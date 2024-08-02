@@ -1,0 +1,12 @@
+cradle:
+  cabal:
+    - path: "./src"
+      component: "lib:interaction-nets-in-fpga"
+    - path: "./tests/doctests.hs"
+      component: "interaction-nets-in-fpga:doctests"
+    - path: "./tests"
+      component: "interaction-nets-in-fpga:test-library"
+    - path: "./bin/Clashi.hs"
+      component: "interaction-nets-in-fpga:exe:clashi"
+    - path: "./bin/Clash.hs"
+      component: "interaction-nets-in-fpga:exe:clash"
