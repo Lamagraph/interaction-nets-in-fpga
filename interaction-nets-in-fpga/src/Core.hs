@@ -1,3 +1,6 @@
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
+
 module Core where
 
 import Clash.Prelude
@@ -11,10 +14,10 @@ type IdOfPort = Unsigned 3
 data NodeType = Dup | Erasure
   deriving (Generic, NFDataX)
 
-data ReducerStatus = Work | Finished | Error
+data ReducerStatus = Work | Finished | ErrorHandleSingleNode | ErrorEmptyLeftNode
   deriving (Generic, NFDataX)
 
-data ReducerState = Initial | Empty | OneNodeToLoad
+data ReducerState = Initial | Empty | OneNodeToLoad | Done | Failed 
   deriving (Generic, NFDataX)
 
 data Port = Port {
@@ -27,7 +30,8 @@ data MaybePort = Connected Port | NotConnected | PNothing
   deriving (Generic, NFDataX)
 
 data Node number_of_ports = Node {
-    _ports :: Vec number_of_ports (Maybe Port)
+    _primaryPort :: Port
+    , _secondaryPorts :: Vec number_of_ports (Maybe Port)
     , _nodeType :: NodeType
   }
   deriving (Generic, NFDataX)
@@ -58,12 +62,15 @@ data DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_p
 
 loader ::
  (KnownDomain dom
- , HiddenClockResetEnable dom)
- => (Signal dom Address -> Signal dom Node)
+ , HiddenClockResetEnable dom
+ , KnownNat number_of_ports)
+ => (Signal dom Address -> Signal dom (Node number_of_ports))
  -> Signal dom (Maybe Address)
- -> Signal dom (Maybe LoadedNode)
+ -> Signal dom (Maybe (LoadedNode number_of_ports))
 loader ram addressToLoad =
-  mkLoadedNode <$> bundle (ram addressToLoad) registerForAddressToLoad
+  mkLoadedNode <$> bundle ((ram $ (\n -> case n of 
+                                          Nothing -> 0 
+                                          Just x -> x) <$> addressToLoad), registerForAddressToLoad)
   where
     mkLoadedNode (node, address) = fmap (LoadedNode node) address
     registerForAddressToLoad = register Nothing addressToLoad
@@ -75,108 +82,127 @@ reducer ::
  , KnownNat max_num_of_edges_to_store
  , KnownNat number_of_ports)
  => Address
- -> (Signal dom Maybe(Address) -> Signal dom Maybe(LoadedNode number_of_ports))
- -> Signal dom (DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports, ReducerStatus)
+ -> (Signal dom (Maybe Address) -> Signal dom (Maybe (LoadedNode number_of_ports)))
+ -> Signal dom (Maybe (DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports), ReducerStatus)
 reducer addressOfFirstNodeToLoad nodeLoader =
-  dataToStore
+  bundle (dataToStore, reducerStatus)
   where
-    (dataToStore, nextLeftNode, addressOfNextNodeToLoad) = 
+    (dataToStore, reducerStatus, nextLeftNode, addressOfNextNodeToLoad) = 
       unbundle 
       $ mealy mealyF Initial 
-      $ bundle leftNode (nodeLoader addressOfNextNodeToLoad)
+      $ bundle (leftNode, (nodeLoader addressOfNextNodeToLoad), status)
     
-    leftNode = register Nothing nextLeftNode    
+    leftNode = register Nothing selectNextLeftNode
+
+    status = register Work reducerStatus
     
     handle 
-      :: Maybe (LoadedNode number_of_ports)
+      :: LoadedNode number_of_ports
       -> Maybe (LoadedNode number_of_ports)
-      -> (DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports)
+      -> (Maybe (LoadedNode number_of_ports, Address),DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports)
     handle leftNode rightNode = 
       let emptyNodes = repeat Nothing :: Vec max_num_of_nodes_to_store _
       in 
       let emptyEdges = repeat Nothing :: Vec max_num_of_edges_to_store _
       in
-      let nodes = 
-        if isActive leftNode loadedNode
-          then 
-            case leftNode of
-              Nothing -> DataToStore emptyNodes emptyEdges -- Error must be here
-              Just n1 -> rightNode +>> leftNode +>> emptyNodes -- reduction rules applied here                  
-          else rightNode +>> leftNode +>> emptyNodes
+      let nodes = case rightNode of
+                    Nothing -> Just leftNode +>> emptyNodes
+                    Just n -> 
+                      if isActive leftNode n
+                        then rightNode +>> (Just leftNode) +>> emptyNodes -- reduction rules applied here
+                        else rightNode +>> (Just leftNode) +>> emptyNodes 
       in
-      DataToStore emptyEdges (markAllInnerEdges nodes)
+      selectNextLeftNode $ DataToStore (markAllInnerEdges nodes) emptyEdges
 
-    isPortToLoad
-      :: Maybe Port 
+    isPortToLoad 
+      :: (KnownNat number_of_ports)
+      => LoadedNode number_of_ports
+      -> Port 
       -> Bool
-    isPortToLoad port = 
-      case port of 
-        Nothing -> False
-        Just port -> (not $ _edgeIsVisited port) 
-          && (_originalAddress loadedNode /= _targetAddress port) 
+    isPortToLoad loadedNode port =
+      (not $ bitToBool $ _edgeIsVisited port) 
+      && (_originalAddress loadedNode /= _targetAddress port)
 
     selectAddressToLoad 
       :: LoadedNode number_of_ports
       -> Maybe Address
     selectAddressToLoad loadedNode = 
-      let ports = _ports $ _node loadedNode in
-      if not $ _edgeIsVisited $ ports !! 0 -- 0 is a main port
-        then Just $ _targetAddress $ ports !! 0
-        else foldl (\ s p -> if isPortToLoad p then Just p else s) Nothing $ tail ports
+      let node = _node loadedNode in
+      let addressToLoad s port = if isPortToLoad loadedNode port then Just $ _targetAddress port else s       
+      in
+      if isPortToLoad loadedNode $ _primaryPort node
+        then Just $ _targetAddress $ _primaryPort node
+        else 
+          foldl (\s mbPort -> mbPort >>= addressToLoad s) Nothing 
+          $ _secondaryPorts node
 
     selectNextLeftNode
       :: DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports 
       -> (Maybe (LoadedNode number_of_ports, Address), DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports)
     selectNextLeftNode  preDataToStore =
-      let handleNode s i node =
-        case selectAddressToLoad node of
-          Nothing -> s
-          Just a -> Just (i, node, a)
+      let handleNode s i mbNode = mbNode >>= (\node -> case selectAddressToLoad node of
+                                                        Nothing -> s
+                                                        Just a -> Just (i, node, a))
+      in
       let selectedNode = ifoldl handleNode Nothing $ _nodes preDataToStore
+      in
       case selectedNode of
-        Nothing -> Nothing, preDataToStore
+        Nothing -> (Nothing, preDataToStore)
         Just (i, node, addressOfNodeToLoad) -> 
-            Just (node, addressOfNodeToLoad), DataToStore (replace i Nothing $ _nodes preDataToStore) (_edges preDataToStore)
+            (Just (node, addressOfNodeToLoad), DataToStore (replace i Nothing $ _nodes preDataToStore) (_edges preDataToStore))
 
     markAllInnerEdges
-      :: Vec (max_num_of_nodes_to_store + 1) (Maybe (LoadedNode number_of_ports))
-      -> Vec (max_num_of_nodes_to_store + 1) (Maybe (LoadedNode number_of_ports))
+      :: Vec max_num_of_nodes_to_store (Maybe (LoadedNode number_of_ports))
+      -> Vec max_num_of_nodes_to_store (Maybe (LoadedNode number_of_ports))
     markAllInnerEdges nodes =
       let addressesOfLoadedNodes = map (fmap _originalAddress) nodes in
-      let markPorts node =
-        let targetAddress = _targetAddress port
-        Node (_nodeType node) (map (\port -> Port targetAddress (_edgeIsVisited port || isJust $ elemIndex (Just targetAddress) addressesOfLoadedNodes)) $ _ports node)
+      let markPort port = Port (_targetAddress port) 
+                                (boolToBit ((bitToBool $ _edgeIsVisited port) || (isJust $ elemIndex (Just (_targetAddress port)) addressesOfLoadedNodes)))
+      in
+      let markPorts loadedNode = LoadedNode (Node (markPort $ _primaryPort $ _node loadedNode)
+                                                  (map (fmap markPort) $ _secondaryPorts $ _node loadedNode)
+                                                  (_nodeType $ _node loadedNode)) 
+                                            (_originalAddress loadedNode)        
+      in
       map (fmap markPorts) nodes
 
     isActive
-      :: Maybe (LoadedNode number_of_ports)
-      -> Maybe (LoadedNode number_of_ports)
+      :: LoadedNode number_of_ports
+      -> LoadedNode number_of_ports
       -> Bool
-    isActive leftNode rightNode =
-      case leftNode of
-        Nothing -> False
-        Just n1 -> 
-          case rightNode of 
-            Nothing -> False 
-            Just n2 -> 
-              _targetAddress ((_ports $ _node n1) !! 0) == _originalAddress n2
-              && _targetAddress ((_ports $ _node n2) !! 0) == _originalAddress n1
+    isActive leftNode rightNode = 
+      (_targetAddress $ _primaryPort $ _node leftNode) == (_originalAddress rightNode)
+      && (_targetAddress $ _primaryPort $ _node rightNode) == (_originalAddress leftNode)
 
     mealyF
       :: ReducerState 
-      -> (Maybe (LoadedNode number_of_ports), Maybe (LoadedNode number_of_ports)) 
-      -> (ReducerState, (Maybe (DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports), Maybe (LoadedNode number_of_ports), Maybe Address))
-    mealyF state (leftNode, loadedNode) =
+      -> (Maybe (LoadedNode number_of_ports), Maybe (LoadedNode number_of_ports))
+      -> ReducerStatus 
+      -> (ReducerState, (Maybe (DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports), ReducerStatus, Maybe (LoadedNode number_of_ports), Maybe Address))
+    mealyF state (leftNode, loadedNode) status =
       case state of
-        Initial -> (Empty, (Nothing, Nothing, Just addressOfFirstNodeToLoad))
+        Initial -> (Empty, (Nothing, Work, Nothing, Just addressOfFirstNodeToLoad))
         Empty ->
-          let addressToLoad = selectAddressToLoad loadedNode in
-          case addressToLoad of
-            Just x -> (OneNodeToLoad, (Nothing, loadedNode, addressToLoad))
-            Nothing -> reduce loadedNode Nothing  -- !!HANDLE!!
+          case loadedNode of 
+            Nothing -> (Failed, (Nothing, Error, Nothing, Nothing))
+            Just loadedNode ->
+              let addressToLoad = selectAddressToLoad loadedNode in
+              case addressToLoad of
+                Just x -> (OneNodeToLoad, (Nothing, Work, Just loadedNode, addressToLoad))
+                Nothing -> 
+                  case leftNode of
+                    Just leftNode -> 
+                      let (infoAboutNextNodes, dataToStore) = handle leftNode Nothing in
+                      case infoAboutNextNodes of
+                        Just (nextLeftNode, nextAddressToLoad) -> (Failed, (Nothing, ErrorHandleSingleNode, Nothing, Nothing))
+                        Nothing -> (Empty, (dataToStore, Work, Nothing, Just addressOfNodeWithUnvisitedEdges))
+                    Nothing -> (Failed, (Nothing, ErrorEmptyLeftNode, Nothing, Nothing))
         OneNodeToLoad -> 
-          let preDataToStore = handle leftNode loadedNode in 
-          let nextData, dataToStore = selectNextLeftNode preDataToStore in
-          case nextData of
-            Just (nextLeftNode, nextAddressToLoad) -> (OneNodeToLoad, (dataToStore, Just nextLeftNode, Just nextAddressToLoad))
-            Nothing -> (Empty, (dataToStore, Nothing, Just addressOfNodeWithUnvisitedEdges))
+          case leftNode of
+            Just leftNode -> 
+              let (infoAboutNextNodes, dataToStore) = handle leftNode loadedNode in
+              case infoAboutNextNodes of
+                Just (nextLeftNode, nextAddressToLoad) -> (OneNodeToLoad, (dataToStore, Work, Just nextLeftNode, Just nextAddressToLoad))
+                Nothing -> (Empty, (dataToStore, Work, Nothing, Just addressOfNodeWithUnvisitedEdges))
+            Nothing -> (Failed, (Nothing, ErrorEmptyLeftNode, Nothing, Nothing))
+        Failed -> (Failed, (Nothing, status, Nothing, Nothing))
