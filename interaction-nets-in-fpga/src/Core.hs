@@ -75,6 +75,14 @@ loader ram addressToLoad =
     mkLoadedNode (node, address) = fmap (LoadedNode node) address
     registerForAddressToLoad = register Nothing addressToLoad
 
+--memoryManager 
+--  :: (KnownNat number_of_cells) 
+--  => Vec number_of_cells Bit
+--  -> Vec number_of_cells Bit
+--  -> ()
+--memoryManager isFreeMap isFullyVisitedMap = 
+
+
 reducer ::
  (KnownDomain dom
  , HiddenClockResetEnable dom
@@ -83,14 +91,15 @@ reducer ::
  , KnownNat number_of_ports)
  => Address
  -> (Signal dom (Maybe Address) -> Signal dom (Maybe (LoadedNode number_of_ports)))
+ -> (Signal dom Bit -> Signal dom (Maybe Address))
  -> Signal dom (Maybe (DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports), ReducerStatus)
-reducer addressOfFirstNodeToLoad nodeLoader =
+reducer addressOfFirstNodeToLoad nodeLoader nonvisitedNodesProvider =
   bundle (dataToStore, reducerStatus)
   where
-    (dataToStore, reducerStatus, nextLeftNode, addressOfNextNodeToLoad) = 
+    (dataToStore, reducerStatus, nextLeftNode, addressOfNextNodeToLoad, isNonvisitedNodeUsed) = 
       unbundle 
       $ mealy mealyF Initial 
-      $ bundle (leftNode, (nodeLoader addressOfNextNodeToLoad), status)
+      $ bundle (leftNode, (nodeLoader addressOfNextNodeToLoad), status, (nonvisitedNodesProvider isNonvisitedNodeUsed))
     
     leftNode = register Nothing selectNextLeftNode
 
@@ -177,9 +186,10 @@ reducer addressOfFirstNodeToLoad nodeLoader =
     mealyF
       :: ReducerState 
       -> (Maybe (LoadedNode number_of_ports), Maybe (LoadedNode number_of_ports))
-      -> ReducerStatus 
-      -> (ReducerState, (Maybe (DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports), ReducerStatus, Maybe (LoadedNode number_of_ports), Maybe Address))
-    mealyF state (leftNode, loadedNode) status =
+      -> ReducerStatus
+      -> (Maybe Address) 
+      -> (ReducerState, (Maybe (DataToStore max_num_of_nodes_to_store max_num_of_edges_to_store number_of_ports), ReducerStatus, Maybe (LoadedNode number_of_ports), Maybe Address, Bit))
+    mealyF state (leftNode, loadedNode) status addressOfNodeWithUnvisitedEdges =
       case state of
         Initial -> (Empty, (Nothing, Work, Nothing, Just addressOfFirstNodeToLoad))
         Empty ->
