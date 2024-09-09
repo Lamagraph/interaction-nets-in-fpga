@@ -1,16 +1,38 @@
 {
-    "editor.formatOnSave": true,
-    "files.insertFinalNewline": true,
-    "files.trimFinalNewlines": true,
-    "files.trimTrailingWhitespace": true,
-    "editor.renderWhitespace": "all",
-    "[haskell]": {
-        "editor.tabSize": 4
-    },
-    "haskell.manageHLS": "GHCup",
-    "haskell.formattingProvider": "fourmolu",
-    "yaml.format.enable": true,
-    "[yaml]": {
-        "editor.defaultFormatter": "redhat.vscode-yaml"
-    },
+  "editor.formatOnSave": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "editor.renderWhitespace": "all",
+  "[haskell]": {
+    "editor.tabSize": 4
+  },
+  "haskell.manageHLS": "GHCup",
+  "haskell.formattingProvider": "fourmolu",
+  "yaml.format.enable": true,
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "files.exclude": {
+    "**/*.vo": true,
+    "**/*.vok": true,
+    "**/*.vos": true,
+    "**/*.aux": true,
+    "**/*.glob": true,
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/*.dyn_hi": true,
+    "**/*.dyn_o": true,
+    "**/*.hi": true,
+    "**/*.o": true,
+    "**/dist-newstyle": true,
+    "**/.stack-work": true,
+    "**/.ghc.environment.*": true,
+    "**/*.o-boot": true,
+    "**/*.hi-boot": true
+  }
 }

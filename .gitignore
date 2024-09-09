@@ -67,3 +67,8 @@ cabal.project.local~
 
 # Because of prettier in pre-commit
 node_modules/
+
+# HDL directories often created during development cycle
+/vhdl
+/verilog
+/systemverilog
