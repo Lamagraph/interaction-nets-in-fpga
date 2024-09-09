@@ -1,0 +1,16 @@
+{
+    "editor.formatOnSave": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true,
+    "editor.renderWhitespace": "all",
+    "[haskell]": {
+        "editor.tabSize": 4
+    },
+    "haskell.manageHLS": "GHCup",
+    "haskell.formattingProvider": "fourmolu",
+    "yaml.format.enable": true,
+    "[yaml]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+}
