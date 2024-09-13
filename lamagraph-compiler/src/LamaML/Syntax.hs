@@ -164,12 +164,9 @@ _ { | }
 
 /typeconstr-name/ ::= /lowercase-ident/
 
-/field-name/ ::= /lowercase-ident/
 @
 
 /Revise or \/ || \/ lor/
-
-/Do we need records?/
 -}
 
 {- $types
@@ -209,7 +206,6 @@ _ { | }
           | /pattern/ __|__ /pattern/
           | /constr-name/ /pattern/
           | /pattern/ { , /pattern/ }
-          | __{__ /field-name/ [: /typexpr/] [= /pattern/] { ; /field-name/ [: /typexpr/] [= /pattern/] } [; _] [;] __}__
           | __[__ /pattern/ { ; /pattern/ } [;] __]__
           | /pattern/ :: /pattern/
 @
@@ -226,8 +222,6 @@ _ { | }
        | /constr-name/ /expr/
        | /expr/ :: /expr/
        | __[__ /expr/ { ; /expr/ } [;] ]
-       | __{__ /field-name/ [: /typexpr/] [= /expr/] { ; /field-name/ [: /typexpr/] [= /expr/] } [;] __}__
-       | __{__ /expr/ with /field-name/ [: /typexpr/] [= /expr/] { ; /field-name/ [: /typexpr/] [= /expr/] } [;] __}__
        | /expr/ { /argument/ }+
        | /prefix-symbol/ /expr/
        | - /expr/
@@ -261,7 +255,6 @@ _ { | }
 /type-equation/ ::= = /typexpr/
 
 /type-representation/ ::= = [ __|__ ] /constr-decl/ { __|__ /constr-decl/ }
-                      | = /record=decl/
                       | = __|__
 
 /type-params/ ::= /type-param/
@@ -269,13 +262,9 @@ _ { | }
 
 /type-param/ ::= ' /ident/
 
-/record-decl/ ::= __{__ /field-decl/ { ; /field-decl/ } [;] __}__
-
 /constr-decl/ ::= ( /constr-name/ | __[]__ | __(__::__)__ ) [ of /constr-args/ ]
 
 /constr-args/ ::= /typexpr/ { * /typexpr/ }
-
-/field-decl/ ::= /field-name/ : /typexpr/
 @
 -}
 
@@ -294,4 +283,5 @@ For the sake of simplicity this language currently lacks these know to the autho
 
 * Multiline strings
 * Less useful escape sequences like @\\t@
+* Records
 -}
