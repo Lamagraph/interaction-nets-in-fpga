@@ -52,6 +52,9 @@ module LamaML.Syntax (
 
     -- * Declarations
     -- $decls
+
+    -- * Missing things
+    -- $missing
 ) where
 
 {- $rules
@@ -101,8 +104,6 @@ Nesting is allowed and must be handled.
 /escape-sequence/ ::= \\ ( __|__ | " | ' | n )
 @
 
-/Do we need more escape sequences?/
-
 /We must define regular-char? Any ASCII one?/
 -}
 
@@ -115,8 +116,6 @@ Nesting is allowed and must be handled.
 @
 
 /We must define regular-string-character? Any ASCII one?/
-
-/Do we need multiline strings?/
 -}
 
 {- $lexing_operators
@@ -287,4 +286,12 @@ _ { | }
 
 /prog/ ::= { /decl/ }
 @
+-}
+
+{- $missing
+
+For the sake of simplicity this language currently lacks these know to the authors features:
+
+* Multiline strings
+* Less useful escape sequences like @\\t@
 -}
