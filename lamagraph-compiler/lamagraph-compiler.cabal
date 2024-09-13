@@ -24,8 +24,8 @@ source-repository head
 
 library
   exposed-modules:
+      LamaML.Syntax
       Lib
-      Syntax
   other-modules:
       Paths_lamagraph_compiler
   hs-source-dirs:
