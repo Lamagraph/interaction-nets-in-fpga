@@ -49,9 +49,9 @@ markAllInnerEdges nodes =
       markPort port =
         Port
           (_targetAddress port)
-          ( boolToBit $
-              bitToBool (_edgeIsVisited port)
-                || isJust (elemIndex (Just (_targetAddress port)) addressesOfLoadedNodes)
+          ( boolToBit
+              $ bitToBool (_edgeIsVisited port)
+              || isJust (elemIndex (Just (_targetAddress port)) addressesOfLoadedNodes)
           )
       markPorts loadedNode =
         LoadedNode
@@ -68,8 +68,10 @@ isActive ::
   LoadedNode numberOfPorts ->
   Bool
 isActive leftNode rightNode =
-  leftNodePrimaryPortAddress == _originalAddress rightNode
-    && rightNodePrimaryPortAddress == _originalAddress leftNode
+  leftNodePrimaryPortAddress
+    == _originalAddress rightNode
+    && rightNodePrimaryPortAddress
+    == _originalAddress leftNode
  where
   leftNodePrimaryPortAddress = _targetAddress (_primaryPort $ _node leftNode)
   rightNodePrimaryPortAddress = _targetAddress (_primaryPort $ _node rightNode)
@@ -85,8 +87,8 @@ selectAddressToLoad loadedNode =
   if isPortToLoad loadedNode primaryPort
     then Just $ _targetAddress primaryPort
     else
-      foldl (\s mbPort -> mbPort >>= addressToLoad s) Nothing $
-        _secondaryPorts node
+      foldl (\s mbPort -> mbPort >>= addressToLoad s) Nothing
+        $ _secondaryPorts node
  where
   node = _node loadedNode
   primaryPort = _primaryPort node
