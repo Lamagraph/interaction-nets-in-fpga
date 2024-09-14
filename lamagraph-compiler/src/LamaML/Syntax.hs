@@ -50,7 +50,7 @@ module LamaML.Syntax (
     -- * Type definitions
     -- $typedefs
 
-    -- * Declarations
+    -- * Declarations and Modules
     -- $decls
 
     -- * Missing things
@@ -135,7 +135,7 @@ Note that the following code won't be treated as a valid multiline comment!
 {- $lexing_operators
 
 @
-/infix-symbol/ ::= ( = | \< | \> | @ | ^ | __|__ | & | + | - | * | / | $ | % ) { /operator-char/ }
+/infix-symbol/ ::= ( = | \< | \> | @ | ^ | __|__ | & | + | - | * | \/ | $ | % ) { /operator-char/ }
 
 /prefix-symbol/ ::= ! { /operator-char/ }
                 | ( ? | ~ ) { /operator-char/ }+
@@ -150,17 +150,17 @@ Copypasted from https://askra.de/software/ocaml-doc/4.02/lex.html#sec71, probabl
 Keyword table:
 
 @
-and asr else false fun if in
-land let lor lsl lsr lxor match mod
-of rec then true type when with
+and asr else false fun if in land let
+lor lsl lsr lxor match mod module
+of open rec then true type when with
 
 != && ' ( ) * + , - -> : :: ; < = > [ ]
-_ { | }
+_ { | } .
 @
 -}
 
 {- $names
-/No modules currently!/
+Basic names
 
 @
 /value-name/ ::= /lowercase-ident/
@@ -175,6 +175,20 @@ _ { | }
 /constr-name/ ::= /capitalized-ident/
 
 /typeconstr-name/ ::= /lowercase-ident/
+
+/module-name/ ::= /capitalized-ident/
+@
+
+Qualified names
+
+@
+/value-path/ ::= [ /module-path/ . ] /value-name/
+
+/constr/ ::= [ /module-path/ . ] /constr-name/
+
+/typeconstr/ ::= [ /module-path/ . ] /typeconstr-name/
+
+/module-path/ ::= /module-name/ { . /module-name/ }
 @
 -}
 
@@ -185,9 +199,9 @@ _ { | }
           | __(__ /typexpr/ __)__
           | /typexpr/ -> /typexpr/
           | /typexpr/ { * /typexpr/}+
-          | /typeconstr-name/
-          | /typexpr/ /typeconstr-name/
-          | __(__ /typexpr/ {, /typexpr/} __)__ /typeconstr-name/
+          | /typeconstr/
+          | /typexpr/ /typeconstr/
+          | __(__ /typexpr/ {, /typexpr/} __)__ /typeconstr/
 @
 -}
 
@@ -200,7 +214,7 @@ _ { | }
            | /uint64-literal/
            | /char-literal/
            | /string-literal/
-           | /constr-name/
+           | /constr/
            | false
            | true
            | __()__
@@ -216,7 +230,7 @@ _ { | }
           | __(__ /pattern/ __)__
           | __(__ /pattern/ : /typexpr/ __)__
           | /pattern/ __|__ /pattern/
-          | /constr-name/ /pattern/
+          | /constr/ /pattern/
           | /pattern/ { , /pattern/ }
           | __[__ /pattern/ { ; /pattern/ } [;] __]__
           | /pattern/ :: /pattern/
@@ -226,11 +240,12 @@ _ { | }
 {- $expressions
 
 @
-/expr/ ::= /value-name/
+/expr/ ::= /value-path/
        | /constant/
        | __(__ /expr/ __)__
+       | __(__ /expr/ : /typexpr/ __)__
        | /expr/ {, /expr/ }
-       | /constr-name/ /expr/
+       | /constr/ /expr/
        | /expr/ :: /expr/
        | __[__ /expr/ { ; /expr/ } [;] ]
        | /expr/ { /argument/ }+
@@ -268,7 +283,7 @@ _ { | }
                       | = __|__
 
 /type-params/ ::= /type-param/
-              | __(__ /type-param/ {, /type-param/ __)__
+              | __(__ /type-param/ {, /type-param/ } __)__
 
 /type-param/ ::= ' /ident/
 
@@ -281,9 +296,13 @@ _ { | }
 {- $decls
 
 @
-/decl/ ::= /expr/ | /type-definition/
+/module-definition/ ::= module /module-path/
 
-/prog/ ::= { /decl/ }
+/open-decl/ ::= open /module-path/
+
+/decl/ ::= /expr/ | /type-definition/ | /open-decl/
+
+/prog/ ::= [ /module-definition/ ] { /decl/ }
 @
 -}
 
