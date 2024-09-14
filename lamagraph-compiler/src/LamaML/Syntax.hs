@@ -70,8 +70,18 @@ Spaces, tabs, @\\n@ and @\\r@ are ignored and are used to separate tokens.
 -}
 
 {- $lexing_comments
-Comments must be enclosed in @(*@ and @*)@.
+
+Single-line comments use @--@ syntax and consume ALL characters until line break.
+
+Multiline comments must be enclosed in @(*@ and @*)@.
 Nesting is allowed and must be handled.
+
+Note that the following code won't be treated as a valid multiline comment!
+
+@
+-- (*
+*)
+@
 -}
 
 {- $lexing_idents
