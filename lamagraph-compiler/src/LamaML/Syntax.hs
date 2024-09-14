@@ -150,15 +150,13 @@ Copypasted from https://askra.de/software/ocaml-doc/4.02/lex.html#sec71, probabl
 Keyword table:
 
 @
-and asr begin else end false fun function
-if in land let lor lsl lsr lxor match mod
+and asr else false fun function if in
+land let lor lsl lsr lxor match mod
 of rec then true type when with
 
 != && ' ( ) * + , - -> : :: ; < = > [ ]
 _ { | }
 @
-
-/I hope nothing is missing./
 -}
 
 {- $names
@@ -177,10 +175,7 @@ _ { | }
 /constr-name/ ::= /capitalized-ident/
 
 /typeconstr-name/ ::= /lowercase-ident/
-
 @
-
-/Revise or \/ || \/ lor/
 -}
 
 {- $types
@@ -209,7 +204,6 @@ _ { | }
            | false
            | true
            | __()__
-           | begin end
            | __[]__
 @
 -}
@@ -235,7 +229,6 @@ _ { | }
 /expr/ ::= /value-name/
        | /constant/
        | __(__ /expr/ __)__
-       | begin /expr/ end
        | /expr/ {, /expr/ }
        | /constr-name/ /expr/
        | /expr/ :: /expr/
