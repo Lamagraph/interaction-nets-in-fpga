@@ -86,7 +86,7 @@ Note that the following code won't be treated as a valid multiline comment!
 
 {- $lexing_idents
 @
-/ident/ ::= ( /letter/ | _ ) { /letter/ | 0...9 | _ | ' }
+/ident/ ::= /letter/ { /letter/ | 0...9 | _ | ' }
 
 /capitalized-ident/ ::= ( A...Z ) { /letter/ | 0...9 | _ | ' }
 
@@ -195,7 +195,6 @@ Qualified names
 {- $types
 @
 /typexpr/ ::= ' /ident/
-          | _
           | __(__ /typexpr/ __)__
           | /typexpr/ -> /typexpr/
           | /typexpr/ { * /typexpr/}+
@@ -314,5 +313,5 @@ For the sake of simplicity this language currently lacks these know to the autho
 * Less useful escape sequences like @\\t@
 * Records
 * Float numbers
-* `function` keyword
+* @function@ keyword
 -}
