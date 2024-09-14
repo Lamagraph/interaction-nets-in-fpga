@@ -99,11 +99,15 @@ Note that the following code won't be treated as a valid multiline comment!
 {- $lexing_int_lits
 @
 /integer-literal/ ::= \[-] ( 0...9 ) { 0...9 | _ }
+
+/int32-literal/ ::= /integer-literal/ l
+
+/uint32-literal/ ::= /integer-literal/ ul
+
+/int64-literal/ ::= /integer-literal/ L
+
+/uint64-literal/ ::= /integer-literal/ UL
 @
-
-/Do we need hex\/octal\/binary numbers and\/or size suffixes?/
-
-/Also no floats currently./
 -}
 
 {- $lexing_char_lits
@@ -195,6 +199,10 @@ _ { | }
 {- $constants
 @
 /constant/ ::= /integer-literal/
+           | /int32-literal/
+           | /uint32-literal/
+           | /int64-literal/
+           | /uint64-literal/
            | /char-literal/
            | /string-literal/
            | /constr-name/
@@ -294,4 +302,5 @@ For the sake of simplicity this language currently lacks these know to the autho
 * Multiline strings
 * Less useful escape sequences like @\\t@
 * Records
+* Float numbers
 -}
