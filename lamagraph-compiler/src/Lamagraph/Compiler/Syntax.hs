@@ -140,7 +140,7 @@ Note that the following code won't be treated as a valid multiline comment!
 /prefix-symbol/ ::= ! { /operator-char/ }
                 | ( ? | ~ ) { /operator-char/ }+
 
-/operator-char/ ::= ! | $ | % | & | * | + | - | . | / | : | \< | = | \> | ? | \@ | ^ | __|__ | ~
+/operator-char/ ::= ! | $ | % | & | * | + | . | / | : | \< | = | \> | ? | \@ | ^ | __|__ | ~
 @
 
 Copypasted from https://askra.de/software/ocaml-doc/4.02/lex.html#sec71, probably too complicated.
