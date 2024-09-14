@@ -150,7 +150,7 @@ Copypasted from https://askra.de/software/ocaml-doc/4.02/lex.html#sec71, probabl
 Keyword table:
 
 @
-and asr else false fun function if in
+and asr else false fun if in
 land let lor lsl lsr lxor match mod
 of rec then true type when with
 
@@ -239,7 +239,6 @@ _ { | }
        | /expr/ /infix-op/ /expr/
        | if /expr/ then /expr/ else /expr/
        | match /expr/ with /pattern-matching/
-       | function /pattern-matching/
        | fun { /parameter/ }+ [ : /typexpr/ ] -> /expr/
        | let [rec] /let-binding/ { and /let-binding/ } in /expr/
 
@@ -296,4 +295,5 @@ For the sake of simplicity this language currently lacks these know to the autho
 * Less useful escape sequences like @\\t@
 * Records
 * Float numbers
+* `function` keyword
 -}
