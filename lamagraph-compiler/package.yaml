@@ -21,6 +21,11 @@ description: Please see the README on GitHub at <https://github.com/Lamagraph/in
 
 dependencies:
   - base >= 4.7 && < 5
+  - relude
+
+default-extensions:
+  - NoImplicitPrelude
+  - OverloadedStrings
 
 ghc-options:
   - -Wall
