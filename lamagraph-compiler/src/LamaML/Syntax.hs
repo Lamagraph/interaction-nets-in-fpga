@@ -118,7 +118,7 @@ Note that the following code won't be treated as a valid multiline comment!
 /escape-sequence/ ::= \\ ( __|__ | " | ' | n )
 @
 
-/We must define regular-char? Any ASCII one?/
+@/regular-char/@ must match every printable ASCII character (decimal range: 32-126).
 -}
 
 {- $lexing_string_lits
@@ -129,7 +129,7 @@ Note that the following code won't be treated as a valid multiline comment!
                    | /escape-sequence/
 @
 
-/We must define regular-string-character? Any ASCII one?/
+@/regular-string-character/@ must match every printable ASCII character (decimal range: 32-126).
 -}
 
 {- $lexing_operators
