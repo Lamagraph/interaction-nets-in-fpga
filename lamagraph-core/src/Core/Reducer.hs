@@ -96,9 +96,7 @@ data NonVisitedOver = No | Yes
 
 -- | Transition function in mealy automaton.
 mealyFunction ::
-  ( KnownDomain dom
-  , HiddenClockResetEnable dom
-  , KnownNat maxNumOfNodesToStore
+  ( KnownNat maxNumOfNodesToStore
   , KnownNat maxNumOfEdgesToStore
   , KnownNat numberOfPorts
   ) =>
