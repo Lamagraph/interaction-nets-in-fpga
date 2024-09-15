@@ -1,15 +1,20 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Core.Node where
 
 import Clash.Prelude
+import Control.Lens (makeLenses, (^.))
 import Data.Maybe (isJust)
 
 type Address = Unsigned 16
 
 data Port = Port
   { _targetAddress :: Address
-  , _edgeIsVisited :: Bit
+  , _edgeIsVisited :: Bool
   }
   deriving (NFDataX, Generic)
+
+$(makeLenses ''Port)
 
 -- | Node in the RAM.
 data Node numberOfPorts = Node
@@ -19,16 +24,20 @@ data Node numberOfPorts = Node
   }
   deriving (NFDataX, Generic)
 
+$(makeLenses ''Node)
+
 {- | `Node` with info about his`Address`.
 Original address can be useful when reducer working.
 For example, if this `Node` has reduced then his `Addres  s` is become free
 and info about this should be passed to the memory manager.
 -}
 data LoadedNode numberOfPorts = LoadedNode
-  { _node :: Node numberOfPorts
+  { _containedNode :: Node numberOfPorts
   , _originalAddress :: Address
   }
   deriving (NFDataX, Generic)
+
+$(makeLenses ''LoadedNode)
 
 -- | Check if `Port` is not visited yet and there is no collision with `Node` address.
 isPortToLoad ::
@@ -37,8 +46,8 @@ isPortToLoad ::
   Port ->
   Bool
 isPortToLoad loadedNode port =
-  not (bitToBool $ _edgeIsVisited port)
-    && (_originalAddress loadedNode /= _targetAddress port)
+  not (port ^. edgeIsVisited)
+    && (loadedNode ^. originalAddress /= port ^. targetAddress)
 
 -- | Mark all `Port` in nodes as visited, if it has pointer at given nodes.
 markAllInnerEdges ::
@@ -48,21 +57,18 @@ markAllInnerEdges ::
   -- | Marked vector of nodes.
   Vec maxNumOfNodesToStore (Maybe (LoadedNode numberOfPorts))
 markAllInnerEdges nodes =
-  let addressesOfLoadedNodes = map (fmap _originalAddress) nodes
+  let addressesOfLoadedNodes = map (fmap (^. originalAddress)) nodes
       markPort port =
         Port
-          (_targetAddress port)
-          ( boolToBit
-              $ bitToBool (_edgeIsVisited port)
-              || isJust (elemIndex (Just (_targetAddress port)) addressesOfLoadedNodes)
-          )
+          (port ^. targetAddress)
+          ((port ^. edgeIsVisited) || isJust (elemIndex (Just (port ^. targetAddress)) addressesOfLoadedNodes))
       markPorts loadedNode =
         LoadedNode
           ( Node
-              (markPort $ _primaryPort $ _node loadedNode)
-              (map (fmap markPort) $ _secondaryPorts $ _node loadedNode)
+              (markPort $ loadedNode ^. containedNode . primaryPort)
+              (map (fmap markPort) $ loadedNode ^. containedNode . secondaryPorts)
           )
-          (_originalAddress loadedNode)
+          (loadedNode ^. originalAddress)
    in map (fmap markPorts) nodes
 
 -- | Check if pair of `LoadedNode` are active, i.e. they are connected by primary ports.
@@ -71,13 +77,11 @@ isActive ::
   LoadedNode numberOfPorts ->
   Bool
 isActive leftNode rightNode =
-  leftNodePrimaryPortAddress
-    == _originalAddress rightNode
-    && rightNodePrimaryPortAddress
-    == _originalAddress leftNode
+  leftNodePrimaryPortAddress == rightNode ^. originalAddress
+    && rightNodePrimaryPortAddress == leftNode ^. originalAddress
  where
-  leftNodePrimaryPortAddress = _targetAddress (_primaryPort $ _node leftNode)
-  rightNodePrimaryPortAddress = _targetAddress (_primaryPort $ _node rightNode)
+  leftNodePrimaryPortAddress = leftNode ^. containedNode . primaryPort . targetAddress
+  rightNodePrimaryPortAddress = rightNode ^. containedNode . primaryPort . targetAddress
 
 {- | Select an `Address` among those node's ports that can be loaded.
 It is always check primary port first.
@@ -87,12 +91,11 @@ selectAddressToLoad ::
   LoadedNode numberOfPorts ->
   Maybe Address
 selectAddressToLoad loadedNode =
-  if isPortToLoad loadedNode primaryPort
-    then Just $ _targetAddress primaryPort
+  if isPortToLoad loadedNode primPort
+    then Just $ primPort ^. targetAddress
     else
-      foldl (\s mbPort -> mbPort >>= addressToLoad s) Nothing
-        $ _secondaryPorts node
+      foldl (\s mbPort -> mbPort >>= addressToLoad s) Nothing $ node ^. secondaryPorts
  where
-  node = _node loadedNode
-  primaryPort = _primaryPort node
-  addressToLoad s port = if isPortToLoad loadedNode port then Just $ _targetAddress port else s
+  node = loadedNode ^. containedNode
+  primPort = node ^. primaryPort
+  addressToLoad s port = if isPortToLoad loadedNode port then Just $ port ^. targetAddress else s
