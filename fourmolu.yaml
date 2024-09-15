@@ -75,3 +75,4 @@ reexports:
   - "module Relude exports Relude.Print"
   - "module Relude exports Relude.String"
   - "module Relude.String exports Relude.String.Reexport"
+  - "module Clash.Prelude exports Clash.HaskellPrelude"
