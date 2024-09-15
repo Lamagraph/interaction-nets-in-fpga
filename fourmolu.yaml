@@ -47,4 +47,31 @@ respectful: true
 fixities: []
 
 # Module reexports Fourmolu should know about
-reexports: []
+reexports:
+  - "module Relude exports Relude.Applicative"
+  - "module Relude exports Relude.Base"
+  - "module Relude exports Relude.Bool"
+  - "module Relude.Bool exports Relude.Bool.Reexport"
+  - "module Relude exports Relude.Container"
+  - "module Relude.Container exports Relude.Container.Reexport"
+  - "module Relude exports Relude.Debug"
+  - "module Relude exports Relude.DeepSeq"
+  - "module Relude exports Relude.Enum"
+  - "module Relude exports Relude.Exception"
+  - "module Relude exports Relude.File"
+  - "module Relude exports Relude.Foldable"
+  - "module Relude.Foldable exports Relude.Foldable.Reexport"
+  - "module Relude exports Relude.Function"
+  - "module Relude exports Relude.Functor"
+  - "module Relude.Functor exports Relude.Functor.Reexport"
+  - "module Relude exports Relude.Lifted"
+  - "module Relude exports Relude.List"
+  - "module Relude.List exports Relude.List.Reexport"
+  - "module Relude exports Relude.Monad"
+  - "module Relude.Monad exports Relude.Monad.Reexport"
+  - "module Relude exports Relude.Monoid"
+  - "module Relude exports Relude.Nub"
+  - "module Relude exports Relude.Numeric"
+  - "module Relude exports Relude.Print"
+  - "module Relude exports Relude.String"
+  - "module Relude.String exports Relude.String.Reexport"
