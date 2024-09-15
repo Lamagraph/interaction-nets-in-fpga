@@ -46,6 +46,13 @@ packages:
       size: 300
   original:
     hackage: prettyprinter-interp-0.2.0.0@sha256:69c339a95b265dab9b3478ca19ec96952b6b472bd0ff6e2127112a9562362c1d,2086
+- completed:
+    hackage: alex-3.5.1.0@sha256:de553eefe0b6548a560e9d8100486310548470a403c1fa21108dd03713da5fc7,3886
+    pantry-tree:
+      sha256: c3b94e18bde058e26070d4c06c73a42734b59135443382b4f830c33f5e3e3ed0
+      size: 4473
+  original:
+    hackage: alex-3.5.1.0@sha256:de553eefe0b6548a560e9d8100486310548470a403c1fa21108dd03713da5fc7,3886
 snapshots:
 - completed:
     sha256: a81fb3877c4f9031e1325eb3935122e608d80715dc16b586eb11ddbff8671ecd

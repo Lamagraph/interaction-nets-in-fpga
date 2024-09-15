@@ -37,5 +37,8 @@
   },
   "cSpell.words": [
     "Lamagraph"
-  ]
+  ],
+  "[alex]": {
+    "editor.tabSize": 2
+  }
 }

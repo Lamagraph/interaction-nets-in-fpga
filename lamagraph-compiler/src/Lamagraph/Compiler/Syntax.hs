@@ -82,11 +82,13 @@ Note that the following code won't be treated as a valid multiline comment!
 -- (*
 *)
 @
+
+/Note:/ now we can't have @~-@ unary minus, thus @--@ is a subject for change.
 -}
 
 {- $lexing_idents
 @
-/ident/ ::= /letter/ { /letter/ | 0...9 | _ | ' }
+/ident/ ::= ( /letter/ | _ ) { /letter/ | 0...9 | _ | ' }
 
 /capitalized-ident/ ::= ( A...Z ) { /letter/ | 0...9 | _ | ' }
 
@@ -94,6 +96,8 @@ Note that the following code won't be treated as a valid multiline comment!
 
 /letter/ ::= A...Z | a...z
 @
+
+@/ident/@ can be written as @( /capitalized-ident/ | /lowercase-ident/ )@.
 -}
 
 {- $lexing_int_lits
@@ -108,6 +112,8 @@ Note that the following code won't be treated as a valid multiline comment!
 
 /uint64-literal/ ::= /integer-literal/ UL
 @
+
+Values outside of type range will overflow.
 -}
 
 {- $lexing_char_lits
@@ -115,10 +121,10 @@ Note that the following code won't be treated as a valid multiline comment!
 /char-literal/ ::= ' /regular-char/ '
                | ' /escape-sequence/ '
 
-/escape-sequence/ ::= \\ ( __|__ | " | ' | n )
+/escape-sequence/ ::= \\ ( \\ | " | ' | n )
 @
 
-@/regular-char/@ must match every printable ASCII character (decimal range: 32-126).
+@/regular-char/@ must match every printable ASCII character (decimal range: 32-126 excluding escaped characters).
 -}
 
 {- $lexing_string_lits
@@ -129,7 +135,7 @@ Note that the following code won't be treated as a valid multiline comment!
                    | /escape-sequence/
 @
 
-@/regular-string-character/@ must match every printable ASCII character (decimal range: 32-126).
+@/regular-string-character/@ must match every printable ASCII character (decimal range: 32-126 excluding escaped characters).
 -}
 
 {- $lexing_operators
@@ -142,8 +148,6 @@ Note that the following code won't be treated as a valid multiline comment!
 
 /operator-char/ ::= ! | $ | % | & | * | + | . | / | : | \< | = | \> | ? | \@ | ^ | __|__ | ~
 @
-
-Copypasted from https://askra.de/software/ocaml-doc/4.02/lex.html#sec71, probably too complicated.
 -}
 
 {- $lexing_keywords
@@ -154,8 +158,8 @@ and asr else false fun if in land let
 lor lsl lsr lxor match mod module
 of open rec then true type when with
 
-!= && ' ( ) * + , - -> : :: ; < = > [ ]
-_ { | } .
+&& ' ( ) * + , - -> : :: ; < = > [ ]
+_ { } . | ||
 @
 -}
 
@@ -169,7 +173,7 @@ Basic names
 /operator-name/ ::= /prefix-symbol/ | /infix-op/
 
 /infix-op/ ::= /infix-symbol/
-           | * | + | - | = | != | \< | \> | || | &&
+           | * | + | - | = | \< | \> | || | &&
            | mod | land | lor | lxor | lsl | lsr | asr
 
 /constr-name/ ::= /capitalized-ident/
