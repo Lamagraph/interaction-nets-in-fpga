@@ -26,14 +26,12 @@ data ReducerState
   | Failed
   deriving (Generic, NFDataX)
 
--- | Pointer on one of End of `Edge`
 data EdgeEnd = EdgeEnd
   { _addressOfVertex :: Address
   , _idOfPort :: IdOfPort
   }
   deriving (Generic, NFDataX)
 
--- | Pair of the ends.
 data Edge = Edge
   { _leftEnd :: EdgeEnd
   , _rightEnd :: EdgeEnd
@@ -46,12 +44,10 @@ data DataToStore maxNumOfNodesToStore maxNumOfEdgesToStore numberOfPorts = DataT
   }
   deriving (Generic, NFDataX)
 
--- | Select next `Node` to handle and next `Address` by `Port`.
+-- | Select next left `Node` to handle and next `Address` of right `Node` to be loaded.
 selectNextLeftNode ::
   (KnownNat maxNumOfNodesToStore, KnownNat numberOfPorts, KnownNat maxNumOfEdgesToStore) =>
-  -- | Actual data.
   DataToStore maxNumOfNodesToStore maxNumOfEdgesToStore numberOfPorts ->
-  -- | Next `Node`, `Address` and data without selected `Node`.
   ( Maybe (LoadedNode numberOfPorts, Address)
   , DataToStore maxNumOfNodesToStore maxNumOfEdgesToStore numberOfPorts
   )

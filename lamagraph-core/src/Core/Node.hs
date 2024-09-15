@@ -5,7 +5,6 @@ import Data.Maybe (isJust)
 
 type Address = Unsigned 16
 
--- | Pointer on port of the `Node` with visited flag.
 data Port = Port
   { _targetAddress :: Address
   , _edgeIsVisited :: Bit
@@ -20,7 +19,11 @@ data Node numberOfPorts = Node
   }
   deriving (NFDataX, Generic)
 
--- | `Node` with info about his`Address`.
+{- | `Node` with info about his`Address`.
+Original address can be useful when reducer working.
+For example, if this `Node` has reduced then his `Addres  s` is become free
+and info about this should be passed to the memory manager.
+-}
 data LoadedNode numberOfPorts = LoadedNode
   { _node :: Node numberOfPorts
   , _originalAddress :: Address
