@@ -47,4 +47,4 @@ respectful: true
 fixities: []
 
 # Module reexports Fourmolu should know about
-reexports: []
+reexports: [module Clash.Prelude exports Clash.HaskellPrelude]
