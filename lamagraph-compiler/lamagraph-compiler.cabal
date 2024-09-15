@@ -6,7 +6,7 @@ cabal-version: 1.12
 
 name:           lamagraph-compiler
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/lamagraph-compiler#readme>
+description:    Please see the README on GitHub at <https://github.com/Lamagraph/interaction-nets-in-fpga#readme>
 homepage:       https://github.com/Lamagraph/interaction-nets-in-fpga#readme
 bug-reports:    https://github.com/Lamagraph/interaction-nets-in-fpga/issues
 author:         Nikolai Ponomarev
@@ -24,6 +24,7 @@ source-repository head
 
 library
   exposed-modules:
+      Lamagraph.Compiler.Syntax
       Lib
   other-modules:
       Paths_lamagraph_compiler
