@@ -22,10 +22,16 @@ description: Please see the README on GitHub at <https://github.com/Lamagraph/in
 dependencies:
   - base >= 4.7 && < 5
   - relude
+  - array
+  - lens
+
+language: GHC2021
 
 default-extensions:
   - NoImplicitPrelude
   - OverloadedStrings
+  - LambdaCase # Remove with GHC2024
+  - NoFieldSelectors
 
 ghc-options:
   - -Wall
@@ -40,6 +46,9 @@ ghc-options:
 
 library:
   source-dirs: src
+  build-tools:
+    - alex
+    - happy
 
 executables:
   lamagraph-compiler-exe:
@@ -62,3 +71,5 @@ tests:
       - -with-rtsopts=-N
     dependencies:
       - lamagraph-compiler
+      - tasty
+      - tasty-hunit

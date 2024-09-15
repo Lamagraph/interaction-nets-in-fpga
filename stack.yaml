@@ -48,6 +48,7 @@ extra-deps:
   - clash-prelude-hedgehog-1.8.1@sha256:9ec3aa3f8195481f5ce4942b34a49c97dd132dd1c8f1fa58aeecbd82c2602e86,1410
   - concurrent-supply-0.1.8@sha256:80b658533141660818d0781b8c8fb9a8cf69b987fcfbab782dc788bfc7df4846,1627
   - prettyprinter-interp-0.2.0.0@sha256:69c339a95b265dab9b3478ca19ec96952b6b472bd0ff6e2127112a9562362c1d,2086
+  - alex-3.5.1.0@sha256:de553eefe0b6548a560e9d8100486310548470a403c1fa21108dd03713da5fc7,3886
 # Override default flag values for local packages and extra-deps
 # flags: {}
 
