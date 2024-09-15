@@ -17,9 +17,9 @@ prop_isPortToLoad :: H.Property
 prop_isPortToLoad = H.property $ do
   address <- H.forAll $ genUnsigned $ Range.singleton 16
   let
-    port = Port address 0
-    node = Node port C.Nil
-    loadedNode = LoadedNode node (address + 1)
+    port = Port address False
+    newNode = Node port C.Nil
+    loadedNode = LoadedNode newNode (address + 1)
 
   isPortToLoad loadedNode port H.=== True
 
