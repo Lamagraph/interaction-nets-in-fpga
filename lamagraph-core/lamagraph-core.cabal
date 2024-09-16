@@ -126,6 +126,7 @@ test-suite test-library
   main-is: unittests.hs
   other-modules:
     Tests.Core.Node
+    NodeGenerate
   build-depends:
     lamagraph-core,
     QuickCheck,
