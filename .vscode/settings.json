@@ -35,5 +35,5 @@
     "**/*.o-boot": true,
     "**/*.hi-boot": true
   },
-  "cSpell.words": ["Lamagraph", "unbundle"]
+  "cSpell.words": ["Lamagraph", "crossreference", "unbundle"]
 }
