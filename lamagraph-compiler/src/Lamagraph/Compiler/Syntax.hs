@@ -154,7 +154,7 @@ and asr else false fun if in land let
 lor lsl lsr lxor match mod module
 of open rec then true type when with
 
-!= && ' ( ) * + , - -> : :: ; < = > [ ]
+&& ' ( ) * + , - -> : :: ; < = > [ ]
 _ { | } .
 @
 -}
@@ -169,7 +169,7 @@ Basic names
 /operator-name/ ::= /prefix-symbol/ | /infix-op/
 
 /infix-op/ ::= /infix-symbol/
-           | * | + | - | = | != | \< | \> | || | &&
+           | * | + | - | = | \< | \> | || | &&
            | mod | land | lor | lxor | lsl | lsr | asr
 
 /constr-name/ ::= /capitalized-ident/
