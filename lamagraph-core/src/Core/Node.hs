@@ -12,7 +12,7 @@ data Port = Port
   { _targetAddress :: Address
   , _edgeIsVisited :: Bool
   }
-  deriving (NFDataX, Generic)
+  deriving (NFDataX, Generic, Show)
 
 $(makeLenses ''Port)
 
@@ -22,7 +22,7 @@ data Node numberOfPorts = Node
   , _secondaryPorts :: Vec numberOfPorts (Maybe Port)
   -- _nodeType :: INNode looks like we need some kind of node label. Info about and reduction rules contained IN
   }
-  deriving (NFDataX, Generic)
+  deriving (NFDataX, Generic, Show)
 
 $(makeLenses ''Node)
 
@@ -35,7 +35,7 @@ data LoadedNode numberOfPorts = LoadedNode
   { _containedNode :: Node numberOfPorts
   , _originalAddress :: Address
   }
-  deriving (NFDataX, Generic)
+  deriving (NFDataX, Generic, Show)
 
 $(makeLenses ''LoadedNode)
 
