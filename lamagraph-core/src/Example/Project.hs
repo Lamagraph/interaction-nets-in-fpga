@@ -21,27 +21,27 @@ In this case, we are using the @Dom50@ domain, which we created with @createDoma
 and we are using 8-bit unsigned numbers.
 -}
 topEntity ::
-    Clock Dom50 ->
-    Reset Dom50 ->
-    Enable Dom50 ->
-    Signal Dom50 (Unsigned 8) ->
-    Signal Dom50 (Unsigned 8)
+  Clock Dom50 ->
+  Reset Dom50 ->
+  Enable Dom50 ->
+  Signal Dom50 (Unsigned 8) ->
+  Signal Dom50 (Unsigned 8)
 topEntity = exposeClockResetEnable accum
 -- To specify the names of the ports of our top entity, we create a @Synthesize@ annotation.
 {-# ANN
-    topEntity
-    ( Synthesize
-        { t_name = "accum"
-        , t_inputs =
-            [ PortName "CLK"
-            , PortName "RST"
-            , PortName "EN"
-            , PortName "DIN"
-            ]
-        , t_output = PortName "DOUT"
-        }
-    )
-    #-}
+  topEntity
+  ( Synthesize
+      { t_name = "accum"
+      , t_inputs =
+          [ PortName "CLK"
+          , PortName "RST"
+          , PortName "EN"
+          , PortName "DIN"
+          ]
+      , t_output = PortName "DOUT"
+      }
+  )
+  #-}
 -- Make sure GHC does not apply any optimizations to the boundaries of the design.
 -- For GHC versions 9.2 or older, use: {-# NOINLINE topEntity #-}
 {-# OPAQUE topEntity #-}
@@ -50,9 +50,9 @@ topEntity = exposeClockResetEnable accum
 It has hidden clock, reset, and enable signals.
 -}
 accum ::
-    (HiddenClockResetEnable dom, KnownNat n) =>
-    Signal dom (Unsigned n) ->
-    Signal dom (Unsigned n)
+  (HiddenClockResetEnable dom, KnownNat n) =>
+  Signal dom (Unsigned n) ->
+  Signal dom (Unsigned n)
 accum = mealy accumT 0
-  where
-    accumT s i = (s + i, s)
+ where
+  accumT s i = (s + i, s)

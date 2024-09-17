@@ -3,58 +3,58 @@
 LamagraphML syntax
 -}
 module Lamagraph.Compiler.Syntax (
-    -- * Grammar rules
-    -- $rules
+  -- * Grammar rules
+  -- $rules
 
-    -- * Lexical conventions
+  -- * Lexical conventions
 
-    -- ** Blanks
-    -- $lexing_blanks
+  -- ** Blanks
+  -- $lexing_blanks
 
-    -- ** Comments
-    -- $lexing_comments
+  -- ** Comments
+  -- $lexing_comments
 
-    -- ** Identifiers
-    -- $lexing_idents
+  -- ** Identifiers
+  -- $lexing_idents
 
-    -- ** Integer literals
-    -- $lexing_int_lits
+  -- ** Integer literals
+  -- $lexing_int_lits
 
-    -- ** Character literals
-    -- $lexing_char_lits
+  -- ** Character literals
+  -- $lexing_char_lits
 
-    -- ** String literals
-    -- $lexing_string_lits
+  -- ** String literals
+  -- $lexing_string_lits
 
-    -- ** Operators
-    -- $lexing_operators
+  -- ** Operators
+  -- $lexing_operators
 
-    -- ** Keywords
-    -- $lexing_keywords
+  -- ** Keywords
+  -- $lexing_keywords
 
-    -- * Names
-    -- $names
+  -- * Names
+  -- $names
 
-    -- * Type expressions
-    -- $types
+  -- * Type expressions
+  -- $types
 
-    -- * Constants
-    -- $constants
+  -- * Constants
+  -- $constants
 
-    -- * Patterns
-    -- $patterns
+  -- * Patterns
+  -- $patterns
 
-    -- * Expressions
-    -- $expressions
+  -- * Expressions
+  -- $expressions
 
-    -- * Type definitions
-    -- $typedefs
+  -- * Type definitions
+  -- $typedefs
 
-    -- * Declarations and Modules
-    -- $decls
+  -- * Declarations and Modules
+  -- $decls
 
-    -- * Missing things
-    -- $missing
+  -- * Missing things
+  -- $missing
 ) where
 
 {- $rules
