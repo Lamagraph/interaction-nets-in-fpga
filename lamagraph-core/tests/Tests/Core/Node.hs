@@ -3,16 +3,16 @@
 
 module Tests.Core.Node where
 
-import Prelude
-
 import qualified Clash.Prelude as C
+import qualified Clash.Sized.Vector as Vec
 import Core.Node
 import qualified Hedgehog as H
 import qualified Hedgehog.Gen as Gen
-import NodeGenerate (genAddress, genMbObjectsVec, genPortVisitedFlag)
+import NodeGenerate (genAddress, genLoadedNodeByGivenAddresses, genMbObjectsVec, genPortVisitedFlag)
 import Test.Tasty
 import Test.Tasty.Hedgehog
 import Test.Tasty.TH
+import Prelude
 
 prop_isPortToLoad_diffAddr :: H.Property
 prop_isPortToLoad_diffAddr = H.property $ do
@@ -86,6 +86,40 @@ prop_selectAddressToLoad_all_visited = H.property $ do
     node = Node primPort secondaryPortsVec
     loadedNode = LoadedNode node address
   selectAddressToLoad loadedNode H.=== Nothing
+
+prop_markAllInnerEdges_empty_vec_of_nodes :: H.Property
+prop_markAllInnerEdges_empty_vec_of_nodes = H.property $ do
+  let nodes = C.def :: C.Vec 10 (Maybe (LoadedNode 10))
+  nodes H.=== markAllInnerEdges nodes
+
+prop_markAllInnerEdges_uniq_addresses :: H.Property
+prop_markAllInnerEdges_uniq_addresses = H.property $ do
+  let
+    uniqAddresses = C.iterateI (+ 1) 1 :: C.Vec 21 Address -- it can be obtained by using function genUniqAddresses, but it is very slow
+    preDataToGenLoadedNodes = window 7 $ Vec.toList uniqAddresses
+    listOfLoadedNodesGen = map genLoadedNode preDataToGenLoadedNodes
+    genVecOfUniqLoadedNodes = sequence $ Vec.unsafeFromList listOfLoadedNodesGen :: H.Gen (C.Vec 3 (LoadedNode 5))
+  vecOfUniqLoadedNodes <- H.forAll genVecOfUniqLoadedNodes
+  let vecOfMbUniqLoadedNodes = Just <$> vecOfUniqLoadedNodes
+  markAllInnerEdges vecOfMbUniqLoadedNodes H.=== vecOfMbUniqLoadedNodes
+ where
+  window size list = case splitAt size list of
+    ([], []) -> []
+    (xs, remainder) -> xs : window size remainder
+  genLoadedNode list = genLoadedNodeByGivenAddresses (head list) (list !! 1) (drop 2 list)
+
+prop_markAllInnerEdges_crossreference :: H.Property
+prop_markAllInnerEdges_crossreference = H.property $ do
+  addressOfNode1 <- H.forAll genAddress
+  addressOfNode2 <- H.forAll genAddress
+  port1 <- H.forAll $ genPortVisitedFlag True
+  let
+    loadedNode1 = Just $ LoadedNode (Node port1 C.Nil) addressOfNode1
+    loadedNode2 = Just $ LoadedNode (Node (Port addressOfNode1 False) C.Nil) addressOfNode2
+    expectedResult = loadedNode1 C.:> Just (LoadedNode (Node (Port addressOfNode1 True) C.Nil) addressOfNode2) C.:> C.Nil
+    actualResult = markAllInnerEdges (loadedNode1 C.:> loadedNode2 C.:> C.Nil)
+
+  actualResult H.=== expectedResult
 
 accumTests :: TestTree
 accumTests = $(testGroupGenerator)
