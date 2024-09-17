@@ -83,8 +83,8 @@ handle ::
 handle leftNode rightNode =
   selectNextLeftNode $ DataToStore (markAllInnerEdges nodes) emptyEdges
  where
-  emptyNodes = repeat Nothing :: Vec maxNumOfNodesToStore _
-  emptyEdges = repeat Nothing :: Vec maxNumOfEdgesToStore _
+  emptyNodes = def :: Vec maxNumOfNodesToStore _
+  emptyEdges = def :: Vec maxNumOfEdgesToStore _
   nodes = case rightNode of
     Nothing -> Just leftNode +>> emptyNodes
     Just _ ->
