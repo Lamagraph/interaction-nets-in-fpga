@@ -4,7 +4,6 @@ module Core.Node where
 
 import Clash.Prelude
 import Control.Lens (makeLenses, (^.))
-import Data.Maybe (isJust)
 
 type Address = Unsigned 16
 
@@ -61,7 +60,7 @@ markAllInnerEdges nodes =
       markPort port =
         Port
           (port ^. targetAddress)
-          ((port ^. edgeIsVisited) || isJust (elemIndex (Just (port ^. targetAddress)) addressesOfLoadedNodes))
+          ((port ^. edgeIsVisited) || elem (Just (port ^. targetAddress)) addressesOfLoadedNodes)
       markPorts loadedNode =
         LoadedNode
           ( Node
