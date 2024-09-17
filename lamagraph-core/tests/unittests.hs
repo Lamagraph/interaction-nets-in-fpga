@@ -6,8 +6,8 @@ import qualified Tests.Example.Project
 
 main :: IO ()
 main =
-    defaultMain $
-        testGroup
-            "."
-            [ Tests.Example.Project.accumTests
-            ]
+  defaultMain $
+    testGroup
+      "."
+      [ Tests.Example.Project.accumTests
+      ]
