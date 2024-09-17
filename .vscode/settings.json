@@ -5,7 +5,7 @@
   "files.trimTrailingWhitespace": true,
   "editor.renderWhitespace": "all",
   "[haskell]": {
-    "editor.tabSize": 4
+    "editor.tabSize": 2
   },
   "haskell.manageHLS": "GHCup",
   "haskell.formattingProvider": "fourmolu",
