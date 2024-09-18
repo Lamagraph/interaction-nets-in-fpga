@@ -15,7 +15,7 @@ data ReducerStatus
   | Finished
   | ErrorHandleSingleNode
   | ErrorEmptyLeftNode
-  deriving (Generic, NFDataX)
+  deriving (Generic, NFDataX, Show, Eq)
 
 -- | State of the reducer (in terms of mealy automaton).
 data ReducerState
@@ -24,25 +24,25 @@ data ReducerState
   | OneNodeToLoad
   | Done
   | Failed
-  deriving (Generic, NFDataX)
+  deriving (Generic, NFDataX, Show, Eq)
 
 data EdgeEnd = EdgeEnd
   { _addressOfVertex :: Address
   , _idOfPort :: IdOfPort
   }
-  deriving (Generic, NFDataX)
+  deriving (Generic, NFDataX, Show, Eq)
 
 data Edge = Edge
   { _leftEnd :: EdgeEnd
   , _rightEnd :: EdgeEnd
   }
-  deriving (Generic, NFDataX)
+  deriving (Generic, NFDataX, Show, Eq)
 
 data DataToStore maxNumOfNodesToStore maxNumOfEdgesToStore numberOfPorts = DataToStore
   { _nodes :: Vec maxNumOfNodesToStore (Maybe (LoadedNode numberOfPorts))
   , _edges :: Vec maxNumOfEdgesToStore (Maybe Edge)
   }
-  deriving (Generic, NFDataX)
+  deriving (Generic, NFDataX, Show, Eq)
 
 -- | Select next left `Node` to handle and next `Address` of right `Node` to be loaded.
 selectNextLeftNode ::
