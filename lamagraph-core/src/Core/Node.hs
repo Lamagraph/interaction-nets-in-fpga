@@ -7,6 +7,15 @@ import Control.Lens (makeLenses, (^.))
 
 type Address = Unsigned 16
 
+{-
+Maybe we need ro rewrite Port by
+data Port
+  = PrimaryPort
+      { _targetAddress :: Address
+      , _edgeIsVisited :: Bool
+      }
+  | SecondaryPort {_targetAddress :: Address}
+-}
 data Port = Port
   { _targetAddress :: Address
   , _edgeIsVisited :: Bool
@@ -27,7 +36,7 @@ $(makeLenses ''Node)
 
 {- | `Node` with info about his`Address`.
 Original address can be useful when reducer working.
-For example, if this `Node` has reduced then his `Addres  s` is become free
+For example, if this `Node` has reduced then his `Address` is become free
 and info about this should be passed to the memory manager.
 -}
 data LoadedNode numberOfPorts = LoadedNode
