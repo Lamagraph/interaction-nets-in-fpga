@@ -1,0 +1,6 @@
+module ListPatterns
+
+let [] = x
+let [a] = x
+let [a; b] = x
+let [a; b; c] = x

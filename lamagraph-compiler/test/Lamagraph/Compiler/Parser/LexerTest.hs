@@ -126,7 +126,7 @@ allSymbolKeywords =
   testCase "Lex all symbol keywords" $ do
     getTokenTypesFromText str @?= Right tokens
  where
-  str = "&& ' ( ) * + , - -> : :: ; = [ ] _ { } . | ||"
+  str = "&& ' ( ) * + , - -> : :: ; = [ ] _ . | ||"
   tokens =
     [ TokBoolAnd
     , TokApostrophe
@@ -144,8 +144,6 @@ allSymbolKeywords =
     , TokLeftBracket
     , TokRightBracket
     , TokWildcard
-    , TokLeftCurly
-    , TokRightCurly
     , TokDot
     , TokBar
     , TokDoubleBar
@@ -155,15 +153,22 @@ allSymbolKeywords =
 infixSymbols :: TestTree
 infixSymbols =
   testCase "Lex infix symbols" $ do
-    getTokenTypesFromText "=@ |= >= <= <> &&& %"
+    getTokenTypesFromText "=@ <= >= |= &&& $! @. ^| += -** *+* / % **"
       @?= Right
-        [ TokInfixSymbol "=@"
-        , TokInfixSymbol "|="
-        , TokInfixSymbol ">="
-        , TokInfixSymbol "<="
-        , TokInfixSymbol "<>"
-        , TokInfixSymbol "&&&"
-        , TokInfixSymbol "%"
+        [ TokInfixSymbol0 "=@"
+        , TokInfixSymbol0 "<="
+        , TokInfixSymbol0 ">="
+        , TokInfixSymbol0 "|="
+        , TokInfixSymbol0 "&&&"
+        , TokInfixSymbol0 "$!"
+        , TokInfixSymbol1 "@."
+        , TokInfixSymbol1 "^|"
+        , TokInfixSymbol2 "+="
+        , TokInfixSymbol2 "-**"
+        , TokInfixSymbol3 "*+*"
+        , TokInfixSymbol3 "/"
+        , TokInfixSymbol3 "%"
+        , TokInfixSymbol4 "**"
         , TokEOF
         ]
 

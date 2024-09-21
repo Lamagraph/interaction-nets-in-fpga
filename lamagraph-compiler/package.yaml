@@ -23,6 +23,7 @@ dependencies:
   - base >= 4.7 && < 5
   - relude
   - array
+  - extra
   - lens
 
 language: GHC2021
@@ -71,5 +72,8 @@ tests:
       - -with-rtsopts=-N
     dependencies:
       - lamagraph-compiler
+      - filepath
       - tasty
       - tasty-hunit
+      - tasty-golden
+      - pretty-simple

@@ -3,23 +3,20 @@
 -- Some of the Alex generated code contains @undefinded@ which is considered
 -- deprecated in Relude
 {-# OPTIONS_GHC -Wno-deprecations #-}
--- Because of active use of lenses, in this project field selectors are generally
+-- Because of the active use of lenses, in this project field selectors are generally
 -- disabled, but because Alex relies on them, they must be turned on explicitly
 {-# LANGUAGE FieldSelectors #-}
-module Lamagraph.Compiler.Parser.Lexer where
--- This is commented and will fail CI
--- This will be fixed after writing parser
--- (
---   Byte,
---   AlexInput,
---   AlexPosn(..),
---   AlexState(..),
---   Alex,
---   runAlex,
---   alexMonadScan,
---   Token(..),
---   TokenType(..),
--- ) where
+
+module Lamagraph.Compiler.Parser.Lexer (
+  Byte,
+  AlexInput,
+  AlexPosn(..),
+  runAlex,
+  Alex,
+  alexError,
+  alexGetInput,
+  alexMonadScan
+) where
 
 import Relude
 -- These functions must be used only for crashing the entire app,
@@ -123,8 +120,6 @@ lamagraphml :-
 <0> "[" { tok TokLeftBracket }
 <0> "]" { tok TokRightBracket }
 <0> "_" { tok TokWildcard }
-<0> "{" { tok TokLeftCurly }
-<0> "}" { tok TokRightCurly }
 <0> "." { tok TokDot }
 <0> "|" { tok TokBar }
 <0> "||" { tok TokDoubleBar }
@@ -153,7 +148,12 @@ lamagraphml :-
 <state_string> \" { leaveString `andBegin` 0 }
 <state_string> $regular_char { addCurrentToString }
 
-<0> @infix_symbol { tokAnyIdent TokInfixSymbol }
+<0> \*\* ( $operator_char )* { tokAnyIdent TokInfixSymbol4 }
+<0> (\* | \/ | \%) ( $operator_char )* { tokAnyIdent TokInfixSymbol3 }
+<0> (\+ | \-) ( $operator_char )* { tokAnyIdent TokInfixSymbol2 }
+<0> (\@ | \^) ( $operator_char )* { tokAnyIdent TokInfixSymbol1 }
+<0> (\= | \< | \> | \| | & | \$) ( $operator_char )* { tokAnyIdent TokInfixSymbol0 }
+
 <0> @prefix_symbol { tokAnyIdent TokPrefixSymbol }
 
 -- Alex "Haskell code fragment bottom"
@@ -164,13 +164,16 @@ instance MonadState AlexUserState Alex where
   put :: AlexUserState -> Alex ()
   put newState = Alex $ \st -> Right (st{alex_ust = newState}, ())
 
+getEndPos :: AlexInput -> Int -> AlexPosn
+getEndPos (startPosn, _, _, str) len = Text.foldl' alexMove startPosn $ Text.take len str
+
 alexEOF :: Alex Token
 alexEOF = do
   startCode <- alexGetStartCode
   when (startCode == state_comment) $ (alexError "lexical error: EOF while reading comment")
   when (startCode == state_string) $ (alexError "lexical error: EOF while reading string")
   (pos, _, _, _) <- alexGetInput
-  return $ Token TokEOF pos pos ""
+  return $ Token TokEOF (Loc pos pos) ""
 
 enterNewComment :: AlexAction Token
 enterNewComment input len = do
@@ -189,15 +192,11 @@ unembedComment input len = do
   when (commentDepth == 0) $ alexSetStartCode 0
   skip input len
 
-getEndPos :: AlexInput -> Int -> AlexPosn
-getEndPos (startPosn, _, _, str) len = Text.foldl' alexMove startPosn $ Text.take len str
-
 tokAnyIdent :: (Text -> TokenType) -> AlexAction Token
 tokAnyIdent ctor input@(startPosn, _, _, str) len = do
   return Token
     { _tokenType = ctor $ Text.take len str
-    , _startPos = startPosn
-    , _endPos = getEndPos input len
+    , _loc = Loc startPosn $ getEndPos input len
     , _readStr = str
     }
 
@@ -206,8 +205,7 @@ tokAnyInt ctor input@(startPosn, _, _, str) len = do
   let num = read $ toString $ Text.dropWhileEnd isIntSuffix $ Text.take len str
   return Token
     { _tokenType = ctor num
-    , _startPos = startPosn
-    , _endPos = getEndPos input len
+    , _loc = Loc startPosn $ getEndPos input len
     , _readStr = str
     }
   where
@@ -222,8 +220,7 @@ tok :: TokenType -> AlexAction Token
 tok ctor input@(startPosn, _, _, str) len = do
   return Token
     { _tokenType = ctor
-    , _startPos = startPosn
-    , _endPos = getEndPos input len
+    , _loc = Loc startPosn $ getEndPos input len
     , _readStr = str
     }
 
@@ -256,8 +253,7 @@ leaveString input@(_, _, _, str) len = do
   return
     Token
       { _tokenType = TokString tokenType'
-      , _startPos = fromJust startPos'
-      , _endPos = getEndPos input len
+      , _loc = Loc (fromJust startPos') $ getEndPos input len
       , _readStr = lexerReadString'
       }
 
@@ -271,8 +267,7 @@ tokRegularChar input@(startPosn, _, _, str) len = do
   let fullStr = Text.take len str
   return Token
     { _tokenType = TokChar $ Text.head $ Text.dropAround (== '\'') fullStr
-    , _startPos = startPosn
-    , _endPos = getEndPos input len
+    , _loc = Loc startPosn $ getEndPos input len
     , _readStr = fullStr
     }
 
@@ -280,8 +275,7 @@ tokEscapedChar :: Char -> AlexAction Token
 tokEscapedChar char input@(startPosn, _, _, str) len = do
   return Token
     { _tokenType = TokChar char
-    , _startPos = startPosn
-    , _endPos = getEndPos input len
+    , _loc = Loc startPosn $ getEndPos input len
     , _readStr = Text.take len str
     }
 

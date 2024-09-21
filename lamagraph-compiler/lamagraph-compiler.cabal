@@ -24,9 +24,11 @@ source-repository head
 
 library
   exposed-modules:
+      Lamagraph.Compiler.Parser
       Lamagraph.Compiler.Parser.Lexer
       Lamagraph.Compiler.Parser.LexerTypes
       Lamagraph.Compiler.Parser.LexerUtils
+      Lamagraph.Compiler.Parser.ParseTree
       Lamagraph.Compiler.Syntax
   other-modules:
       Paths_lamagraph_compiler
@@ -44,6 +46,7 @@ library
   build-depends:
       array
     , base >=4.7 && <5
+    , extra
     , lens
     , relude
   default-language: GHC2021
@@ -63,6 +66,7 @@ executable lamagraph-compiler-exe
   build-depends:
       array
     , base >=4.7 && <5
+    , extra
     , lamagraph-compiler
     , lens
     , relude
@@ -73,6 +77,7 @@ test-suite lamagraph-compiler-test
   main-is: Spec.hs
   other-modules:
       Lamagraph.Compiler.Parser.LexerTest
+      Lamagraph.Compiler.ParserGoldenTest
       Paths_lamagraph_compiler
   hs-source-dirs:
       test
@@ -85,9 +90,13 @@ test-suite lamagraph-compiler-test
   build-depends:
       array
     , base >=4.7 && <5
+    , extra
+    , filepath
     , lamagraph-compiler
     , lens
+    , pretty-simple
     , relude
     , tasty
+    , tasty-golden
     , tasty-hunit
   default-language: GHC2021
