@@ -26,6 +26,7 @@ library
   exposed-modules:
       Lamagraph.Compiler.Parser.Lexer
       Lamagraph.Compiler.Parser.LexerUtils
+      Lamagraph.Compiler.Parser.ParseTree
       Lamagraph.Compiler.Syntax
   other-modules:
       Paths_lamagraph_compiler
