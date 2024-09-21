@@ -126,7 +126,7 @@ allSymbolKeywords =
   testCase "Lex all symbol keywords" $ do
     getTokenTypesFromText str @?= Right tokens
  where
-  str = "&& ' ( ) * + , - -> : :: ; = [ ] _ { | } ."
+  str = "&& ' ( ) * + , - -> : :: ; = [ ] _ { } . | ||"
   tokens =
     [ TokBoolAnd
     , TokApostrophe
@@ -145,9 +145,10 @@ allSymbolKeywords =
     , TokRightBracket
     , TokWildcard
     , TokLeftCurly
-    , TokBar
     , TokRightCurly
     , TokDot
+    , TokBar
+    , TokDoubleBar
     , TokEOF
     ]
 

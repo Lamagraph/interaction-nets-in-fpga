@@ -119,9 +119,10 @@ lamagraphml :-
 <0> "]" { tok TokRightBracket }
 <0> "_" { tok TokWildcard }
 <0> "{" { tok TokLeftCurly }
-<0> "|" { tok TokBar }
 <0> "}" { tok TokRightCurly }
 <0> "." { tok TokDot }
+<0> "|" { tok TokBar }
+<0> "||" { tok TokDoubleBar }
 
 <0> @capitalized_ident { tokAnyIdent (TokIdent Capitalized) }
 <0> @lowercase_ident { tokAnyIdent (TokIdent Lowercase) }
@@ -262,8 +263,9 @@ data TokenType
   | TokWildcard -- ^ @_@
   | TokLeftCurly -- ^ @{@
   | TokRightCurly -- ^ @}@
-  | TokBar -- ^ @|@
   | TokDot -- ^ @.@
+  | TokBar -- ^ @|@
+  | TokDoubleBar -- ^ @||@
   | TokEOF
   deriving (Eq, Show)
 
