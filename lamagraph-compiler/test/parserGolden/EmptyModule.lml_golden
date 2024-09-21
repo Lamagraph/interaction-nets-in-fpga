@@ -1,0 +1,12 @@
+ModuleExpr
+    { _pMEDefinition = Just
+        ( ModuleDefinition
+            { _pMDName = "EmptyModule" :| []
+            , _pMDLoc = Loc
+                { _startPos = AlexPn 0 1 1
+                , _endPos = AlexPn 18 1 19
+                }
+            }
+        )
+    , _pMEStructure = []
+    }

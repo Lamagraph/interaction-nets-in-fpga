@@ -1,0 +1,7 @@
+module ConstrPatterns
+
+let SomeConstr = SomeConstr
+let true = true
+let false = false
+let () = ()
+let [] = []
