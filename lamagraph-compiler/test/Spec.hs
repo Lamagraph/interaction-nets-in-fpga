@@ -1,13 +1,11 @@
 import Relude
 
-import Lamagraph.Compiler.Parser.LexerTest
 import Test.Tasty
-import Test.Tasty.Hspec
+
+import Lamagraph.Compiler.Parser.LexerTest
 
 main :: IO ()
-main = do
-  tests <- unitTests
-  defaultMain tests
+main = defaultMain lexerTests
 
-unitTests :: IO TestTree
-unitTests = testSpec "Lexer" lexerTests
+lexerTests :: TestTree
+lexerTests = testGroup "Lexer" [lexerUnitTests]

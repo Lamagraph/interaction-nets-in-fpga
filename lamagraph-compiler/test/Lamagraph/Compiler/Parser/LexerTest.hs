@@ -1,10 +1,13 @@
-module Lamagraph.Compiler.Parser.LexerTest (lexerTests) where
+module Lamagraph.Compiler.Parser.LexerTest (lexerUnitTests) where
+
+import Relude
 
 import Control.Lens
+import Test.Tasty
+import Test.Tasty.HUnit
+
 import Lamagraph.Compiler.Parser.Lexer
 import Lamagraph.Compiler.Parser.LexerUtils
-import Relude
-import Test.Hspec
 
 getTokenTypes :: Either String [Token] -> Either String [TokenType]
 getTokenTypes tokens = tokens & _Right %~ toListOf (traverse . tokenType)
@@ -12,79 +15,79 @@ getTokenTypes tokens = tokens & _Right %~ toListOf (traverse . tokenType)
 getTokenTypesFromText :: Text -> Either String [TokenType]
 getTokenTypesFromText = getTokenTypes . scanner
 
-skipWhitespace :: SpecWith ()
+skipWhitespace :: TestTree
 skipWhitespace =
-  it "Skip whitespace" $ do
-    getTokenTypesFromText " \t\r\n" `shouldBe` Right [TokEOF]
+  testCase "Skip whitespace" $ do
+    getTokenTypesFromText " \t\r\n" @?= Right [TokEOF]
 
-oneLevelMultilineComment :: SpecWith ()
+oneLevelMultilineComment :: TestTree
 oneLevelMultilineComment =
-  it "Skip unnested multiline comment" $ do
-    getTokenTypesFromText "(* This is one level comment *)" `shouldBe` Right [TokEOF]
+  testCase "Skip unnested multiline comment" $ do
+    getTokenTypesFromText "(* This is one level comment *)" @?= Right [TokEOF]
 
-nestedMultilineComments :: SpecWith ()
+nestedMultilineComments :: TestTree
 nestedMultilineComments =
-  it "Handle nested multiline comments" $ do
-    getTokenTypesFromText comment `shouldBe` Right [TokEOF]
+  testCase "Handle nested multiline comments" $ do
+    getTokenTypesFromText comment @?= Right [TokEOF]
  where
   comment =
     "(* First level of comment \n\
     \ (* Second level of comment*) \n\
     \ *)"
 
-singleLineComment :: SpecWith ()
+singleLineComment :: TestTree
 singleLineComment =
-  it "Skip single-line comments" $ do
-    getTokenTypesFromText "-- This is single line comment" `shouldBe` Right [TokEOF]
+  testCase "Skip single-line comments" $ do
+    getTokenTypesFromText "-- This is single line comment" @?= Right [TokEOF]
 
-noMixSingleLineAndMultiline :: SpecWith ()
+noMixSingleLineAndMultiline :: TestTree
 noMixSingleLineAndMultiline =
-  it "No mix of single-line and multiline comments" $ do
-    getTokenTypesFromText comment `shouldBe` Left "lexical error at line 2, column 2: Closing comment before opening"
+  testCase "No mix of single-line and multiline comments" $ do
+    getTokenTypesFromText comment @?= Left "lexical error at line 2, column 2: Closing comment before opening"
  where
   comment =
     "-- (* \n\
     \ *)"
 
-capitalizedIdent :: SpecWith ()
+capitalizedIdent :: TestTree
 capitalizedIdent =
-  it "Lex capitalized ident" $ do
-    getTokenTypesFromText "MyModule_42'meow" `shouldBe` Right [TokIdent Capitalized "MyModule_42'meow", TokEOF]
+  testCase "Lex capitalized ident" $ do
+    getTokenTypesFromText "MyModule_42'meow" @?= Right [TokIdent Capitalized "MyModule_42'meow", TokEOF]
 
-lowercaseIdent :: SpecWith ()
+lowercaseIdent :: TestTree
 lowercaseIdent =
-  it "Lex lowercase ident" $ do
-    getTokenTypesFromText "_myType_42'meow" `shouldBe` Right [TokIdent Lowercase "_myType_42'meow", TokEOF]
+  testCase "Lex lowercase ident" $ do
+    getTokenTypesFromText "_myType_42'meow" @?= Right [TokIdent Lowercase "_myType_42'meow", TokEOF]
 
-integerLiteral :: SpecWith ()
+integerLiteral :: TestTree
 integerLiteral =
-  it "Lex Int literal" $ do
-    getTokenTypesFromText "42" `shouldBe` Right [TokInt 42, TokEOF]
+  testCase "Lex Int literal" $ do
+    getTokenTypesFromText "42" @?= Right [TokInt 42, TokEOF]
 
-int32Literal :: SpecWith ()
+int32Literal :: TestTree
 int32Literal =
-  it "Lex Int32 literal" $ do
-    getTokenTypesFromText "42l" `shouldBe` Right [TokInt32 42, TokEOF]
+  testCase "Lex Int32 literal" $ do
+    getTokenTypesFromText "42l" @?= Right [TokInt32 42, TokEOF]
 
-uint32Literal :: SpecWith ()
+uint32Literal :: TestTree
 uint32Literal =
-  it "Lex UInt32 literal" $ do
-    getTokenTypesFromText "42ul" `shouldBe` Right [TokUInt32 42, TokEOF]
+  testCase "Lex UInt32 literal" $ do
+    getTokenTypesFromText "42ul" @?= Right [TokUInt32 42, TokEOF]
 
-int64Literal :: SpecWith ()
+int64Literal :: TestTree
 int64Literal =
-  it "Lex Int64 literal" $ do
-    getTokenTypesFromText "42L" `shouldBe` Right [TokInt64 42, TokEOF]
+  testCase "Lex Int64 literal" $ do
+    getTokenTypesFromText "42L" @?= Right [TokInt64 42, TokEOF]
 
-uint64Literal :: SpecWith ()
+uint64Literal :: TestTree
 uint64Literal =
-  it "Lex UInt64 literal" $ do
-    getTokenTypesFromText "42UL" `shouldBe` Right [TokUInt64 42, TokEOF]
+  testCase "Lex UInt64 literal" $ do
+    getTokenTypesFromText "42UL" @?= Right [TokUInt64 42, TokEOF]
 
-allLetterKeywords :: SpecWith () -- Yep, strange name
+allLetterKeywords :: TestTree -- Yep, strange name
 allLetterKeywords =
-  it "Lex all letter keywords" $ do
-    getTokenTypesFromText str `shouldBe` Right tokens
+  testCase "Lex all letter keywords" $ do
+    getTokenTypesFromText str @?= Right tokens
  where
   str =
     "and asr else false fun if in land let \
@@ -118,10 +121,10 @@ allLetterKeywords =
     , TokEOF
     ]
 
-allSymbolKeywords :: SpecWith ()
+allSymbolKeywords :: TestTree
 allSymbolKeywords =
-  it "Lex all symbol keywords" $ do
-    getTokenTypesFromText str `shouldBe` Right tokens
+  testCase "Lex all symbol keywords" $ do
+    getTokenTypesFromText str @?= Right tokens
  where
   str = "&& ' ( ) * + , - -> : :: ; = [ ] _ { | } ."
   tokens =
@@ -148,11 +151,11 @@ allSymbolKeywords =
     , TokEOF
     ]
 
-infixSymbols :: SpecWith ()
+infixSymbols :: TestTree
 infixSymbols =
-  it "Lex infix symbols" $ do
+  testCase "Lex infix symbols" $ do
     getTokenTypesFromText "=@ |= >= <= <> &&& %"
-      `shouldBe` Right
+      @?= Right
         [ TokInfixSymbol "=@"
         , TokInfixSymbol "|="
         , TokInfixSymbol ">="
@@ -163,11 +166,11 @@ infixSymbols =
         , TokEOF
         ]
 
-prefixSymbols :: SpecWith ()
+prefixSymbols :: TestTree
 prefixSymbols =
-  it "Lex prefix symbols" $ do
+  testCase "Lex prefix symbols" $ do
     getTokenTypesFromText "! != !@@. ?++ ~^|"
-      `shouldBe` Right
+      @?= Right
         [ TokPrefixSymbol "!"
         , TokPrefixSymbol "!="
         , TokPrefixSymbol "!@@."
@@ -176,80 +179,82 @@ prefixSymbols =
         , TokEOF
         ]
 
-regularString :: SpecWith ()
+regularString :: TestTree
 regularString =
-  it "Lex regular string" $ do
+  testCase "Lex regular string" $ do
     getTokenTypesFromText "\"Regular string\""
-      `shouldBe` Right [TokString "Regular string", TokEOF]
+      @?= Right [TokString "Regular string", TokEOF]
 
-escapedCharsInString :: SpecWith ()
+escapedCharsInString :: TestTree
 escapedCharsInString =
-  it "Lex escaped characters in string" $ do
+  testCase "Lex escaped characters in string" $ do
     getTokenTypesFromText "\"\\n \\\" \\\' \\\\\""
-      `shouldBe` Right [TokString "\n \" \' \\", TokEOF]
+      @?= Right [TokString "\n \" \' \\", TokEOF]
 
-mixedCharsInString :: SpecWith ()
+mixedCharsInString :: TestTree
 mixedCharsInString =
-  it "Lex mixed string" $ do
+  testCase "Lex mixed string" $ do
     getTokenTypesFromText "\"_myType_42\\\'meow is the best \\\\ identifier!\""
-      `shouldBe` Right [TokString "_myType_42\'meow is the best \\ identifier!", TokEOF]
+      @?= Right [TokString "_myType_42\'meow is the best \\ identifier!", TokEOF]
 
-regularChar :: SpecWith ()
+regularChar :: TestTree
 regularChar =
-  it "Lex regular char" $ do
-    getTokenTypesFromText "\'~\'" `shouldBe` Right [TokChar '~', TokEOF]
+  testCase "Lex regular char" $ do
+    getTokenTypesFromText "\'~\'" @?= Right [TokChar '~', TokEOF]
 
-escapedChars :: SpecWith ()
+escapedChars :: TestTree
 escapedChars =
-  it "Lex escaped chars" $ do
+  testCase "Lex escaped chars" $ do
     getTokenTypesFromText "'\\n' '\\'' '\\\"' '\\\\'"
-      `shouldBe` Right [TokChar '\n', TokChar '\'', TokChar '\"', TokChar '\\', TokEOF]
+      @?= Right [TokChar '\n', TokChar '\'', TokChar '\"', TokChar '\\', TokEOF]
 
-errorClosingCommentBeforeOpening :: SpecWith ()
+errorClosingCommentBeforeOpening :: TestTree
 errorClosingCommentBeforeOpening =
-  it "Error: closing comment before opening" $ do
-    getTokenTypesFromText "*)" `shouldBe` Left "lexical error at line 1, column 1: Closing comment before opening"
+  testCase "Error: closing comment before opening" $ do
+    getTokenTypesFromText "*)" @?= Left "lexical error at line 1, column 1: Closing comment before opening"
 
-errorUnfinishedEscapeChar :: SpecWith ()
+errorUnfinishedEscapeChar :: TestTree
 errorUnfinishedEscapeChar =
-  it "Error: unfinished escape char" $ do
-    getTokenTypesFromText "\"\\ a\"" `shouldBe` Left "lexical error at line 1, column 2: Unfinished escape character"
+  testCase "Error: unfinished escape char" $ do
+    getTokenTypesFromText "\"\\ a\"" @?= Left "lexical error at line 1, column 2: Unfinished escape character"
 
-errorEOFInComment :: SpecWith ()
+errorEOFInComment :: TestTree
 errorEOFInComment =
-  it "Error: EOF in comment" $ do
-    getTokenTypesFromText "(* comment" `shouldBe` Left "lexical error: EOF while reading comment"
+  testCase "Error: EOF in comment" $ do
+    getTokenTypesFromText "(* comment" @?= Left "lexical error: EOF while reading comment"
 
-errorEOFInString :: SpecWith ()
+errorEOFInString :: TestTree
 errorEOFInString =
-  it "Error: EOF in comment" $ do
-    getTokenTypesFromText "\"string" `shouldBe` Left "lexical error: EOF while reading string"
+  testCase "Error: EOF in comment" $ do
+    getTokenTypesFromText "\"string" @?= Left "lexical error: EOF while reading string"
 
-lexerTests :: SpecWith ()
-lexerTests = do
-  describe "Unit tests" $ do
-    skipWhitespace
-    oneLevelMultilineComment
-    nestedMultilineComments
-    singleLineComment
-    noMixSingleLineAndMultiline
-    capitalizedIdent
-    lowercaseIdent
-    integerLiteral
-    int32Literal
-    uint32Literal
-    int64Literal
-    uint64Literal
-    regularChar
-    escapedChars
-    regularString
-    escapedCharsInString
-    mixedCharsInString
-    infixSymbols
-    prefixSymbols
-    allLetterKeywords
-    allSymbolKeywords
-    errorClosingCommentBeforeOpening
-    errorUnfinishedEscapeChar
-    errorEOFInComment
-    errorEOFInString
+lexerUnitTests :: TestTree
+lexerUnitTests =
+  testGroup
+    "Unit tests"
+    [ skipWhitespace
+    , oneLevelMultilineComment
+    , nestedMultilineComments
+    , singleLineComment
+    , noMixSingleLineAndMultiline
+    , capitalizedIdent
+    , lowercaseIdent
+    , integerLiteral
+    , int32Literal
+    , uint32Literal
+    , int64Literal
+    , uint64Literal
+    , regularChar
+    , escapedChars
+    , regularString
+    , escapedCharsInString
+    , mixedCharsInString
+    , infixSymbols
+    , prefixSymbols
+    , allLetterKeywords
+    , allSymbolKeywords
+    , errorClosingCommentBeforeOpening
+    , errorUnfinishedEscapeChar
+    , errorEOFInComment
+    , errorEOFInString
+    ]

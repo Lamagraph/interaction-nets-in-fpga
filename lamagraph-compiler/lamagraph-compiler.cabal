@@ -44,7 +44,6 @@ library
     , base >=4.7 && <5
     , lens
     , relude
-    , text
   default-language: GHC2021
 
 executable lamagraph-compiler-exe
@@ -64,7 +63,6 @@ executable lamagraph-compiler-exe
     , lamagraph-compiler
     , lens
     , relude
-    , text
   default-language: GHC2021
 
 test-suite lamagraph-compiler-test
@@ -83,12 +81,9 @@ test-suite lamagraph-compiler-test
   build-depends:
       array
     , base >=4.7 && <5
-    , hspec
     , lamagraph-compiler
     , lens
     , relude
     , tasty
-    , tasty-hspec
-    , tasty-quickcheck
-    , text
+    , tasty-hunit
   default-language: GHC2021
