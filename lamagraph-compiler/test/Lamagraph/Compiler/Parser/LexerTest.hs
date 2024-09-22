@@ -6,7 +6,7 @@ import Control.Lens
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Lamagraph.Compiler.Parser.Lexer
+import Lamagraph.Compiler.Parser.LexerTypes
 import Lamagraph.Compiler.Parser.LexerUtils
 
 getTokenTypes :: Either String [Token] -> Either String [TokenType]

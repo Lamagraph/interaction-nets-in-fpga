@@ -3,6 +3,9 @@
 -- Some of the Alex generated code contains @undefinded@ which is considered
 -- deprecated in Relude
 {-# OPTIONS_GHC -Wno-deprecations #-}
+-- Because of active use of lenses, in this project field selectors are generally
+-- disabled, but because Alex relies on them, they must be turned on explicitly
+{-# LANGUAGE FieldSelectors #-}
 module Lamagraph.Compiler.Parser.Lexer where
 -- This is commented and will fail CI
 -- This will be fixed after writing parser
@@ -25,6 +28,8 @@ import Relude.Unsafe (fromJust, read)
 
 import Control.Lens
 import qualified Data.Text as Text
+
+import Lamagraph.Compiler.Parser.LexerTypes
 }
 -- Alex "Wrapper"
 %wrapper "monadUserState-strict-text"
@@ -153,121 +158,11 @@ lamagraphml :-
 
 -- Alex "Haskell code fragment bottom"
 {
-data AlexUserState = AlexUserState
-  { _lexerCommentDepth :: Int
-  , _lexerStringStartPos :: Maybe AlexPosn
-  , _lexerStringValue :: Text
-  , _lexerReadString :: Text
-  }
-  deriving (Eq, Show)
-
 instance MonadState AlexUserState Alex where
   get :: Alex AlexUserState
   get = Alex $ \st -> Right (st, alex_ust st)
   put :: AlexUserState -> Alex ()
   put newState = Alex $ \st -> Right (st{alex_ust = newState}, ())
-
--- Lenses for AlexUserState
-lexerCommentDepth :: Lens' AlexUserState Int
-lexerCommentDepth = lens _lexerCommentDepth (\ust newLexerCommentDepth -> ust{ _lexerCommentDepth = newLexerCommentDepth })
-lexerStringStartPos :: Lens' AlexUserState (Maybe AlexPosn)
-lexerStringStartPos = lens _lexerStringStartPos (\ust newlexerStringStartPos -> ust{ _lexerStringStartPos = newlexerStringStartPos })
-lexerStringValue :: Lens' AlexUserState Text
-lexerStringValue = lens _lexerStringValue (\ust newLexerStringValue -> ust{ _lexerStringValue = newLexerStringValue })
-lexerReadString :: Lens' AlexUserState Text
-lexerReadString = lens _lexerReadString (\ust newLexerReadString -> ust{ _lexerReadString = newLexerReadString })
-
-alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState
-  { _lexerCommentDepth = 0
-  , _lexerStringStartPos = Nothing
-  , _lexerStringValue = ""
-  , _lexerReadString = ""
-  }
-
-data Token = Token
-  { _tokenType :: TokenType
-  , _startPos :: AlexPosn
-  , _endPos :: AlexPosn
-  , _readStr :: Text
-  }
-  deriving (Eq, Show)
-
--- Lenses for Token
-tokenType :: Lens' Token TokenType
-tokenType = lens _tokenType (\token' newTokenType -> token' { _tokenType = newTokenType })
-startPos :: Lens' Token AlexPosn
-startPos = lens _startPos (\token' newStartPos -> token' { _startPos = newStartPos })
-endPos :: Lens' Token AlexPosn
-endPos = lens _endPos (\token' newEndPos -> token' { _endPos = newEndPos })
-readStr :: Lens' Token Text
-readStr = lens _readStr (\token' newStr -> token' { _readStr = newStr })
-
-data IdentType = Capitalized | Lowercase
-  deriving (Eq, Show)
-
-data TokenType
-  = TokIdent IdentType Text
-  | TokInt Int
-  | TokInt32 Int32
-  | TokUInt32 Word32
-  | TokInt64 Int64
-  | TokUInt64 Word64
-  -- Character literals
-  | TokChar Char
-  -- String literals
-  | TokString Text
-  -- Operators
-  | TokInfixSymbol Text
-  | TokPrefixSymbol Text
-  -- Keywords
-  | TokAnd
-  | TokAsr
-  | TokElse
-  | TokFalse
-  | TokFun
-  | TokIf
-  | TokIn
-  | TokLand
-  | TokLet
-  | TokLor
-  | TokLsl
-  | TokLsr
-  | TokLxor
-  | TokMatch
-  | TokMod
-  | TokModule
-  | TokOf
-  | TokOpen
-  | TokRec
-  | TokThen
-  | TokTrue
-  | TokType
-  | TokWhen
-  | TokWith
-  | TokBoolAnd -- ^ @&&@
-  | TokApostrophe -- ^ @'@
-  | TokLeftPar -- ^ @(@
-  | TokRightPar -- ^ @)@
-  | TokStar -- ^ @*@
-  | TokPlus -- ^ @+@
-  | TokComma -- ^ @,@
-  | TokMinus -- ^ @-@
-  | TokArrow -- ^ @->@
-  | TokColon -- ^ @:@
-  | TokDoubleColon -- ^ @::@
-  | TokSemicolon -- ^ @;@
-  | TokEq -- ^ @=@
-  | TokLeftBracket -- ^ @[@
-  | TokRightBracket -- ^ @]@
-  | TokWildcard -- ^ @_@
-  | TokLeftCurly -- ^ @{@
-  | TokRightCurly -- ^ @}@
-  | TokDot -- ^ @.@
-  | TokBar -- ^ @|@
-  | TokDoubleBar -- ^ @||@
-  | TokEOF
-  deriving (Eq, Show)
 
 alexEOF :: Alex Token
 alexEOF = do
@@ -394,5 +289,4 @@ alexErrorPos :: String -> AlexAction a
 alexErrorPos msg ((AlexPn _ line column), _, _, _) _ = Alex $ const $ Left fullMsg
   where
     fullMsg = "lexical error at line " ++ (show line) ++ ", column " ++ (show column) ++ ": " ++ msg
-
 }
