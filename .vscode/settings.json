@@ -40,5 +40,8 @@
   ],
   "[alex]": {
     "editor.tabSize": 2
+  },
+  "[happy]": {
+    "editor.tabSize": 2
   }
 }

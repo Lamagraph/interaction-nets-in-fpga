@@ -159,7 +159,7 @@ lor lsl lsr lxor match mod module
 of open rec then true type when with
 
 && ' ( ) * + , - -> : :: ; < = > [ ]
-_ { } . | ||
+_ { } . | || < >
 @
 -}
 
@@ -234,7 +234,7 @@ Qualified names
           | __(__ /pattern/ : /typexpr/ __)__
           | /pattern/ __|__ /pattern/
           | /constr/ /pattern/
-          | /pattern/ { , /pattern/ }
+          | /pattern/ { , /pattern/ }+
           | __[__ /pattern/ { ; /pattern/ } [;] __]__
           | /pattern/ :: /pattern/
 @
@@ -247,7 +247,7 @@ Qualified names
        | /constant/
        | __(__ /expr/ __)__
        | __(__ /expr/ : /typexpr/ __)__
-       | /expr/ {, /expr/ }
+       | /expr/ {, /expr/ }+
        | /constr/ /expr/
        | /expr/ :: /expr/
        | __[__ /expr/ { ; /expr/ } [;] ]
@@ -299,13 +299,14 @@ Qualified names
 {- $decls
 
 @
+/module-expression/ ::= [ /module-definition/ ] { /module-item/ }
+
 /module-definition/ ::= module /module-path/
 
-/open-decl/ ::= open /module-path/
-
-/decl/ ::= /expr/ | /type-definition/ | /open-decl/
-
-/prog/ ::= [ /module-definition/ ] { /decl/ }
+/module-item/ ::= /expr/
+              | let [rec] /let-binding/ { and /let-binding/ }
+              | /type-definition/
+              | open /module-path/
 @
 -}
 

@@ -1,14 +1,21 @@
-module Lamagraph.Compiler.Parser.ParseTree () where
+{-# LANGUAGE TemplateHaskell #-}
+
+module Lamagraph.Compiler.Parser.ParseTree where
 
 import Relude
 
-data Location = Location
-  {
-  }
-  deriving (Eq, Show)
+import Control.Lens
+
+import Lamagraph.Compiler.Parser.LexerTypes
 
 type Longident = NonEmpty Text
 
+{- | Representation of constant values
+
+/Note/: in contrast to the grammar, general constructors
+and specific ones like @false@, @true@, @()@, @::@
+aren't represented by this type
+-}
 data Constant = Constant
   { _pConstDesc :: ConstantDesc
   , _pConstLoc :: Location
@@ -25,6 +32,9 @@ data ConstantDesc
   | PConstString Text
   deriving (Eq, Show)
 
+{- |
+Type for representing type expressions
+-}
 data CoreType = CoreType
   { _pTyp :: CoreTypeDesc
   , _pTypLoc :: Location
@@ -32,10 +42,20 @@ data CoreType = CoreType
   deriving (Eq, Show)
 
 data CoreTypeDesc
-  = PTypVar Text
-  | PTypArrow CoreType CoreType
-  | PTypTuple CoreType (NonEmpty CoreType) -- n >= 2
-  | PTypConstr Longident [CoreType]
+  = -- | Represents type variables like @'a@
+    PTypVar Text
+  | -- | Represents type arrow @'a -> 'a@
+    PTypArrow CoreType CoreType
+  | -- | Represents tuple @('a1, 'a2, ..., 'an)@
+    --
+    -- /Invariant/: \(n \geq 2\)
+    PTypTuple CoreType (NonEmpty CoreType)
+  | -- | @'PTypConstr' lident types@ represents
+    --
+    -- - @/typeconstr/@ when @types = []@
+    -- - @/typexpr/ /typeconstr/@ when @types = [type]@
+    -- - @( /typexpr/ { , /typeexpr/} ) /typeconstr/@ when @types = [type1, ..., typen]@
+    PTypConstr Longident [CoreType]
   deriving (Eq, Show)
 
 data Pattern = Pattern
@@ -48,8 +68,9 @@ data PatternDesc
   = PPatAny
   | PPatVar Text
   | PPatConstant Constant
-  | PPatTuple CoreType (NonEmpty CoreType) -- n >= 2
-  | PPatConstruct Longident (Maybe Pattern) -- TODO: revise
+  | -- | n >= 2
+    PPatTuple Pattern (NonEmpty Pattern)
+  | PPatConstruct Longident (Maybe Pattern)
   | PPatOr Pattern Pattern
   | PPatConstraint Pattern CoreType
   deriving (Eq, Show)
@@ -67,13 +88,16 @@ data ExpressionDesc
   = PExpIdent Longident
   | PExpConstant Constant
   | PExpLet RecFlag (NonEmpty ValueBinding) Expression
-  | PExpFunction Pattern Expression -- nesting!
+  | -- | nesting!
+    PExpFunction Pattern Expression
   | PExpApply Expression (NonEmpty Expression)
   | PExpMatch Expression (NonEmpty Case)
-  | PExpTuple Expression (NonEmpty Expression) -- n >=2
+  | -- | Invariant: \(n \geq 2\)
+    PExpTuple Expression (NonEmpty Expression)
   | PExpConstruct Longident (Maybe Expression)
   | PExpIfThenElse Expression Expression Expression
-  | PExpConstraint Expression CoreType
+  | -- | @(expr : typexpr)@
+    PExpConstraint Expression CoreType
   deriving (Eq, Show)
 
 data Case = Case
@@ -100,7 +124,8 @@ data TypeKind
 data ConstructorDeclaration = ConstructorDeclaration
   { _pCDName :: Text
   , _pCDArgs :: [CoreType]
-  , _pCDRes :: Maybe CoreType -- TODO: I have no clue :)
+  , _pCDRes :: Maybe CoreType
+  -- ^ TODO: I have no clue :)
   , _pCDLoc :: Location
   }
   deriving (Eq, Show)
@@ -131,6 +156,17 @@ data StructureItem
   = PStrEval Expression
   | PStrValue RecFlag (NonEmpty ValueBinding)
   | PStrType RecFlag (NonEmpty TypeDeclaration)
-  | PStrModule ModuleDefinition
   | PStrOpen OpenDeclaration
   deriving (Eq, Show)
+
+data ModuleExpr = ModuleExpr
+  { _pMEDefinition :: Maybe ModuleDefinition
+  , _pMEStructure :: Structure
+  }
+  deriving (Eq, Show)
+
+makeLenses ''Constant
+makeLenses ''CoreType
+makeLenses ''Pattern
+makeLenses ''Expression
+makeLenses ''ValueBinding

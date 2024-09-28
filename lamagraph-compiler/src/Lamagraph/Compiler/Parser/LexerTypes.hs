@@ -1,8 +1,21 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Lamagraph.Compiler.Parser.LexerTypes (
+  Location (..),
+  startPos,
+  endPos,
   IdentType (..),
   TokenType (..),
+  _TokIdent,
+  _TokInt,
+  _TokInt32,
+  _TokUInt32,
+  _TokInt64,
+  _TokUInt64,
+  _TokChar,
+  _TokString,
+  _TokInfixSymbol,
+  _TokPrefixSymbol,
   AlexUserState (..),
   alexInitUserState,
   lexerCommentDepth,
@@ -11,8 +24,7 @@ module Lamagraph.Compiler.Parser.LexerTypes (
   lexerReadString,
   Token (..),
   tokenType,
-  startPos,
-  endPos,
+  loc,
   readStr,
 ) where
 
@@ -21,6 +33,13 @@ import Relude
 import Control.Lens
 
 import {-# SOURCE #-} Lamagraph.Compiler.Parser.Lexer
+
+data Location = Loc
+  { _startPos :: AlexPosn
+  , _endPos :: AlexPosn
+  }
+  deriving (Eq, Show)
+makeLenses ''Location
 
 data AlexUserState = AlexUserState
   { _lexerCommentDepth :: Int
@@ -50,14 +69,14 @@ data TokenType
   | TokUInt32 Word32
   | TokInt64 Int64
   | TokUInt64 Word64
-  | -- Character literals
+  | {- Character literals -}
     TokChar Char
-  | -- String literals
+  | {- String literals -}
     TokString Text
-  | -- Operators
+  | {- Operators -}
     TokInfixSymbol Text
   | TokPrefixSymbol Text
-  | -- Keywords
+  | {- Keywords-}
     TokAnd
   | TokAsr
   | TokElse
@@ -124,13 +143,17 @@ data TokenType
     TokBar
   | -- | @||@
     TokDoubleBar
+  | -- | @<@
+    TokLess
+  | -- | @>@
+    TokGreater
   | TokEOF
   deriving (Eq, Show)
+makePrisms ''TokenType
 
 data Token = Token
   { _tokenType :: TokenType
-  , _startPos :: AlexPosn
-  , _endPos :: AlexPosn
+  , _loc :: Location
   , _readStr :: Text
   }
   deriving (Eq, Show)

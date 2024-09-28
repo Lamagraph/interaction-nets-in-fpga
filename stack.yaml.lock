@@ -53,6 +53,20 @@ packages:
       size: 4473
   original:
     hackage: alex-3.5.1.0@sha256:de553eefe0b6548a560e9d8100486310548470a403c1fa21108dd03713da5fc7,3886
+- completed:
+    hackage: happy-2.0.1@sha256:4472e567a786e42db6359367f53d3ee1977664ede4f6f077cab2ffb346afbb39,4995
+    pantry-tree:
+      sha256: b22ce16a073b46f76ad8df75153377b611b6ab0ab9ea5be1fefaefd9dab8a80a
+      size: 6282
+  original:
+    hackage: happy-2.0.1
+- completed:
+    hackage: happy-lib-2.0.1@sha256:19331c029192a37fab20192b989bc32582634287a023c0823c4eb151cd8bd251,5069
+    pantry-tree:
+      sha256: 2b3912489a771839eb680549077c337f6c2f22ac6a5ac45ea4ad3598933f082b
+      size: 2403
+  original:
+    hackage: happy-lib-2.0.1
 snapshots:
 - completed:
     sha256: a81fb3877c4f9031e1325eb3935122e608d80715dc16b586eb11ddbff8671ecd
