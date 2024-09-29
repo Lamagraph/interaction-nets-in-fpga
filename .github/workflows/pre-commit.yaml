@@ -11,7 +11,7 @@ jobs:
 
       - name: Install pre-commit
         run: |
-          pip install pre-commit
+          pipx install pre-commit
 
       - name: Run pre-commit
         run: |
