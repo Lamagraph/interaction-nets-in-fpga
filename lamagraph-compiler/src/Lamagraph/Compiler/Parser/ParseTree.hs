@@ -1,6 +1,39 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Lamagraph.Compiler.Parser.ParseTree where
+module Lamagraph.Compiler.Parser.ParseTree (
+  Longident,
+  Constant (..),
+  pConstDesc,
+  pConstLoc,
+  ConstantDesc (..),
+  CoreType (..),
+  pTyp,
+  pTypLoc,
+  CoreTypeDesc (..),
+  Pattern (..),
+  pPatDesc,
+  pPatLoc,
+  PatternDesc (..),
+  RecFlag (..),
+  Expression (..),
+  pExpDesc,
+  pExpLoc,
+  ExpressionDesc (..),
+  Case (..),
+  TypeDeclaration (..),
+  TypeKind (..),
+  ConstructorDeclaration (..),
+  ValueBinding (..),
+  pVBPat,
+  pVBExpr,
+  pVBConstraint,
+  pVBLoc,
+  ModuleDefinition (..),
+  OpenDeclaration (..),
+  Structure,
+  StructureItem (..),
+  ModuleExpr (..),
+) where
 
 import Relude
 
