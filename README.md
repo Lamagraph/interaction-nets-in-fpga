@@ -77,5 +77,5 @@ Active pair $a \bowtie b$ is **realizable** if there is a sequence
 
 $$\mathcal{n_0} \xrightarrow{r_0} \ldots \xrightarrow{r_{k-1}} \mathcal{n_k},$$
 
-, $r_i \in \mathcal{R}$, such that $\mathcal{n}_k$ contains $a \bowtie b$.
+$r_i \in \mathcal{R}$, such that $\mathcal{n}_k$ contains $a \bowtie b$.
 We assume that for the given network $\mathcal{n}$ and rules set $\mathcal{R}$, $\mathcal{R}$ contains rules for all **realizable** active pairs.
