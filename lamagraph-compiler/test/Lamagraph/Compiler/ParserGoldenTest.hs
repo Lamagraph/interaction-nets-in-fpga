@@ -5,6 +5,7 @@ import Relude
 import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
+import Text.Pretty.Simple
 
 import Lamagraph.Compiler.Parser
 
@@ -20,4 +21,10 @@ parserGoldenTests = do
       ]
  where
   helper :: FilePath -> IO LByteString
-  helper lmlFile = (show <$> parseLamagraphML) . decodeUtf8 <$> readFileBS lmlFile
+  helper lmlFile = do
+    fileBS <- readFileBS lmlFile
+    let fileT = decodeUtf8 fileBS
+        parseResult = parseLamagraphML fileT
+    pure $ case parseResult of
+      Left err -> encodeUtf8 err
+      Right tree -> encodeUtf8 $ pShowNoColor tree

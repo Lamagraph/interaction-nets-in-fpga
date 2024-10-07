@@ -159,7 +159,7 @@ lor lsl lsr lxor match mod module
 of open rec then true type when with
 
 && ' ( ) * + , - -> : :: ; < = > [ ]
-_ { } . | || < >
+_ . | || < >
 @
 -}
 

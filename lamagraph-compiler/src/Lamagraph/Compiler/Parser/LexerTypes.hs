@@ -133,10 +133,6 @@ data TokenType
     TokRightBracket
   | -- | @_@
     TokWildcard
-  | -- | @{@
-    TokLeftCurly
-  | -- | @}@
-    TokRightCurly
   | -- | @.@
     TokDot
   | -- | @|@

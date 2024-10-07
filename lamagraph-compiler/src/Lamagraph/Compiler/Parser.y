@@ -3,7 +3,7 @@
 but Happy docs recommend this flag -}
 {-# OPTIONS_GHC -fglasgow-exts #-}
 
-module Lamagraph.Compiler.Parser (parseLamagraphML) where
+module Lamagraph.Compiler.Parser (parseLamagraphML, (<~>), (<->)) where
 
 import Relude
 {- We can use partial functions, because of the way parsing works -}
@@ -83,8 +83,6 @@ import Lamagraph.Compiler.Parser.ParseTree
   '[' { Token{ _tokenType = TokLeftBracket } }
   ']' { Token{ _tokenType = TokRightBracket } }
   '_' { Token{ _tokenType = TokWildcard } }
-  '{' { Token{ _tokenType = TokLeftCurly } }
-  '}' { Token{ _tokenType = TokRightCurly } }
   '.' { Token{ _tokenType = TokDot } }
   '|' { Token{ _tokenType = TokBar } }
   '||' { Token{ _tokenType = TokDoubleBar } }
@@ -92,39 +90,52 @@ import Lamagraph.Compiler.Parser.ParseTree
   '>' { Token{ _tokenType = TokGreater } }
 
 -- Higher in the list, lower the precendce
+%nonassoc 'in'
+%nonassoc below_SEMI -- TODO: needed?
+%nonassoc ';'
+%nonassoc 'let'
+%nonassoc below_WITH -- TODO: needed?
+%nonassoc 'with'
+%nonassoc 'and'
+%nonassoc 'then'
+%nonassoc 'else'
 %left '|'
 %nonassoc below_COMMA
 %left ',' -- typexpr (e, e, e)
 %right '->' -- typexpr (t -> t ->t)
+%right '||'
+%right '&&'
+%nonassoc below_EQUAL -- TODO: needed?
+%left '=' '<' '>'
 %right '::' -- e :: e :: e
+%left '+' '-'
 %left '*' -- typeexpr ('t * 't)
+%nonassoc prec_unary_minus prec_unary_plus -- TODO: needed?
+%nonassoc prec_constant_constructor
 %nonassoc constr_appl -- above '|' '::' ','
 %nonassoc below_DOT
 %nonassoc '.' -- idents
 %nonassoc '(' ')' capitalized_ident lowercase_ident integer_literal
           int32_literal uint32_literal int64_literal uint64_literal
-          char_literal string_literal
+          char_literal string_literal 'false' '[' ']' prefix_symbol
+          'true'
 
 %%
 -- Happy does pattern-matching againt %token directives, thus we need a rule for ident
 ident :: { Token }
-ident
   : lowercase_ident { $1 }
   | capitalized_ident { $1 }
 
 -- Basic names
 value_name :: { Token }
-value_name
   : lowercase_ident { $1 }
   | '(' operator_name ')' { $2 }
 
 operator_name :: { Token }
-operator_name
   : prefix_symbol { $1 }
   | infix_op { $1 }
 
 infix_op :: { Token }
-infix_op
   : infix_symbol { $1 }
   | '*' { $1 }
   | '+' { $1 }
@@ -144,32 +155,28 @@ infix_op
 
 constr_name :: { Token } : capitalized_ident { $1 }
 
--- extra_constr_name :: { Token }
---   : '(' '::' ')' {}
-
 typeconstr_name :: { Token }
-typeconstr_name : lowercase_ident { $1 }
+  : lowercase_ident { $1 }
 
 -- Qualified names
 value_path :: { NonEmpty Token }
-value_path : mkIdent(module_path, lowercase_ident) { $1 }
+  : mkIdent(module_path, lowercase_ident) { $1 }
+
 
 constr :: { NonEmpty Token }
+  {- It would be ideal to have @true@, @false@, @()@, @[]@ here,
+    but it breakes longident logic -}
   : mkIdent(module_path, capitalized_ident) { $1 }
-  | 'true' { pure $1 }
-  | 'false' { pure $1 }
-  | '(' ')' { $1 :| [$2] }
-  | '[' ']' { $1 :| [$2] }
 
 typeconstr :: { NonEmpty Token }
-typeconstr : mkIdent(module_path, lowercase_ident) { $1 }
+  : mkIdent(module_path, lowercase_ident) { $1 }
 
 module_path :: { NonEmpty Token }
-module_path : mkIdent(module_path, capitalized_ident) { $1 }
+  : mkIdent(module_path, capitalized_ident) { $1 }
 
 -- Type expressions
 typexpr :: { CoreType }
-typexpr : function_type { $1 }
+  : function_type { $1 }
 
 -- This was copied from OCaml
 -- Otherwise there was plenty of reduce/reduce conflicts
@@ -179,16 +186,14 @@ function_type :: { CoreType }
     { CoreType { _pTyp = PTypArrow $1 $3, _pTypLoc = $1 ^. pTypLoc <~> $3 ^. pTypLoc } }
 
 tuple_type :: { CoreType }
-tuple_type
   : atomic_type { $1 }
   | atomic_type lsepBy1(atomic_type, '*')
     { CoreType{ _pTyp = PTypTuple $1 $2, _pTypLoc = $1 ^. pTypLoc <~> (last $2) ^. pTypLoc } }
 
 delimited_type :: { CoreType }
-delimited_type : '(' function_type ')' { $2{ _pTypLoc = $1 <-> $3 } }
+  : '(' function_type ')' { $2{ _pTypLoc = $1 <-> $3 } }
 
 atomic_type :: { CoreType }
-atomic_type
   : delimited_type { $1 }
   | '\'' ident { CoreType{ _pTyp = PTypVar $ getIdent $2, _pTypLoc = $1 <-> $2 } }
   | '(' sepBy2L(function_type, ',' ) ')' typeconstr
@@ -200,7 +205,6 @@ atomic_type
 
 -- Constants
 constant :: { Constant }
-constant
   : integer_literal
     { Constant{ _pConstDesc = PConstInt $ fromJust $ $1 ^? tokenType . _TokInt, _pConstLoc = $1 <-> $1 } }
   | int32_literal
@@ -238,25 +242,70 @@ simple_pattern :: { Pattern }
   | value_name { Pattern{ _pPatDesc = PPatVar $ getIdent $1, _pPatLoc = $1 <-> $1 }}
   | '_' { Pattern{ _pPatDesc = PPatAny, _pPatLoc = $1 <-> $1 } }
   | constant { Pattern{ _pPatDesc = PPatConstant $1, _pPatLoc = $1 ^. pConstLoc <~> $1 ^. pConstLoc } }
-  | constr { Pattern{ _pPatDesc = PPatConstruct (getLongident $1) Nothing, _pPatLoc = (head $1) <-> (last $1)} }
+  | constr { Pattern{ _pPatDesc = PPatConstruct (getLongident $1) Nothing, _pPatLoc = (head $1) <-> (last $1) } }
+  | '[' ']' { Pattern{ _pPatDesc = PPatConstruct (pure "[]") Nothing, _pPatLoc = $1 <-> $2 } }
+  | '(' ')' { Pattern{ _pPatDesc = PPatConstruct (pure "()") Nothing, _pPatLoc = $1 <-> $2 } }
+  | 'true' { Pattern{ _pPatDesc = PPatConstruct (pure "true") Nothing, _pPatLoc = $1 <-> $1 } }
+  | 'false' { Pattern{ _pPatDesc = PPatConstruct (pure "false") Nothing, _pPatLoc = $1 <-> $1 } }
   | tuple_pattern '|' tuple_pattern { Pattern{ _pPatDesc = PPatOr $1 $3, _pPatLoc = $1 ^. pPatLoc <~> $3 ^. pPatLoc } }
   | constr tuple_pattern %prec constr_appl
     { Pattern{ _pPatDesc = PPatConstruct (getLongident $1) (Just $2)
              , _pPatLoc = (head $1) ^. loc <~> $2 ^. pPatLoc } }
-  | '[' tuple_pattern lsepBy1(tuple_pattern, ';') '>' ']'
-    { let lhs = Pattern{ _pPatDesc = PPatTuple $2 $3, _pPatLoc = $2 ^. pPatLoc <~> (last $3) ^. pPatLoc } in
-      let rhs = Pattern{ _pPatDesc = PPatConstruct (pure "[]") Nothing, _pPatLoc = $5 <-> $5 } in
-      Pattern{ _pPatDesc = PPatConstruct (pure "::")
-                (Just $ Pattern{ _pPatDesc = PPatTuple lhs (pure rhs), _pPatLoc = $1 <-> $1 })
-             , _pPatLoc = $1 <-> $5 } }
+  | '[' sepBy1Terminated(tuple_pattern, ';') ']' { mkListPat $1 $2 $3 }
   | tuple_pattern '::' tuple_pattern
     { Pattern{ _pPatDesc = PPatConstruct (pure "::")
-                (Just $ Pattern{ _pPatDesc = PPatTuple $1 (pure $3), _pPatLoc = $1 ^. pPatLoc <~> $3 ^. pPatLoc })
-             , _pPatLoc = $2 <-> $2 } }
+                (Just $ Pattern{ _pPatDesc = PPatTuple $1 (pure $3)
+                               , _pPatLoc = $1 ^. pPatLoc <~> $3 ^. pPatLoc })
+             , _pPatLoc = $2 <-> $2 }
+    }
 
 -- Expressions
 expr :: { Expression }
-expr : fun_expr { $1 }
+  -- : value_path
+  --   { Expression{ _pExpDesc = PExpIdent $ getLongident $1, _pExpLoc = head $1 <-> last $1 } }
+  -- | constant
+  --   { Expression{ _pExpDesc = PExpConstant $1, _pExpLoc = $1 ^. pConstLoc <~> $1 ^. pConstLoc } }
+  -- | constr %prec prec_constant_constructor
+  --   { Expression{ _pExpDesc = PExpConstruct (getLongident $1) Nothing
+  --               , _pExpLoc = (head $1) <-> (last $1) }
+  --   }
+  -- | '[' ']' { Expression{ _pExpDesc = PExpConstruct (pure "[]") Nothing, _pExpLoc = $1 <-> $2 } }
+  -- | '(' ')' { Expression{ _pExpDesc = PExpConstruct (pure "()") Nothing, _pExpLoc = $1 <-> $2 } }
+  -- | 'true' { Expression{ _pExpDesc = PExpConstruct (pure "true") Nothing, _pExpLoc = $1 <-> $1 } }
+  -- | 'false' { Expression{ _pExpDesc = PExpConstruct (pure "false") Nothing, _pExpLoc = $1 <-> $1 } }
+
+  -- | expr expr_comma_list
+  --   { Expression{ _pExpDesc = PExpTuple $1 $2, _pExpLoc = $1 ^. pExpLoc <~> (last $2) ^. pExpLoc } }
+  -- | constr expr %prec constr_appl
+  --   { Expression{ _pExpDesc = PExpConstruct (getLongident $1) (Just $2), _pExpLoc = (head $1) ^. loc <~> $2 ^. pExpLoc } }
+  -- | expr '::' expr
+  --   { Expression{ _pExpDesc = PExpConstruct (pure "::")
+  --                   (Just $ Expression{ _pExpDesc = PExpTuple $1 (pure $3)
+  --                                     , _pExpLoc = $1 ^. pExpLoc <~> $3 ^. pExpLoc })
+  --               , _pExpLoc = $2 <-> $2 }
+  --   }
+  -- | '[' sepBy1Terminated(expr, ';') ']' { mkListExpr $1 $2 $3 }
+  -- | expr manyNE(expr) { Expression{ _pExpDesc = PExpApply $1 $2, _pExpLoc = $1 ^. pExpLoc <~> (last $2) ^. pExpLoc } }
+  -- | prefix_symbol expr
+  --   { let ident = Expression{ _pExpDesc = PExpIdent (pure $ getIdent $1), _pExpLoc = $1 <-> $1 } in
+  --     Expression{ _pExpDesc = PExpApply ident (pure $2), _pExpLoc = $1 ^. loc <~> $2 ^. pExpLoc }
+  --   }
+  -- | '-' expr %prec prec_unary_minus
+  --   { let um = Expression{ _pExpDesc = PExpIdent (pure "~-"), _pExpLoc = $1 <-> $1 } in
+  --     Expression{ _pExpDesc = PExpApply um (pure $2), _pExpLoc = $1 ^. loc <~> $2 ^. pExpLoc  }
+  --   }
+  -- | 'if' expr 'then' expr 'else' expr %shift
+  --   { Expression{ _pExpDesc = PExpIfThenElse $2 $4 $6, _pExpLoc = $1 ^. loc <~> $6 ^. pExpLoc  } }
+
+argument :: { Expression }
+  : expr { $1 }
+
+expr_comma_list : lsepBy1Rev(expr, ',') %prec below_COMMA { NE.reverse $1 }
+
+delimited_expr :: { Expression }
+  : '(' expr ')' { $2{ _pExpLoc = $1 <-> $3} }
+  | '(' expr ':' typexpr ')'
+    { Expression{ _pExpDesc = PExpConstraint $2 $4, _pExpLoc = $1 <-> $5 } }
 
 -- -- tuple_expr :: { Expression }
 -- -- tuple_expr
@@ -272,16 +321,16 @@ expr : fun_expr { $1 }
 --   -- | expr lsepBy1(expr, ',') %prec below_COMMA
 --   --   { Expression{ _pExpDesc = PExpTuple $1 $2, _pExpLoc = $1 ^. pExpLoc <~> (last $2) ^. pExpLoc } }
 
-fun_expr :: { Expression }
-  : simple_expr %prec below_DOT { $1 }
-  -- | simple_expr manyNE(fun_expr)
-  --   { Expression{ _pExpDesc = PExpApply $1 $2, _pExpLoc = $1 ^. pExpLoc <~> (last $2) ^. pExpLoc } }
+-- fun_expr :: { Expression }
+--   : simple_expr %prec below_DOT { $1 }
+--   -- | simple_expr manyNE(fun_expr)
+--   --   { Expression{ _pExpDesc = PExpApply $1 $2, _pExpLoc = $1 ^. pExpLoc <~> (last $2) ^. pExpLoc } }
 
-simple_expr :: { Expression }
-  : value_path
-    { Expression{ _pExpDesc = PExpIdent $ getLongident $1, _pExpLoc = head $1 <-> last $1 } }
-  -- | constant
-  --   { Ex
+-- simple_expr :: { Expression }
+--   : value_path
+--     { Expression{ _pExpDesc = PExpIdent $ getLongident $1, _pExpLoc = head $1 <-> last $1 } }
+--   -- | constant
+--   --   { Ex
 
 -- simple_expr :: { Expression }
 -- simple_expr
@@ -294,14 +343,13 @@ simple_expr :: { Expression }
 --   --   { Expression{ _pExpDesc = PExpConstant $1, _pExpLoc = $1 ^. pConstLoc <~> $1 ^. pConstLoc } }
 
 let_binding :: { ValueBinding }
-let_binding
   : pattern '=' expr
     { ValueBinding{ _pVBPat = $1
                   , _pVBExpr = $3
                   , _pVBConstraint = Nothing
                   , _pVBLoc = $1 ^. pPatLoc <~> $3 ^. pExpLoc }
     }
-  -- | value_name many()
+  -- | value_name many(parameter)
 
 -- type_constraint :: { CoreType }
 -- type_constraint : ':' typexpr { $2 }
@@ -310,15 +358,14 @@ let_binding
 
 -- Declarations and modules
 module_expression :: { ModuleExpr }
-module_expression : optional(module_definition) many(module_item)
+  : optional(module_definition) many(module_item)
   { ModuleExpr{ _pMEDefinition = $1, _pMEStructure = $2 } }
 
 module_definition :: { ModuleDefinition }
-module_definition : 'module' module_path
+  : 'module' module_path
   { ModuleDefinition{ _pMDName = getLongident $2, _pMDLoc = $1 <-> last $2 } }
 
 module_item :: { StructureItem }
-module_item
   : 'open' module_path
     { PStrOpen $ OpenDeclaration{ _pODName = getLongident $2, _pODLoc = $1 <-> last $2 } }
   | 'let' rec sepBy1(let_binding, 'and') { PStrValue $2 $3 }
@@ -370,6 +417,10 @@ mkIdentRev(prefix,final)
 
 mkIdent(prefix, final) : mkIdentRev(prefix,final) { NE.reverse $1 }
 
+sepBy1Terminated(p, sep)
+  : p optional(sep) { pure $1 }
+  | p sep sepBy1Terminated(p, sep) { NE.cons $1 $3 }
+
 {
 parseError :: Token -> Alex a
 parseError token = do
@@ -398,6 +449,32 @@ lLoc <~> rLoc = if lLocStart < rLocEnd then Loc lLocStart rLocEnd else error msg
   lLocStart = lLoc ^. startPos
   rLocEnd = rLoc ^. endPos
   msg = "Internal parser error: left token must go after the right token"
+
+mkListPat :: Token -> NonEmpty Pattern -> Token -> Pattern
+mkListPat lBracket list rBracket = foldr helper init list
+ where
+  init :: Pattern
+  init = Pattern{ _pPatDesc = PPatConstruct (pure "[]") Nothing, _pPatLoc = rBracket <-> rBracket }
+  helper :: Pattern -> Pattern -> Pattern
+  helper x acc = Pattern
+    { _pPatDesc = PPatConstruct (pure "::") (Just pat)
+    , _pPatLoc = x ^. pPatLoc <~> rBracket ^. loc
+    }
+   where
+    pat = Pattern{ _pPatDesc = PPatTuple x (pure acc), _pPatLoc = x ^. pPatLoc <~> acc ^. pPatLoc }
+
+mkListExpr :: Token -> NonEmpty Expression -> Token -> Expression
+mkListExpr lBracket list rBracket = foldr helper init list
+ where
+  init :: Expression
+  init = Expression{ _pExpDesc = PExpConstruct (pure "[]") Nothing, _pExpLoc = rBracket <-> rBracket }
+  helper :: Expression -> Expression -> Expression
+  helper x acc = Expression
+    { _pExpDesc = PExpConstruct (pure "::") (Just expr)
+    , _pExpLoc = x ^. pExpLoc <~> rBracket ^. loc
+    }
+   where
+    expr = Expression{ _pExpDesc = PExpTuple x (pure acc), _pExpLoc = x ^. pExpLoc <~> acc ^. pExpLoc }
 
 parseLamagraphML :: Text -> Either String ModuleExpr
 parseLamagraphML text = runAlex text pLamagraphML

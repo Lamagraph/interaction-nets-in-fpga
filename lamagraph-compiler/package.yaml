@@ -76,3 +76,4 @@ tests:
       - tasty
       - tasty-hunit
       - tasty-golden
+      - pretty-simple
