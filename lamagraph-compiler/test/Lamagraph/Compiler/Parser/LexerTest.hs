@@ -153,15 +153,22 @@ allSymbolKeywords =
 infixSymbols :: TestTree
 infixSymbols =
   testCase "Lex infix symbols" $ do
-    getTokenTypesFromText "=@ |= >= <= <> &&& %"
+    getTokenTypesFromText "=@ <= >= |= &&& $! @. ^| += -** *+* / % **"
       @?= Right
-        [ TokInfixSymbol "=@"
-        , TokInfixSymbol "|="
-        , TokInfixSymbol ">="
-        , TokInfixSymbol "<="
-        , TokInfixSymbol "<>"
-        , TokInfixSymbol "&&&"
-        , TokInfixSymbol "%"
+        [ TokInfixSymbol0 "=@"
+        , TokInfixSymbol0 "<="
+        , TokInfixSymbol0 ">="
+        , TokInfixSymbol0 "|="
+        , TokInfixSymbol0 "&&&"
+        , TokInfixSymbol0 "$!"
+        , TokInfixSymbol1 "@."
+        , TokInfixSymbol1 "^|"
+        , TokInfixSymbol2 "+="
+        , TokInfixSymbol2 "-**"
+        , TokInfixSymbol3 "*+*"
+        , TokInfixSymbol3 "/"
+        , TokInfixSymbol3 "%"
+        , TokInfixSymbol4 "**"
         , TokEOF
         ]
 

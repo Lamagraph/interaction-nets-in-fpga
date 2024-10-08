@@ -27,7 +27,6 @@ ModuleExpr
                         , _endPos = AlexPn 50 3 28
                         }
                     }
-                , _pVBConstraint = Nothing
                 , _pVBLoc = Loc
                     { _startPos = AlexPn 27 3 5
                     , _endPos = AlexPn 50 3 28
@@ -52,7 +51,6 @@ ModuleExpr
                         , _endPos = AlexPn 66 4 16
                         }
                     }
-                , _pVBConstraint = Nothing
                 , _pVBLoc = Loc
                     { _startPos = AlexPn 55 4 5
                     , _endPos = AlexPn 66 4 16
@@ -77,7 +75,6 @@ ModuleExpr
                         , _endPos = AlexPn 84 5 18
                         }
                     }
-                , _pVBConstraint = Nothing
                 , _pVBLoc = Loc
                     { _startPos = AlexPn 71 5 5
                     , _endPos = AlexPn 84 5 18
@@ -102,7 +99,6 @@ ModuleExpr
                         , _endPos = AlexPn 96 6 12
                         }
                     }
-                , _pVBConstraint = Nothing
                 , _pVBLoc = Loc
                     { _startPos = AlexPn 89 6 5
                     , _endPos = AlexPn 96 6 12
@@ -127,7 +123,6 @@ ModuleExpr
                         , _endPos = AlexPn 108 7 12
                         }
                     }
-                , _pVBConstraint = Nothing
                 , _pVBLoc = Loc
                     { _startPos = AlexPn 101 7 5
                     , _endPos = AlexPn 108 7 12

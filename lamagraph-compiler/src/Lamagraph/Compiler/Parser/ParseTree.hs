@@ -20,13 +20,15 @@ module Lamagraph.Compiler.Parser.ParseTree (
   pExpLoc,
   ExpressionDesc (..),
   Case (..),
+  pCLhs,
+  pCGuard,
+  pCRhs,
   TypeDeclaration (..),
   TypeKind (..),
   ConstructorDeclaration (..),
   ValueBinding (..),
   pVBPat,
   pVBExpr,
-  pVBConstraint,
   pVBLoc,
   ModuleDefinition (..),
   OpenDeclaration (..),
@@ -144,21 +146,18 @@ data TypeDeclaration = TypeDeclaration
   { _pTypeName :: Text
   , _pTypeParams :: [CoreType]
   , _pTypeKind :: TypeKind
-  , _pTypeManifest :: Maybe CoreType
   , _pTypeLoc :: Location
   }
   deriving (Eq, Show)
 
 data TypeKind
-  = PTypeAbstract
-  | PTypeVariant (NonEmpty ConstructorDeclaration)
+  = PTypeAbstract (Maybe CoreType)
+  | PTypeVariant [ConstructorDeclaration]
   deriving (Eq, Show)
 
 data ConstructorDeclaration = ConstructorDeclaration
   { _pCDName :: Text
   , _pCDArgs :: [CoreType]
-  , _pCDRes :: Maybe CoreType
-  -- ^ TODO: I have no clue :)
   , _pCDLoc :: Location
   }
   deriving (Eq, Show)
@@ -166,7 +165,6 @@ data ConstructorDeclaration = ConstructorDeclaration
 data ValueBinding = ValueBinding
   { _pVBPat :: Pattern
   , _pVBExpr :: Expression
-  , _pVBConstraint :: Maybe CoreType
   , _pVBLoc :: Location
   }
   deriving (Eq, Show)
@@ -185,10 +183,9 @@ data OpenDeclaration = OpenDeclaration
 
 type Structure = [StructureItem]
 
-data StructureItem
-  = PStrEval Expression
-  | PStrValue RecFlag (NonEmpty ValueBinding)
-  | PStrType RecFlag (NonEmpty TypeDeclaration)
+data StructureItem -- FIXME: Location?
+  = PStrValue RecFlag (NonEmpty ValueBinding)
+  | PStrType (NonEmpty TypeDeclaration)
   | PStrOpen OpenDeclaration
   deriving (Eq, Show)
 
@@ -202,4 +199,5 @@ makeLenses ''Constant
 makeLenses ''CoreType
 makeLenses ''Pattern
 makeLenses ''Expression
+makeLenses ''Case
 makeLenses ''ValueBinding

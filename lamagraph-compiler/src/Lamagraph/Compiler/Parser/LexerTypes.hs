@@ -14,7 +14,11 @@ module Lamagraph.Compiler.Parser.LexerTypes (
   _TokUInt64,
   _TokChar,
   _TokString,
-  _TokInfixSymbol,
+  _TokInfixSymbol0,
+  _TokInfixSymbol1,
+  _TokInfixSymbol2,
+  _TokInfixSymbol3,
+  _TokInfixSymbol4,
   _TokPrefixSymbol,
   AlexUserState (..),
   alexInitUserState,
@@ -74,7 +78,17 @@ data TokenType
   | {- String literals -}
     TokString Text
   | {- Operators -}
-    TokInfixSymbol Text
+
+    -- | @( = | \< | \> | __|__ | \& | $ ) /operator-char/*@
+    TokInfixSymbol0 Text
+  | -- | @( \@ | \^ ) /operator-char/*@
+    TokInfixSymbol1 Text
+  | -- | @( + | - ) /operator-char/*@
+    TokInfixSymbol2 Text
+  | -- | @( * | \/ | % ) /operator-char/* | lor | lxor | mod | land@
+    TokInfixSymbol3 Text
+  | -- | @** /operator-char/* | lsl | lsr | asr@
+    TokInfixSymbol4 Text
   | TokPrefixSymbol Text
   | {- Keywords-}
     TokAnd
@@ -139,10 +153,6 @@ data TokenType
     TokBar
   | -- | @||@
     TokDoubleBar
-  | -- | @<@
-    TokLess
-  | -- | @>@
-    TokGreater
   | TokEOF
   deriving (Eq, Show)
 makePrisms ''TokenType

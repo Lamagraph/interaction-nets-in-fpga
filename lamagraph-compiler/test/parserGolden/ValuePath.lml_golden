@@ -18,7 +18,6 @@ ModuleExpr
                         , _endPos = AlexPn 11 1 12
                         }
                     }
-                , _pVBConstraint = Nothing
                 , _pVBLoc = Loc
                     { _startPos = AlexPn 4 1 5
                     , _endPos = AlexPn 11 1 12

@@ -123,8 +123,6 @@ lamagraphml :-
 <0> "." { tok TokDot }
 <0> "|" { tok TokBar }
 <0> "||" { tok TokDoubleBar }
-<0> "<" { tok TokLess }
-<0> ">" { tok TokGreater}
 
 <0> @capitalized_ident { tokAnyIdent (TokIdent Capitalized) }
 <0> @lowercase_ident { tokAnyIdent (TokIdent Lowercase) }
@@ -150,7 +148,12 @@ lamagraphml :-
 <state_string> \" { leaveString `andBegin` 0 }
 <state_string> $regular_char { addCurrentToString }
 
-<0> @infix_symbol { tokAnyIdent TokInfixSymbol }
+<0> \*\* ( $operator_char )* { tokAnyIdent TokInfixSymbol4 }
+<0> (\* | \/ | \%) ( $operator_char )* { tokAnyIdent TokInfixSymbol3 }
+<0> (\+ | \-) ( $operator_char )* { tokAnyIdent TokInfixSymbol2 }
+<0> (\@ | \^) ( $operator_char )* { tokAnyIdent TokInfixSymbol1 }
+<0> (\= | \< | \> | \| | & | \$) ( $operator_char )* { tokAnyIdent TokInfixSymbol0 }
+
 <0> @prefix_symbol { tokAnyIdent TokPrefixSymbol }
 
 -- Alex "Haskell code fragment bottom"

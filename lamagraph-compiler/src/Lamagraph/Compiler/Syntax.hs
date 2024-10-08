@@ -158,8 +158,7 @@ and asr else false fun if in land let
 lor lsl lsr lxor match mod module
 of open rec then true type when with
 
-&& ' ( ) * + , - -> : :: ; < = > [ ]
-_ . | || < >
+&& ' ( ) * + , - -> : :: ; = [ ] _ . | ||
 @
 -}
 
@@ -172,8 +171,7 @@ Basic names
 
 /operator-name/ ::= /prefix-symbol/ | /infix-op/
 
-/infix-op/ ::= /infix-symbol/
-           | * | + | - | = | \< | \> | || | &&
+/infix-op/ ::= /infix-symbol/           | * | + | - | = | || | &&
            | mod | land | lor | lxor | lsl | lsr | asr
 
 /constr-name/ ::= /capitalized-ident/
@@ -276,9 +274,9 @@ Qualified names
 @
 /type-definition/ ::= type /typedef/ { and /typedef/ }
 
-/typedef/ ::= [ /type-params/ ] /typeconstr-name/ /type-information/
+/typedef/ ::= [ /type-params/ ] /typeconstr-name/ [ /type-information/ ]
 
-/type-information/ ::= [ /type-equation/ ] [ /type-representation/ ]
+/type-information/ ::= /type-equation/ | /type-representation/
 
 /type-equation/ ::= = /typexpr/
 
@@ -303,8 +301,7 @@ Qualified names
 
 /module-definition/ ::= module /module-path/
 
-/module-item/ ::= /expr/
-              | let [rec] /let-binding/ { and /let-binding/ }
+/module-item/ ::= let [rec] /let-binding/ { and /let-binding/ }
               | /type-definition/
               | open /module-path/
 @
