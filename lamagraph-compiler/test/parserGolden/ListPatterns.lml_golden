@@ -1,0 +1,271 @@
+ModuleExpr
+    { _pMEDefinition = Just
+        ( ModuleDefinition
+            { _pMDName = "ListPatterns" :| []
+            , _pMDLoc = Loc
+                { _startPos = AlexPn 0 1 1
+                , _endPos = AlexPn 19 1 20
+                }
+            }
+        )
+    , _pMEStructure =
+        [ PStrValue NonRecursive
+            ( ValueBinding
+                { _pVBPat = Pattern
+                    { _pPatDesc = PPatConstruct
+                        ( "[]" :| [] ) Nothing
+                    , _pPatLoc = Loc
+                        { _startPos = AlexPn 25 3 5
+                        , _endPos = AlexPn 27 3 7
+                        }
+                    }
+                , _pVBExpr = Expression
+                    { _pExpDesc = PExpIdent
+                        ( "x" :| [] )
+                    , _pExpLoc = Loc
+                        { _startPos = AlexPn 30 3 10
+                        , _endPos = AlexPn 31 3 11
+                        }
+                    }
+                , _pVBLoc = Loc
+                    { _startPos = AlexPn 25 3 5
+                    , _endPos = AlexPn 31 3 11
+                    }
+                } :| []
+            )
+        , PStrValue NonRecursive
+            ( ValueBinding
+                { _pVBPat = Pattern
+                    { _pPatDesc = PPatConstruct
+                        ( "::" :| [] )
+                        ( Just
+                            ( Pattern
+                                { _pPatDesc = PPatTuple
+                                    ( Pattern
+                                        { _pPatDesc = PPatVar "a"
+                                        , _pPatLoc = Loc
+                                            { _startPos = AlexPn 37 4 6
+                                            , _endPos = AlexPn 38 4 7
+                                            }
+                                        }
+                                    )
+                                    ( Pattern
+                                        { _pPatDesc = PPatConstruct
+                                            ( "[]" :| [] ) Nothing
+                                        , _pPatLoc = Loc
+                                            { _startPos = AlexPn 38 4 7
+                                            , _endPos = AlexPn 39 4 8
+                                            }
+                                        } :| []
+                                    )
+                                , _pPatLoc = Loc
+                                    { _startPos = AlexPn 37 4 6
+                                    , _endPos = AlexPn 39 4 8
+                                    }
+                                }
+                            )
+                        )
+                    , _pPatLoc = Loc
+                        { _startPos = AlexPn 37 4 6
+                        , _endPos = AlexPn 39 4 8
+                        }
+                    }
+                , _pVBExpr = Expression
+                    { _pExpDesc = PExpIdent
+                        ( "x" :| [] )
+                    , _pExpLoc = Loc
+                        { _startPos = AlexPn 42 4 11
+                        , _endPos = AlexPn 43 4 12
+                        }
+                    }
+                , _pVBLoc = Loc
+                    { _startPos = AlexPn 37 4 6
+                    , _endPos = AlexPn 43 4 12
+                    }
+                } :| []
+            )
+        , PStrValue NonRecursive
+            ( ValueBinding
+                { _pVBPat = Pattern
+                    { _pPatDesc = PPatConstruct
+                        ( "::" :| [] )
+                        ( Just
+                            ( Pattern
+                                { _pPatDesc = PPatTuple
+                                    ( Pattern
+                                        { _pPatDesc = PPatVar "a"
+                                        , _pPatLoc = Loc
+                                            { _startPos = AlexPn 49 5 6
+                                            , _endPos = AlexPn 50 5 7
+                                            }
+                                        }
+                                    )
+                                    ( Pattern
+                                        { _pPatDesc = PPatConstruct
+                                            ( "::" :| [] )
+                                            ( Just
+                                                ( Pattern
+                                                    { _pPatDesc = PPatTuple
+                                                        ( Pattern
+                                                            { _pPatDesc = PPatVar "b"
+                                                            , _pPatLoc = Loc
+                                                                { _startPos = AlexPn 52 5 9
+                                                                , _endPos = AlexPn 53 5 10
+                                                                }
+                                                            }
+                                                        )
+                                                        ( Pattern
+                                                            { _pPatDesc = PPatConstruct
+                                                                ( "[]" :| [] ) Nothing
+                                                            , _pPatLoc = Loc
+                                                                { _startPos = AlexPn 53 5 10
+                                                                , _endPos = AlexPn 54 5 11
+                                                                }
+                                                            } :| []
+                                                        )
+                                                    , _pPatLoc = Loc
+                                                        { _startPos = AlexPn 52 5 9
+                                                        , _endPos = AlexPn 54 5 11
+                                                        }
+                                                    }
+                                                )
+                                            )
+                                        , _pPatLoc = Loc
+                                            { _startPos = AlexPn 52 5 9
+                                            , _endPos = AlexPn 54 5 11
+                                            }
+                                        } :| []
+                                    )
+                                , _pPatLoc = Loc
+                                    { _startPos = AlexPn 49 5 6
+                                    , _endPos = AlexPn 54 5 11
+                                    }
+                                }
+                            )
+                        )
+                    , _pPatLoc = Loc
+                        { _startPos = AlexPn 49 5 6
+                        , _endPos = AlexPn 54 5 11
+                        }
+                    }
+                , _pVBExpr = Expression
+                    { _pExpDesc = PExpIdent
+                        ( "x" :| [] )
+                    , _pExpLoc = Loc
+                        { _startPos = AlexPn 57 5 14
+                        , _endPos = AlexPn 58 5 15
+                        }
+                    }
+                , _pVBLoc = Loc
+                    { _startPos = AlexPn 49 5 6
+                    , _endPos = AlexPn 58 5 15
+                    }
+                } :| []
+            )
+        , PStrValue NonRecursive
+            ( ValueBinding
+                { _pVBPat = Pattern
+                    { _pPatDesc = PPatConstruct
+                        ( "::" :| [] )
+                        ( Just
+                            ( Pattern
+                                { _pPatDesc = PPatTuple
+                                    ( Pattern
+                                        { _pPatDesc = PPatVar "a"
+                                        , _pPatLoc = Loc
+                                            { _startPos = AlexPn 64 6 6
+                                            , _endPos = AlexPn 65 6 7
+                                            }
+                                        }
+                                    )
+                                    ( Pattern
+                                        { _pPatDesc = PPatConstruct
+                                            ( "::" :| [] )
+                                            ( Just
+                                                ( Pattern
+                                                    { _pPatDesc = PPatTuple
+                                                        ( Pattern
+                                                            { _pPatDesc = PPatVar "b"
+                                                            , _pPatLoc = Loc
+                                                                { _startPos = AlexPn 67 6 9
+                                                                , _endPos = AlexPn 68 6 10
+                                                                }
+                                                            }
+                                                        )
+                                                        ( Pattern
+                                                            { _pPatDesc = PPatConstruct
+                                                                ( "::" :| [] )
+                                                                ( Just
+                                                                    ( Pattern
+                                                                        { _pPatDesc = PPatTuple
+                                                                            ( Pattern
+                                                                                { _pPatDesc = PPatVar "c"
+                                                                                , _pPatLoc = Loc
+                                                                                    { _startPos = AlexPn 70 6 12
+                                                                                    , _endPos = AlexPn 71 6 13
+                                                                                    }
+                                                                                }
+                                                                            )
+                                                                            ( Pattern
+                                                                                { _pPatDesc = PPatConstruct
+                                                                                    ( "[]" :| [] ) Nothing
+                                                                                , _pPatLoc = Loc
+                                                                                    { _startPos = AlexPn 71 6 13
+                                                                                    , _endPos = AlexPn 72 6 14
+                                                                                    }
+                                                                                } :| []
+                                                                            )
+                                                                        , _pPatLoc = Loc
+                                                                            { _startPos = AlexPn 70 6 12
+                                                                            , _endPos = AlexPn 72 6 14
+                                                                            }
+                                                                        }
+                                                                    )
+                                                                )
+                                                            , _pPatLoc = Loc
+                                                                { _startPos = AlexPn 70 6 12
+                                                                , _endPos = AlexPn 72 6 14
+                                                                }
+                                                            } :| []
+                                                        )
+                                                    , _pPatLoc = Loc
+                                                        { _startPos = AlexPn 67 6 9
+                                                        , _endPos = AlexPn 72 6 14
+                                                        }
+                                                    }
+                                                )
+                                            )
+                                        , _pPatLoc = Loc
+                                            { _startPos = AlexPn 67 6 9
+                                            , _endPos = AlexPn 72 6 14
+                                            }
+                                        } :| []
+                                    )
+                                , _pPatLoc = Loc
+                                    { _startPos = AlexPn 64 6 6
+                                    , _endPos = AlexPn 72 6 14
+                                    }
+                                }
+                            )
+                        )
+                    , _pPatLoc = Loc
+                        { _startPos = AlexPn 64 6 6
+                        , _endPos = AlexPn 72 6 14
+                        }
+                    }
+                , _pVBExpr = Expression
+                    { _pExpDesc = PExpIdent
+                        ( "x" :| [] )
+                    , _pExpLoc = Loc
+                        { _startPos = AlexPn 75 6 17
+                        , _endPos = AlexPn 76 6 18
+                        }
+                    }
+                , _pVBLoc = Loc
+                    { _startPos = AlexPn 64 6 6
+                    , _endPos = AlexPn 76 6 18
+                    }
+                } :| []
+            )
+        ]
+    }

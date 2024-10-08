@@ -82,11 +82,13 @@ Note that the following code won't be treated as a valid multiline comment!
 -- (*
 *)
 @
+
+/Note:/ now we can't have @~-@ unary minus, thus @--@ is a subject for change.
 -}
 
 {- $lexing_idents
 @
-/ident/ ::= /letter/ { /letter/ | 0...9 | _ | ' }
+/ident/ ::= ( /letter/ | _ ) { /letter/ | 0...9 | _ | ' }
 
 /capitalized-ident/ ::= ( A...Z ) { /letter/ | 0...9 | _ | ' }
 
@@ -94,6 +96,8 @@ Note that the following code won't be treated as a valid multiline comment!
 
 /letter/ ::= A...Z | a...z
 @
+
+@/ident/@ can be written as @( /capitalized-ident/ | /lowercase-ident/ )@.
 -}
 
 {- $lexing_int_lits
@@ -108,6 +112,8 @@ Note that the following code won't be treated as a valid multiline comment!
 
 /uint64-literal/ ::= /integer-literal/ UL
 @
+
+Values outside of type range will overflow.
 -}
 
 {- $lexing_char_lits
@@ -115,10 +121,10 @@ Note that the following code won't be treated as a valid multiline comment!
 /char-literal/ ::= ' /regular-char/ '
                | ' /escape-sequence/ '
 
-/escape-sequence/ ::= \\ ( __|__ | " | ' | n )
+/escape-sequence/ ::= \\ ( \\ | " | ' | n )
 @
 
-@/regular-char/@ must match every printable ASCII character (decimal range: 32-126).
+@/regular-char/@ must match every printable ASCII character (decimal range: 32-126 excluding escaped characters).
 -}
 
 {- $lexing_string_lits
@@ -129,7 +135,7 @@ Note that the following code won't be treated as a valid multiline comment!
                    | /escape-sequence/
 @
 
-@/regular-string-character/@ must match every printable ASCII character (decimal range: 32-126).
+@/regular-string-character/@ must match every printable ASCII character (decimal range: 32-126 excluding escaped characters).
 -}
 
 {- $lexing_operators
@@ -142,8 +148,6 @@ Note that the following code won't be treated as a valid multiline comment!
 
 /operator-char/ ::= ! | $ | % | & | * | + | . | / | : | \< | = | \> | ? | \@ | ^ | __|__ | ~
 @
-
-Copypasted from https://askra.de/software/ocaml-doc/4.02/lex.html#sec71, probably too complicated.
 -}
 
 {- $lexing_keywords
@@ -154,8 +158,7 @@ and asr else false fun if in land let
 lor lsl lsr lxor match mod module
 of open rec then true type when with
 
-!= && ' ( ) * + , - -> : :: ; < = > [ ]
-_ { | } .
+&& ' ( ) * + , - -> : :: ; = [ ] _ . | ||
 @
 -}
 
@@ -168,8 +171,7 @@ Basic names
 
 /operator-name/ ::= /prefix-symbol/ | /infix-op/
 
-/infix-op/ ::= /infix-symbol/
-           | * | + | - | = | != | \< | \> | || | &&
+/infix-op/ ::= /infix-symbol/           | * | + | - | = | || | &&
            | mod | land | lor | lxor | lsl | lsr | asr
 
 /constr-name/ ::= /capitalized-ident/
@@ -230,7 +232,7 @@ Qualified names
           | __(__ /pattern/ : /typexpr/ __)__
           | /pattern/ __|__ /pattern/
           | /constr/ /pattern/
-          | /pattern/ { , /pattern/ }
+          | /pattern/ { , /pattern/ }+
           | __[__ /pattern/ { ; /pattern/ } [;] __]__
           | /pattern/ :: /pattern/
 @
@@ -243,7 +245,7 @@ Qualified names
        | /constant/
        | __(__ /expr/ __)__
        | __(__ /expr/ : /typexpr/ __)__
-       | /expr/ {, /expr/ }
+       | /expr/ {, /expr/ }+
        | /constr/ /expr/
        | /expr/ :: /expr/
        | __[__ /expr/ { ; /expr/ } [;] ]
@@ -272,9 +274,9 @@ Qualified names
 @
 /type-definition/ ::= type /typedef/ { and /typedef/ }
 
-/typedef/ ::= [ /type-params/ ] /typeconstr-name/ /type-information/
+/typedef/ ::= [ /type-params/ ] /typeconstr-name/ [ /type-information/ ]
 
-/type-information/ ::= [ /type-equation/ ] [ /type-representation/ ]
+/type-information/ ::= /type-equation/ | /type-representation/
 
 /type-equation/ ::= = /typexpr/
 
@@ -295,13 +297,13 @@ Qualified names
 {- $decls
 
 @
+/module-expression/ ::= [ /module-definition/ ] { /module-item/ }
+
 /module-definition/ ::= module /module-path/
 
-/open-decl/ ::= open /module-path/
-
-/decl/ ::= /expr/ | /type-definition/ | /open-decl/
-
-/prog/ ::= [ /module-definition/ ] { /decl/ }
+/module-item/ ::= let [rec] /let-binding/ { and /let-binding/ }
+              | /type-definition/
+              | open /module-path/
 @
 -}
 

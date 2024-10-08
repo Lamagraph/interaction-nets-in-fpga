@@ -1,0 +1,133 @@
+ModuleExpr
+    { _pMEDefinition = Just
+        ( ModuleDefinition
+            { _pMDName = "ConstrPatterns" :| []
+            , _pMDLoc = Loc
+                { _startPos = AlexPn 0 1 1
+                , _endPos = AlexPn 21 1 22
+                }
+            }
+        )
+    , _pMEStructure =
+        [ PStrValue NonRecursive
+            ( ValueBinding
+                { _pVBPat = Pattern
+                    { _pPatDesc = PPatConstruct
+                        ( "SomeConstr" :| [] ) Nothing
+                    , _pPatLoc = Loc
+                        { _startPos = AlexPn 27 3 5
+                        , _endPos = AlexPn 37 3 15
+                        }
+                    }
+                , _pVBExpr = Expression
+                    { _pExpDesc = PExpConstruct
+                        ( "SomeConstr" :| [] ) Nothing
+                    , _pExpLoc = Loc
+                        { _startPos = AlexPn 40 3 18
+                        , _endPos = AlexPn 50 3 28
+                        }
+                    }
+                , _pVBLoc = Loc
+                    { _startPos = AlexPn 27 3 5
+                    , _endPos = AlexPn 50 3 28
+                    }
+                } :| []
+            )
+        , PStrValue NonRecursive
+            ( ValueBinding
+                { _pVBPat = Pattern
+                    { _pPatDesc = PPatConstruct
+                        ( "true" :| [] ) Nothing
+                    , _pPatLoc = Loc
+                        { _startPos = AlexPn 55 4 5
+                        , _endPos = AlexPn 59 4 9
+                        }
+                    }
+                , _pVBExpr = Expression
+                    { _pExpDesc = PExpConstruct
+                        ( "true" :| [] ) Nothing
+                    , _pExpLoc = Loc
+                        { _startPos = AlexPn 62 4 12
+                        , _endPos = AlexPn 66 4 16
+                        }
+                    }
+                , _pVBLoc = Loc
+                    { _startPos = AlexPn 55 4 5
+                    , _endPos = AlexPn 66 4 16
+                    }
+                } :| []
+            )
+        , PStrValue NonRecursive
+            ( ValueBinding
+                { _pVBPat = Pattern
+                    { _pPatDesc = PPatConstruct
+                        ( "false" :| [] ) Nothing
+                    , _pPatLoc = Loc
+                        { _startPos = AlexPn 71 5 5
+                        , _endPos = AlexPn 76 5 10
+                        }
+                    }
+                , _pVBExpr = Expression
+                    { _pExpDesc = PExpConstruct
+                        ( "false" :| [] ) Nothing
+                    , _pExpLoc = Loc
+                        { _startPos = AlexPn 79 5 13
+                        , _endPos = AlexPn 84 5 18
+                        }
+                    }
+                , _pVBLoc = Loc
+                    { _startPos = AlexPn 71 5 5
+                    , _endPos = AlexPn 84 5 18
+                    }
+                } :| []
+            )
+        , PStrValue NonRecursive
+            ( ValueBinding
+                { _pVBPat = Pattern
+                    { _pPatDesc = PPatConstruct
+                        ( "()" :| [] ) Nothing
+                    , _pPatLoc = Loc
+                        { _startPos = AlexPn 89 6 5
+                        , _endPos = AlexPn 91 6 7
+                        }
+                    }
+                , _pVBExpr = Expression
+                    { _pExpDesc = PExpConstruct
+                        ( "()" :| [] ) Nothing
+                    , _pExpLoc = Loc
+                        { _startPos = AlexPn 94 6 10
+                        , _endPos = AlexPn 96 6 12
+                        }
+                    }
+                , _pVBLoc = Loc
+                    { _startPos = AlexPn 89 6 5
+                    , _endPos = AlexPn 96 6 12
+                    }
+                } :| []
+            )
+        , PStrValue NonRecursive
+            ( ValueBinding
+                { _pVBPat = Pattern
+                    { _pPatDesc = PPatConstruct
+                        ( "[]" :| [] ) Nothing
+                    , _pPatLoc = Loc
+                        { _startPos = AlexPn 101 7 5
+                        , _endPos = AlexPn 103 7 7
+                        }
+                    }
+                , _pVBExpr = Expression
+                    { _pExpDesc = PExpConstruct
+                        ( "[]" :| [] ) Nothing
+                    , _pExpLoc = Loc
+                        { _startPos = AlexPn 106 7 10
+                        , _endPos = AlexPn 108 7 12
+                        }
+                    }
+                , _pVBLoc = Loc
+                    { _startPos = AlexPn 101 7 5
+                    , _endPos = AlexPn 108 7 12
+                    }
+                } :| []
+            )
+        ]
+    }
