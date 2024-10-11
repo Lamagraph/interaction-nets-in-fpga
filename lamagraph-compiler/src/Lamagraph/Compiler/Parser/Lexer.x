@@ -27,6 +27,7 @@ import Control.Lens
 import qualified Data.Text as Text
 
 import Lamagraph.Compiler.Parser.LexerTypes
+import Lamagraph.Compiler.Parser.SrcLoc
 }
 -- Alex "Wrapper"
 %wrapper "monadUserState-strict-text"
@@ -164,50 +165,53 @@ instance MonadState AlexUserState Alex where
   put :: AlexUserState -> Alex ()
   put newState = Alex $ \st -> Right (st{alex_ust = newState}, ())
 
+-- FIXME: Handle filenames correctly
+alexPosnToSrcLoc :: AlexPosn -> SrcLoc
+alexPosnToSrcLoc (AlexPn _ line column) = mkSrcLoc "" line column
+
+alexPosnToSrcSpan :: AlexPosn -> AlexPosn -> SrcSpan
+alexPosnToSrcSpan pos1 pos2 = mkSrcSpan (alexPosnToSrcLoc pos1) (alexPosnToSrcLoc pos2)
+
 getEndPos :: AlexInput -> Int -> AlexPosn
 getEndPos (startPosn, _, _, str) len = Text.foldl' alexMove startPosn $ Text.take len str
 
-alexEOF :: Alex Token
+alexEOF :: Alex LToken
 alexEOF = do
   startCode <- alexGetStartCode
   when (startCode == state_comment) $ (alexError "lexical error: EOF while reading comment")
   when (startCode == state_string) $ (alexError "lexical error: EOF while reading string")
   (pos, _, _, _) <- alexGetInput
-  return $ Token TokEOF (Loc pos pos) ""
+  return $ L (alexPosnToSrcSpan pos pos) TokEOF
 
-enterNewComment :: AlexAction Token
+enterNewComment :: AlexAction LToken
 enterNewComment input len = do
   lexerCommentDepth .= 1
   skip input len
 
-embedComment :: AlexAction Token
+embedComment :: AlexAction LToken
 embedComment input len = do
   lexerCommentDepth += 1
   skip input len
 
-unembedComment :: AlexAction Token
+unembedComment :: AlexAction LToken
 unembedComment input len = do
   lexerCommentDepth -= 1
   commentDepth <- use lexerCommentDepth
   when (commentDepth == 0) $ alexSetStartCode 0
   skip input len
 
-tokAnyIdent :: (Text -> TokenType) -> AlexAction Token
+tokAnyIdent :: (Text -> Token) -> AlexAction LToken
 tokAnyIdent ctor input@(startPosn, _, _, str) len = do
-  return Token
-    { _tokenType = ctor $ Text.take len str
-    , _loc = Loc startPosn $ getEndPos input len
-    , _readStr = str
-    }
+  return $ L
+    (alexPosnToSrcSpan startPosn $ getEndPos input len)
+    (ctor $ Text.take len str)
 
-tokAnyInt :: Read a => (a -> TokenType) -> AlexAction Token
+tokAnyInt :: Read a => (a -> Token) -> AlexAction LToken
 tokAnyInt ctor input@(startPosn, _, _, str) len = do
   let num = read $ toString $ Text.dropWhileEnd isIntSuffix $ Text.take len str
-  return Token
-    { _tokenType = ctor num
-    , _loc = Loc startPosn $ getEndPos input len
-    , _readStr = str
-    }
+  return $ L
+    (alexPosnToSrcSpan startPosn $ getEndPos input len)
+    (ctor num)
   where
     isIntSuffix :: Char -> Bool
     isIntSuffix 'u' = True
@@ -216,69 +220,52 @@ tokAnyInt ctor input@(startPosn, _, _, str) len = do
     isIntSuffix 'L' = True
     isIntSuffix _ = False
 
-tok :: TokenType -> AlexAction Token
-tok ctor input@(startPosn, _, _, str) len = do
-  return Token
-    { _tokenType = ctor
-    , _loc = Loc startPosn $ getEndPos input len
-    , _readStr = str
-    }
+tok :: Token -> AlexAction LToken
+tok ctor input@(startPosn, _, _, _) len = do
+  return $ L (alexPosnToSrcSpan startPosn $ getEndPos input len) ctor
 
-enterNewString :: AlexAction Token
-enterNewString (startPosn, _, _, str) len = do
-  lexerStringStartPos .= Just startPosn
+enterNewString :: AlexAction LToken
+enterNewString (startPosn, _, _, _) _ = do
+  lexerStringStartPos .= Just (alexPosnToSrcLoc startPosn)
   lexerStringValue .= ""
-  lexerReadString .= Text.take len str
   alexMonadScan
 
-addCharToString :: Char -> AlexAction Token
-addCharToString char (_, _, _, str) len = do
+addCharToString :: Char -> AlexAction LToken
+addCharToString char (_, _, _, _) _ = do
   lexerStringValue <>= Text.singleton char
-  lexerReadString <>= Text.take len str
   alexMonadScan
 
-leaveString :: AlexAction Token
-leaveString input@(_, _, _, str) len = do
-  lexerReadString <>= Text.take len str
-
-  -- I wish I knew how to write this clearer
+leaveString :: AlexAction LToken
+leaveString input@(_, _, _, _) len = do
   tokenType' <- use lexerStringValue
   startPos' <- use lexerStringStartPos
-  lexerReadString' <- use lexerReadString
 
   lexerStringStartPos .= Nothing
   lexerStringValue .= ""
-  lexerReadString .= ""
 
-  return
-    Token
-      { _tokenType = TokString tokenType'
-      , _loc = Loc (fromJust startPos') $ getEndPos input len
-      , _readStr = lexerReadString'
-      }
+  return $ L
+    (mkSrcSpan (fromJust startPos') (alexPosnToSrcLoc $ getEndPos input len))
+    (TokString tokenType')
 
-addCurrentToString :: AlexAction Token
+addCurrentToString :: AlexAction LToken
 addCurrentToString input@(_, _, _, str) len = do
   let char = Text.head $ Text.take len str
   addCharToString char input len
 
-tokRegularChar :: AlexAction Token
+tokRegularChar :: AlexAction LToken
 tokRegularChar input@(startPosn, _, _, str) len = do
   let fullStr = Text.take len str
-  return Token
-    { _tokenType = TokChar $ Text.head $ Text.dropAround (== '\'') fullStr
-    , _loc = Loc startPosn $ getEndPos input len
-    , _readStr = fullStr
-    }
+  return $ L
+    (alexPosnToSrcSpan startPosn $ getEndPos input len)
+    (TokChar $ Text.head $ Text.dropAround (== '\'') fullStr)
 
-tokEscapedChar :: Char -> AlexAction Token
-tokEscapedChar char input@(startPosn, _, _, str) len = do
-  return Token
-    { _tokenType = TokChar char
-    , _loc = Loc startPosn $ getEndPos input len
-    , _readStr = Text.take len str
-    }
+tokEscapedChar :: Char -> AlexAction LToken
+tokEscapedChar char input@(startPosn, _, _, _) len = do
+  return $ L
+    (alexPosnToSrcSpan startPosn $ getEndPos input len)
+    (TokChar char)
 
+-- TODO: Investigate 'String' there
 alexErrorPos :: String -> AlexAction a
 alexErrorPos msg ((AlexPn _ line column), _, _, _) _ = Alex $ const $ Left fullMsg
   where

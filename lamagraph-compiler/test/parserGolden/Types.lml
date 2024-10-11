@@ -1,0 +1,9 @@
+module Types
+
+type unit
+
+type 'a alias = int -> 'a list -> 'a
+
+type data = C1 of int | C2
+
+type 'a list = [] of 'a | (::) of 'a * 'a list
