@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 {- |
 
 LamagraphML syntax
@@ -55,7 +57,17 @@ module Lamagraph.Compiler.Syntax (
 
   -- * Missing things
   -- $missing
+  LmlModule (..),
+  module Lamagraph.Compiler.Syntax.Longident,
+  module Lamagraph.Compiler.Syntax.Decl,
+  module Lamagraph.Compiler.Syntax.Extension,
 ) where
+
+import Relude
+
+import Lamagraph.Compiler.Syntax.Decl
+import Lamagraph.Compiler.Syntax.Extension
+import Lamagraph.Compiler.Syntax.Longident
 
 {- $rules
 Grammar rules are written in monospace font.
@@ -317,3 +329,20 @@ For the sake of simplicity this language currently lacks these know to the autho
 * Float numbers
 * @function@ keyword
 -}
+
+-- | LamagraphML module
+data LmlModule p
+  = LmlModule
+      { _lmlModExt :: XCModule p
+      -- ^ LmlModule extension point
+      , _lmlModName :: Maybe (XLocated p Longident)
+      -- ^ 'Nothing' if "@module X@" is omitted.
+      , _lmlModDecls :: [LLmlDecl p]
+      -- ^ Open, type and let declarations
+      }
+  | XModule !(XXModule p)
+
+type ForallLmlModule (f :: Type -> Constraint) p =
+  (f (XCModule p), f (XLocated p Longident), f (LLmlDecl p), f (XXModule p))
+
+deriving instance (ForallLmlModule Show p) => Show (LmlModule p)

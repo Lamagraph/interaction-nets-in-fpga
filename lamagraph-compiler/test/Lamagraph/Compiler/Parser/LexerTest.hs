@@ -2,18 +2,11 @@ module Lamagraph.Compiler.Parser.LexerTest (lexerUnitTests) where
 
 import Relude
 
-import Control.Lens
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import Lamagraph.Compiler.Parser.LexerTypes
 import Lamagraph.Compiler.Parser.LexerUtils
-
-getTokenTypes :: Either String [Token] -> Either String [TokenType]
-getTokenTypes tokens = tokens & _Right %~ toListOf (traverse . tokenType)
-
-getTokenTypesFromText :: Text -> Either String [TokenType]
-getTokenTypesFromText = getTokenTypes . scanner
 
 skipWhitespace :: TestTree
 skipWhitespace =

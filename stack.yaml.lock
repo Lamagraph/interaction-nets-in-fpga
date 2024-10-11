@@ -54,19 +54,19 @@ packages:
   original:
     hackage: alex-3.5.1.0@sha256:de553eefe0b6548a560e9d8100486310548470a403c1fa21108dd03713da5fc7,3886
 - completed:
-    hackage: happy-2.0.1@sha256:4472e567a786e42db6359367f53d3ee1977664ede4f6f077cab2ffb346afbb39,4995
+    hackage: happy-2.0.2@sha256:df315b5554b84d313ae54ad8d79dabe5a69f943f50ad5279a3009fe6a9313fc9,4995
     pantry-tree:
-      sha256: b22ce16a073b46f76ad8df75153377b611b6ab0ab9ea5be1fefaefd9dab8a80a
+      sha256: 60245e900b31d670359448806f4501b2d64803665f89bebfee2868b04ada434c
       size: 6282
   original:
-    hackage: happy-2.0.1
+    hackage: happy-2.0.2@sha256:df315b5554b84d313ae54ad8d79dabe5a69f943f50ad5279a3009fe6a9313fc9,4995
 - completed:
-    hackage: happy-lib-2.0.1@sha256:19331c029192a37fab20192b989bc32582634287a023c0823c4eb151cd8bd251,5069
+    hackage: happy-lib-2.0.2@sha256:4768c8c1a34d4e9aaa61fff3f7dd7cde0cd36d2130081e5acf030389ec357189,5099
     pantry-tree:
-      sha256: 2b3912489a771839eb680549077c337f6c2f22ac6a5ac45ea4ad3598933f082b
+      sha256: eeac85d3d57bf23de7d091c66969480ea23d1d2764f721ea16efa25789b9e610
       size: 2403
   original:
-    hackage: happy-lib-2.0.1
+    hackage: happy-lib-2.0.2@sha256:4768c8c1a34d4e9aaa61fff3f7dd7cde0cd36d2130081e5acf030389ec357189,5099
 snapshots:
 - completed:
     sha256: a81fb3877c4f9031e1325eb3935122e608d80715dc16b586eb11ddbff8671ecd

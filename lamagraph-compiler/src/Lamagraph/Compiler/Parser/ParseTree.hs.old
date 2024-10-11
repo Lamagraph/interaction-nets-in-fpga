@@ -175,25 +175,25 @@ data ModuleDefinition = ModuleDefinition
   }
   deriving (Eq, Show)
 
-data OpenDeclaration = OpenDeclaration
-  { _pODName :: Longident
-  , _pODLoc :: Location
-  }
-  deriving (Eq, Show)
+-- data OpenDeclaration = OpenDeclaration
+--   { _pODName :: Longident
+--   , _pODLoc :: Location
+--   }
+--   deriving (Eq, Show)
 
-type Structure = [StructureItem]
+-- type Structure = [StructureItem]
 
 data StructureItem -- FIXME: Location?
   = PStrValue RecFlag (NonEmpty ValueBinding)
   | PStrType (NonEmpty TypeDeclaration)
-  | PStrOpen OpenDeclaration
+  -- | PStrOpen OpenDeclaration
   deriving (Eq, Show)
 
-data ModuleExpr = ModuleExpr
-  { _pMEDefinition :: Maybe ModuleDefinition
-  , _pMEStructure :: Structure
-  }
-  deriving (Eq, Show)
+-- data ModuleExpr = ModuleExpr
+--   { _pMEDefinition :: Maybe ModuleDefinition
+--   , _pMEStructure :: Structure
+--   }
+--   deriving (Eq, Show)
 
 makeLenses ''Constant
 makeLenses ''CoreType

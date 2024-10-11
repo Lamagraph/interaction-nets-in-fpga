@@ -1,11 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Lamagraph.Compiler.Parser.LexerTypes (
-  Location (..),
-  startPos,
-  endPos,
   IdentType (..),
-  TokenType (..),
+  Token (..),
   _TokIdent,
   _TokInt,
   _TokInt32,
@@ -20,36 +17,24 @@ module Lamagraph.Compiler.Parser.LexerTypes (
   _TokInfixSymbol3,
   _TokInfixSymbol4,
   _TokPrefixSymbol,
+  LToken,
   AlexUserState (..),
   alexInitUserState,
   lexerCommentDepth,
   lexerStringStartPos,
   lexerStringValue,
-  lexerReadString,
-  Token (..),
-  tokenType,
-  loc,
-  readStr,
 ) where
 
 import Relude
 
 import Control.Lens
 
-import {-# SOURCE #-} Lamagraph.Compiler.Parser.Lexer
-
-data Location = Loc
-  { _startPos :: AlexPosn
-  , _endPos :: AlexPosn
-  }
-  deriving (Eq, Show)
-makeLenses ''Location
+import Lamagraph.Compiler.Parser.SrcLoc
 
 data AlexUserState = AlexUserState
   { _lexerCommentDepth :: Int
-  , _lexerStringStartPos :: Maybe AlexPosn
+  , _lexerStringStartPos :: Maybe SrcLoc
   , _lexerStringValue :: Text
-  , _lexerReadString :: Text
   }
   deriving (Eq, Show)
 makeLenses ''AlexUserState
@@ -60,13 +45,12 @@ alexInitUserState =
     { _lexerCommentDepth = 0
     , _lexerStringStartPos = Nothing
     , _lexerStringValue = ""
-    , _lexerReadString = ""
     }
 
 data IdentType = Capitalized | Lowercase
   deriving (Eq, Show)
 
-data TokenType
+data Token
   = TokIdent IdentType Text
   | TokInt Int
   | TokInt32 Int32
@@ -155,12 +139,6 @@ data TokenType
     TokDoubleBar
   | TokEOF
   deriving (Eq, Show)
-makePrisms ''TokenType
+makePrisms ''Token
 
-data Token = Token
-  { _tokenType :: TokenType
-  , _loc :: Location
-  , _readStr :: Text
-  }
-  deriving (Eq, Show)
-makeLenses ''Token
+type LToken = Located Token

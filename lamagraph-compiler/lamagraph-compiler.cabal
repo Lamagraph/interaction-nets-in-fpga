@@ -24,12 +24,17 @@ source-repository head
 
 library
   exposed-modules:
+      Lamagraph.Compiler.Extension
       Lamagraph.Compiler.Parser
       Lamagraph.Compiler.Parser.Lexer
       Lamagraph.Compiler.Parser.LexerTypes
       Lamagraph.Compiler.Parser.LexerUtils
-      Lamagraph.Compiler.Parser.ParseTree
+      Lamagraph.Compiler.Parser.SrcLoc
+      Lamagraph.Compiler.Passes
       Lamagraph.Compiler.Syntax
+      Lamagraph.Compiler.Syntax.Decl
+      Lamagraph.Compiler.Syntax.Extension
+      Lamagraph.Compiler.Syntax.Longident
   other-modules:
       Paths_lamagraph_compiler
   hs-source-dirs:
