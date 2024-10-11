@@ -3,93 +3,92 @@
 but Happy docs recommend this flag -}
 {-# OPTIONS_GHC -fglasgow-exts #-}
 
-module Lamagraph.Compiler.Parser (parseLamagraphML, (<~>), (<->)) where
+module Lamagraph.Compiler.Parser (parseLamagraphML) where
 
 import Relude
-{- We can use partial functions, because of the way parsing works -}
-import Relude.Unsafe (fromJust)
 
-import Control.Lens
 import qualified Data.List.NonEmpty.Extra as NE
--- Required for Happy code
-import qualified Prelude
+import qualified Prelude -- Required for Happy code
 
+import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Parser.Lexer
 import Lamagraph.Compiler.Parser.LexerTypes
-import Lamagraph.Compiler.Parser.ParseTree
+import Lamagraph.Compiler.Parser.SrcLoc
+import Lamagraph.Compiler.Syntax
 }
 
 %name pLamagraphML module_expression
-%tokentype { Token }
+%tokentype { LToken }
 %error { parseError }
 %monad { Alex } { >>= } { return }
-%lexer { lexer } { Token{ _tokenType = TokEOF } }
+%lexer { lexer } { L _ TokEOF }
+%expect 0
 
 %token
   -- Identifiers
-  capitalized_ident { Token{ _tokenType = TokIdent Capitalized _ } }
-  lowercase_ident { Token{ _tokenType = TokIdent Lowercase _ } }
+  capitalized_ident { L _ (TokIdent Capitalized _)  }
+  lowercase_ident { L _ (TokIdent Lowercase _) }
   -- Integer literals
-  integer_literal { Token{ _tokenType = TokInt _ } }
-  int32_literal { Token{ _tokenType = TokInt32 _ } }
-  uint32_literal { Token{ _tokenType = TokUInt32 _ } }
-  int64_literal { Token{ _tokenType = TokInt64 _ } }
-  uint64_literal { Token{ _tokenType = TokUInt64 _ } }
+  integer_literal { L _ (TokInt _) }
+  int32_literal { L _ (TokInt32 _) }
+  uint32_literal { L _ (TokUInt32 _) }
+  int64_literal { L _ (TokInt64 _) }
+  uint64_literal { L _ (TokUInt64 _) }
   -- Character liteal
-  char_literal { Token{ _tokenType = TokChar _ } }
+  char_literal { L _ (TokChar _) }
   -- String literal
-  string_literal { Token{ _tokenType = TokString _ } }
+  string_literal { L _ (TokString _) }
   -- Operators
-  infix_symbol0 { Token{ _tokenType = TokInfixSymbol0 _ } }
-  infix_symbol1 { Token{ _tokenType = TokInfixSymbol1 _ } }
-  infix_symbol2 { Token{ _tokenType = TokInfixSymbol2 _ } }
-  infix_symbol3 { Token{ _tokenType = TokInfixSymbol3 _ } }
-  infix_symbol4 { Token{ _tokenType = TokInfixSymbol4 _ } }
-  prefix_symbol { Token{ _tokenType = TokPrefixSymbol _ } }
+  infix_symbol0 { L _ (TokInfixSymbol0 _) }
+  infix_symbol1 { L _ (TokInfixSymbol1 _) }
+  infix_symbol2 { L _ (TokInfixSymbol2 _) }
+  infix_symbol3 { L _ (TokInfixSymbol3 _) }
+  infix_symbol4 { L _ (TokInfixSymbol4 _) }
+  prefix_symbol { L _ (TokPrefixSymbol _) }
   -- Keywords
-  'and' { Token{ _tokenType = TokAnd } }
-  'asr' { Token{ _tokenType = TokAsr } }
-  'else' { Token{ _tokenType = TokElse } }
-  'false' { Token{ _tokenType = TokFalse } }
-  'fun' { Token{ _tokenType = TokFun } }
-  'if' { Token{ _tokenType = TokIf } }
-  'in' { Token{ _tokenType = TokIn } }
-  'land' { Token{ _tokenType = TokLand } }
-  'let' { Token{ _tokenType = TokLet } }
-  'lor' { Token{ _tokenType = TokLor } }
-  'lsl' { Token{ _tokenType = TokLsl } }
-  'lsr' { Token{ _tokenType = TokLsr } }
-  'lxor' { Token{ _tokenType = TokLxor } }
-  'match' { Token{ _tokenType = TokMatch } }
-  'mod' { Token{ _tokenType = TokMod } }
-  'module' { Token{ _tokenType = TokModule } }
-  'of' { Token{ _tokenType = TokOf } }
-  'open' { Token{ _tokenType = TokOpen } }
-  'rec' { Token{ _tokenType = TokRec } }
-  'then' { Token{ _tokenType = TokThen } }
-  'true' { Token{ _tokenType = TokTrue } }
-  'type' { Token{ _tokenType = TokType } }
-  'when' { Token{ _tokenType = TokWhen } }
-  'with' { Token{ _tokenType = TokWith } }
-  '&&' { Token{ _tokenType = TokBoolAnd } }
-  '\'' { Token{ _tokenType = TokApostrophe } }
-  '(' { Token{ _tokenType = TokLeftPar } }
-  ')' { Token{ _tokenType = TokRightPar } }
-  '*' { Token{ _tokenType = TokStar } }
-  '+' { Token{ _tokenType = TokPlus } }
-  ',' { Token{ _tokenType = TokComma } }
-  '-' { Token{ _tokenType = TokMinus } }
-  '->' { Token{ _tokenType = TokArrow } }
-  ':' { Token{ _tokenType = TokColon } }
-  '::' { Token{ _tokenType = TokDoubleColon } }
-  ';' { Token{ _tokenType = TokSemicolon } }
-  '=' { Token{ _tokenType = TokEq } }
-  '[' { Token{ _tokenType = TokLeftBracket } }
-  ']' { Token{ _tokenType = TokRightBracket } }
-  '_' { Token{ _tokenType = TokWildcard } }
-  '.' { Token{ _tokenType = TokDot } }
-  '|' { Token{ _tokenType = TokBar } }
-  '||' { Token{ _tokenType = TokDoubleBar } }
+  'and' { L _ TokAnd }
+  'asr' { L _ TokAsr }
+  'else' { L _ TokElse }
+  'false' { L _ TokFalse }
+  'fun' { L _ TokFun }
+  'if' { L _ TokIf }
+  'in' { L _ TokIn }
+  'land' { L _ TokLand }
+  'let' { L _ TokLet }
+  'lor' { L _ TokLor }
+  'lsl' { L _ TokLsl }
+  'lsr' { L _ TokLsr }
+  'lxor' { L _ TokLxor }
+  'match' { L _ TokMatch }
+  'mod' { L _ TokMod }
+  'module' { L _ TokModule }
+  'of' { L _ TokOf }
+  'open' { L _ TokOpen }
+  'rec' { L _ TokRec }
+  'then' { L _ TokThen }
+  'true' { L _ TokTrue }
+  'type' { L _ TokType }
+  'when' { L _ TokWhen }
+  'with' { L _ TokWith }
+  '&&' { L _ TokBoolAnd }
+  '\'' { L _ TokApostrophe }
+  '(' { L _ TokLeftPar }
+  ')' { L _ TokRightPar }
+  '*' { L _ TokStar }
+  '+' { L _ TokPlus }
+  ',' { L _ TokComma }
+  '-' { L _ TokMinus }
+  '->' { L _ TokArrow }
+  ':' { L _ TokColon }
+  '::' { L _ TokDoubleColon }
+  ';' { L _ TokSemicolon }
+  '=' { L _ TokEq }
+  '[' { L _ TokLeftBracket }
+  ']' { L _ TokRightBracket }
+  '_' { L _ TokWildcard }
+  '.' { L _ TokDot }
+  '|' { L _ TokBar }
+  '||' { L _ TokDoubleBar }
 
 -- Higher in the list, lower the precendce
 %nonassoc 'in'
@@ -123,324 +122,301 @@ import Lamagraph.Compiler.Parser.ParseTree
 
 %%
 -- Happy does pattern-matching againt %token directives, thus we need a rule for ident
-ident :: { Token }
-  : lowercase_ident { $1 }
-  | capitalized_ident { $1 }
+-- TODO: RdrName?
+ident :: { XLocated LmlcPs Text }
+  : lowercase_ident { sL1 $1 $ getIdent $1 }
+  | capitalized_ident { sL1 $1 $ getIdent $1 }
 
--- Basic names
-value_name :: { Token }
-  : lowercase_ident { $1 }
-  | '(' operator_name ')' { $2 }
+-----------------
+-- Basic names --
+-----------------
+value_name :: { XLocated LmlcPs Text }
+  : lowercase_ident { sL1 $1 $ getIdent $1 }
+  | '(' operator_name ')' { sLL $1 $3 $ unLoc $2 }
 
-operator_name :: { Token }
-  : prefix_symbol { $1 }
+operator_name :: { XLocated LmlcPs Text }
+  : prefix_symbol { sL1 $1 $ getIdent $1 }
   | infix_op { $1 }
 
-infix_op :: { Token }
-  : infix_symbol0 { $1 }
-  | infix_symbol1 { $1 }
-  | infix_symbol2 { $1 }
-  | infix_symbol3 { $1 }
-  | infix_symbol4 { $1 }
-  | '*' { $1 }
-  | '+' { $1 }
-  | '-' { $1 }
-  | '=' { $1 }
-  | '||' { $1 }
-  | '&&' { $1 }
-  | 'mod' { $1 }
-  | 'land' { $1 }
-  | 'lor' { $1 }
-  | 'lxor' { $1 }
-  | 'lsl' { $1 }
-  | 'lsr' { $1 }
-  | 'asr' { $1 }
+infix_op :: { XLocated LmlcPs Text }
+  : infix_symbol0 { sL1 $1 $ getIdent $1 }
+  | infix_symbol1 { sL1 $1 $ getIdent $1 }
+  | infix_symbol2 { sL1 $1 $ getIdent $1 }
+  | infix_symbol3 { sL1 $1 $ getIdent $1 }
+  | infix_symbol4 { sL1 $1 $ getIdent $1 }
+  | '*' { sL1 $1 "*" }
+  | '+' { sL1 $1 "+" }
+  | '-' { sL1 $1 "-" }
+  | '=' { sL1 $1 "=" }
+  | '||' { sL1 $1 "||" }
+  | '&&' { sL1 $1 "&&" }
+  | 'mod' { sL1 $1 "mod" }
+  | 'land' { sL1 $1 "land" }
+  | 'lor' { sL1 $1 "lor" }
+  | 'lxor' { sL1 $1 "lxor" }
+  | 'lsl' { sL1 $1 "lsl" }
+  | 'lsr' { sL1 $1 "lsr" }
+  | 'asr' { sL1 $1 "asr" }
 
-constr_name :: { Token } : capitalized_ident { $1 }
+constr_name :: { XLocated LmlcPs Text }
+  : capitalized_ident { sL1 $1 $ getIdent $1 }
 
-typeconstr_name :: { Token }
-  : lowercase_ident { $1 }
+typeconstr_name :: { XLocated LmlcPs Text }
+  : lowercase_ident { sL1 $1 $ getIdent $1 }
 
--- Qualified names
-value_path :: { NonEmpty Token }
-  : mkIdent(module_path, lowercase_ident) { $1 }
+---------------------
+-- Qualified names --
+---------------------
+module_pathT :: { NonEmpty LToken }
+  : mkIdent(module_pathT, capitalized_ident) { $1 }
 
-constr :: { NonEmpty Token }
-  {- It would be ideal to have @true@, @false@, @()@, @[]@ here,
-    but it breaks longident logic -}
-  : mkIdent(module_path, capitalized_ident) { $1 }
+value_path :: { LLongident LmlcPs }
+  : mkIdent(module_pathT, lowercase_ident) { sLNE $1 $ getLongident $1 }
 
-typeconstr :: { NonEmpty Token }
-  : mkIdent(module_path, lowercase_ident) { $1 }
+constr :: { LLongident LmlcPs }
+  : mkIdent(module_pathT, capitalized_ident) { sLNE $1 $ getLongident $1 }
+  | '[' ']' { sLL $1 $2 nilConstruct }
+  | '(' ')' { sLL $1 $2 unitConstruct }
+  | 'true' { sL1 $1 $ (mkLongident . pure) "true" }
+  | 'false' { sL1 $1 $ (mkLongident . pure) "false" }
 
-module_path :: { NonEmpty Token }
-  : mkIdent(module_path, capitalized_ident) { $1 }
+typeconstr :: { LLongident LmlcPs }
+  : mkIdent(module_pathT, lowercase_ident) { sLNE $1 $ getLongident $1 }
 
--- Type expressions
-typexpr :: { CoreType }
+module_path :: { LLongident LmlcPs }
+  : module_pathT { sLNE $1 $ getLongident $1 }
+
+----------------------
+-- Type expressions --
+----------------------
+typexpr :: { LLmlType LmlcPs }
   : function_type { $1 }
 
-function_type :: { CoreType }
+function_type :: { LLmlType LmlcPs }
   : tuple_type %prec '->' { $1 }
-  | tuple_type '->' function_type
-    { CoreType { _pTyp = PTypArrow $1 $3, _pTypLoc = $1 ^. pTypLoc <~> $3 ^. pTypLoc } }
+  | tuple_type '->' function_type { sLL $1 $3 (LmlTyArrow noExtField $1 $3) }
 
-tuple_type :: { CoreType }
+tuple_type :: { LLmlType LmlcPs }
   : atomic_type %prec below_DOT { $1 }
-  | atomic_type lsepBy1(atomic_type, '*')
-    { CoreType{ _pTyp = PTypTuple $1 $2, _pTypLoc = $1 ^. pTypLoc <~> (last $2) ^. pTypLoc } }
+  | atomic_type lsepBy1(atomic_type, '*') { sLNE (NE.cons $1 $2) (LmlTyTuple noExtField $1 $2) }
 
-delimited_type :: { CoreType }
-  : '(' function_type ')' { $2{ _pTypLoc = $1 <-> $3 } }
+delimited_type :: { LLmlType LmlcPs }
+  : '(' function_type ')' { sLL $1 $3 (unLoc $2) }
 
-atomic_type :: { CoreType }
+atomic_type :: { LLmlType LmlcPs }
   : delimited_type { $1 }
-  | '\'' ident { CoreType{ _pTyp = PTypVar $ getIdent $2, _pTypLoc = $1 <-> $2 } }
-  | '(' sepBy2L(function_type, ',' ) ')' typeconstr
-    { CoreType { _pTyp = PTypConstr (getLongident $4) $2, _pTypLoc = $1 ^. loc <~> (last $4) ^. loc } }
-  | atomic_type typeconstr
-    { CoreType { _pTyp = PTypConstr (getLongident $2) [$1], _pTypLoc = $1 ^. pTypLoc <~> (last $2) ^. loc } }
-  | typeconstr
-    { CoreType { _pTyp = PTypConstr (getLongident $1) [], _pTypLoc = head $1 <-> last $1 } }
+  | '\'' ident { sLL $1 $2 $ LmlTyVar noExtField $2 }
+  | '(' sepBy2L(function_type, ',' ) ')' typeconstr { sLL $1 $4 $ LmlTyConstr noExtField $4 $2 }
+  | atomic_type typeconstr { sLL $1 $2 $ LmlTyConstr noExtField $2 [$1] }
+  | typeconstr { sL1 $1 $ LmlTyConstr noExtField $1 [] }
 
--- Constants
-constant :: { Constant }
-  : integer_literal
-    { Constant{ _pConstDesc = PConstInt $ fromJust $ $1 ^? tokenType . _TokInt, _pConstLoc = $1 <-> $1 } }
-  | int32_literal
-    { Constant{ _pConstDesc = PConstInt32 $ fromJust $ $1 ^? tokenType . _TokInt32, _pConstLoc = $1 <-> $1 } }
-  | uint32_literal
-    { Constant{ _pConstDesc = PConstUInt32 $ fromJust $ $1 ^? tokenType . _TokUInt32, _pConstLoc = $1 <-> $1 } }
-  | int64_literal
-    { Constant{ _pConstDesc = PConstInt64 $ fromJust $ $1 ^? tokenType . _TokInt64, _pConstLoc = $1 <-> $1 } }
-  | uint64_literal
-    { Constant{ _pConstDesc = PConstUInt64 $ fromJust $ $1 ^? tokenType . _TokUInt64, _pConstLoc = $1 <-> $1 } }
-  | char_literal
-    { Constant{ _pConstDesc = PConstChar $ fromJust $ $1 ^? tokenType . _TokChar, _pConstLoc = $1 <-> $1 } }
-  | string_literal
-    { Constant{ _pConstDesc = PConstString $ fromJust $ $1 ^? tokenType . _TokString, _pConstLoc = $1 <-> $1 } }
+---------------
+-- Constants --
+---------------
+constant :: { XLocated LmlcPs (LmlLit LmlcPs) }
+  : integer_literal { sL1 $1 $ LmlInt noExtField (getInt $1) }
+  | int32_literal { sL1 $1 $ LmlInt32 noExtField (getInt32 $1) }
+  | uint32_literal { sL1 $1 $ LmlUInt32 noExtField (getUInt32 $1) }
+  | int64_literal { sL1 $1 $ LmlInt64 noExtField (getInt64 $1) }
+  | uint64_literal { sL1 $1 $ LmlUInt64 noExtField (getUInt64 $1) }
+  | char_literal { sL1 $1 $ LmlChar noExtField (getChar $1) }
+  | string_literal { sL1 $1 $ LmlString noExtField (getString $1)}
 
--- Patterns
+--------------
+-- Patterns --
+--------------
 
-pattern :: { Pattern }
+pattern :: { LLmlPat LmlcPs }
   : tuple_pattern { $1 }
 
-pattern_comma_list : lsepBy1Rev(simple_pattern, ',') %prec below_COMMA { NE.reverse $1 }
+pattern_comma_list :: { NonEmpty (LLmlPat LmlcPs) }
+  : lsepBy1Rev(simple_pattern, ',') %prec below_COMMA { NE.reverse $1 }
 
-tuple_pattern :: { Pattern }
+tuple_pattern :: { LLmlPat LmlcPs }
   : simple_pattern %prec below_COMMA { $1 }
-  | simple_pattern pattern_comma_list
-  { Pattern{ _pPatDesc = PPatTuple $1 $2, _pPatLoc = $1 ^. pPatLoc <~> (last $2) ^. pPatLoc } }
+  | simple_pattern pattern_comma_list { sLNE (NE.cons $1 $2) $ LmlPatTuple noExtField $1 $2}
 
-delimited_pattern :: { Pattern }
-  : '(' tuple_pattern ')' { $2{ _pPatLoc = $1 <-> $3 } }
-  | '(' tuple_pattern ':' typexpr ')'
-    { Pattern{ _pPatDesc = PPatConstraint $2 $4, _pPatLoc = $1 <-> $5 } }
+delimited_pattern :: { LLmlPat LmlcPs }
+  : '(' tuple_pattern ')' { sLL $1 $3 (unLoc $2) }
+  | '(' tuple_pattern ':' typexpr ')' { sLL $1 $5 $ LmlPatConstraint noExtField $2 $4 }
 
-simple_pattern :: { Pattern }
+simple_pattern :: { LLmlPat LmlcPs }
   : delimited_pattern { $1 }
-  | value_name { Pattern{ _pPatDesc = PPatVar $ getIdent $1, _pPatLoc = $1 <-> $1 } }
-  | '_' { Pattern{ _pPatDesc = PPatAny, _pPatLoc = $1 <-> $1 } }
-  | constant { Pattern{ _pPatDesc = PPatConstant $1, _pPatLoc = $1 ^. pConstLoc <~> $1 ^. pConstLoc } }
-  | constr %prec below_DOT
-    { Pattern{ _pPatDesc = PPatConstruct (getLongident $1) Nothing, _pPatLoc = (head $1) <-> (last $1) } }
-  | '[' ']' { Pattern{ _pPatDesc = PPatConstruct (pure "[]") Nothing, _pPatLoc = $1 <-> $2 } }
-  | '(' ')' { Pattern{ _pPatDesc = PPatConstruct (pure "()") Nothing, _pPatLoc = $1 <-> $2 } }
-  | 'true' { Pattern{ _pPatDesc = PPatConstruct (pure "true") Nothing, _pPatLoc = $1 <-> $1 } }
-  | 'false' { Pattern{ _pPatDesc = PPatConstruct (pure "false") Nothing, _pPatLoc = $1 <-> $1 } }
-  | tuple_pattern '|' tuple_pattern { Pattern{ _pPatDesc = PPatOr $1 $3, _pPatLoc = $1 ^. pPatLoc <~> $3 ^. pPatLoc } }
-  | constr tuple_pattern %prec constr_appl
-    { Pattern{ _pPatDesc = PPatConstruct (getLongident $1) (Just $2)
-             , _pPatLoc = (head $1) ^. loc <~> $2 ^. pPatLoc } }
+  | value_name { sL1 $1 $ LmlPatVar noExtField $1 }
+  | '_' { sL1 $1 $ LmlPatAny noExtField }
+  | constant { sL1 $1 $ LmlPatConstant noExtField (unLoc $1) }
+  | constr %prec below_DOT { sL1 $1 $ LmlPatConstruct noExtField $1 Nothing }
+  | tuple_pattern '|' tuple_pattern { sLL $1 $3 $ LmlPatOr noExtField $1 $3 }
+  | constr tuple_pattern %prec constr_appl { sLL $1 $2 $ LmlPatConstruct noExtField $1 (Just $2)}
   | '[' sepBy1Terminated(tuple_pattern, ';') ']' { mkListPat $1 $2 $3 }
   | tuple_pattern '::' tuple_pattern
-    { Pattern{ _pPatDesc = PPatConstruct (pure "::")
-                (Just $ Pattern{ _pPatDesc = PPatTuple $1 (pure $3)
-                               , _pPatLoc = $1 ^. pPatLoc <~> $3 ^. pPatLoc })
-             , _pPatLoc = $2 <-> $2 }
+    { let consIdent = sL1 $2 consConstruct in
+      let consTuple = sLL $1 $3 $ LmlPatTuple noExtField $1 (pure $3) in
+      sLL $1 $3 $ LmlPatConstruct noExtField consIdent (Just consTuple)
     }
 
--- Expressions
-expr :: { Expression }
+-----------------
+-- Expressions --
+-----------------
+expr :: { LLmlExpr LmlcPs }
   : compound_expr { $1 }
 
-argument :: { Expression }
+argument :: { LLmlExpr LmlcPs }
   : simple_expr { $1 }
 
-parameter :: { Pattern }
+parameter :: { LLmlPat LmlcPs }
   : pattern { $1 }
 
-expr_comma_NE :: { NonEmpty Expression }
+expr_comma_NE :: { NonEmpty (LLmlExpr LmlcPs) }
   : lsepBy1Rev(argument, ',') %prec below_COMMA { NE.reverse $1 }
 
-expr_apply_NE :: { NonEmpty Expression }
+expr_apply_NE :: { NonEmpty (LLmlExpr LmlcPs) }
   : manyNERev(simple_expr) %prec below_DOT { NE.reverse $1 }
 
-expr_parameter_NE :: { NonEmpty Pattern }
+expr_parameter_NE :: { NonEmpty (LLmlPat LmlcPs) }
   : manyNERev(parameter) %prec below_DOT { NE.reverse $1 }
 
-type_constraint :: { CoreType }
+type_constraint :: { LLmlType LmlcPs }
   : ':' typexpr { $2 }
 
-compound_expr :: { Expression }
+compound_expr :: { LLmlExpr LmlcPs }
   : simple_expr %prec below_DOT { $1 }
-  | simple_expr expr_comma_NE
-    { Expression{ _pExpDesc = PExpTuple $1 $2, _pExpLoc = $1 ^. pExpLoc <~> (last $2) ^. pExpLoc } }
-  | constr simple_expr %prec below_DOT
-    { Expression{ _pExpDesc = PExpConstruct (getLongident $1) (Just $2), _pExpLoc = (head $1) ^. loc <~> $2 ^. pExpLoc } }
+  | simple_expr expr_comma_NE { sLNE (NE.cons $1 $2) $ LmlExprTuple noExtField $1 $2 }
+  | constr simple_expr %prec below_DOT { sLL $1 $2 $ LmlExprConstruct noExtField $1 (Just $2) }
   | simple_expr '::' compound_expr
-    { Expression{ _pExpDesc = PExpConstruct (pure "::")
-                    (Just $ Expression{ _pExpDesc = PExpTuple $1 (pure $3)
-                                      , _pExpLoc = $1 ^. pExpLoc <~> $3 ^. pExpLoc })
-                , _pExpLoc = $2 <-> $2 }
+    { let consIdent = sL1 $2 consConstruct in
+      let consTuple = sLL $1 $3 $ LmlExprTuple noExtField $1 (pure $3) in
+      sLL $1 $3 $ LmlExprConstruct noExtField consIdent (Just consTuple)
     }
   | prefix_symbol compound_expr
-    { let ident = Expression{ _pExpDesc = PExpIdent (pure $ fromJust $ $1 ^? tokenType . _TokPrefixSymbol)
-                            , _pExpLoc = $1 <-> $1 } in
-      Expression{ _pExpDesc = PExpApply ident (pure $2), _pExpLoc = $1 ^. loc <~> $2 ^. pExpLoc }
+    { let prefixIdent = sL1 $1 $ LmlExprIdent noExtField (getLongident (pure $1)) in
+      sLL $1 $2 $ LmlExprApply noExtField prefixIdent (pure $2)
     }
   | '-' compound_expr %prec prec_unary_minus
-    { let um = Expression{ _pExpDesc = PExpIdent (pure "~-"), _pExpLoc = $1 <-> $1 } in
-      Expression{ _pExpDesc = PExpApply um (pure $2), _pExpLoc = $1 ^. loc <~> $2 ^. pExpLoc  }
+    { let prefixIdent = sL1 $1 $ LmlExprIdent noExtField (mkLongident $ pure "~-") in
+      sLL $1 $2 $ LmlExprApply noExtField prefixIdent (pure $2)
     }
   | simple_expr infix_op compound_expr
-    { let ident = Expression{ _pExpDesc = PExpIdent (getInfixIdent $2), _pExpLoc = $2 <-> $2 } in
-      Expression{ _pExpDesc = PExpApply ident ($1 :| [$3]), _pExpLoc = $1 ^. pExpLoc <~> $3 ^. pExpLoc }
+    { let infixIdent = sL1 $2 $ LmlExprIdent noExtField ((mkLongident . pure . unLoc) $2) in
+      sLL $1 $3 $ LmlExprApply noExtField infixIdent ($1 :| [$3])
     }
   | 'if' compound_expr 'then' compound_expr 'else' compound_expr
-    { Expression{ _pExpDesc = PExpIfThenElse $2 $4 $6, _pExpLoc = $1 ^. loc <~> $6 ^. pExpLoc  } }
-  | simple_expr expr_apply_NE { Expression{ _pExpDesc = PExpApply $1 $2, _pExpLoc = $1 ^. pExpLoc <~> (last $2) ^. pExpLoc } }
-  | 'match' compound_expr 'with' pattern_matchingNE
-    { Expression{ _pExpDesc = PExpMatch $2 $4, _pExpLoc = $1 ^. loc <~> (last $4) ^. pCRhs . pExpLoc } }
-  | 'fun' expr_parameter_NE optional(type_constraint) '->' compound_expr
-    { mkFunExpr $2 $3 $5 }
-  | 'let' rec sepBy1(let_binding, 'and') 'in' compound_expr
-    { Expression{ _pExpDesc = PExpLet $2 $3 $5, _pExpLoc = $1 ^. loc <~> $5 ^. pExpLoc } }
+    { sLL $1 $6 $ LmlExprIfThenElse noExtField $2 $4 $6 }
+  | simple_expr expr_apply_NE { sLNE (NE.cons $1 $2) $ LmlExprApply noExtField $1 $2 }
+  | 'match' compound_expr 'with' pattern_matchingNE{ sLL $1 (last $4) $ LmlExprMatch noExtField $2 $4 }
+  | 'fun' expr_parameter_NE optional(type_constraint) '->' compound_expr { mkFunExpr $2 $3 $5 }
+  | 'let' rec sepBy1(let_binding, 'and') 'in' compound_expr { sLL $1 $5 $ LmlExprLet noExtField $2 $3 $5 }
 
-delimited_expr :: { Expression }
-  : '(' compound_expr ')' { $2{ _pExpLoc = $1 <-> $3} }
-  | '(' compound_expr ':' typexpr ')'
-    { Expression{ _pExpDesc = PExpConstraint $2 $4, _pExpLoc = $1 <-> $5 } }
+delimited_expr :: { LLmlExpr LmlcPs }
+  : '(' compound_expr ')' { sLL $1 $3 (unLoc $2) }
+  | '(' compound_expr ':' typexpr ')' { sLL $1 $5 $ LmlExprConstraint noExtField $2 $4 }
 
 -- These exprs (except delimited_expr) can be used in application w/o parentheses
-simple_expr :: { Expression }
+simple_expr :: { LLmlExpr LmlcPs }
   : delimited_expr { $1 }
-  | value_path
-    { Expression{ _pExpDesc = PExpIdent $ getLongident $1, _pExpLoc = head $1 <-> last $1 } }
-  | constant
-    { Expression{ _pExpDesc = PExpConstant $1, _pExpLoc = $1 ^. pConstLoc <~> $1 ^. pConstLoc } }
-  | '[' ']' { Expression{ _pExpDesc = PExpConstruct (pure "[]") Nothing, _pExpLoc = $1 <-> $2 } }
-  | '(' ')' { Expression{ _pExpDesc = PExpConstruct (pure "()") Nothing, _pExpLoc = $1 <-> $2 } }
-  | 'true' { Expression{ _pExpDesc = PExpConstruct (pure "true") Nothing, _pExpLoc = $1 <-> $1 } }
-  | 'false' { Expression{ _pExpDesc = PExpConstruct (pure "false") Nothing, _pExpLoc = $1 <-> $1 } }
+  | value_path { sL1 $1 $ LmlExprIdent noExtField (unLoc $1) }
+  | constant { sL1 $1 $ LmlExprConstant noExtField (unLoc $1) }
   | '[' sepBy1Terminated(compound_expr, ';') ']' { mkListExpr $1 $2 $3 }
-  | constr %prec prec_constant_constructor
-    { Expression{ _pExpDesc = PExpConstruct (getLongident $1) Nothing
-                , _pExpLoc = (head $1) <-> (last $1) }
-    }
+  | constr %prec prec_constant_constructor { sL1 $1 $ LmlExprConstruct noExtField $1 Nothing }
 
-when_expr :: { Expression }
+when_expr :: { LLmlExpr LmlcPs }
   : 'when' expr { $2 }
 
-pattern_matching :: { Case }
-  : pattern optional(when_expr) '->' expr
-    { Case{ _pCLhs = $1, _pCGuard = $2, _pCRhs = $4 } }
+pattern_matching :: { LLmlCase LmlcPs }
+  : pattern optional(when_expr) '->' expr { sLL $1 $4 $ LmlCase noExtField $1 $2 $4 }
 
-pattern_matchingNE :: { NonEmpty Case }
+pattern_matchingNE :: { NonEmpty (LLmlCase LmlcPs) }
   : lsepBy1PreceededRev(pattern_matching, '|') %shift { NE.reverse $1 }
 
-let_binding :: { ValueBinding }
-  : pattern '=' expr
-    { ValueBinding{ _pVBPat = $1
-                  , _pVBExpr = $3
-                  , _pVBLoc = $1 ^. pPatLoc <~> $3 ^. pExpLoc }
-    }
+let_binding :: { LLmlBind LmlcPs }
+  : pattern '=' expr { sLL $1 $3 $ LmlBind noExtField $1 $3 }
   | value_name expr_parameter_NE optional(type_constraint) '=' expr
-    { let namePat = Pattern{ _pPatDesc = PPatVar $ getIdent $1, _pPatLoc = $1 <-> $1 } in
-      ValueBinding{ _pVBPat = namePat
-                  , _pVBExpr = mkFunExpr $2 $3 $5
-                  , _pVBLoc = $1 ^. loc <~> $5 ^. pExpLoc }
+    { let patIdent = sL1 $1 $ LmlPatVar noExtField $1 in
+      sLL $1 $5 $ LmlBind noExtField patIdent (mkFunExpr $2 $3 $5)
     }
 
--- Type definitions
-typedef :: { TypeDeclaration }
-  : optional(type_params) typeconstr_name type_information
-    { TypeDeclaration{ _pTypeName = getIdent $2
-                     , _pTypeParams = maybe [] toList $1
-                     , _pTypeKind = $3
-                     , _pTypeLoc = (maybe ($2 ^. loc) ((view pTypLoc) . last) $1) <~> $2 ^. loc } -- FIXME: type_informatiom MUST have location
+----------------------
+-- Type definitions --
+----------------------
+
+-- type-information rule in inlined here
+typedef :: { LTyDecl LmlcPs }
+  : optional(type_params) typeconstr_name {- empty -}
+    { let typeParams = maybe [] toList $1 in
+      sMNELL $1 $2 $2 $ DataDecl noExtField $2 typeParams []
+    }
+  | optional(type_params) typeconstr_name '=' type_equation
+    { let typeParams = maybe [] toList $1 in
+      sMNELL $1 $2 $4 $ AliasDecl noExtField $2 typeParams $4
+    }
+  | optional(type_params) typeconstr_name '=' type_representation
+    { let typeParams = maybe [] toList $1 in
+      sMNELL $1 $2 (last $4) $ DataDecl noExtField $2 typeParams (toList $4)
     }
 
-type_information :: { TypeKind }
-  : {- empty -} { PTypeAbstract Nothing }
-  | '=' type_equation { PTypeAbstract (Just $2) }
-  | '=' type_representation { PTypeVariant $2 }
-
-type_equation :: { CoreType }
+type_equation :: { LLmlType LmlcPs }
   : typexpr { $1 }
 
-type_representationRev :: { [ConstructorDeclaration] }
-  : constr_decl { [$1] }
-  | '|' constr_decl { [$2] }
-  | type_representationRev '|' constr_decl { $3 : $1 }
-
-type_representation :: { [ConstructorDeclaration] }
-  : '|' { [] }
-  | type_representationRev { $1 }
-
--- For some LR related reason following code will give shift/reduce conflicts
+-- For some LR related reason following code will give weird shift/reduce conflicts
 -- -- type_representation :: { NonEmpty ConstructorDeclaration }
 -- --   : lsepBy1Preceeded(constr_decl, '|') { $1 }
--- One above -- won't
+-- One below -- won't
 
-type_params :: { NonEmpty CoreType }
+type_representationRev :: { NonEmpty (LConDecl LmlcPs) }
+  : constr_decl { pure $1 }
+  | '|' constr_decl { pure $2 }
+  | type_representationRev '|' constr_decl { NE.cons $3 $1 }
+
+type_representation :: { NonEmpty (LConDecl LmlcPs) }
+  : type_representationRev { NE.reverse $1 }
+
+type_params :: { NonEmpty (LLmlType LmlcPs) }
   : type_param { pure $1 }
   | '(' sepBy1(type_param, ',') ')' { $2 }
 
-type_param :: { CoreType }
-  : '\'' ident { CoreType{ _pTyp = PTypVar $ getIdent $2, _pTypLoc = $1 <-> $2 } }
+type_param :: { LLmlType LmlcPs }
+  : '\'' ident { sLL $1 $2 $ LmlTyVar noExtField $2 }
 
-of_constr_args :: { NonEmpty CoreType }
-  : 'of' constr_args { $2 }
-
-constr_decl :: { ConstructorDeclaration }
-  :
-  constr_name optional(of_constr_args)
-    { ConstructorDeclaration{ _pCDName = getIdent $1
-                            , _pCDArgs = maybe [] toList $2
-                            , _pCDLoc = $1 ^. loc <~> maybe ($1 ^. loc) ((view pTypLoc) . last) $2 }
-    }
-  |
-  '[' ']' optional(of_constr_args)
-    { ConstructorDeclaration{ _pCDName = "[]"
-                            , _pCDArgs = maybe [] toList $3
-                            , _pCDLoc = $1 ^. loc <~> maybe ($2 ^. loc) ((view pTypLoc) . last) $3 }
-    }
-  | '(' '::' ')' optional(of_constr_args)
-    { ConstructorDeclaration{ _pCDName = "::"
-                            , _pCDArgs = maybe [] toList $4
-                            , _pCDLoc = $1 ^. loc <~> maybe ($3 ^. loc) ((view pTypLoc) . last) $4 }
-    }
-
-constr_args :: { NonEmpty CoreType }
+constr_args :: { NonEmpty (LLmlType LmlcPs) }
   : sepBy1(atomic_type, '*') { $1 }
 
--- Declarations and modules
-module_expression :: { ModuleExpr }
+of_constr_args :: { NonEmpty (LLmlType LmlcPs) }
+  : 'of' constr_args { $2 }
+
+constr_decl :: { LConDecl LmlcPs }
+  : constr_name optional(of_constr_args)
+    { sLMNEL $1 $2 $1 $ ConDecl noExtField $1 (maybe [] toList $2) }
+  | '[' ']' optional(of_constr_args)
+    { let ident = sLL $1 $2 "[]" in
+      sLMNEL $1 $3 $2 $ ConDecl noExtField ident (maybe [] toList $3)
+    }
+  | '(' '::' ')' optional(of_constr_args)
+    { let ident = sLL $1 $3 "::" in
+      sLMNEL $1 $4 $3 $ ConDecl noExtField ident (maybe [] toList $4)
+    }
+
+------------------------------
+-- Declarations and modules --
+------------------------------
+module_expression :: { LmlModule LmlcPs }
   : optional(module_definition) many(module_item)
-  { ModuleExpr{ _pMEDefinition = $1, _pMEStructure = $2 } }
+    { LmlModule{ _lmlModExt = noExtField, _lmlModName = $1, _lmlModDecls = $2 } }
 
-module_definition :: { ModuleDefinition }
-  : 'module' module_path
-  { ModuleDefinition{ _pMDName = getLongident $2, _pMDLoc = $1 <-> last $2 } }
+-- FIXME: Store 'module' location
+module_definition :: { LLongident LmlcPs }
+  : 'module' module_path { $2 }
 
-module_item :: { StructureItem }
-  : 'open' module_path
-    { PStrOpen $ OpenDeclaration{ _pODName = getLongident $2, _pODLoc = $1 <-> last $2 } }
-  | 'let' rec sepBy1(let_binding, 'and') { PStrValue $2 $3 }
-  | 'type' sepBy1(typedef, 'and') { PStrType $2 }
+open_declaration :: { LOpenDecl LmlcPs }
+  : 'open' module_path { sLL $1 $2 $ OpenDecl noExtField $2  }
 
--- Helpers
+module_item :: { LLmlDecl LmlcPs }
+  : open_declaration { sL1 $1 $ OpenD noExtField (unLoc $1) }
+  | 'let' rec sepBy1(let_binding, 'and') { sLL $1 (last $3) $ ValD noExtField $2 $3 }
+  | 'type' sepBy1(typedef, 'and') { sLL $1 (last $2) $ TyD noExtField $2 }
+
+-------------
+-- Helpers --
+-------------
 optional(p)
   : {- empty -} { Nothing }
   | p { Just $1 }
@@ -476,7 +452,6 @@ lsepBy1Rev(p, sep)
 lsepBy1(p, sep) : lsepBy1Rev(p, sep) { NE.reverse $1 }
 
 rec :: { RecFlag }
-rec
   : {- empty -} { NonRecursive }
   | 'rec' { Recursive }
 
@@ -497,93 +472,150 @@ lsepBy1PreceededRev(p, sep)
 lsepBy1Preceeded(p, sep) : lsepBy1PreceededRev(p, sep) { NE.reverse $1 }
 
 {
-parseError :: Token -> Alex a
+-- TODO: Find another way to print a token
+parseError :: LToken -> Alex a
 parseError token = do
-  (AlexPn _ line column, _, _, _) <- alexGetInput
-  alexError $ "parse error at line " ++ (show line) ++ ", column " ++ (show column) ++ ": " ++ (toString $ token ^. readStr)
+  (AlexPn _ line column, _, _, str) <- alexGetInput
+  alexError $ "parse error at line " ++ (show line) ++ ", column " ++ (show column) ++ ": " ++ (show (unLoc token))
 
-lexer :: (Token -> Alex a) -> Alex a
+lexer :: (LToken -> Alex a) -> Alex a
 lexer = (alexMonadScan >>=)
 
-getIdent :: Token -> Text
-getIdent tok = tok ^. tokenType . _TokIdent . _2
+getIdent :: LToken -> Text
+getIdent (L _ (TokIdent _ val)) = val
+getIdent (L _ (TokInfixSymbol0 val)) = val
+getIdent (L _ (TokInfixSymbol1 val)) = val
+getIdent (L _ (TokInfixSymbol2 val)) = val
+getIdent (L _ (TokInfixSymbol3 val)) = val
+getIdent (L _ (TokInfixSymbol4 val)) = val
+getIdent (L _ TokStar) = "*"
+getIdent (L _ TokPlus) = "+"
+getIdent (L _ TokMinus) = "-"
+getIdent (L _ TokEq) = "="
+getIdent (L _ TokDoubleBar) = "||"
+getIdent (L _ TokBoolAnd) = "&&"
+getIdent (L _ TokMod) = "mod"
+getIdent (L _ TokLand) = "land"
+getIdent (L _ TokLor) = "lor"
+getIdent (L _ TokLxor) = "lxor"
+getIdent (L _ TokLsl) = "lsl"
+getIdent (L _ TokLsr) = "lsr"
+getIdent (L _ TokAsr) = "asr"
+getIdent (L _ (TokPrefixSymbol val)) = val
+-- getIdent (L _ TokBar) = "|"
 
-getLongident :: NonEmpty Token -> Longident
-getLongident = fmap getIdent
+getLongident :: NonEmpty LToken -> Longident
+getLongident = mkLongident . fmap getIdent
 
-infix 7 <->
-{-| Version of ('<~>') specialied to 'Token' -}
-(<->) :: Token -> Token -> Location
-lTok <-> rTok = (lTok ^. loc <~> rTok ^. loc)
+getInt :: LToken -> Int
+getInt (L _ (TokInt val)) = val
 
-infix 7 <~>
-{- | Union of two 'Location's with priority one below of '^.' -}
-(<~>) :: Location -> Location -> Location
-lLoc <~> rLoc = if lLocStart < rLocEnd then Loc lLocStart rLocEnd else error msg
+getInt32 :: LToken -> Int32
+getInt32 (L _ (TokInt32 val)) = val
+
+getUInt32 :: LToken -> Word32
+getUInt32 (L _ (TokUInt32 val)) = val
+
+getInt64 :: LToken -> Int64
+getInt64 (L _ (TokInt64 val)) = val
+
+getUInt64 :: LToken -> Word64
+getUInt64 (L _ (TokUInt64 val)) = val
+
+getChar :: LToken -> Char
+getChar (L _ (TokChar val)) = val
+
+getString :: LToken -> Text
+getString (L _ (TokString val)) = val
+
+nilConstruct :: Longident
+nilConstruct = (mkLongident . pure) "[]"
+
+consConstruct :: Longident
+consConstruct = (mkLongident . pure) "::"
+
+unitConstruct :: Longident
+unitConstruct = (mkLongident . pure) "()"
+
+-- Combining helpers
+{-# INLINE comb2 #-}
+comb2 :: Located a -> Located b -> SrcSpan
+comb2 a b = a `seq` b `seq` combineLocs a b
+
+-- | Strict 'GenLocated' constructor
+{-# INLINE sL #-}
+sL :: l -> e -> GenLocated l e
+sL loc e = loc `seq` e `seq` L loc e
+
+-- | Combine first and last locations from 'NonEmpty'
+{-# INLINE sLNE #-}
+sLNE :: NonEmpty (Located a) -> b -> Located b
+sLNE ne = sL (combineLocs (head ne) (last ne))
+
+-- | Combine two locations
+{-# INLINE sLL #-}
+sLL :: Located a -> Located b -> c -> Located c
+sLL a b = sL (comb2 a b)
+
+-- | Repack 'Located'
+{-# INLINE sL1 #-}
+sL1 :: Located a -> b -> Located b
+sL1 a = sL (getLoc a)
+
+-- | Combine two location when first is @'Maybe' ('NonEmpty' a)@.
+-- If first is 'Nothing', then second one is selected.
+-- Third is always used as the last.
+{-# INLINE sMNELL #-}
+sMNELL :: Maybe (NonEmpty (Located a)) -> Located b -> Located c -> d -> Located d
+sMNELL a b c = sL outLoc
  where
-  lLocStart = lLoc ^. startPos
-  rLocEnd = rLoc ^. endPos
-  msg = "Internal parser error: left token must go after the right token"
+  leftLoc :: SrcSpan
+  leftLoc = maybe (getLoc b) (getLoc . head) a
+  outLoc :: SrcSpan
+  outLoc = combineSrcSpans leftLoc (getLoc c)
 
-mkListPat :: Token -> NonEmpty Pattern -> Token -> Pattern
+-- | Combine two location when second is @'Maybe' ('NonEmpty' a)@.
+-- If second is 'Nothing', then third one is selected.
+-- First is always used as the leader.
+{-# INLINE sLMNEL #-}
+sLMNEL ::  Located a -> Maybe (NonEmpty (Located b)) -> Located c -> d -> Located d
+sLMNEL a b c = sL outLoc
+ where
+  rightLoc :: SrcSpan
+  rightLoc = maybe (getLoc c) (getLoc . last) b
+  outLoc :: SrcSpan
+  outLoc = combineSrcSpans (getLoc a) rightLoc
+
+mkListPat :: LToken -> NonEmpty (LLmlPat LmlcPs) -> LToken -> LLmlPat LmlcPs
 mkListPat lBracket list rBracket = foldr helper init list
  where
-  init :: Pattern
-  init = Pattern{ _pPatDesc = PPatConstruct (pure "[]") Nothing, _pPatLoc = rBracket <-> rBracket }
-  helper :: Pattern -> Pattern -> Pattern
-  helper x acc = Pattern
-    { _pPatDesc = PPatConstruct (pure "::") (Just pat)
-    , _pPatLoc = x ^. pPatLoc <~> rBracket ^. loc
-    }
+  init :: LLmlPat LmlcPs
+  init = sL1 rBracket $ LmlPatConstruct noExtField (sL generatedSrcSpan nilConstruct) Nothing
+  helper :: LLmlPat LmlcPs -> LLmlPat LmlcPs -> LLmlPat LmlcPs
+  helper x acc = sLL x rBracket $ LmlPatConstruct noExtField (sL generatedSrcSpan consConstruct) (Just pat)
    where
-    pat = Pattern{ _pPatDesc = PPatTuple x (pure acc), _pPatLoc = x ^. pPatLoc <~> acc ^. pPatLoc }
+    pat = sLL x acc $ LmlPatTuple noExtField x (pure acc)
 
-mkListExpr :: Token -> NonEmpty Expression -> Token -> Expression
+mkListExpr :: LToken -> NonEmpty (LLmlExpr LmlcPs) -> LToken -> LLmlExpr LmlcPs
 mkListExpr lBracket list rBracket = foldr helper init list
  where
-  init :: Expression
-  init = Expression{ _pExpDesc = PExpConstruct (pure "[]") Nothing, _pExpLoc = rBracket <-> rBracket }
-  helper :: Expression -> Expression -> Expression
-  helper x acc = Expression
-    { _pExpDesc = PExpConstruct (pure "::") (Just expr)
-    , _pExpLoc = x ^. pExpLoc <~> rBracket ^. loc
-    }
+  init :: LLmlExpr LmlcPs
+  init = sL1 rBracket $ LmlExprConstruct noExtField (sL generatedSrcSpan nilConstruct) Nothing
+  helper :: LLmlExpr LmlcPs -> LLmlExpr LmlcPs -> LLmlExpr LmlcPs
+  helper x acc = sLL x rBracket $ LmlExprConstruct noExtField (sL generatedSrcSpan consConstruct) (Just expr)
    where
-    expr = Expression{ _pExpDesc = PExpTuple x (pure acc), _pExpLoc = x ^. pExpLoc <~> acc ^. pExpLoc }
+    expr = sLL x acc $ LmlExprTuple noExtField x (pure acc)
 
-getInfixIdent :: Token -> NonEmpty Text
-getInfixIdent (Token (TokInfixSymbol0 op) _ _) = pure op
-getInfixIdent (Token (TokInfixSymbol1 op) _ _) = pure op
-getInfixIdent (Token (TokInfixSymbol2 op) _ _) = pure op
-getInfixIdent (Token (TokInfixSymbol3 op) _ _) = pure op
-getInfixIdent (Token (TokInfixSymbol4 op) _ _) = pure op
-getInfixIdent (Token TokLor _ _) = pure "lor"
-getInfixIdent (Token TokLxor _ _) = pure "lxor"
-getInfixIdent (Token TokMod _ _) = pure "mod"
-getInfixIdent (Token TokLand _ _) = pure "land"
-getInfixIdent (Token TokLsl _ _) = pure "lsl"
-getInfixIdent (Token TokLsr _ _) = pure "lsr"
-getInfixIdent (Token TokAsr _ _) = pure "asr"
-getInfixIdent (Token TokBoolAnd _ _) = pure "&&"
-getInfixIdent (Token TokStar _ _) = pure "*"
-getInfixIdent (Token TokPlus _ _) = pure "+"
-getInfixIdent (Token TokMinus _ _) = pure "-"
-getInfixIdent (Token TokEq _ _) = pure "="
-getInfixIdent (Token TokBar _ _) = pure "|"
-getInfixIdent (Token TokDoubleBar _ _) = pure "||"
-
-mkFunExpr :: NonEmpty Pattern -> Maybe CoreType -> Expression -> Expression
+mkFunExpr :: NonEmpty (LLmlPat LmlcPs) -> Maybe (LLmlType LmlcPs) -> LLmlExpr LmlcPs -> LLmlExpr LmlcPs
 mkFunExpr pats mType rhsExpr = foldr helper init pats
  where
-  init :: Expression
+  init :: LLmlExpr LmlcPs
   init = case mType of
-           Just typ -> Expression{ _pExpDesc = PExpConstraint rhsExpr typ
-                                  , _pExpLoc = typ ^. pTypLoc <~> rhsExpr ^. pExpLoc
-                                  }
+           Just typ -> sLL typ rhsExpr $ LmlExprConstraint noExtField rhsExpr typ
            Nothing -> rhsExpr
-  helper :: Pattern -> Expression -> Expression
-  helper pat acc = Expression{ _pExpDesc = PExpFunction pat acc, _pExpLoc = pat ^. pPatLoc <~> acc ^. pExpLoc }
+  helper :: LLmlPat LmlcPs -> LLmlExpr LmlcPs -> LLmlExpr LmlcPs
+  helper pat acc = sLL pat acc $ LmlExprFunction noExtField pat acc
 
-parseLamagraphML :: Text -> Either String ModuleExpr
+parseLamagraphML :: Text -> Either String (LmlModule LmlcPs)
 parseLamagraphML text = runAlex text pLamagraphML
 }

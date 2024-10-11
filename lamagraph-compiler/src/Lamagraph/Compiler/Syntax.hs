@@ -1,61 +1,90 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 {- |
 
 LamagraphML syntax
 -}
 module Lamagraph.Compiler.Syntax (
-  -- * Grammar rules
+  -- * Language description
+
+  -- ** Grammar rules
   -- $rules
 
-  -- * Lexical conventions
+  -- ** Lexical conventions
 
-  -- ** Blanks
+  -- *** Blanks
   -- $lexing_blanks
 
-  -- ** Comments
+  -- *** Comments
   -- $lexing_comments
 
-  -- ** Identifiers
+  -- *** Identifiers
   -- $lexing_idents
 
-  -- ** Integer literals
+  -- *** Integer literals
   -- $lexing_int_lits
 
-  -- ** Character literals
+  -- *** Character literals
   -- $lexing_char_lits
 
-  -- ** String literals
+  -- *** String literals
   -- $lexing_string_lits
 
-  -- ** Operators
+  -- *** Operators
   -- $lexing_operators
 
-  -- ** Keywords
+  -- *** Keywords
   -- $lexing_keywords
 
-  -- * Names
+  -- ** Names
   -- $names
 
-  -- * Type expressions
+  -- ** Type expressions
   -- $types
 
-  -- * Constants
+  -- ** Constants
   -- $constants
 
-  -- * Patterns
+  -- ** Patterns
   -- $patterns
 
-  -- * Expressions
+  -- ** Expressions
   -- $expressions
 
-  -- * Type definitions
+  -- ** Type definitions
   -- $typedefs
 
-  -- * Declarations and Modules
+  -- ** Declarations and Modules
   -- $decls
 
-  -- * Missing things
+  -- ** Missing things
   -- $missing
+
+  -- * AST types
+
+  -- ** LmlModule type
+  LmlModule (..),
+  ForallLmlModule,
+
+  -- ** Reexports
+  module Lamagraph.Compiler.Syntax.Decl,
+  module Lamagraph.Compiler.Syntax.Expr,
+  module Lamagraph.Compiler.Syntax.Extension,
+  module Lamagraph.Compiler.Syntax.Lit,
+  module Lamagraph.Compiler.Syntax.Longident,
+  module Lamagraph.Compiler.Syntax.Pat,
+  module Lamagraph.Compiler.Syntax.Type,
 ) where
+
+import Relude
+
+import Lamagraph.Compiler.Syntax.Decl
+import Lamagraph.Compiler.Syntax.Expr
+import Lamagraph.Compiler.Syntax.Extension
+import Lamagraph.Compiler.Syntax.Lit
+import Lamagraph.Compiler.Syntax.Longident
+import Lamagraph.Compiler.Syntax.Pat
+import Lamagraph.Compiler.Syntax.Type
 
 {- $rules
 Grammar rules are written in monospace font.
@@ -281,7 +310,6 @@ Qualified names
 /type-equation/ ::= = /typexpr/
 
 /type-representation/ ::= = [ __|__ ] /constr-decl/ { __|__ /constr-decl/ }
-                      | = __|__
 
 /type-params/ ::= /type-param/
               | __(__ /type-param/ {, /type-param/ } __)__
@@ -317,3 +345,20 @@ For the sake of simplicity this language currently lacks these know to the autho
 * Float numbers
 * @function@ keyword
 -}
+
+-- | LamagraphML module
+data LmlModule pass
+  = LmlModule
+      { _lmlModExt :: XCModule pass
+      -- ^ LmlModule extension point
+      , _lmlModName :: Maybe (LLongident pass)
+      -- ^ 'Nothing' if "@module X@" is omitted.
+      , _lmlModDecls :: [LLmlDecl pass]
+      -- ^ Open, type and let declarations
+      }
+  | XModule !(XXModule pass)
+
+type ForallLmlModule (tc :: Type -> Constraint) pass =
+  (tc (XCModule pass), tc (LLongident pass), tc (LLmlDecl pass), tc (XXModule pass))
+
+deriving instance (ForallLmlModule Show pass) => Show (LmlModule pass)
