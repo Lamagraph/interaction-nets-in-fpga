@@ -55,6 +55,8 @@ module Lamagraph.Compiler.Parser.SrcLoc (
 
   -- ** Accessing Located
   _L,
+  unLoc,
+  getLoc,
 
   -- * Parser locations
   combineRealSrcSpans,
@@ -184,4 +186,10 @@ mkBadLocated :: Text -> e -> Located e
 mkBadLocated str e = L (mkBadSrcSpan str) e
 
 combineLocs :: Located a -> Located b -> SrcSpan
-combineLocs a b = combineSrcSpans (a ^. _L . _1) (b ^. _L . _1)
+combineLocs (L loc1 _) (L loc2 _) = combineSrcSpans loc1 loc2
+
+unLoc :: GenLocated l e -> e
+unLoc (L _ e) = e
+
+getLoc :: GenLocated l e -> l
+getLoc (L loc _) = loc

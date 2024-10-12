@@ -1,4 +1,1 @@
-parse error at line 3, column 4:  [] = x
-let [a] = x
-let [a; b] = x
-let [a; b; c] = x
+parse error at line 3, column 4: TokLet

@@ -1,8 +1,1 @@
-parse error at line 3, column 5:  Stdlib
-
-let fac n =
-  let rec helper m acc =
-    if m > n then acc
-    else helper (m + 1) (acc * m)
-  in
-  helper 1 1
+parse error at line 5, column 4: TokLet

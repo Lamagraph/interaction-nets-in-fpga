@@ -57,17 +57,29 @@ module Lamagraph.Compiler.Syntax (
 
   -- * Missing things
   -- $missing
+
+  -- * LmlModule type
   LmlModule (..),
+
+  -- * Reexports
   module Lamagraph.Compiler.Syntax.Longident,
   module Lamagraph.Compiler.Syntax.Decl,
+  module Lamagraph.Compiler.Syntax.Type,
+  module Lamagraph.Compiler.Syntax.Lit,
+  module Lamagraph.Compiler.Syntax.Pat,
+  module Lamagraph.Compiler.Syntax.Expr,
   module Lamagraph.Compiler.Syntax.Extension,
 ) where
 
 import Relude
 
 import Lamagraph.Compiler.Syntax.Decl
+import Lamagraph.Compiler.Syntax.Expr
 import Lamagraph.Compiler.Syntax.Extension
+import Lamagraph.Compiler.Syntax.Lit
 import Lamagraph.Compiler.Syntax.Longident
+import Lamagraph.Compiler.Syntax.Pat
+import Lamagraph.Compiler.Syntax.Type
 
 {- $rules
 Grammar rules are written in monospace font.
@@ -335,7 +347,7 @@ data LmlModule p
   = LmlModule
       { _lmlModExt :: XCModule p
       -- ^ LmlModule extension point
-      , _lmlModName :: Maybe (XLocated p Longident)
+      , _lmlModName :: Maybe (LLongident p)
       -- ^ 'Nothing' if "@module X@" is omitted.
       , _lmlModDecls :: [LLmlDecl p]
       -- ^ Open, type and let declarations
@@ -343,6 +355,6 @@ data LmlModule p
   | XModule !(XXModule p)
 
 type ForallLmlModule (f :: Type -> Constraint) p =
-  (f (XCModule p), f (XLocated p Longident), f (LLmlDecl p), f (XXModule p))
+  (f (XCModule p), f (LLongident p), f (LLmlDecl p), f (XXModule p))
 
 deriving instance (ForallLmlModule Show p) => Show (LmlModule p)

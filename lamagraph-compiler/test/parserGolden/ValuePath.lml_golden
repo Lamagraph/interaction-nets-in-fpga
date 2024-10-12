@@ -1,1 +1,1 @@
-parse error at line 1, column 4:  x = M.y
+parse error at line 1, column 4: TokLet

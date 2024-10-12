@@ -25,9 +25,10 @@ type LOpenDecl pass = XLocated pass (OpenDecl pass)
 N.B. Too small to have separate module
 -}
 data OpenDecl pass
-  = OpenDecl (XOpenDecl pass) Longident
+  = OpenDecl (XOpenDecl pass) (LLongident pass)
   | XOpenDecl !(XXOpenDecl pass)
 
-type ForallOpenDecl (f :: Type -> Constraint) p = (f (XOpenDecl p), f (XXOpenDecl p))
+type ForallOpenDecl (f :: Type -> Constraint) pass =
+  (f (XOpenDecl pass), f (XXOpenDecl pass), f (LLongident pass))
 
 deriving instance (ForallOpenDecl Show p) => Show (OpenDecl p)
