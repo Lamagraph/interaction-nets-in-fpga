@@ -1,3 +1,6 @@
+{-# LANGUAGE UndecidableInstances #-}
+
+-- TODO: Exports & MonoLocalBinds
 module Lamagraph.Compiler.Syntax.Pat where
 
 import Relude
@@ -18,3 +21,21 @@ data LmlPat pass
   | LmlPatOr (XLmlPatOr pass) (LLmlPat pass) (LLmlPat pass)
   | LmlPatConstraint (XLmlPatConstraint pass) (LLmlPat pass) (LLmlType pass)
   | XLmlPat !(XXPat pass)
+
+type ForallLmlPat (tc :: Type -> Constraint) pass =
+  ( tc (XLmlPatAny pass)
+  , tc (XLmlPatVar pass)
+  , tc (XLocated pass Text)
+  , tc (XLmlPatConstant pass)
+  , tc (LmlLit pass)
+  , tc (XLmlPatTuple pass)
+  , tc (LLmlPat pass)
+  , tc (XLmlPatConstruct pass)
+  , tc (LLongident pass)
+  , tc (XLmlPatOr pass)
+  , tc (XLmlPatConstraint pass)
+  , tc (LLmlType pass)
+  , tc (XXPat pass)
+  )
+
+deriving instance (ForallLmlPat Show pass) => Show (LmlPat pass)

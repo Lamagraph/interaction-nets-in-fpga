@@ -5,63 +5,67 @@
 LamagraphML syntax
 -}
 module Lamagraph.Compiler.Syntax (
-  -- * Grammar rules
+  -- * Language description
+
+  -- ** Grammar rules
   -- $rules
 
-  -- * Lexical conventions
+  -- ** Lexical conventions
 
-  -- ** Blanks
+  -- *** Blanks
   -- $lexing_blanks
 
-  -- ** Comments
+  -- *** Comments
   -- $lexing_comments
 
-  -- ** Identifiers
+  -- *** Identifiers
   -- $lexing_idents
 
-  -- ** Integer literals
+  -- *** Integer literals
   -- $lexing_int_lits
 
-  -- ** Character literals
+  -- *** Character literals
   -- $lexing_char_lits
 
-  -- ** String literals
+  -- *** String literals
   -- $lexing_string_lits
 
-  -- ** Operators
+  -- *** Operators
   -- $lexing_operators
 
-  -- ** Keywords
+  -- *** Keywords
   -- $lexing_keywords
 
-  -- * Names
+  -- ** Names
   -- $names
 
-  -- * Type expressions
+  -- ** Type expressions
   -- $types
 
-  -- * Constants
+  -- ** Constants
   -- $constants
 
-  -- * Patterns
+  -- ** Patterns
   -- $patterns
 
-  -- * Expressions
+  -- ** Expressions
   -- $expressions
 
-  -- * Type definitions
+  -- ** Type definitions
   -- $typedefs
 
-  -- * Declarations and Modules
+  -- ** Declarations and Modules
   -- $decls
 
-  -- * Missing things
+  -- ** Missing things
   -- $missing
 
-  -- * LmlModule type
+  -- * AST types
+
+  -- ** LmlModule type
   LmlModule (..),
 
-  -- * Reexports
+  -- ** Reexports
   module Lamagraph.Compiler.Syntax.Longident,
   module Lamagraph.Compiler.Syntax.Decl,
   module Lamagraph.Compiler.Syntax.Type,
@@ -305,7 +309,6 @@ Qualified names
 /type-equation/ ::= = /typexpr/
 
 /type-representation/ ::= = [ __|__ ] /constr-decl/ { __|__ /constr-decl/ }
-                      | = __|__
 
 /type-params/ ::= /type-param/
               | __(__ /type-param/ {, /type-param/ } __)__

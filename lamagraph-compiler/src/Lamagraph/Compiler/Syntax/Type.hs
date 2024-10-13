@@ -1,3 +1,6 @@
+{-# LANGUAGE UndecidableInstances #-}
+
+-- TODO: Exports
 module Lamagraph.Compiler.Syntax.Type where
 
 import Relude
@@ -30,3 +33,16 @@ data LmlType pass
     -- - @( /typexpr/ { , /typexpr/ } ) /typeconstr/@ when @types = [type1, ..., typen]@
     LmlTyConstr (XLmlTyConstr pass) (LLongident pass) [(LLmlType pass)]
   | XLmlType !(XXType pass)
+
+type ForallLmlType (tc :: Type -> Constraint) pass =
+  ( tc (XLmlTyVar pass)
+  , tc (XLocated pass Text)
+  , tc (XLmlTyArrow pass)
+  , tc (LLmlType pass)
+  , tc (XLmlTyTuple pass)
+  , tc (XLmlTyConstr pass)
+  , tc (LLongident pass)
+  , tc (XXType pass)
+  )
+
+deriving instance (ForallLmlType Show pass) => Show (LmlType pass)

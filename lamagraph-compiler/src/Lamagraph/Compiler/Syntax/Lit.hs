@@ -1,3 +1,6 @@
+{-# LANGUAGE UndecidableInstances #-}
+
+-- TODO: Exports
 module Lamagraph.Compiler.Syntax.Lit where
 
 import Relude
@@ -12,4 +15,17 @@ data LmlLit pass
   | LmlUInt64 (XLmlUInt64 pass) Word64
   | LmlChar (XLmlChar pass) Char
   | LmlString (XLmlString pass) Text
-  | XLit !(XXLit pass)
+  | XLmlLit !(XXLit pass)
+
+type ForallLmlLit (tc :: Type -> Constraint) pass =
+  ( tc (XLmlInt pass)
+  , tc (XLmlInt32 pass)
+  , tc (XLmlUInt32 pass)
+  , tc (XLmlInt64 pass)
+  , tc (XLmlUInt64 pass)
+  , tc (XLmlChar pass)
+  , tc (XLmlString pass)
+  , tc (XXLit pass)
+  )
+
+deriving instance (ForallLmlLit Show pass) => Show (LmlLit pass)

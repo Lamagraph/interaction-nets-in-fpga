@@ -37,7 +37,9 @@ type family XXModule x
 ------------------------------------------------
 
 type family XOpenD x
-type family XXLmlDecl x
+type family XValD x
+type family XTyD x
+type family XXDecl x
 
 -------------------------------------------------
 -- Type families for OpenDecl extension points --
@@ -45,6 +47,21 @@ type family XXLmlDecl x
 
 type family XOpenDecl x
 type family XXOpenDecl x
+
+-----------------------------------------------
+-- Type families for TyDecl extension points --
+-----------------------------------------------
+
+type family XAliasDecl x
+type family XDataDecl x
+type family XXTyDecl x
+
+------------------------------------------------
+-- Type families for ConDecl extension points --
+------------------------------------------------
+
+type family XConDecl x
+type family XXConDecl x
 
 ------------------------------------------------
 -- Type families for LmlType extension points --
