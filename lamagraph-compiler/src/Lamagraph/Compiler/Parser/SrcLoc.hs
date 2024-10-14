@@ -90,7 +90,7 @@ mkSrcLoc :: Text -> Int -> Int -> SrcLoc
 mkSrcLoc file line column = RealSrcLoc (mkRealSrcLoc file line column)
 
 mkRealSrcLoc :: Text -> Int -> Int -> RealSrcLoc
-mkRealSrcLoc file line column = RealSrcLoc' file line column
+mkRealSrcLoc = RealSrcLoc'
 
 generatedSrcLoc :: SrcLoc
 generatedSrcLoc = UnhelpfulLoc "<compiler-generated code>"
@@ -179,7 +179,7 @@ type Located = GenLocated SrcSpan
 type RealLocated = GenLocated RealSrcSpan
 
 mkBadLocated :: Text -> e -> Located e
-mkBadLocated str e = L (mkBadSrcSpan str) e
+mkBadLocated str = L (mkBadSrcSpan str)
 
 combineLocs :: Located a -> Located b -> SrcSpan
 combineLocs (L loc1 _) (L loc2 _) = combineSrcSpans loc1 loc2

@@ -29,7 +29,7 @@ data LmlType pass
     -- - @/typeconstr/@ when @types = []@
     -- - @/typexpr/ /typeconstr/@ when @types = [type]@
     -- - @( /typexpr/ { , /typexpr/ } ) /typeconstr/@ when @types = [type1, ..., typen]@
-    LmlTyConstr (XLmlTyConstr pass) (LLongident pass) [(LLmlType pass)]
+    LmlTyConstr (XLmlTyConstr pass) (LLongident pass) [LLmlType pass]
   | XLmlType !(XXType pass)
 
 type ForallLmlType (tc :: Type -> Constraint) pass =

@@ -12,6 +12,6 @@ newtype Longident = Longident (NonEmpty Text)
   deriving (Show)
 
 mkLongident :: NonEmpty Text -> Longident
-mkLongident s = Longident s
+mkLongident = Longident
 
 type LLongident pass = XLocated pass Longident
