@@ -3,20 +3,6 @@
 module Lamagraph.Compiler.Parser.LexerTypes (
   IdentType (..),
   Token (..),
-  _TokIdent,
-  _TokInt,
-  _TokInt32,
-  _TokUInt32,
-  _TokInt64,
-  _TokUInt64,
-  _TokChar,
-  _TokString,
-  _TokInfixSymbol0,
-  _TokInfixSymbol1,
-  _TokInfixSymbol2,
-  _TokInfixSymbol3,
-  _TokInfixSymbol4,
-  _TokPrefixSymbol,
   LToken,
   AlexUserState (..),
   alexInitUserState,
@@ -139,6 +125,5 @@ data Token
     TokDoubleBar
   | TokEOF
   deriving (Eq, Show)
-makePrisms ''Token
 
 type LToken = Located Token

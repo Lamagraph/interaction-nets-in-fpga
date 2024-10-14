@@ -1,12 +1,13 @@
 {-# LANGUAGE UndecidableInstances #-}
 
--- TODO: Exports
-module Lamagraph.Compiler.Syntax.Lit where
+-- | LamagraphML literals
+module Lamagraph.Compiler.Syntax.Lit (LmlLit (..), ForallLmlLit) where
 
 import Relude
 
 import Lamagraph.Compiler.Syntax.Extension
 
+-- | LamagraphML literal
 data LmlLit pass
   = LmlInt (XLmlInt pass) Int
   | LmlInt32 (XLmlInt32 pass) Int32

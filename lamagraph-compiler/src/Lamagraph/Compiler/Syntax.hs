@@ -64,15 +64,16 @@ module Lamagraph.Compiler.Syntax (
 
   -- ** LmlModule type
   LmlModule (..),
+  ForallLmlModule,
 
   -- ** Reexports
-  module Lamagraph.Compiler.Syntax.Longident,
   module Lamagraph.Compiler.Syntax.Decl,
-  module Lamagraph.Compiler.Syntax.Type,
-  module Lamagraph.Compiler.Syntax.Lit,
-  module Lamagraph.Compiler.Syntax.Pat,
   module Lamagraph.Compiler.Syntax.Expr,
   module Lamagraph.Compiler.Syntax.Extension,
+  module Lamagraph.Compiler.Syntax.Lit,
+  module Lamagraph.Compiler.Syntax.Longident,
+  module Lamagraph.Compiler.Syntax.Pat,
+  module Lamagraph.Compiler.Syntax.Type,
 ) where
 
 import Relude
@@ -346,18 +347,18 @@ For the sake of simplicity this language currently lacks these know to the autho
 -}
 
 -- | LamagraphML module
-data LmlModule p
+data LmlModule pass
   = LmlModule
-      { _lmlModExt :: XCModule p
+      { _lmlModExt :: XCModule pass
       -- ^ LmlModule extension point
-      , _lmlModName :: Maybe (LLongident p)
+      , _lmlModName :: Maybe (LLongident pass)
       -- ^ 'Nothing' if "@module X@" is omitted.
-      , _lmlModDecls :: [LLmlDecl p]
+      , _lmlModDecls :: [LLmlDecl pass]
       -- ^ Open, type and let declarations
       }
-  | XModule !(XXModule p)
+  | XModule !(XXModule pass)
 
-type ForallLmlModule (f :: Type -> Constraint) p =
-  (f (XCModule p), f (LLongident p), f (LLmlDecl p), f (XXModule p))
+type ForallLmlModule (tc :: Type -> Constraint) pass =
+  (tc (XCModule pass), tc (LLongident pass), tc (LLmlDecl pass), tc (XXModule pass))
 
-deriving instance (ForallLmlModule Show p) => Show (LmlModule p)
+deriving instance (ForallLmlModule Show pass) => Show (LmlModule pass)

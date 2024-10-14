@@ -1,7 +1,20 @@
 {-# LANGUAGE UndecidableInstances #-}
 
--- TODO: Exports
-module Lamagraph.Compiler.Syntax.Decl where
+-- | LamagraphML declarations
+module Lamagraph.Compiler.Syntax.Decl (
+  LLmlDecl,
+  LmlDecl (..),
+  ForallLmlDecl,
+  LOpenDecl,
+  OpenDecl (..),
+  ForallOpenDecl,
+  LTyDecl,
+  TyDecl (..),
+  ForallTyDecl,
+  LConDecl,
+  ConDecl (..),
+  ForallConDecl,
+) where
 
 import Relude
 
@@ -20,17 +33,17 @@ data LmlDecl pass
   | TyD (XTyD pass) (NonEmpty (LTyDecl pass))
   | XLmlDecl !(XXDecl pass)
 
-type ForallLmlDecl (f :: Type -> Constraint) pass =
-  ( f (XOpenD pass)
-  , f (OpenDecl pass)
-  , f (XValD pass)
-  , f (LLmlBind pass)
-  , f (XTyD pass)
-  , f (LTyDecl pass)
-  , f (XXDecl pass)
+type ForallLmlDecl (tc :: Type -> Constraint) pass =
+  ( tc (XOpenD pass)
+  , tc (OpenDecl pass)
+  , tc (XValD pass)
+  , tc (LLmlBind pass)
+  , tc (XTyD pass)
+  , tc (LTyDecl pass)
+  , tc (XXDecl pass)
   )
 
-deriving instance (ForallLmlDecl Show p) => Show (LmlDecl p)
+deriving instance (ForallLmlDecl Show pass) => Show (LmlDecl pass)
 
 -- | Located open declaration
 type LOpenDecl pass = XLocated pass (OpenDecl pass)
@@ -43,10 +56,10 @@ data OpenDecl pass
   = OpenDecl (XOpenDecl pass) (LLongident pass)
   | XOpenDecl !(XXOpenDecl pass)
 
-type ForallOpenDecl (f :: Type -> Constraint) pass =
-  (f (XOpenDecl pass), f (XXOpenDecl pass), f (LLongident pass))
+type ForallOpenDecl (tc :: Type -> Constraint) pass =
+  (tc (XOpenDecl pass), tc (XXOpenDecl pass), tc (LLongident pass))
 
-deriving instance (ForallOpenDecl Show p) => Show (OpenDecl p)
+deriving instance (ForallOpenDecl Show pass) => Show (OpenDecl pass)
 
 -- | Located type declaration
 type LTyDecl pass = XLocated pass (TyDecl pass)

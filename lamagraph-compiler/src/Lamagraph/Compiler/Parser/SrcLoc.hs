@@ -1,12 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
-{-# HLINT ignore "Eta reduce" #-}
--- TODO: Make this global
 
 {- | This module contain types that describe positions of text in source files.
-This types are used instead of 'AlexPosn' outside of the internals of the lexer.
+This types are used instead of 'Lamagraph.Compiler.Parser.Lexer.AlexPosn' outside of the internals of the lexer.
 
 Inspired by GHC's SrcLoc.hs.
 Thus, if some function is needed for compiler, please, consult with GHC first.

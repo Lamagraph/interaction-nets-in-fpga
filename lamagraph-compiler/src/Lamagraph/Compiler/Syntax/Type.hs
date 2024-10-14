@@ -1,14 +1,12 @@
 {-# LANGUAGE UndecidableInstances #-}
 
--- TODO: Exports
-module Lamagraph.Compiler.Syntax.Type where
+-- | LamagraphML type related types
+module Lamagraph.Compiler.Syntax.Type (LLmlType, LmlType (..), ForallLmlType) where
 
 import Relude
 
 import Lamagraph.Compiler.Syntax.Extension
 import Lamagraph.Compiler.Syntax.Longident
-
--- import Lamagraph.Compiler.Syntax
 
 -- | Located 'LmlType'.
 type LLmlType pass = XLocated pass (LmlType pass)

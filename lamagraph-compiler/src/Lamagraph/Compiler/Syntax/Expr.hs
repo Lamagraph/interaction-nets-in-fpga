@@ -1,9 +1,18 @@
--- Enabled because of weird warning produced by @Show (LmlExpr pass)@ instance
-{-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- TODO: Exports
-module Lamagraph.Compiler.Syntax.Expr where
+-- | LamagraphML expressions
+module Lamagraph.Compiler.Syntax.Expr (
+  RecFlag (..),
+  LLmlExpr,
+  LmlExpr (..),
+  ForallLmlExpr,
+  LLmlBind,
+  LmlBind (..),
+  ForallLmlBind,
+  LLmlCase,
+  LmlCase (..),
+  ForallLmlCase,
+) where
 
 import Relude
 
@@ -13,21 +22,41 @@ import Lamagraph.Compiler.Syntax.Longident
 import Lamagraph.Compiler.Syntax.Pat
 import Lamagraph.Compiler.Syntax.Type
 
+-- | Flag for recursive let-bindings
 data RecFlag = Recursive | NonRecursive deriving (Show)
 
+-- | Located 'LmlExpr'
 type LLmlExpr pass = XLocated pass (LmlExpr pass)
 
+-- | LamagraphML expression
 data LmlExpr pass
-  = LmlExprIdent (XLmlExprIdent pass) Longident
-  | LmlExprConstant (XLmlExprConstant pass) (LmlLit pass)
-  | LmlExprLet (XLmlExprLet pass) RecFlag (NonEmpty (LLmlBind pass)) (LLmlExpr pass)
-  | LmlExprFunction (XLmlExprFunction pass) (LLmlPat pass) (LLmlExpr pass)
-  | LmlExprApply (XLmlExprApply pass) (LLmlExpr pass) (NonEmpty (LLmlExpr pass))
-  | LmlExprMatch (XLmlExprMatch pass) (LLmlExpr pass) (NonEmpty (LLmlCase pass))
-  | LmlExprTuple (XLmlExprTuple pass) (LLmlExpr pass) (NonEmpty (LLmlExpr pass))
-  | LmlExprConstruct (XLmlExprConstruct pass) (LLongident pass) (Maybe (LLmlExpr pass))
-  | LmlExprIfThenElse (XLmlExprIfThenElse pass) (LLmlExpr pass) (LLmlExpr pass) (LLmlExpr pass)
-  | LmlExprConstraint (XLmlExprConstraint pass) (LLmlExpr pass) (LLmlType pass)
+  = -- | Represents identifier, e.g. @A.B.C.fun@
+    LmlExprIdent (XLmlExprIdent pass) Longident
+  | -- | Represents constant value like @-1@ or @"text"@
+    LmlExprConstant (XLmlExprConstant pass) (LmlLit pass)
+  | -- | Represents let-binding
+    LmlExprLet (XLmlExprLet pass) RecFlag (NonEmpty (LLmlBind pass)) (LLmlExpr pass)
+  | -- | Represents @fun x -> expr@ construction
+    LmlExprFunction (XLmlExprFunction pass) (LLmlPat pass) (LLmlExpr pass)
+  | -- | Function application @f x y z@
+    LmlExprApply (XLmlExprApply pass) (LLmlExpr pass) (NonEmpty (LLmlExpr pass))
+  | -- | Match expression
+    --
+    -- @
+    -- match x with
+    -- | pat -> expr
+    -- @
+    LmlExprMatch (XLmlExprMatch pass) (LLmlExpr pass) (NonEmpty (LLmlCase pass))
+  | -- | Tuple representation, invariant \(n \geq 2\)
+    LmlExprTuple (XLmlExprTuple pass) (LLmlExpr pass) (NonEmpty (LLmlExpr pass))
+  | -- | Constructor application
+    --
+    -- Constructors aren't curried, this means that they must be applied to a tuple.
+    LmlExprConstruct (XLmlExprConstruct pass) (LLongident pass) (Maybe (LLmlExpr pass))
+  | -- | Represents @if expr then expr else expr@
+    LmlExprIfThenElse (XLmlExprIfThenElse pass) (LLmlExpr pass) (LLmlExpr pass) (LLmlExpr pass)
+  | -- | Represents expression constrained by type as in @(expr : typexpr)@
+    LmlExprConstraint (XLmlExprConstraint pass) (LLmlExpr pass) (LLmlType pass)
   | XLmlExpr !(XXExpr pass)
 
 type ForallLmlExpr (tc :: Type -> Constraint) pass =
