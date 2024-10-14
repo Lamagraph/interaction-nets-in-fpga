@@ -47,6 +47,7 @@ library
       OverloadedStrings
       LambdaCase
       NoFieldSelectors
+      MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-tools:
       alex
@@ -70,6 +71,7 @@ executable lamagraph-compiler-exe
       OverloadedStrings
       LambdaCase
       NoFieldSelectors
+      MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       array
@@ -94,6 +96,7 @@ test-suite lamagraph-compiler-test
       OverloadedStrings
       LambdaCase
       NoFieldSelectors
+      MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       array
