@@ -25,6 +25,7 @@ dependencies:
   - array
   - extra
   - lens
+  - prettyprinter
 
 language: GHC2021
 

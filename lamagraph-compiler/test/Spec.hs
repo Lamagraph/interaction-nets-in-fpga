@@ -16,5 +16,5 @@ lexerTests = testGroup "Lexer" [lexerUnitTests]
 
 parserTests :: IO TestTree
 parserTests = do
-  parserGolden <- parserGoldenTests
+  parserGolden <- parserGoldenTestsAST
   return $ testGroup "Parser" [parserGolden]

@@ -1,0 +1,105 @@
+(Module
+ (Just
+ (L
+  { :1:8-22 }
+  ("ConstrPatterns")))
+ [ (L
+    { :3:1-28 }
+    (ValD NonRec
+     [ (L
+        { :3:5-28 }
+        (Bind
+         (L
+          { :3:5-15 }
+          (PatConstruct
+           (L
+            { :3:5-15 }
+            ("SomeConstr"))
+           (Nothing)))
+         (L
+          { :3:18-28 }
+          (ExprConstruct
+           (L
+            { :3:18-28 }
+            ("SomeConstr"))
+           (Nothing))))) ]))
+ , (L
+    { :4:1-16 }
+    (ValD NonRec
+     [ (L
+        { :4:5-16 }
+        (Bind
+         (L
+          { :4:5-9 }
+          (PatConstruct
+           (L
+            { :4:5-9 }
+            ("true"))
+           (Nothing)))
+         (L
+          { :4:12-16 }
+          (ExprConstruct
+           (L
+            { :4:12-16 }
+            ("true"))
+           (Nothing))))) ]))
+ , (L
+    { :5:1-18 }
+    (ValD NonRec
+     [ (L
+        { :5:5-18 }
+        (Bind
+         (L
+          { :5:5-10 }
+          (PatConstruct
+           (L
+            { :5:5-10 }
+            ("false"))
+           (Nothing)))
+         (L
+          { :5:13-18 }
+          (ExprConstruct
+           (L
+            { :5:13-18 }
+            ("false"))
+           (Nothing))))) ]))
+ , (L
+    { :6:1-12 }
+    (ValD NonRec
+     [ (L
+        { :6:5-12 }
+        (Bind
+         (L
+          { :6:5-7 }
+          (PatConstruct
+           (L
+            { :6:5-7 }
+            ("()"))
+           (Nothing)))
+         (L
+          { :6:10-12 }
+          (ExprConstruct
+           (L
+            { :6:10-12 }
+            ("()"))
+           (Nothing))))) ]))
+ , (L
+    { :7:1-12 }
+    (ValD NonRec
+     [ (L
+        { :7:5-12 }
+        (Bind
+         (L
+          { :7:5-7 }
+          (PatConstruct
+           (L
+            { :7:5-7 }
+            ("[]"))
+           (Nothing)))
+         (L
+          { :7:10-12 }
+          (ExprConstruct
+           (L
+            { :7:10-12 }
+            ("[]"))
+           (Nothing))))) ])) ])

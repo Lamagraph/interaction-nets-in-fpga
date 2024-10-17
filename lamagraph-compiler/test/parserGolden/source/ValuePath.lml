@@ -1,1 +1,2 @@
 let x = M.y
+and y = M.x
