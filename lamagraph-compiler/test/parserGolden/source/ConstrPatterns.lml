@@ -1,7 +1,8 @@
 module ConstrPatterns
 
-let SomeConstr = SomeConstr
+let (SomeConstr _) = (SomeConstr 1)
 let true = true
 let false = false
 let () = ()
 let [] = []
+let a::b::[] = [a; b]

@@ -10,14 +10,14 @@ import Relude
 {- | Type to serve as a placeholder for TTG extension points, which can be constructed,
 but aren't used to hold something more useful.
 -}
-data NoExtField = NoExtField deriving (Show)
+data NoExtField = NoExtField deriving (Show, Eq)
 
 -- | Is used to construct a term.
 noExtField :: NoExtField
 noExtField = NoExtField
 
 -- | Isomorphic to 'Void'.
-data DataConCantHappen deriving (Show)
+data DataConCantHappen deriving (Show, Eq)
 
 dataConCanHappen :: DataConCantHappen -> a
 dataConCanHappen x = case x of {}

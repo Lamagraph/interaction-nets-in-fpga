@@ -1,3 +1,4 @@
 let f = match x with
           | 1 | 2 | 3 -> true
+          | x when x == 4 -> true
           | _ -> false

@@ -1,23 +1,25 @@
-module Lamagraph.Compiler.ParserGoldenTest (parserGoldenTests) where
+module Lamagraph.Compiler.Parser.PrettyASTGolden (parserGoldenTestsAST) where
 
 import Relude
 
+import Prettyprinter
 import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
-import Text.Pretty.Simple
 
 import Lamagraph.Compiler.Parser
+import Lamagraph.Compiler.Parser.GoldenCommon
+import Lamagraph.Compiler.PrettyAST ()
 
-parserGoldenTests :: IO TestTree
-parserGoldenTests = do
-  lmlFiles <- findByExtension [".lml"] "test/parserGolden"
+parserGoldenTestsAST :: IO TestTree
+parserGoldenTestsAST = do
+  lmlFiles <- findByExtension [lmlExt] parserGoldenTestsDir
   return $
     testGroup
-      "Golden tests"
+      "Pretty AST Golden tests"
       [ goldenVsString (takeBaseName lmlFile) resLmlFile (helper lmlFile)
       | lmlFile <- lmlFiles
-      , let resLmlFile = replaceExtension lmlFile ".lml_golden"
+      , let resLmlFile = addExtension (changeFileDir lmlFile "../ast") "ast"
       ]
  where
   helper :: FilePath -> IO LByteString
@@ -27,4 +29,4 @@ parserGoldenTests = do
         parseResult = parseLamagraphML fileT
     pure $ case parseResult of
       Left err -> encodeUtf8 err
-      Right tree -> encodeUtf8 $ pShowNoColor tree
+      Right tree -> encodeUtf8 $ (renderPretty . pretty) tree

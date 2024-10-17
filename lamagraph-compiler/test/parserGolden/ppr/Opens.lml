@@ -1,0 +1,5 @@
+module Opens
+
+open M1
+
+open Stdlib.Fun.Abs

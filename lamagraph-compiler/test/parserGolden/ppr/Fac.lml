@@ -1,0 +1,6 @@
+module Fac
+
+open Stdlib
+
+let fac = fun n -> let rec helper =
+fun m -> fun acc -> if ( > ) (m) (n) then acc else helper (( + ) (m) (1)) (( * ) (acc) (m)) in helper (1) (1)

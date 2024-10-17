@@ -3,8 +3,6 @@
 
 module Lamagraph.Compiler.Extension (Pass (..), LmlcPass (..), LmlcPs) where
 
--- import Relude
-
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 

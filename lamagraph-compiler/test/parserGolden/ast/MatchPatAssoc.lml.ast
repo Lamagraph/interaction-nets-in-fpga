@@ -1,0 +1,95 @@
+(Module
+ (Nothing)
+ [ (L
+    { :(1,1)-(4,23) }
+    (ValD NonRec
+     [ (L
+        { :(1,5)-(4,23) }
+        (Bind
+         (L
+          { :1:5-6 }
+          (PatVar
+           (L
+            { :1:5-6 }
+            "f")))
+         (L
+          { :(1,9)-(4,23) }
+          (ExprMatch
+           (L
+            { :1:15-16 }
+            (ExprIdent
+             "x"))
+           [ (L
+              { :2:13-30 }
+              (Case
+               (L
+                { :2:13-22 }
+                (ParOr
+                 (L
+                  { :2:13-18 }
+                  (ParOr
+                   (L
+                    { :2:13-14 }
+                    (PatConstant
+                     1))
+                   (L
+                    { :2:17-18 }
+                    (PatConstant
+                     2))))
+                 (L
+                  { :2:21-22 }
+                  (PatConstant
+                   3))))
+               (Nothing)
+               (L
+                { :2:26-30 }
+                (ExprConstruct
+                 (L
+                  { :2:26-30 }
+                  ("true"))
+                 (Nothing)))))
+           , (L
+              { :3:13-34 }
+              (Case
+               (L
+                { :3:13-14 }
+                (PatVar
+                 (L
+                  { :3:13-14 }
+                  "x")))
+               (Just
+               (L
+                { :3:20-26 }
+                (ExprApply
+                 (L
+                  { :3:22-24 }
+                  (ExprIdent
+                   "=="))
+                 [ (L
+                    { :3:20-21 }
+                    (ExprIdent
+                     "x"))
+                 , (L
+                    { :3:25-26 }
+                    (ExprConstant 4)) ])))
+               (L
+                { :3:30-34 }
+                (ExprConstruct
+                 (L
+                  { :3:30-34 }
+                  ("true"))
+                 (Nothing)))))
+           , (L
+              { :4:13-23 }
+              (Case
+               (L
+                { :4:13-14 }
+                (PatAny))
+               (Nothing)
+               (L
+                { :4:18-23 }
+                (ExprConstruct
+                 (L
+                  { :4:18-23 }
+                  ("false"))
+                 (Nothing))))) ])))) ])) ])

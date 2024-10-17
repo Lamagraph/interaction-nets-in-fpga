@@ -30,3 +30,4 @@ type ForallLmlLit (tc :: Type -> Constraint) pass =
   )
 
 deriving instance (ForallLmlLit Show pass) => Show (LmlLit pass)
+deriving instance (ForallLmlLit Eq pass) => Eq (LmlLit pass)
