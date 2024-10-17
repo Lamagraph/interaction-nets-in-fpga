@@ -25,6 +25,8 @@ dependencies:
   - array
   - extra
   - lens
+  - prettyprinter
+  - string-interpolate
 
 language: GHC2021
 
@@ -77,4 +79,5 @@ tests:
       - tasty
       - tasty-hunit
       - tasty-golden
-      - pretty-simple
+      - tasty-hedgehog
+      - hedgehog

@@ -168,23 +168,52 @@ typeconstr_name :: { XLocated LmlcPs Text }
 -- Qualified names --
 ---------------------
 module_pathT :: { NonEmpty LToken }
-  : mkIdent(module_pathT, capitalized_ident) { $1 }
+  : mkIdentRev(module_pathT, capitalized_ident) { $1 }
+
+value_nameT :: { LToken }
+  : lowercase_ident { $1 }
+  | '(' operator_nameT ')' { sLL $1 $3 $ unLoc $2 }
+
+operator_nameT :: { LToken }
+  : prefix_symbol { $1 }
+  | infix_opT { $1 }
+
+infix_opT :: { LToken }
+  : infix_symbol0 { $1 }
+  | infix_symbol1 { $1 }
+  | infix_symbol2 { $1 }
+  | infix_symbol3 { $1 }
+  | infix_symbol4 { $1 }
+  | '*' { $1 }
+  | '+' { $1 }
+  | '-' { $1 }
+  | '=' { $1 }
+  | '||' { $1 }
+  | '&&' { $1 }
+  | 'mod' { $1 }
+  | 'land' { $1 }
+  | 'lor' { $1 }
+  | 'lxor' { $1 }
+  | 'lsl' { $1 }
+  | 'lsr' { $1 }
+  | 'asr' { $1 }
 
 value_path :: { LLongident LmlcPs }
-  : mkIdent(module_pathT, lowercase_ident) { sLNE $1 $ getLongident $1 }
+  : mkIdentRev(module_pathT, value_nameT) { sLNE $1 $ getLongident (NE.reverse $1) }
+  -- | mkIdentRev(module_pathT, ) { sLNE $1 $ getLongident (NE.reverse $1) }
 
 constr :: { LLongident LmlcPs }
-  : mkIdent(module_pathT, capitalized_ident) { sLNE $1 $ getLongident $1 }
+  : mkIdentRev(module_pathT, capitalized_ident) { sLNE $1 $ getLongident (NE.reverse $1) }
   | '[' ']' { sLL $1 $2 nilConstruct }
   | '(' ')' { sLL $1 $2 unitConstruct }
   | 'true' { sL1 $1 $ (mkLongident . pure) "true" }
   | 'false' { sL1 $1 $ (mkLongident . pure) "false" }
 
 typeconstr :: { LLongident LmlcPs }
-  : mkIdent(module_pathT, lowercase_ident) { sLNE $1 $ getLongident $1 }
+  : mkIdentRev(module_pathT, lowercase_ident) { sLNE $1 $ getLongident (NE.reverse $1) }
 
 module_path :: { LLongident LmlcPs }
-  : module_pathT { sLNE $1 $ getLongident $1 }
+  : module_pathT { sLNE $1 $ getLongident (NE.reverse $1) }
 
 ----------------------
 -- Type expressions --

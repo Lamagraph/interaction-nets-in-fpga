@@ -1,0 +1,37 @@
+(Module
+ (Nothing)
+ [ (L
+    { :1:1-18 }
+    (ValD NonRec
+     [ (L
+        { :1:5-18 }
+        (Bind
+         (L
+          { :1:5-6 }
+          (PatVar
+           (L
+            { :1:5-6 }
+            "x")))
+         (L
+          { :1:9-18 }
+          (ExprApply
+           (L
+            { :1:11-12 }
+            (ExprIdent
+             "+"))
+           [ (L
+              { :1:9-10 }
+              (ExprConstant 1))
+           , (L
+              { :1:13-18 }
+              (ExprApply
+               (L
+                { :1:15-16 }
+                (ExprIdent
+                 "*"))
+               [ (L
+                  { :1:13-14 }
+                  (ExprConstant 2))
+               , (L
+                  { :1:17-18 }
+                  (ExprConstant 3)) ])) ])))) ])) ])

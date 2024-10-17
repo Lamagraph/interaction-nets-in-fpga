@@ -119,9 +119,9 @@ makeLenses ''RealSrcSpan
 A 'SrcSpan' represents either "good" portion of a file
 or a description of a "bad" span.
 -}
-data SrcSpan = RealSrcSpan RealSrcSpan | UnhelpfulSpan UnhelpfulSpanReason deriving (Show)
+data SrcSpan = RealSrcSpan RealSrcSpan | UnhelpfulSpan UnhelpfulSpanReason deriving (Show, Eq)
 
-data UnhelpfulSpanReason = UnhelpfulGenerated | UnhelpfulOther Text deriving (Show)
+data UnhelpfulSpanReason = UnhelpfulGenerated | UnhelpfulOther Text deriving (Show, Eq)
 
 generatedSrcSpan :: SrcSpan
 generatedSrcSpan = UnhelpfulSpan UnhelpfulGenerated
@@ -172,6 +172,13 @@ combineSrcSpans (RealSrcSpan span1) (RealSrcSpan span2)
 
 -- | 'SrcSpan's will be attached to nearly everything, let's create a type for attaching.
 data GenLocated l e = L l e deriving (Show)
+
+{- | This is very specific instance for 'Eq'.
+It doesn't compare locations, only contents.
+-}
+instance (Eq e) => Eq (GenLocated l e) where
+  (==) :: GenLocated l e -> GenLocated l e -> Bool
+  (L _ a) == (L _ b) = a == b
 
 makePrisms ''GenLocated
 

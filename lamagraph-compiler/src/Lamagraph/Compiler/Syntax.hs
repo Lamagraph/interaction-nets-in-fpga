@@ -362,3 +362,4 @@ type ForallLmlModule (tc :: Type -> Constraint) pass =
   (tc (XCModule pass), tc (LLongident pass), tc (LLmlDecl pass), tc (XXModule pass))
 
 deriving instance (ForallLmlModule Show pass) => Show (LmlModule pass)
+deriving instance (ForallLmlModule Eq pass) => Eq (LmlModule pass)

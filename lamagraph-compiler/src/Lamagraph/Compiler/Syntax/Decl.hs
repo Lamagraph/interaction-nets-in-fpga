@@ -44,6 +44,7 @@ type ForallLmlDecl (tc :: Type -> Constraint) pass =
   )
 
 deriving instance (ForallLmlDecl Show pass) => Show (LmlDecl pass)
+deriving instance (ForallLmlDecl Eq pass) => Eq (LmlDecl pass)
 
 -- | Located open declaration
 type LOpenDecl pass = XLocated pass (OpenDecl pass)
@@ -60,6 +61,7 @@ type ForallOpenDecl (tc :: Type -> Constraint) pass =
   (tc (XOpenDecl pass), tc (XXOpenDecl pass), tc (LLongident pass))
 
 deriving instance (ForallOpenDecl Show pass) => Show (OpenDecl pass)
+deriving instance (ForallOpenDecl Eq pass) => Eq (OpenDecl pass)
 
 -- | Located type declaration
 type LTyDecl pass = XLocated pass (TyDecl pass)
@@ -82,6 +84,7 @@ type ForallTyDecl (tc :: Type -> Constraint) pass =
   )
 
 deriving instance (ForallTyDecl Show pass) => Show (TyDecl pass)
+deriving instance (ForallTyDecl Eq pass) => Eq (TyDecl pass)
 
 -- | Located ADT constructor declaration
 type LConDecl pass = XLocated pass (ConDecl pass)
@@ -102,3 +105,4 @@ type ForallConDecl (tc :: Type -> Constraint) pass =
   (tc (XConDecl pass), tc (XLocated pass Text), tc (LLmlType pass), tc (XXConDecl pass))
 
 deriving instance (ForallConDecl Show pass) => Show (ConDecl pass)
+deriving instance (ForallConDecl Eq pass) => Eq (ConDecl pass)

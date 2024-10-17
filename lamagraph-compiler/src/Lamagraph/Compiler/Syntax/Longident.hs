@@ -9,7 +9,7 @@ import Lamagraph.Compiler.Syntax.Extension
 'Text' fragments are dot separated in the source code.
 -}
 newtype Longident = Longident (NonEmpty Text)
-  deriving (Show)
+  deriving (Show, Eq)
 
 mkLongident :: NonEmpty Text -> Longident
 mkLongident = Longident

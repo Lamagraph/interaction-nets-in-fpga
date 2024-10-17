@@ -23,7 +23,7 @@ import Lamagraph.Compiler.Syntax.Pat
 import Lamagraph.Compiler.Syntax.Type
 
 -- | Flag for recursive let-bindings
-data RecFlag = Recursive | NonRecursive deriving (Show)
+data RecFlag = Recursive | NonRecursive deriving (Show, Eq)
 
 -- | Located 'LmlExpr'
 type LLmlExpr pass = XLocated pass (LmlExpr pass)
@@ -81,6 +81,7 @@ type ForallLmlExpr (tc :: Type -> Constraint) pass =
   )
 
 deriving instance (ForallLmlExpr Show pass) => Show (LmlExpr pass)
+deriving instance (ForallLmlExpr Eq pass) => Eq (LmlExpr pass)
 
 -- | Located let binder
 type LLmlBind pass = XLocated pass (LmlBind pass)
@@ -97,6 +98,7 @@ type ForallLmlBind (tc :: Type -> Constraint) pass =
   (tc (XLmlBind pass), tc (LLmlPat pass), tc (LLmlExpr pass), tc (XXBind pass))
 
 deriving instance (ForallLmlBind Show pass) => Show (LmlBind pass)
+deriving instance (ForallLmlBind Eq pass) => Eq (LmlBind pass)
 
 -- | Located case binder type
 type LLmlCase pass = XLocated pass (LmlCase pass)
@@ -110,3 +112,4 @@ type ForallLmlCase (tc :: Type -> Constraint) pass =
   (tc (XLmlCase pass), tc (LLmlPat pass), tc (LLmlExpr pass), tc (XXCase pass))
 
 deriving instance (ForallLmlCase Show pass) => Show (LmlCase pass)
+deriving instance (ForallLmlCase Eq pass) => Eq (LmlCase pass)

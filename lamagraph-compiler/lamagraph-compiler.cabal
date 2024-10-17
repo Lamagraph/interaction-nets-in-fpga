@@ -30,6 +30,8 @@ library
       Lamagraph.Compiler.Parser.LexerTypes
       Lamagraph.Compiler.Parser.LexerUtils
       Lamagraph.Compiler.Parser.SrcLoc
+      Lamagraph.Compiler.PrettyAST
+      Lamagraph.Compiler.PrettyLML
       Lamagraph.Compiler.Syntax
       Lamagraph.Compiler.Syntax.Decl
       Lamagraph.Compiler.Syntax.Expr
@@ -57,7 +59,9 @@ library
     , base >=4.7 && <5
     , extra
     , lens
+    , prettyprinter
     , relude
+    , string-interpolate
   default-language: GHC2021
 
 executable lamagraph-compiler-exe
@@ -79,15 +83,20 @@ executable lamagraph-compiler-exe
     , extra
     , lamagraph-compiler
     , lens
+    , prettyprinter
     , relude
+    , string-interpolate
   default-language: GHC2021
 
 test-suite lamagraph-compiler-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Lamagraph.Compiler.Parser.GoldenCommon
       Lamagraph.Compiler.Parser.LexerTest
-      Lamagraph.Compiler.ParserGoldenTest
+      Lamagraph.Compiler.Parser.ParserRoundtrip
+      Lamagraph.Compiler.Parser.PrettyASTGolden
+      Lamagraph.Compiler.Parser.PrettyLmlGolden
       Paths_lamagraph_compiler
   hs-source-dirs:
       test
@@ -103,11 +112,14 @@ test-suite lamagraph-compiler-test
     , base >=4.7 && <5
     , extra
     , filepath
+    , hedgehog
     , lamagraph-compiler
     , lens
-    , pretty-simple
+    , prettyprinter
     , relude
+    , string-interpolate
     , tasty
     , tasty-golden
+    , tasty-hedgehog
     , tasty-hunit
   default-language: GHC2021

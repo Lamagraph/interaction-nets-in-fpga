@@ -49,7 +49,11 @@ $operator_char = [\! \$ \% & \* \+ \. \/ \: \< \= \> \? \@ \^ \| \~]
 -- Identifiers
 @ident_tail = ( $letter | $digit | \_ | \' )*
 @capitalized_ident = $capital_letter @ident_tail
-@lowercase_ident = ( $lowercase_letter | \_ ) @ident_tail
+-- @lowercase_ident = ( $lowercase_letter | \_ ) @ident_tail
+@lowercase_ident = (
+  ( $lowercase_letter @ident_tail)
+  | ( \_ ( $letter | $digit ) @ident_tail )
+)
 
 -- Integer literals
 @integer_literal = \-? $digit ( $digit | \_ )*

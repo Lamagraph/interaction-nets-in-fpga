@@ -50,3 +50,4 @@ type ForallLmlPat (tc :: Type -> Constraint) pass =
   )
 
 deriving instance (ForallLmlPat Show pass) => Show (LmlPat pass)
+deriving instance (ForallLmlPat Eq pass) => Eq (LmlPat pass)

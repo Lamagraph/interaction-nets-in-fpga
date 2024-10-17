@@ -1,0 +1,191 @@
+(Module
+ (Just
+ (L
+  { :1:8-22 }
+  ("ConstrPatterns")))
+ [ (L
+    { :3:1-36 }
+    (ValD NonRec
+     [ (L
+        { :3:5-36 }
+        (Bind
+         (L
+          { :3:5-19 }
+          (PatConstruct
+           (L
+            { :3:6-16 }
+            ("SomeConstr"))
+           (Just
+           (L
+            { :3:17-18 }
+            (PatAny)))))
+         (L
+          { :3:22-36 }
+          (ExprConstruct
+           (L
+            { :3:23-33 }
+            ("SomeConstr"))
+           (Just
+           (L
+            { :3:34-35 }
+            (ExprConstant 1))))))) ]))
+ , (L
+    { :4:1-16 }
+    (ValD NonRec
+     [ (L
+        { :4:5-16 }
+        (Bind
+         (L
+          { :4:5-9 }
+          (PatConstruct
+           (L
+            { :4:5-9 }
+            ("true"))
+           (Nothing)))
+         (L
+          { :4:12-16 }
+          (ExprConstruct
+           (L
+            { :4:12-16 }
+            ("true"))
+           (Nothing))))) ]))
+ , (L
+    { :5:1-18 }
+    (ValD NonRec
+     [ (L
+        { :5:5-18 }
+        (Bind
+         (L
+          { :5:5-10 }
+          (PatConstruct
+           (L
+            { :5:5-10 }
+            ("false"))
+           (Nothing)))
+         (L
+          { :5:13-18 }
+          (ExprConstruct
+           (L
+            { :5:13-18 }
+            ("false"))
+           (Nothing))))) ]))
+ , (L
+    { :6:1-12 }
+    (ValD NonRec
+     [ (L
+        { :6:5-12 }
+        (Bind
+         (L
+          { :6:5-7 }
+          (PatConstruct
+           (L
+            { :6:5-7 }
+            ("()"))
+           (Nothing)))
+         (L
+          { :6:10-12 }
+          (ExprConstruct
+           (L
+            { :6:10-12 }
+            ("()"))
+           (Nothing))))) ]))
+ , (L
+    { :7:1-12 }
+    (ValD NonRec
+     [ (L
+        { :7:5-12 }
+        (Bind
+         (L
+          { :7:5-7 }
+          (PatConstruct
+           (L
+            { :7:5-7 }
+            ("[]"))
+           (Nothing)))
+         (L
+          { :7:10-12 }
+          (ExprConstruct
+           (L
+            { :7:10-12 }
+            ("[]"))
+           (Nothing))))) ]))
+ , (L
+    { :8:1-22 }
+    (ValD NonRec
+     [ (L
+        { :8:5-22 }
+        (Bind
+         (L
+          { :8:5-13 }
+          (PatConstruct
+           (L
+            { :8:6-8 }
+            ("::"))
+           (Just
+           (L
+            { :8:5-13 }
+            (PatTuple
+             [ (L
+                { :8:5-6 }
+                (PatVar
+                 (L
+                  { :8:5-6 }
+                  "a")))
+             , (L
+                { :8:8-13 }
+                (PatConstruct
+                 (L
+                  { :8:9-11 }
+                  ("::"))
+                 (Just
+                 (L
+                  { :8:8-13 }
+                  (PatTuple
+                   [ (L
+                      { :8:8-9 }
+                      (PatVar
+                       (L
+                        { :8:8-9 }
+                        "b")))
+                   , (L
+                      { :8:11-13 }
+                      (PatConstruct
+                       (L
+                        { :8:11-13 }
+                        ("[]"))
+                       (Nothing))) ]))))) ])))))
+         (L
+          { :8:17-22 }
+          (ExprConstruct
+           (L
+            { <compiler-generated code> }
+            ("::"))
+           (Just
+           (L
+            { :8:17-22 }
+            (ExprTuple
+             [ (L
+                { :8:17-18 }
+                (ExprIdent
+                 "a"))
+             , (L
+                { :8:20-22 }
+                (ExprConstruct
+                 (L
+                  { <compiler-generated code> }
+                  ("::"))
+                 (Just
+                 (L
+                  { :8:20-22 }
+                  (ExprTuple
+                   [ (L
+                      { :8:20-21 }
+                      (ExprIdent
+                       "b"))
+                   , (L
+                      { :8:21-22 }
+                      (ExprConstruct
+                       (L
+                        { <compiler-generated code> }
+                        ("[]"))
+                       (Nothing))) ]))))) ]))))))) ])) ])

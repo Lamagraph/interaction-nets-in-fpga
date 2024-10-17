@@ -44,3 +44,4 @@ type ForallLmlType (tc :: Type -> Constraint) pass =
   )
 
 deriving instance (ForallLmlType Show pass) => Show (LmlType pass)
+deriving instance (ForallLmlType Eq pass) => Eq (LmlType pass)
