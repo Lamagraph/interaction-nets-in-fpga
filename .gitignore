@@ -72,3 +72,7 @@ node_modules/
 /vhdl
 /verilog
 /systemverilog
+
+lamagraph-compiler/src/Lamagraph/Compiler/Parser.info
+lamagraph-compiler/src/Lamagraph/Compiler/Parser.hs
+lamagraph-compiler/src/Lamagraph/Compiler/Parser/Lexer.hs

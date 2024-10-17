@@ -46,6 +46,27 @@ packages:
       size: 300
   original:
     hackage: prettyprinter-interp-0.2.0.0@sha256:69c339a95b265dab9b3478ca19ec96952b6b472bd0ff6e2127112a9562362c1d,2086
+- completed:
+    hackage: alex-3.5.1.0@sha256:de553eefe0b6548a560e9d8100486310548470a403c1fa21108dd03713da5fc7,3886
+    pantry-tree:
+      sha256: c3b94e18bde058e26070d4c06c73a42734b59135443382b4f830c33f5e3e3ed0
+      size: 4473
+  original:
+    hackage: alex-3.5.1.0@sha256:de553eefe0b6548a560e9d8100486310548470a403c1fa21108dd03713da5fc7,3886
+- completed:
+    hackage: happy-2.0.2@sha256:df315b5554b84d313ae54ad8d79dabe5a69f943f50ad5279a3009fe6a9313fc9,4995
+    pantry-tree:
+      sha256: 60245e900b31d670359448806f4501b2d64803665f89bebfee2868b04ada434c
+      size: 6282
+  original:
+    hackage: happy-2.0.2@sha256:df315b5554b84d313ae54ad8d79dabe5a69f943f50ad5279a3009fe6a9313fc9,4995
+- completed:
+    hackage: happy-lib-2.0.2@sha256:4768c8c1a34d4e9aaa61fff3f7dd7cde0cd36d2130081e5acf030389ec357189,5099
+    pantry-tree:
+      sha256: eeac85d3d57bf23de7d091c66969480ea23d1d2764f721ea16efa25789b9e610
+      size: 2403
+  original:
+    hackage: happy-lib-2.0.2@sha256:4768c8c1a34d4e9aaa61fff3f7dd7cde0cd36d2130081e5acf030389ec357189,5099
 snapshots:
 - completed:
     sha256: a81fb3877c4f9031e1325eb3935122e608d80715dc16b586eb11ddbff8671ecd

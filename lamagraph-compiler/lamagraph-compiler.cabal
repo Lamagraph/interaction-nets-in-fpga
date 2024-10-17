@@ -24,16 +24,43 @@ source-repository head
 
 library
   exposed-modules:
+      Lamagraph.Compiler.Extension
+      Lamagraph.Compiler.Parser
+      Lamagraph.Compiler.Parser.Lexer
+      Lamagraph.Compiler.Parser.LexerTypes
+      Lamagraph.Compiler.Parser.LexerUtils
+      Lamagraph.Compiler.Parser.SrcLoc
+      Lamagraph.Compiler.PrettyAST
       Lamagraph.Compiler.Syntax
-      Lib
+      Lamagraph.Compiler.Syntax.Decl
+      Lamagraph.Compiler.Syntax.Expr
+      Lamagraph.Compiler.Syntax.Extension
+      Lamagraph.Compiler.Syntax.Lit
+      Lamagraph.Compiler.Syntax.Longident
+      Lamagraph.Compiler.Syntax.Pat
+      Lamagraph.Compiler.Syntax.Type
   other-modules:
       Paths_lamagraph_compiler
   hs-source-dirs:
       src
+  default-extensions:
+      NoImplicitPrelude
+      OverloadedStrings
+      LambdaCase
+      NoFieldSelectors
+      MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-tools:
+      alex
+    , happy
   build-depends:
-      base >=4.7 && <5
-  default-language: Haskell2010
+      array
+    , base >=4.7 && <5
+    , extra
+    , lens
+    , prettyprinter
+    , relude
+  default-language: GHC2021
 
 executable lamagraph-compiler-exe
   main-is: Main.hs
@@ -41,21 +68,50 @@ executable lamagraph-compiler-exe
       Paths_lamagraph_compiler
   hs-source-dirs:
       app
+  default-extensions:
+      NoImplicitPrelude
+      OverloadedStrings
+      LambdaCase
+      NoFieldSelectors
+      MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
+    , extra
     , lamagraph-compiler
-  default-language: Haskell2010
+    , lens
+    , prettyprinter
+    , relude
+  default-language: GHC2021
 
 test-suite lamagraph-compiler-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Lamagraph.Compiler.Parser.LexerTest
+      Lamagraph.Compiler.ParserGoldenTest
       Paths_lamagraph_compiler
   hs-source-dirs:
       test
+  default-extensions:
+      NoImplicitPrelude
+      OverloadedStrings
+      LambdaCase
+      NoFieldSelectors
+      MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
+    , extra
+    , filepath
     , lamagraph-compiler
-  default-language: Haskell2010
+    , lens
+    , pretty-simple
+    , prettyprinter
+    , relude
+    , tasty
+    , tasty-golden
+    , tasty-hunit
+  default-language: GHC2021

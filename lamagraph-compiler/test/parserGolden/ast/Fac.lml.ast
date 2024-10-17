@@ -1,0 +1,134 @@
+(Module
+ (Just
+ (L
+  { :1:8-11 }
+  ("Fac")))
+ [ (L
+    { :3:1-12 }
+    (OpenD
+     OpenDecl
+     (L
+      { :3:6-12 }
+      ("Stdlib"))))
+ , (L
+    { :(5,1)-(10,13) }
+    (ValD NonRec
+     [ (L
+        { :(5,5)-(10,13) }
+        (Bind
+         (L
+          { :5:5-8 }
+          (PatVar
+           (L
+            { :5:5-8 }
+            "fac")))
+         (L
+          { :(5,9)-(10,13) }
+          (ExprFunction
+           (L
+            { :5:9-10 }
+            (PatVar
+             (L
+              { :5:9-10 }
+              "n")))
+           (L
+            { :(6,3)-(10,13) }
+            (ExprLet Rec
+             [ (L
+                { :(6,11)-(8,34) }
+                (Bind
+                 (L
+                  { :6:11-17 }
+                  (PatVar
+                   (L
+                    { :6:11-17 }
+                    "helper")))
+                 (L
+                  { :(6,18)-(8,34) }
+                  (ExprFunction
+                   (L
+                    { :6:18-19 }
+                    (PatVar
+                     (L
+                      { :6:18-19 }
+                      "m")))
+                   (L
+                    { :(6,20)-(8,34) }
+                    (ExprFunction
+                     (L
+                      { :6:20-23 }
+                      (PatVar
+                       (L
+                        { :6:20-23 }
+                        "acc")))
+                     (L
+                      { :(7,5)-(8,34) }
+                      (ExprITE
+                       (L
+                        { :7:8-13 }
+                        (ExprApply
+                         (L
+                          { :7:10-11 }
+                          (ExprIdent
+                           ">"))
+                         [ (L
+                            { :7:8-9 }
+                            (ExprIdent
+                             "m"))
+                         , (L
+                            { :7:12-13 }
+                            (ExprIdent
+                             "n")) ]))
+                       (L
+                        { :7:19-22 }
+                        (ExprIdent
+                         "acc"))
+                       (L
+                        { :8:10-34 }
+                        (ExprApply
+                         (L
+                          { :8:10-16 }
+                          (ExprIdent
+                           "helper"))
+                         [ (L
+                            { :8:17-24 }
+                            (ExprApply
+                             (L
+                              { :8:20-21 }
+                              (ExprIdent
+                               "+"))
+                             [ (L
+                                { :8:18-19 }
+                                (ExprIdent
+                                 "m"))
+                             , (L
+                                { :8:22-23 }
+                                (ExprConstant 1)) ]))
+                         , (L
+                            { :8:25-34 }
+                            (ExprApply
+                             (L
+                              { :8:30-31 }
+                              (ExprIdent
+                               "*"))
+                             [ (L
+                                { :8:26-29 }
+                                (ExprIdent
+                                 "acc"))
+                             , (L
+                                { :8:32-33 }
+                                (ExprIdent
+                                 "m")) ])) ])))))))))) ]
+             (L
+              { :10:3-13 }
+              (ExprApply
+               (L
+                { :10:3-9 }
+                (ExprIdent
+                 "helper"))
+               [ (L
+                  { :10:10-11 }
+                  (ExprConstant 1))
+               , (L
+                  { :10:12-13 }
+                  (ExprConstant 1)) ])))))))) ])) ])

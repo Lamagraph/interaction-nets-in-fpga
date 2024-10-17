@@ -1,2 +1,20 @@
+import Relude
+
+import Test.Tasty
+
+import Lamagraph.Compiler.Parser.LexerTest
+import Lamagraph.Compiler.ParserGoldenTest
+
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = do
+  parserTests' <- parserTests
+  let tests = testGroup "" [lexerTests, parserTests']
+  defaultMain tests
+
+lexerTests :: TestTree
+lexerTests = testGroup "Lexer" [lexerUnitTests]
+
+parserTests :: IO TestTree
+parserTests = do
+  parserGolden <- parserGoldenTestsAST
+  return $ testGroup "Parser" [parserGolden]
