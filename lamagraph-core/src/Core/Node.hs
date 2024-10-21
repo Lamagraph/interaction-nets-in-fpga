@@ -7,16 +7,28 @@ import Control.Lens (makeLenses, (^.))
 
 type AddressNumber = Unsigned 16
 
+data IdOfPort (portsNumber :: Nat) = Id (Index portsNumber) | Primary
+  deriving (Generic, Show, Eq, NFDataX) -- Index numberOfPorts
+
 data Address = ActualAddress AddressNumber | LocalAddress AddressNumber
   deriving (NFDataX, Generic, Show, Eq)
 
-newtype Port = Port (Maybe Address)
+instance Default Address where
+  def :: Address
+  def = ActualAddress (def :: AddressNumber)
+
+data Port (portsNumber :: Nat) = Port
+  { _nodeAddress :: Maybe Address
+  , _portConnectedToId :: IdOfPort portsNumber
+  }
   deriving (NFDataX, Generic, Show, Eq)
 
+$(makeLenses ''Port)
+
 -- | Node in the RAM.
-data Node numberOfPorts = Node
-  { _primaryPort :: Port
-  , _secondaryPorts :: Vec numberOfPorts (Maybe Port)
+data Node portsNumber = Node
+  { _primaryPort :: Port portsNumber
+  , _secondaryPorts :: Vec portsNumber (Maybe (Port portsNumber))
   -- _nodeType :: INNode looks like we need some kind of node label. Info about and reduction rules contained IN
   }
   deriving (NFDataX, Generic, Show, Eq)
@@ -54,5 +66,5 @@ isActive leftNode rightNode =
   leftNodePrimaryPortAddress == Just (rightNode ^. originalAddress)
     && rightNodePrimaryPortAddress == Just (leftNode ^. originalAddress)
  where
-  Port leftNodePrimaryPortAddress = leftNode ^. containedNode . primaryPort
-  Port rightNodePrimaryPortAddress = rightNode ^. containedNode . primaryPort
+  Port leftNodePrimaryPortAddress _ = leftNode ^. containedNode . primaryPort
+  Port rightNodePrimaryPortAddress _ = rightNode ^. containedNode . primaryPort
