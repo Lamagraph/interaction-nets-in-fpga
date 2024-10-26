@@ -9,7 +9,7 @@ import Test.Tasty.Golden
 
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Parser.GoldenCommon
-import Lamagraph.Compiler.PrettyLML ()
+import Lamagraph.Compiler.PrettyLml ()
 
 parserPrettyLmlGolden :: IO TestTree
 parserPrettyLmlGolden = do
@@ -17,7 +17,9 @@ parserPrettyLmlGolden = do
   return $
     testGroup
       "Pretty LML Golden tests"
-      [ goldenVsString (takeBaseName lmlFile) resLmlFile (helper lmlFile) | lmlFile <- lmlFiles, let resLmlFile = changeFileDir lmlFile "../ppr"
+      [ goldenVsString (takeBaseName lmlFile) resLmlFile (helper lmlFile)
+      | lmlFile <- lmlFiles
+      , let resLmlFile = changeFileDir lmlFile "../ppr"
       ]
  where
   helper :: FilePath -> IO LByteString

@@ -1,12 +1,20 @@
--- Alex "Haskell code fragment top"
+--------------------------------------
+-- Alex "Haskell code fragment top" --
+--------------------------------------
 {
--- Some of the Alex generated code contains @undefinded@ which is considered
--- deprecated in Relude
+{- Some of the Alex generated code contains @undefinded@ which is considered
+deprecated in Relude
+-}
 {-# OPTIONS_GHC -Wno-deprecations #-}
--- Because of the active use of lenses, in this project field selectors are generally
--- disabled, but because Alex relies on them, they must be turned on explicitly
+{- Because of the active use of lenses, in this project field selectors are generally
+disabled, but because Alex relies on them, they must be turned on explicitly
+-}
 {-# LANGUAGE FieldSelectors #-}
 
+{- | Module with Alex parser
+
+Some of the exports aren't used in other modules, but are useful in docs.
+-}
 module Lamagraph.Compiler.Parser.Lexer (
   Byte,
   AlexInput,
@@ -19,8 +27,9 @@ module Lamagraph.Compiler.Parser.Lexer (
 ) where
 
 import Relude
--- These functions must be used only for crashing the entire app,
--- because of the bug in Alex, not in this code
+{- These functions must be used only for crashing the entire app,
+because of the bug in Alex, not in this code
+-}
 import Relude.Unsafe (fromJust, read)
 
 import Control.Lens
@@ -29,10 +38,14 @@ import qualified Data.Text as Text
 import Lamagraph.Compiler.Parser.LexerTypes
 import Lamagraph.Compiler.Parser.SrcLoc
 }
--- Alex "Wrapper"
+--------------------
+-- Alex "Wrapper" --
+--------------------
 %wrapper "monadUserState-strict-text"
 
--- Alex "Character set macros"
+---------------------------------
+-- Alex "Character set macros" --
+---------------------------------
 
 $digit = [0-9]
 $letter = [a-zA-Z]
@@ -40,18 +53,20 @@ $capital_letter = [A-Z]
 $lowercase_letter = [a-z]
 
 $escape_sequence = [\\ \" \' \n]
-$regular_char = [\ -\~] # $escape_sequence
+$regular_char = [\ -\~] # $escape_sequence -- # is a set difference
 
 $operator_char = [\! \$ \% & \* \+ \. \/ \: \< \= \> \? \@ \^ \| \~]
 
--- Alex "Regular expression macros"
+--------------------------------------
+-- Alex "Regular expression macros" --
+--------------------------------------
 
 -- Identifiers
 @ident_tail = ( $letter | $digit | \_ | \' )*
 @capitalized_ident = $capital_letter @ident_tail
--- @lowercase_ident = ( $lowercase_letter | \_ ) @ident_tail
 @lowercase_ident = (
   ( $lowercase_letter @ident_tail)
+  -- In constrast to the grammar @_@ is reserved as a wildcard and thus cannot be identifier
   | ( \_ ( $letter | $digit ) @ident_tail )
 )
 
@@ -69,10 +84,15 @@ $operator_char = [\! \$ \% & \* \+ \. \/ \: \< \= \> \? \@ \^ \| \~]
   | ( ( \? | \~ ) ( $operator_char )+ )
 )
 
--- Alex "Identifier"
+-----------------------
+-- Alex "Identifier" --
+-----------------------
+
 lamagraphml :-
 
--- Alex "Rules"
+------------------
+-- Alex "Rules" --
+------------------
 
 <0> $white+ ;
 
@@ -161,7 +181,9 @@ lamagraphml :-
 
 <0> @prefix_symbol { tokAnyIdent TokPrefixSymbol }
 
--- Alex "Haskell code fragment bottom"
+-----------------------------------------
+-- Alex "Haskell code fragment bottom" --
+-----------------------------------------
 {
 instance MonadState AlexUserState Alex where
   get :: Alex AlexUserState

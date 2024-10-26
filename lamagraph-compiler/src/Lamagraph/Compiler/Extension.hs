@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 
+-- | Lmlc (LamagraphML Compiler) specializations for LML AST
 module Lamagraph.Compiler.Extension (Pass (..), LmlcPass (..), LmlcPs) where
 
 import Lamagraph.Compiler.Parser.SrcLoc
@@ -11,7 +12,9 @@ data Pass = Parsed
 data LmlcPass (c :: Pass) where
   LmlcPs :: LmlcPass 'Parsed
 
-type LmlcPs = LmlcPass 'Parsed -- Output of parser
+type LmlcPs =
+  -- | Output of parser
+  LmlcPass 'Parsed
 
 type instance XLocated (LmlcPass p) a = Located a
 

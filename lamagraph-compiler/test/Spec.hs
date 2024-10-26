@@ -5,7 +5,7 @@ import Test.Tasty.Hedgehog
 
 import Lamagraph.Compiler.Parser.LexerTest
 import Lamagraph.Compiler.Parser.ParserRoundtrip
-import Lamagraph.Compiler.Parser.PrettyASTGolden
+import Lamagraph.Compiler.Parser.PrettyAstGolden
 import Lamagraph.Compiler.Parser.PrettyLmlGolden
 
 main :: IO ()
@@ -19,7 +19,7 @@ lexerTests = testGroup "Lexer" [lexerUnitTests]
 
 parserTests :: IO TestTree
 parserTests = do
-  parserASTGolden <- parserGoldenTestsAST
+  parserASTGolden <- parserPrettyAstGolden
   parserLmlGolden <- parserPrettyLmlGolden
   let roundtrip = testPropertyNamed "Parser roundtrip (AST -> LML -> AST)" "prop_ParserRoundtrip" prop_ParserRoundtrip
   return $ testGroup "Parser" [parserASTGolden, parserLmlGolden, roundtrip]

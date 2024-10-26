@@ -1,8 +1,11 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
--- | Orphan instances for pretty-printing LamagraphML
-module Lamagraph.Compiler.PrettyLML () where
+{- | Orphan instances for pretty-printing LamagraphML
+
+__Warning__: DO NOT import together with "Lamagraph.Compiler.PrettyAst"!
+-}
+module Lamagraph.Compiler.PrettyLml () where
 
 import Relude
 

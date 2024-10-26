@@ -2,7 +2,16 @@
 -- Exporting every type family from here will be too tedious
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
--- | Module with TTG extension points type families
+{- | Module with TTG extension points type families
+
+AST here is designed using Trees That Grow (<https://www.jucs.org/jucs_23_1/trees_that_grow/jucs_23_01_0042_0062_najd.pdf>) pattern.
+It uses type families to contain phase-specific information.
+
+Regarding directory structure, it loosely follows GHC's one.
+In "Lamagraph.Compiler.Syntax".* we have the most general tree with open type families,
+meaning that "Lamagraph.Compiler.Syntax".* can easily be transformed into a library.
+All the specialization must be done outside (currently in "Lamagraph.Compiler.Extension").
+-}
 module Lamagraph.Compiler.Syntax.Extension where
 
 import Relude

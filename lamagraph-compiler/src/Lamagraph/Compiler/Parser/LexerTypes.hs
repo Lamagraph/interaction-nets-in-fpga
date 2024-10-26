@@ -1,5 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
+-- | Module for types produced by lexer
 module Lamagraph.Compiler.Parser.LexerTypes (
   IdentType (..),
   Token (..),
@@ -20,6 +21,7 @@ import Lamagraph.Compiler.Parser.SrcLoc
 data AlexUserState = AlexUserState
   { _lexerCommentDepth :: Int
   , _lexerStringStartPos :: Maybe SrcLoc
+  -- ^ t'SrcLoc' here allows to untie cyclic dependency on 'Lamagraph.Compiler.Parser.Lexer.AlexPosn'
   , _lexerStringValue :: Text
   }
   deriving (Eq, Show)

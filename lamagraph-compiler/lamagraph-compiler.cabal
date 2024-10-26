@@ -30,8 +30,8 @@ library
       Lamagraph.Compiler.Parser.LexerTypes
       Lamagraph.Compiler.Parser.LexerUtils
       Lamagraph.Compiler.Parser.SrcLoc
-      Lamagraph.Compiler.PrettyAST
-      Lamagraph.Compiler.PrettyLML
+      Lamagraph.Compiler.PrettyAst
+      Lamagraph.Compiler.PrettyLml
       Lamagraph.Compiler.Syntax
       Lamagraph.Compiler.Syntax.Decl
       Lamagraph.Compiler.Syntax.Expr
@@ -95,7 +95,7 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Parser.GoldenCommon
       Lamagraph.Compiler.Parser.LexerTest
       Lamagraph.Compiler.Parser.ParserRoundtrip
-      Lamagraph.Compiler.Parser.PrettyASTGolden
+      Lamagraph.Compiler.Parser.PrettyAstGolden
       Lamagraph.Compiler.Parser.PrettyLmlGolden
       Paths_lamagraph_compiler
   hs-source-dirs:

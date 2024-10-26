@@ -1,3 +1,7 @@
+{- | Module with functions for working with lexer token stream
+
+For now they are used only in tests.
+-}
 module Lamagraph.Compiler.Parser.LexerUtils (scanner, getTokenTypes, getTokenTypesFromText) where
 
 import Relude
