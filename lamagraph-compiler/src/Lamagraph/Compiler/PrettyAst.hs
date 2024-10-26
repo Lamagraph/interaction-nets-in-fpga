@@ -1,7 +1,10 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
--- | Orphan instances for pretty-printing AST
-module Lamagraph.Compiler.PrettyAST () where
+{- | Orphan instances for pretty-printing AST
+
+__Warning__: DO NOT import together with "Lamagraph.Compiler.PrettyLml"!
+-}
+module Lamagraph.Compiler.PrettyAst () where
 
 import Relude
 

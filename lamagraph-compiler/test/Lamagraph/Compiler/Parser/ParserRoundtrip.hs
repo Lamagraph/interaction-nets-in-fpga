@@ -15,7 +15,7 @@ import Prettyprinter.Render.Text
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Parser.SrcLoc
-import Lamagraph.Compiler.PrettyLML ()
+import Lamagraph.Compiler.PrettyLml ()
 import Lamagraph.Compiler.Syntax
 
 {- | '<>' lifted to 'Applicative'

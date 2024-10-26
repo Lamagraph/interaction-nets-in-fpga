@@ -3,6 +3,8 @@
 but Happy docs recommend this flag -}
 {-# OPTIONS_GHC -fglasgow-exts #-}
 
+{- | LamagraphML parser made with Happy
+-}
 module Lamagraph.Compiler.Parser (parseLamagraphML) where
 
 import Relude
@@ -645,6 +647,7 @@ mkFunExpr pats mType rhsExpr = foldr helper init pats
   helper :: LLmlPat LmlcPs -> LLmlExpr LmlcPs -> LLmlExpr LmlcPs
   helper pat acc = sLL pat acc $ LmlExprFunction noExtField pat acc
 
+-- | Parser entry point
 parseLamagraphML :: Text -> Either String (LmlModule LmlcPs)
 parseLamagraphML text = runAlex text pLamagraphML
 }

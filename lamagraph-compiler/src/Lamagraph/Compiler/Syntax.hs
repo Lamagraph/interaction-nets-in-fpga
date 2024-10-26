@@ -2,7 +2,9 @@
 
 {- |
 
-LamagraphML syntax
+LamagraphML syntax description and top-level module type
+
+For more information on design see "Lamagraph.Compiler.Syntax.Extension".
 -}
 module Lamagraph.Compiler.Syntax (
   -- * Language description
