@@ -6,6 +6,11 @@
 
 AST here is designed using Trees That Grow (<https://www.jucs.org/jucs_23_1/trees_that_grow/jucs_23_01_0042_0062_najd.pdf>) pattern.
 It uses type families to contain phase-specific information.
+Simpler, but more up-to-date explanations can be found here:
+
+* <https://gitlab.haskell.org/ghc/ghc/-/wikis/implementing-trees-that-grow/trees-that-grow-guidance>
+* <https://gitlab.haskell.org/ghc/ghc/-/wikis/implementing-trees-that-grow/handling-source-locations>
+* <https://gitlab.haskell.org/ghc/ghc/-/wikis/implementing-trees-that-grow/instances>
 
 Regarding directory structure, it loosely follows GHC's one.
 In "Lamagraph.Compiler.Syntax".* we have the most general tree with open type families,
