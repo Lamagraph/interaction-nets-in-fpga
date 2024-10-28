@@ -5,17 +5,18 @@ module Core.Node where
 import Clash.Prelude
 import Control.Lens (makeLenses, (^.))
 
+type NodeTag = String
+
 type AddressNumber = Unsigned 16
+
+type LocalAddressNumber = AddressNumber
+type ActualAddressNumber = AddressNumber
 
 data IdOfPort (portsNumber :: Nat) = Id (Index portsNumber) | Primary
   deriving (Generic, Show, Eq, NFDataX) -- Index numberOfPorts
 
-data Address = ActualAddress AddressNumber | LocalAddress AddressNumber
+data Address = ActualAddress ActualAddressNumber | LocalAddress LocalAddressNumber
   deriving (NFDataX, Generic, Show, Eq)
-
-instance Default Address where
-  def :: Address
-  def = ActualAddress (def :: AddressNumber)
 
 data Port (portsNumber :: Nat) = Port
   { _nodeAddress :: Maybe Address
@@ -29,7 +30,7 @@ $(makeLenses ''Port)
 data Node portsNumber = Node
   { _primaryPort :: Port portsNumber
   , _secondaryPorts :: Vec portsNumber (Maybe (Port portsNumber))
-  -- _nodeType :: INNode looks like we need some kind of node label. Info about and reduction rules contained IN
+  , _nodeType :: NodeTag --  looks like we need some kind of node label. Info about and reduction rules contained IN
   }
   deriving (NFDataX, Generic, Show, Eq)
 
@@ -42,7 +43,7 @@ and info about this should be passed to the memory manager.
 -}
 data LoadedNode (portsNumber :: Nat) = LoadedNode
   { _containedNode :: Node portsNumber
-  , _originalAddress :: Address
+  , _originalAddress :: ActualAddressNumber
   }
   deriving (NFDataX, Generic, Show, Eq)
 
@@ -50,7 +51,7 @@ $(makeLenses ''LoadedNode)
 
 -- | Analog of `LoadedNode` with local address. Redundant, just for simplification of signatures.
 data LocalNode (portsNumber :: Nat) = LocalNode
-  { _localAddress :: Address
+  { _localAddress :: LocalAddressNumber
   , _numberedNode :: Node portsNumber
   }
   deriving (NFDataX, Generic, Show, Eq)
@@ -63,8 +64,18 @@ isActive ::
   LoadedNode numberOfPorts ->
   Bool
 isActive leftNode rightNode =
-  leftNodePrimaryPortAddress == Just (rightNode ^. originalAddress)
-    && rightNodePrimaryPortAddress == Just (leftNode ^. originalAddress)
+  leftNodePrimaryPortAddress == Just (ActualAddress (rightNode ^. originalAddress))
+    && rightNodePrimaryPortAddress == Just (ActualAddress (leftNode ^. originalAddress))
  where
   Port leftNodePrimaryPortAddress _ = leftNode ^. containedNode . primaryPort
   Port rightNodePrimaryPortAddress _ = rightNode ^. containedNode . primaryPort
+
+getPortById ::
+  (KnownNat portsNumber) =>
+  Node portsNumber ->
+  IdOfPort portsNumber ->
+  Maybe (Port portsNumber)
+getPortById node idOfPort =
+  case idOfPort of
+    Primary -> Just $ node ^. primaryPort
+    Id index -> (node ^. secondaryPorts) !! index
