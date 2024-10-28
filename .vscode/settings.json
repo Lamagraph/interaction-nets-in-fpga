@@ -35,13 +35,22 @@
     "**/*.o-boot": true,
     "**/*.hi-boot": true
   },
-  "cSpell.words": ["Lamagraph"],
+  "cSpell.words": [
+    "Lamagraph"
+  ],
   "[alex]": {
     "editor.tabSize": 2,
-    "editor.rulers": [120]
+    "editor.rulers": [
+      120
+    ]
   },
   "[happy]": {
     "editor.tabSize": 2,
-    "editor.rulers": [120]
+    "editor.rulers": [
+      120
+    ]
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
   }
 }
