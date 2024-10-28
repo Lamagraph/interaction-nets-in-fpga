@@ -1,193 +1,95 @@
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
-
 module Core.Reducer where
 
 import Clash.Prelude
+import Control.Lens (makeLenses, set, (^.))
+import Core.MemoryManager
 import Core.Node
 
 type NumOfNodesToStore = Unsigned 3
 type NumOfEdgesToStore = Unsigned 3
-type IdOfPort = Unsigned 3
 
-data ReducerStatus
-  = Work
-  | Finished
-  | ErrorHandleSingleNode
-  | ErrorEmptyLeftNode
-  deriving (Generic, NFDataX, Show, Eq)
+{- | Regulates which external (interface) `Ports` belonged to which `Node` (and in which place) before the reduction.
+  This is necessary in order to be able to coordinate the interface in the reducer
+-}
+data OldId portsNumber = LeftLoadedNode (IdOfPort portsNumber) | RightLoadedNode (IdOfPort portsNumber)
 
--- | State of the reducer (in terms of mealy automaton).
-data ReducerState
-  = Initial Address
-  | Empty
-  | OneNodeToLoad
-  | Done
-  | Failed
-  deriving (Generic, NFDataX, Show, Eq)
-
-data EdgeEnd = EdgeEnd
-  { _addressOfVertex :: Address
-  , _idOfPort :: IdOfPort
+-- | Result of abstract reduction rule
+data ReduceRuleResult (nodesNumber :: Nat) (edgesNumber :: Nat) (portsNumber :: Nat) = ReduceRuleResult
+  { _edges :: Vec edgesNumber (Maybe (OldId portsNumber, OldId portsNumber))
+  , _nodes ::
+      Vec nodesNumber (Maybe (LocalNode portsNumber, Vec portsNumber (Maybe (OldId portsNumber, IdOfPort portsNumber))))
   }
-  deriving (Generic, NFDataX, Show, Eq)
 
-data Edge = Edge
-  { _leftEnd :: EdgeEnd
-  , _rightEnd :: EdgeEnd
-  }
-  deriving (Generic, NFDataX, Show, Eq)
+$(makeLenses ''ReduceRuleResult)
 
-data DataToStore maxNumOfNodesToStore maxNumOfEdgesToStore numberOfPorts = DataToStore
-  { _nodes :: Vec maxNumOfNodesToStore (Maybe (LoadedNode numberOfPorts))
-  , _edges :: Vec maxNumOfEdgesToStore (Maybe Edge)
-  }
-  deriving (Generic, NFDataX, Show, Eq)
-
--- | Select next left `Node` to handle and next `Address` of right `Node` to be loaded.
-selectNextLeftNode ::
-  (KnownNat maxNumOfNodesToStore, KnownNat numberOfPorts, KnownNat maxNumOfEdgesToStore) =>
-  DataToStore maxNumOfNodesToStore maxNumOfEdgesToStore numberOfPorts ->
-  ( Maybe (LoadedNode numberOfPorts, Address)
-  , DataToStore maxNumOfNodesToStore maxNumOfEdgesToStore numberOfPorts
-  )
-selectNextLeftNode preDataToStore =
-  case selectedNode of
-    Nothing -> (Nothing, preDataToStore)
-    Just (i, node, addressOfNodeToLoad) ->
-      ( Just (node, addressOfNodeToLoad)
-      , DataToStore (replace i Nothing $ _nodes preDataToStore) (_edges preDataToStore)
-      )
+{- | Coordinates interface `Port` in `LocalNode`.
+I.e. it connects the "hanging" ports from the reduction rule with the `LoadedNode` from the real net
+-}
+putInterfacesNodeToGlobalNet ::
+  forall portsNumber.
+  (KnownNat portsNumber) =>
+  LoadedNode portsNumber ->
+  LoadedNode portsNumber ->
+  (LocalNode portsNumber, Vec portsNumber (Maybe (OldId portsNumber, IdOfPort portsNumber))) ->
+  LocalNode portsNumber
+putInterfacesNodeToGlobalNet leftLNode rightLNode (localNode, interfacePortsInfo) = foldl replaceOnePort localNode interfacePortsInfo
  where
-  handleNode s i mbNode =
-    mbNode
-      >>= ( \node -> case selectAddressToLoad node of
-              Nothing -> s
-              Just a -> Just (i, node, a)
-          )
-  selectedNode = ifoldl handleNode Nothing $ _nodes preDataToStore
+  replaceOnePort :: LocalNode portsNumber -> Maybe (OldId portsNumber, IdOfPort portsNumber) -> LocalNode portsNumber
+  replaceOnePort ln maybePortInfo =
+    case maybePortInfo of
+      Nothing -> ln
+      Just (oldPortId, portId) ->
+        let setPort loadedN idOfLoadedNode = case getPortById (loadedN ^. containedNode) idOfLoadedNode of
+              Nothing -> error "Port must be connected"
+              Just portOfLoadedNode -> case portId of
+                Primary -> set numberedNode (set primaryPort portOfLoadedNode (ln ^. numberedNode)) ln
+                Id index ->
+                  set
+                    numberedNode
+                    (set secondaryPorts (replace index (Just portOfLoadedNode) (ln ^. numberedNode . secondaryPorts)) (ln ^. numberedNode))
+                    ln
+         in case oldPortId of
+              LeftLoadedNode i -> setPort leftLNode i
+              RightLoadedNode i -> setPort rightLNode i
 
--- | Do one step of reduction and get info about next possible step.
-handle ::
-  forall
-    (maxNumOfNodesToStore :: Nat)
-    (maxNumOfEdgesToStore :: Nat)
-    (numberOfPorts :: Nat).
-  (KnownNat maxNumOfNodesToStore, KnownNat numberOfPorts, KnownNat maxNumOfEdgesToStore) =>
-  -- | Left `Node` to handle.
-  LoadedNode numberOfPorts ->
-  -- | Right `Node` to handle.
-  Maybe (LoadedNode numberOfPorts) ->
-  -- | Next possible Node and Address to handle and result data.
-  (Maybe (LoadedNode numberOfPorts, Address), DataToStore maxNumOfNodesToStore maxNumOfEdgesToStore numberOfPorts)
-handle leftNode rightNode =
-  selectNextLeftNode $ DataToStore (markAllInnerEdges nodes) emptyEdges
- where
-  emptyNodes = def :: Vec maxNumOfNodesToStore _
-  emptyEdges = def :: Vec maxNumOfEdgesToStore _
-  nodes = case rightNode of
-    Nothing -> Just leftNode +>> emptyNodes
-    Just _ ->
-      -- if isActive leftNode n
-      rightNode +>> Just leftNode +>> emptyNodes -- reduction rules applied here
+{- | Coordinates interface `Port` in disappeared `Node`.
+I.e. it connects relevant external `LoadedNode` together (making `Edge`)
+-}
+putInterfacesEdgeToGlobalNet ::
+  forall portsNumber.
+  (KnownNat portsNumber) =>
+  LoadedNode portsNumber ->
+  LoadedNode portsNumber ->
+  Maybe (OldId portsNumber, OldId portsNumber) ->
+  Maybe (Edge portsNumber)
+putInterfacesEdgeToGlobalNet leftLNode rightLNode info = case info of
+  Nothing -> Nothing
+  Just (leftEndPortInfo, rightEndPortInfo) -> Just $ Edge lEnd rEnd
+   where
+    constructEnd portInfo = case portInfo of
+      LeftLoadedNode portId -> EdgeEnd (leftLNode ^. originalAddress) portId
+      RightLoadedNode portId -> EdgeEnd (rightLNode ^. originalAddress) portId
+    lEnd = constructEnd leftEndPortInfo
+    rEnd = constructEnd rightEndPortInfo
 
--- | Type to indicate that all ports that could be handled locally are over.
-data NonVisitedOver = No | Yes
-
--- | Transition function in mealy automaton.
-mealyFunction ::
-  ( KnownNat maxNumOfNodesToStore
-  , KnownNat maxNumOfEdgesToStore
-  , KnownNat numberOfPorts
-  ) =>
-  -- | State of reducer and automaton.
-  ReducerState ->
-  -- | Input.
-  ( -- Left and right `Node` to reduce.
-    (Maybe (LoadedNode numberOfPorts), Maybe (LoadedNode numberOfPorts))
-  , ReducerStatus
-  , Maybe Address
-  -- Address from memory manager if reducer cannot find next `Address` locally.
-  ) ->
-  -- | (state, output).
-  ( ReducerState
-  , ( Maybe (DataToStore maxNumOfNodesToStore maxNumOfEdgesToStore numberOfPorts)
-    , ReducerStatus
-    , Maybe (LoadedNode numberOfPorts)
-    , -- Next left `Node`
-      Maybe Address
-    , -- Next `Address` to load
-      NonVisitedOver
-    )
-  )
-mealyFunction
-  state
-  ( (mbLeftNode, mbLoadedNode)
-    , status
-    , addressOfNodeWithUnvisitedEdges
-    ) =
-    case state of
-      Initial addressOfFirstNodeToLoad -> (Empty, (Nothing, Work, Nothing, Just addressOfFirstNodeToLoad, No))
-      Empty ->
-        case mbLoadedNode of
-          Nothing ->
-            (Failed, (Nothing, ErrorEmptyLeftNode, Nothing, Nothing, No))
-          Just loadedNode ->
-            case addressToLoad of
-              Just _ ->
-                (OneNodeToLoad, (Nothing, Work, Just loadedNode, addressToLoad, No))
-              Nothing ->
-                case mbLeftNode of
-                  Just leftNode' ->
-                    case infoAboutNextNodes of
-                      Just (_, _) ->
-                        (Failed, (Nothing, ErrorHandleSingleNode, Nothing, Nothing, No))
-                      Nothing ->
-                        (Empty, (Just dataToStore, Work, Nothing, addressOfNodeWithUnvisitedEdges, Yes))
-                   where
-                    (infoAboutNextNodes, dataToStore) = handle leftNode' Nothing
-                  Nothing ->
-                    (Failed, (Nothing, ErrorEmptyLeftNode, Nothing, Nothing, No))
-           where
-            addressToLoad = selectAddressToLoad loadedNode
-      OneNodeToLoad ->
-        case mbLeftNode of
-          Just leftNode ->
-            case infoAboutNextNodes of
-              Just (nextLeftNode, nextAddressToLoad) ->
-                (OneNodeToLoad, (Just dataToStore, Work, Just nextLeftNode, Just nextAddressToLoad, No))
-              Nothing ->
-                (Empty, (Just dataToStore, Work, Nothing, addressOfNodeWithUnvisitedEdges, Yes))
-           where
-            (infoAboutNextNodes, dataToStore) = handle leftNode mbLoadedNode
-          Nothing -> (Failed, (Nothing, ErrorEmptyLeftNode, Nothing, Nothing, No))
-      Failed -> (Failed, (Nothing, status, Nothing, Nothing, No))
-      Done -> (Done, (Nothing, Finished, Nothing, Nothing, No))
-
--- | Reducer function. Steps over Interaction Net and apply reduction rules until is possible.
 reducer ::
-  ( KnownDomain dom
-  , HiddenClockResetEnable dom
-  , KnownNat maxNumOfNodesToStore
-  , KnownNat maxNumOfEdgesToStore
-  , KnownNat numberOfPorts
-  ) =>
-  -- | Address of first `Node` to load.
-  Address ->
-  -- | Function to load `Node` from RAM.
-  (Signal dom (Maybe Address) -> Signal dom (Maybe (LoadedNode numberOfPorts))) ->
-  -- | Function that can give next possible `Address` to reduce.
-  --   It will come from memory manager which can see all Interaction Net.
-  (Signal dom NonVisitedOver -> Signal dom (Maybe Address)) ->
-  Signal dom (Maybe (DataToStore maxNumOfNodesToStore maxNumOfEdgesToStore numberOfPorts), ReducerStatus)
-reducer addressOfFirstNodeToLoad nodeLoader nonVisitedNodesProvider =
-  bundle (dataToStore, actualReducerStatus)
+  forall dom portsNumber nodesNumber edgesNumber.
+  (KnownDomain dom, KnownNat portsNumber, KnownNat nodesNumber, KnownNat edgesNumber) =>
+  ((NodeTag, NodeTag) -> ReduceRuleResult nodesNumber edgesNumber portsNumber) ->
+  Signal dom (ActivePair portsNumber) ->
+  Signal dom (Delta nodesNumber edgesNumber portsNumber)
+reducer transFunction activeP = Delta <$> nodesForDelta <*> edgesForDelta <*> activeP
  where
-  (dataToStore, actualReducerStatus, nextLeftNode, addressOfNextNodeToLoad, isNonVisitedNodeUsed) = unbundle mealyOutput
-  mealyOutput =
-    mealy mealyFunction (Initial addressOfFirstNodeToLoad) mealyInput
-  mealyInput =
-    bundle (bundle (leftNode, loadedNode), status, nonVisitedNodesProvider isNonVisitedNodeUsed)
-  loadedNode = register Nothing (nodeLoader addressOfNextNodeToLoad)
-  leftNode = register Nothing nextLeftNode
-  status = register Work actualReducerStatus
+  leftLNode = (^. leftNode) <$> activeP
+  rightLNode = (^. rightNode) <$> activeP
+  reduceRuleRes = transFunction <$> bundle ((^. containedNode . nodeType) <$> leftLNode, (^. containedNode . nodeType) <$> rightLNode)
+  nodesForDelta =
+    bundle $
+      map
+        ( \signalMaybeNodesInterfaceInfo -> case sequenceA signalMaybeNodesInterfaceInfo of
+            Nothing -> pure Nothing
+            Just signalNodesInterfaceInfo -> sequenceA (Just (putInterfacesNodeToGlobalNet <$> leftLNode <*> rightLNode <*> signalNodesInterfaceInfo))
+        )
+        (unbundle $ (^. nodes) <$> reduceRuleRes)
+  edgesForDelta =
+    bundle $ map (putInterfacesEdgeToGlobalNet <$> leftLNode <*> rightLNode <*>) (unbundle $ (^. edges) <$> reduceRuleRes)
