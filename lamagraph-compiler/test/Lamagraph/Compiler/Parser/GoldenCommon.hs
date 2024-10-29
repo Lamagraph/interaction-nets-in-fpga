@@ -15,7 +15,7 @@ renderPretty :: Doc ann -> LText
 renderPretty = renderLazy . layoutPretty (defaultLayoutOptions{layoutPageWidth = AvailablePerLine 80 1.0})
 
 parserGoldenTestsDir :: FilePath
-parserGoldenTestsDir = "test" </> "parserGolden" </> "source"
+parserGoldenTestsDir = "test" </> "golden" </> "parser" </> "source"
 
 lmlExt :: FilePath
 lmlExt = ".lml"
