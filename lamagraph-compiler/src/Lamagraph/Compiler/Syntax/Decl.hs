@@ -29,7 +29,7 @@ type LLmlDecl pass = XLocated pass (LmlDecl pass)
 -- | A LamagraphML declaration
 data LmlDecl pass
   = OpenD (XOpenD pass) (OpenDecl pass)
-  | ValD (XValD pass) RecFlag (NonEmpty (LLmlBind pass))
+  | ValD (XValD pass) (LLmlBindGroup pass)
   | TyD (XTyD pass) (NonEmpty (LTyDecl pass))
   | XLmlDecl !(XXDecl pass)
 
@@ -37,7 +37,7 @@ type ForallLmlDecl (tc :: Type -> Constraint) pass =
   ( tc (XOpenD pass)
   , tc (OpenDecl pass)
   , tc (XValD pass)
-  , tc (LLmlBind pass)
+  , tc (LLmlBindGroup pass)
   , tc (XTyD pass)
   , tc (LTyDecl pass)
   , tc (XXDecl pass)

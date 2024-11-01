@@ -5,106 +5,127 @@
   ("Const")))
  [ (L
     { :3:1-11 }
-    (ValD NonRec
-     [ (L
-        { :3:5-11 }
-        (Bind
-         (L
-          { :3:5-7 }
-          (PatVar
+    (ValD
+     (L
+      { :3:5-11 }
+      (NonRec
+       [ (L
+          { :3:5-11 }
+          (Bind
            (L
             { :3:5-7 }
-            "x1")))
-         (L
-          { :3:10-11 }
-          (ExprConstant 1)))) ]))
+            (PatVar
+             (L
+              { :3:5-7 }
+              "x1")))
+           (L
+            { :3:10-11 }
+            (ExprConstant 1)))) ]))))
  , (L
     { :4:1-12 }
-    (ValD NonRec
-     [ (L
-        { :4:5-12 }
-        (Bind
-         (L
-          { :4:5-7 }
-          (PatVar
+    (ValD
+     (L
+      { :4:5-12 }
+      (NonRec
+       [ (L
+          { :4:5-12 }
+          (Bind
            (L
             { :4:5-7 }
-            "x2")))
-         (L
-          { :4:10-12 }
-          (ExprConstant 1l)))) ]))
+            (PatVar
+             (L
+              { :4:5-7 }
+              "x2")))
+           (L
+            { :4:10-12 }
+            (ExprConstant 1l)))) ]))))
  , (L
     { :5:1-13 }
-    (ValD NonRec
-     [ (L
-        { :5:5-13 }
-        (Bind
-         (L
-          { :5:5-7 }
-          (PatVar
+    (ValD
+     (L
+      { :5:5-13 }
+      (NonRec
+       [ (L
+          { :5:5-13 }
+          (Bind
            (L
             { :5:5-7 }
-            "x3")))
-         (L
-          { :5:10-13 }
-          (ExprConstant 1ul)))) ]))
+            (PatVar
+             (L
+              { :5:5-7 }
+              "x3")))
+           (L
+            { :5:10-13 }
+            (ExprConstant 1ul)))) ]))))
  , (L
     { :6:1-12 }
-    (ValD NonRec
-     [ (L
-        { :6:5-12 }
-        (Bind
-         (L
-          { :6:5-7 }
-          (PatVar
+    (ValD
+     (L
+      { :6:5-12 }
+      (NonRec
+       [ (L
+          { :6:5-12 }
+          (Bind
            (L
             { :6:5-7 }
-            "x4")))
-         (L
-          { :6:10-12 }
-          (ExprConstant 1L)))) ]))
+            (PatVar
+             (L
+              { :6:5-7 }
+              "x4")))
+           (L
+            { :6:10-12 }
+            (ExprConstant 1L)))) ]))))
  , (L
     { :7:1-13 }
-    (ValD NonRec
-     [ (L
-        { :7:5-13 }
-        (Bind
-         (L
-          { :7:5-7 }
-          (PatVar
+    (ValD
+     (L
+      { :7:5-13 }
+      (NonRec
+       [ (L
+          { :7:5-13 }
+          (Bind
            (L
             { :7:5-7 }
-            "x5")))
-         (L
-          { :7:10-13 }
-          (ExprConstant 1UL)))) ]))
+            (PatVar
+             (L
+              { :7:5-7 }
+              "x5")))
+           (L
+            { :7:10-13 }
+            (ExprConstant 1UL)))) ]))))
  , (L
     { :8:1-13 }
-    (ValD NonRec
-     [ (L
-        { :8:5-13 }
-        (Bind
-         (L
-          { :8:5-7 }
-          (PatVar
+    (ValD
+     (L
+      { :8:5-13 }
+      (NonRec
+       [ (L
+          { :8:5-13 }
+          (Bind
            (L
             { :8:5-7 }
-            "x6")))
-         (L
-          { :8:10-13 }
-          (ExprConstant 'a')))) ]))
+            (PatVar
+             (L
+              { :8:5-7 }
+              "x6")))
+           (L
+            { :8:10-13 }
+            (ExprConstant 'a')))) ]))))
  , (L
     { :9:1-14 }
-    (ValD NonRec
-     [ (L
-        { :9:5-14 }
-        (Bind
-         (L
-          { :9:5-7 }
-          (PatVar
+    (ValD
+     (L
+      { :9:5-14 }
+      (NonRec
+       [ (L
+          { :9:5-14 }
+          (Bind
            (L
             { :9:5-7 }
-            "x7")))
-         (L
-          { :9:10-14 }
-          (ExprConstant "ab")))) ])) ])
+            (PatVar
+             (L
+              { :9:5-7 }
+              "x7")))
+           (L
+            { :9:10-14 }
+            (ExprConstant "ab")))) ])))) ])

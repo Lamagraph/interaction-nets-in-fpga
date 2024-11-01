@@ -336,7 +336,7 @@ compound_expr :: { LLmlExpr LmlcPs }
   | simple_expr expr_apply_NE { sLNE (NE.cons $1 $2) $ LmlExprApply noExtField $1 $2 }
   | 'match' compound_expr 'with' pattern_matchingNE{ sLL $1 (last $4) $ LmlExprMatch noExtField $2 $4 }
   | 'fun' expr_parameter_NE optional(type_constraint) '->' compound_expr { mkFunExpr $2 $3 $5 }
-  | 'let' rec sepBy1(let_binding, 'and') 'in' compound_expr { sLL $1 $5 $ LmlExprLet noExtField $2 $3 $5 }
+  | 'let' binding_group 'in' compound_expr { sLL $1 $4 $ LmlExprLet noExtField $2 $4 }
 
 delimited_expr :: { LLmlExpr LmlcPs }
   : '(' compound_expr ')' { sLL $1 $3 (unLoc $2) }
@@ -366,11 +366,15 @@ let_binding :: { LLmlBind LmlcPs }
       sLL $1 $5 $ LmlBind noExtField patIdent (mkFunExpr $2 $3 $5)
     }
 
+binding_group :: { LLmlBindGroup LmlcPs }
+  : {- empty -} sepBy1(let_binding, 'and') { sLNE $1 $ LmlBindGroup noExtField NonRecursive $1 }
+  | 'rec' sepBy1(let_binding, 'and') { sLL $1 (last $2) $ LmlBindGroup noExtField Recursive $2 }
+
 ----------------------
 -- Type definitions --
 ----------------------
 
--- type-information rule in inlined here
+-- type-information rule is inlined here
 typedef :: { LTyDecl LmlcPs }
   : optional(type_params) typeconstr_name {- empty -}
     { let typeParams = maybe [] toList $1 in
@@ -442,7 +446,7 @@ open_declaration :: { LOpenDecl LmlcPs }
 
 module_item :: { LLmlDecl LmlcPs }
   : open_declaration { sL1 $1 $ OpenD noExtField (unLoc $1) }
-  | 'let' rec sepBy1(let_binding, 'and') { sLL $1 (last $3) $ ValD noExtField $2 $3 }
+  | 'let' binding_group { sLL $1 $2 $ ValD noExtField $2 }
   | 'type' sepBy1(typedef, 'and') { sLL $1 (last $2) $ TyD noExtField $2 }
 
 -------------
@@ -481,10 +485,6 @@ lsepBy1Rev(p, sep)
   | lsepBy1Rev(p, sep) sep p { NE.cons $3 $1 }
 
 lsepBy1(p, sep) : lsepBy1Rev(p, sep) { NE.reverse $1 }
-
-rec :: { RecFlag }
-  : {- empty -} { NonRecursive }
-  | 'rec' { Recursive }
 
 mkIdentRev(prefix,final)
   : final { pure $1 }

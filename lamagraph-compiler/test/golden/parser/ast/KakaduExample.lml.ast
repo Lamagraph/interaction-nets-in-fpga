@@ -5,52 +5,58 @@
   ("KakaduExample")))
  [ (L
     { :3:1-31 }
-    (ValD NonRec
-     [ (L
-        { :3:5-31 }
-        (Bind
-         (L
-          { :3:5-6 }
-          (PatVar
+    (ValD
+     (L
+      { :3:5-31 }
+      (NonRec
+       [ (L
+          { :3:5-31 }
+          (Bind
            (L
             { :3:5-6 }
-            "x")))
-         (L
-          { :3:9-31 }
-          (ExprApply
+            (PatVar
+             (L
+              { :3:5-6 }
+              "x")))
            (L
-            { :3:11-12 }
-            (ExprIdent
-             "+"))
-           [ (L
-              { :3:9-10 }
-              (ExprConstant 1))
-           , (L
-              { :3:13-31 }
-              (ExprLet NonRec
-               [ (L
-                  { :3:17-22 }
-                  (Bind
-                   (L
-                    { :3:17-18 }
-                    (PatVar
-                     (L
-                      { :3:17-18 }
-                      "y")))
-                   (L
-                    { :3:21-22 }
-                    (ExprConstant 5)))) ]
-               (L
-                { :3:26-31 }
-                (ExprApply
+            { :3:9-31 }
+            (ExprApply
+             (L
+              { :3:11-12 }
+              (ExprIdent
+               "+"))
+             [ (L
+                { :3:9-10 }
+                (ExprConstant 1))
+             , (L
+                { :3:13-31 }
+                (ExprLet
                  (L
-                  { :3:28-29 }
-                  (ExprIdent
-                   "+"))
-                 [ (L
-                    { :3:26-27 }
-                    (ExprConstant 5))
-                 , (L
-                    { :3:30-31 }
+                  { :3:17-22 }
+                  (NonRec
+                   [ (L
+                      { :3:17-22 }
+                      (Bind
+                       (L
+                        { :3:17-18 }
+                        (PatVar
+                         (L
+                          { :3:17-18 }
+                          "y")))
+                       (L
+                        { :3:21-22 }
+                        (ExprConstant 5)))) ]))
+                 (L
+                  { :3:26-31 }
+                  (ExprApply
+                   (L
+                    { :3:28-29 }
                     (ExprIdent
-                     "y")) ])))) ])))) ])) ])
+                     "+"))
+                   [ (L
+                      { :3:26-27 }
+                      (ExprConstant 5))
+                   , (L
+                      { :3:30-31 }
+                      (ExprIdent
+                       "y")) ])))) ])))) ])))) ])

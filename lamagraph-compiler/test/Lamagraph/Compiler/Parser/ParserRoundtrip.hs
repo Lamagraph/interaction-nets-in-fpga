@@ -137,15 +137,9 @@ genLmlDecl :: Gen (LmlDecl LmlcPs)
 genLmlDecl = do
   Gen.choice
     [ OpenD noExtField <$> genOpenDecl
-    , genValD
+    , ValD noExtField <$> genLLmlBindGroup
     , TyD noExtField <$> Gen.nonEmpty nonEmptyRange genLTyDecl
     ]
-
-genValD :: Gen (LmlDecl LmlcPs)
-genValD = do
-  binds <- Gen.nonEmpty nonEmptyRange genLLmlBind
-  flag <- Gen.element [NonRecursive, Recursive]
-  pure $ ValD noExtField flag binds
 
 genLLmlDecl :: Gen (LLmlDecl LmlcPs)
 genLLmlDecl = mkGenLoc <$> genLmlDecl
@@ -180,10 +174,7 @@ genLmlExpr =
     [ LmlExprIdent noExtField <$> genLongident genValueName
     , LmlExprConstant noExtField <$> genLmlLit
     ]
-    [ LmlExprLet noExtField
-        <$> Gen.element [NonRecursive, Recursive]
-        <*> Gen.nonEmpty nonEmptyRange genLLmlBind
-        <*> genLLmlExpr
+    [ LmlExprLet noExtField <$> genLLmlBindGroup <*> genLLmlExpr
     , LmlExprFunction noExtField <$> genLLmlPat <*> genLLmlExpr
     , let func = (mkGenLoc . LmlExprIdent noExtField <$> genLongident genValueName)
        in LmlExprApply noExtField <$> func <*> Gen.nonEmpty nonEmptyRange genLLmlExpr
@@ -196,6 +187,15 @@ genLmlExpr =
 
 genLLmlExpr :: Gen (LLmlExpr LmlcPs)
 genLLmlExpr = mkGenLoc <$> genLmlExpr
+
+genLmlBindGroup :: Gen (LmlBindGroup LmlcPs)
+genLmlBindGroup = do
+  binds <- Gen.nonEmpty nonEmptyRange genLLmlBind
+  flag <- Gen.element [NonRecursive, Recursive]
+  pure $ LmlBindGroup noExtField flag binds
+
+genLLmlBindGroup :: Gen (LLmlBindGroup LmlcPs)
+genLLmlBindGroup = mkGenLoc <$> genLmlBindGroup
 
 genLmlBind :: Gen (LmlBind LmlcPs)
 genLmlBind = LmlBind noExtField <$> genLLmlPat <*> genLLmlExpr

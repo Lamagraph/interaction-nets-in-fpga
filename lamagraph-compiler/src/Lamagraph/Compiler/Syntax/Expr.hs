@@ -6,6 +6,9 @@ module Lamagraph.Compiler.Syntax.Expr (
   LLmlExpr,
   LmlExpr (..),
   ForallLmlExpr,
+  LLmlBindGroup,
+  LmlBindGroup (..),
+  ForallLmlBindingGroup,
   LLmlBind,
   LmlBind (..),
   ForallLmlBind,
@@ -35,7 +38,7 @@ data LmlExpr pass
   | -- | Represents constant value like @-1@ or @"text"@
     LmlExprConstant (XLmlExprConstant pass) (LmlLit pass)
   | -- | Represents let-binding
-    LmlExprLet (XLmlExprLet pass) RecFlag (NonEmpty (LLmlBind pass)) (LLmlExpr pass)
+    LmlExprLet (XLmlExprLet pass) (LLmlBindGroup pass) (LLmlExpr pass)
   | -- | Represents @fun x -> expr@ construction
     LmlExprFunction (XLmlExprFunction pass) (LLmlPat pass) (LLmlExpr pass)
   | -- | Function application @f x y z@
@@ -64,7 +67,7 @@ type ForallLmlExpr (tc :: Type -> Constraint) pass =
   , tc (XLmlExprConstant pass)
   , tc (LmlLit pass)
   , tc (XLmlExprLet pass)
-  , tc (LLmlBind pass)
+  , tc (LLmlBindGroup pass)
   , tc (LLmlExpr pass)
   , tc (XLmlExprFunction pass)
   , tc (LLmlPat pass)
@@ -82,6 +85,23 @@ type ForallLmlExpr (tc :: Type -> Constraint) pass =
 
 deriving instance (ForallLmlExpr Show pass) => Show (LmlExpr pass)
 deriving instance (ForallLmlExpr Eq pass) => Eq (LmlExpr pass)
+
+-- | Located bind group
+type LLmlBindGroup pass = XLocated pass (LmlBindGroup pass)
+
+{- | Bind group with 'RecFlag'
+
+Have separate type to allow stripping all unneeded declarations after typechecking.
+-}
+data LmlBindGroup pass
+  = LmlBindGroup (XLmlBindGroup pass) RecFlag (NonEmpty (LLmlBind pass))
+  | XLmlBindGroup !(XXBindGroup pass)
+
+type ForallLmlBindingGroup (tc :: Type -> Constraint) pass =
+  (tc (XLmlBindGroup pass), tc (LLmlBind pass), tc (XXBindGroup pass))
+
+deriving instance (ForallLmlBindingGroup Show pass) => Show (LmlBindGroup pass)
+deriving instance (ForallLmlBindingGroup Eq pass) => Eq (LmlBindGroup pass)
 
 -- | Located let binder
 type LLmlBind pass = XLocated pass (LmlBind pass)
