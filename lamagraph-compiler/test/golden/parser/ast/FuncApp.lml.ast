@@ -2,28 +2,31 @@
  (Nothing)
  [ (L
     { :1:1-14 }
-    (ValD NonRec
-     [ (L
-        { :1:5-14 }
-        (Bind
-         (L
-          { :1:5-6 }
-          (PatVar
+    (ValD
+     (L
+      { :1:5-14 }
+      (NonRec
+       [ (L
+          { :1:5-14 }
+          (Bind
            (L
             { :1:5-6 }
-            "x")))
-         (L
-          { :1:9-14 }
-          (ExprApply
+            (PatVar
+             (L
+              { :1:5-6 }
+              "x")))
            (L
-            { :1:9-10 }
-            (ExprIdent
-             "f"))
-           [ (L
-              { :1:11-12 }
+            { :1:9-14 }
+            (ExprApply
+             (L
+              { :1:9-10 }
               (ExprIdent
-               "y"))
-           , (L
-              { :1:13-14 }
-              (ExprIdent
-               "z")) ])))) ])) ])
+               "f"))
+             [ (L
+                { :1:11-12 }
+                (ExprIdent
+                 "y"))
+             , (L
+                { :1:13-14 }
+                (ExprIdent
+                 "z")) ])))) ])))) ])

@@ -129,6 +129,13 @@ type family XLmlExprIfThenElse x
 type family XLmlExprConstraint x
 type family XXExpr x
 
+-----------------------------------------------------
+-- Type families for LmlBindGroup extension points --
+-----------------------------------------------------
+
+type family XLmlBindGroup x
+type family XXBindGroup x
+
 ------------------------------------------------
 -- Type families for LmlBind extension points --
 ------------------------------------------------

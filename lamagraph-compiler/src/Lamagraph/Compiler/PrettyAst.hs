@@ -73,7 +73,7 @@ instance Pretty RecFlag where
 instance Pretty (LmlDecl (LmlcPass pass)) where
   pretty :: LmlDecl (LmlcPass pass) -> Doc ann
   pretty (OpenD _ decl) = vsep ["OpenD", pretty decl]
-  pretty (ValD _ recFlag binds) = vsep ["ValD" <+> pretty recFlag, list $ map pretty (toList binds)]
+  pretty (ValD _ bindGroup) = vsep ["ValD", pretty bindGroup]
   pretty (TyD _ decls) = vsep ["TyD", list $ map pretty (toList decls)]
 
 instance Pretty (OpenDecl (LmlcPass pass)) where
@@ -93,7 +93,7 @@ instance Pretty (LmlExpr (LmlcPass pass)) where
   pretty :: LmlExpr (LmlcPass pass) -> Doc ann
   pretty (LmlExprIdent _ ident) = vsep ["ExprIdent", pretty ident]
   pretty (LmlExprConstant _ constant) = "ExprConstant" <+> pretty constant
-  pretty (LmlExprLet _ recFlag binds expr) = vsep ["ExprLet" <+> pretty recFlag, list $ map pretty (toList binds), pretty expr]
+  pretty (LmlExprLet _ bindGroup expr) = vsep ["ExprLet", pretty bindGroup, pretty expr]
   pretty (LmlExprFunction _ pat expr) = vsep ["ExprFunction", pretty pat, pretty expr]
   pretty (LmlExprApply _ expr exprs) = vsep ["ExprApply", pretty expr, list $ map pretty (toList exprs)]
   pretty (LmlExprMatch _ expr cases) = vsep ["ExprMatch", pretty expr, list $ map pretty (toList cases)]
@@ -101,6 +101,10 @@ instance Pretty (LmlExpr (LmlcPass pass)) where
   pretty (LmlExprConstruct _ constr expr) = vsep ["ExprConstruct", pretty constr, prettyMaybe expr]
   pretty (LmlExprIfThenElse _ cond t f) = vsep ["ExprITE", pretty cond, pretty t, pretty f]
   pretty (LmlExprConstraint _ expr ty) = vsep ["ExprConstraint", pretty expr, pretty ty]
+
+instance Pretty (LmlBindGroup (LmlcPass pass)) where
+  pretty :: LmlBindGroup (LmlcPass pass) -> Doc ann
+  pretty (LmlBindGroup _ recFlag binds) = vsep [pretty recFlag, list $ map pretty (toList binds)]
 
 instance Pretty (LmlBind (LmlcPass pass)) where
   pretty :: LmlBind (LmlcPass pass) -> Doc ann

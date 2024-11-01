@@ -72,6 +72,9 @@ type instance XLmlExprIfThenElse (LmlcPass _) = NoExtField
 type instance XLmlExprConstraint (LmlcPass _) = NoExtField
 type instance XXExpr (LmlcPass _) = DataConCantHappen
 
+type instance XLmlBindGroup (LmlcPass _) = NoExtField
+type instance XXBindGroup (LmlcPass _) = DataConCantHappen
+
 type instance XLmlBind (LmlcPass _) = NoExtField
 type instance XXBind (LmlcPass _) = DataConCantHappen
 

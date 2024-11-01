@@ -52,7 +52,7 @@ instance Pretty RecFlag where
 instance Pretty (LmlDecl (LmlcPass pass)) where
   pretty :: LmlDecl (LmlcPass pass) -> Doc ann
   pretty (OpenD _ decl) = "open" <+> pretty decl
-  pretty (ValD _ recFlag binds) = "let" <+> pretty recFlag <> concatWith (surround (hardline <> "and" <> hardline)) (map pretty (toList binds))
+  pretty (ValD _ bindGroup) = "let" <+> pretty bindGroup
   pretty (TyD _ decls) = "type" <+> concatWith (surround (hardline <> "and" <> hardline)) (map pretty (toList decls))
 
 instance Pretty (OpenDecl (LmlcPass pass)) where
@@ -80,10 +80,9 @@ instance Pretty (LmlExpr (LmlcPass pass)) where
   pretty :: LmlExpr (LmlcPass pass) -> Doc ann
   pretty (LmlExprIdent _ ident) = pretty ident
   pretty (LmlExprConstant _ constant) = pretty constant
-  pretty (LmlExprLet _ recFlag binds expr) =
+  pretty (LmlExprLet _ bindGroup expr) =
     "let"
-      <+> pretty recFlag
-      <> concatWith (surround (hardline <> "and" <> hardline)) (map pretty (toList binds))
+      <+> pretty bindGroup
       <+> "in"
       <+> pretty expr
   pretty (LmlExprFunction _ pat expr) = "fun" <+> pretty pat <+> "->" <+> pretty expr
@@ -98,6 +97,10 @@ instance Pretty (LmlExpr (LmlcPass pass)) where
   pretty (LmlExprConstruct _ constr (Just expr)) = parens (pretty constr <+> parens (pretty expr))
   pretty (LmlExprIfThenElse _ cond t f) = "if" <+> pretty cond <+> "then" <+> pretty t <+> "else" <+> pretty f
   pretty (LmlExprConstraint _ expr ty) = parens (pretty expr <+> ":" <+> pretty ty)
+
+instance Pretty (LmlBindGroup (LmlcPass pass)) where
+  pretty :: LmlBindGroup (LmlcPass pass) -> Doc ann
+  pretty (LmlBindGroup _ recFlag binds) = pretty recFlag <> concatWith (surround (hardline <> "and" <> hardline)) (map pretty (toList binds))
 
 instance Pretty (LmlBind (LmlcPass pass)) where
   pretty :: LmlBind (LmlcPass pass) -> Doc ann

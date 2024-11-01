@@ -5,165 +5,177 @@
   ("ListPatterns")))
  [ (L
     { :3:1-11 }
-    (ValD NonRec
-     [ (L
-        { :3:5-11 }
-        (Bind
-         (L
-          { :3:5-7 }
-          (PatConstruct
+    (ValD
+     (L
+      { :3:5-11 }
+      (NonRec
+       [ (L
+          { :3:5-11 }
+          (Bind
            (L
             { :3:5-7 }
-            ("[]"))
-           (Nothing)))
-         (L
-          { :3:10-11 }
-          (ExprIdent
-           "x")))) ]))
+            (PatConstruct
+             (L
+              { :3:5-7 }
+              ("[]"))
+             (Nothing)))
+           (L
+            { :3:10-11 }
+            (ExprIdent
+             "x")))) ]))))
  , (L
     { :4:1-12 }
-    (ValD NonRec
-     [ (L
-        { :4:6-12 }
-        (Bind
-         (L
-          { :4:6-8 }
-          (PatConstruct
-           (L
-            { <compiler-generated code> }
-            ("::"))
-           (Just
+    (ValD
+     (L
+      { :4:6-12 }
+      (NonRec
+       [ (L
+          { :4:6-12 }
+          (Bind
            (L
             { :4:6-8 }
-            (PatTuple
-             [ (L
-                { :4:6-7 }
-                (PatVar
-                 (L
+            (PatConstruct
+             (L
+              { <compiler-generated code> }
+              ("::"))
+             (Just
+             (L
+              { :4:6-8 }
+              (PatTuple
+               [ (L
                   { :4:6-7 }
-                  "a")))
-             , (L
-                { :4:7-8 }
-                (PatConstruct
-                 (L
-                  { <compiler-generated code> }
-                  ("[]"))
-                 (Nothing))) ])))))
-         (L
-          { :4:11-12 }
-          (ExprIdent
-           "x")))) ]))
+                  (PatVar
+                   (L
+                    { :4:6-7 }
+                    "a")))
+               , (L
+                  { :4:7-8 }
+                  (PatConstruct
+                   (L
+                    { <compiler-generated code> }
+                    ("[]"))
+                   (Nothing))) ])))))
+           (L
+            { :4:11-12 }
+            (ExprIdent
+             "x")))) ]))))
  , (L
     { :5:1-15 }
-    (ValD NonRec
-     [ (L
-        { :5:6-15 }
-        (Bind
-         (L
-          { :5:6-11 }
-          (PatConstruct
-           (L
-            { <compiler-generated code> }
-            ("::"))
-           (Just
+    (ValD
+     (L
+      { :5:6-15 }
+      (NonRec
+       [ (L
+          { :5:6-15 }
+          (Bind
            (L
             { :5:6-11 }
-            (PatTuple
-             [ (L
-                { :5:6-7 }
-                (PatVar
-                 (L
+            (PatConstruct
+             (L
+              { <compiler-generated code> }
+              ("::"))
+             (Just
+             (L
+              { :5:6-11 }
+              (PatTuple
+               [ (L
                   { :5:6-7 }
-                  "a")))
-             , (L
-                { :5:9-11 }
-                (PatConstruct
-                 (L
-                  { <compiler-generated code> }
-                  ("::"))
-                 (Just
-                 (L
+                  (PatVar
+                   (L
+                    { :5:6-7 }
+                    "a")))
+               , (L
                   { :5:9-11 }
-                  (PatTuple
-                   [ (L
-                      { :5:9-10 }
-                      (PatVar
-                       (L
+                  (PatConstruct
+                   (L
+                    { <compiler-generated code> }
+                    ("::"))
+                   (Just
+                   (L
+                    { :5:9-11 }
+                    (PatTuple
+                     [ (L
                         { :5:9-10 }
-                        "b")))
-                   , (L
-                      { :5:10-11 }
-                      (PatConstruct
-                       (L
-                        { <compiler-generated code> }
-                        ("[]"))
-                       (Nothing))) ]))))) ])))))
-         (L
-          { :5:14-15 }
-          (ExprIdent
-           "x")))) ]))
+                        (PatVar
+                         (L
+                          { :5:9-10 }
+                          "b")))
+                     , (L
+                        { :5:10-11 }
+                        (PatConstruct
+                         (L
+                          { <compiler-generated code> }
+                          ("[]"))
+                         (Nothing))) ]))))) ])))))
+           (L
+            { :5:14-15 }
+            (ExprIdent
+             "x")))) ]))))
  , (L
     { :6:1-18 }
-    (ValD NonRec
-     [ (L
-        { :6:6-18 }
-        (Bind
-         (L
-          { :6:6-14 }
-          (PatConstruct
-           (L
-            { <compiler-generated code> }
-            ("::"))
-           (Just
+    (ValD
+     (L
+      { :6:6-18 }
+      (NonRec
+       [ (L
+          { :6:6-18 }
+          (Bind
            (L
             { :6:6-14 }
-            (PatTuple
-             [ (L
-                { :6:6-7 }
-                (PatVar
-                 (L
+            (PatConstruct
+             (L
+              { <compiler-generated code> }
+              ("::"))
+             (Just
+             (L
+              { :6:6-14 }
+              (PatTuple
+               [ (L
                   { :6:6-7 }
-                  "a")))
-             , (L
-                { :6:9-14 }
-                (PatConstruct
-                 (L
-                  { <compiler-generated code> }
-                  ("::"))
-                 (Just
-                 (L
+                  (PatVar
+                   (L
+                    { :6:6-7 }
+                    "a")))
+               , (L
                   { :6:9-14 }
-                  (PatTuple
-                   [ (L
-                      { :6:9-10 }
-                      (PatVar
-                       (L
+                  (PatConstruct
+                   (L
+                    { <compiler-generated code> }
+                    ("::"))
+                   (Just
+                   (L
+                    { :6:9-14 }
+                    (PatTuple
+                     [ (L
                         { :6:9-10 }
-                        "b")))
-                   , (L
-                      { :6:12-14 }
-                      (PatConstruct
-                       (L
-                        { <compiler-generated code> }
-                        ("::"))
-                       (Just
-                       (L
+                        (PatVar
+                         (L
+                          { :6:9-10 }
+                          "b")))
+                     , (L
                         { :6:12-14 }
-                        (PatTuple
-                         [ (L
-                            { :6:12-13 }
-                            (PatVar
-                             (L
+                        (PatConstruct
+                         (L
+                          { <compiler-generated code> }
+                          ("::"))
+                         (Just
+                         (L
+                          { :6:12-14 }
+                          (PatTuple
+                           [ (L
                               { :6:12-13 }
-                              "c")))
-                         , (L
-                            { :6:13-14 }
-                            (PatConstruct
-                             (L
-                              { <compiler-generated code> }
-                              ("[]"))
-                             (Nothing))) ]))))) ]))))) ])))))
-         (L
-          { :6:17-18 }
-          (ExprIdent
-           "x")))) ])) ])
+                              (PatVar
+                               (L
+                                { :6:12-13 }
+                                "c")))
+                           , (L
+                              { :6:13-14 }
+                              (PatConstruct
+                               (L
+                                { <compiler-generated code> }
+                                ("[]"))
+                               (Nothing))) ]))))) ]))))) ])))))
+           (L
+            { :6:17-18 }
+            (ExprIdent
+             "x")))) ])))) ])
