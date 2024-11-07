@@ -51,8 +51,8 @@ $(makeLenses ''LoadedNode)
 
 -- | Analog of `LoadedNode` with local address. Redundant, just for simplification of signatures.
 data LocalNode (portsNumber :: Nat) = LocalNode
-  { _localAddress :: LocalAddressNumber
-  , _numberedNode :: Node portsNumber
+  { _numberedNode :: Node portsNumber
+  , _localAddress :: LocalAddressNumber
   }
   deriving (NFDataX, Generic, Show, Eq)
 

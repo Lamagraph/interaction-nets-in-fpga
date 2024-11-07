@@ -15,7 +15,7 @@ loader ::
 loader ram mbAddressNumberToLoad =
   mkLoadedNode <$> mbNode <*> mbAddressNumberToLoad
  where
-  mkLoadedNode node address = LoadedNode <$> node <*> (ActualAddress <$> address)
+  mkLoadedNode node address = LoadedNode <$> node <*> address
   mbNode = case sequenceA mbAddressNumberToLoad of
     Nothing -> pure Nothing
     Just n -> sequenceA $ Just (ram n)
