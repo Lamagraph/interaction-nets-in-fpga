@@ -89,6 +89,7 @@ library
     Core.Node
     Core.Reducer
     Core.MemoryManager
+    Core.Map
   default-language: Haskell2010
 
 -- Builds the executable 'clash', with lamagraph-core project in scope
