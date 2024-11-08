@@ -157,7 +157,7 @@ updateNode oldNode (NodePortInfo maybeSecPortsAddr maybePrimaryPort) =
     Just primPort -> primPort
 
 -- | The flag to distinguish between nodes that need to be loaded from ram and local ones
-data LocalFlag (portsNumber :: Nat)
+data LocalFlag
   = Local
   | External
   deriving (Eq)
@@ -169,11 +169,11 @@ The first one we can upload from locals and another one we have to upload from r
 updatePortsInfoByPort ::
   forall portsNumber maxNumOfChangedNodes.
   (KnownNat portsNumber, KnownNat maxNumOfChangedNodes) =>
-  Map maxNumOfChangedNodes (NodePortsInfo portsNumber, LocalFlag portsNumber) ->
+  Map maxNumOfChangedNodes (NodePortsInfo portsNumber, LocalFlag) ->
   LoadedNode portsNumber ->
   Port portsNumber ->
   IdOfPort portsNumber ->
-  Map maxNumOfChangedNodes (NodePortsInfo portsNumber, LocalFlag portsNumber)
+  Map maxNumOfChangedNodes (NodePortsInfo portsNumber, LocalFlag)
 updatePortsInfoByPort infoVec localNodeWithAddress (Port maybeAddr connectedToPortId) portId =
   case maybeAddr of
     Nothing -> infoVec -- or @error "Port must be connected"@
@@ -182,7 +182,7 @@ updatePortsInfoByPort infoVec localNodeWithAddress (Port maybeAddr connectedToPo
       ActualAddress addressNum -> update External addressNum
      where
       update localFlag addressNum =
-        changeValueByKey
+        insertWith
           infoVec
           ( \case
               Nothing -> Just (constructNewInfo def, localFlag)
@@ -198,9 +198,9 @@ updatePortsInfoByPort infoVec localNodeWithAddress (Port maybeAddr connectedToPo
 updatePortsInfoByEdge ::
   forall portsNumber maxNumOfChangedNodes.
   (KnownNat portsNumber, KnownNat maxNumOfChangedNodes) =>
-  Map maxNumOfChangedNodes (NodePortsInfo portsNumber, LocalFlag portsNumber) ->
+  Map maxNumOfChangedNodes (NodePortsInfo portsNumber, LocalFlag) ->
   Edge portsNumber ->
-  Map maxNumOfChangedNodes (NodePortsInfo portsNumber, LocalFlag portsNumber)
+  Map maxNumOfChangedNodes (NodePortsInfo portsNumber, LocalFlag)
 updatePortsInfoByEdge oldInfoVec (Edge leftE rightE) =
   update
     rightAddrNum
@@ -212,7 +212,7 @@ updatePortsInfoByEdge oldInfoVec (Edge leftE rightE) =
   leftAddrNum = leftE ^. addressOfVertex
   rightAddrNum = rightE ^. addressOfVertex
   update addrToUpdate addrToWhichUpdate connectedToPortId portId infoVec =
-    changeValueByKey
+    insertWith
       infoVec
       ( \case
           Nothing -> Just (constructNewInfo (NodePortInfo def Nothing), External)
@@ -261,67 +261,40 @@ updateMM ram memoryManager delta = (MemoryManager <$> markedBusyBitMap <*> newAc
   localNodesSignal = unbundle $ (^. newNodes) <$> delta :: _ (Signal _ _)
   activePairSignal = (^. activePair) <$> delta
   -- map of local and actual `AddressNumber`
-  localActualMapDef = undefined
+  localActualMapDef = error "Nothing is written at this local address"
+  updatesInfo = def :: Signal dom (Map maxNumOfChangedNodes (NodePortsInfo _, LocalFlag))
   -- removed the processed active pair
   pairsAfterDelete = (deleteActivePair . (^. activePairs) <$> memoryManager) <*> activePairSignal
   -- freed up space from an active pair
   freedFromActivePair = (freeUpActivePair . (^. busyBitMap) <$> memoryManager) <*> activePairSignal
-  -- gave the local nodes free addresses, marking the occupied ones. Received a marked map address:busy, a list of new nodes with their actual addresses and a map (local address):(actual address)
-  (markedBusyBitMap, loaded, localActualMap) =
+  {- gave the local nodes free addresses, marking the occupied ones.
+     Received a marked map address:busy, a list of new nodes with their actual addresses and a map (local address):(loaded node).
+     It also accumulate all changes in ports in the `Map` and updates actives-}
+  (markedBusyBitMap, localAddressToLoadedMap, newActives, infoAboutUpdatesByNodes) =
     foldl
-      ( \(busyMap, loadedNodes, localToActual) signalMaybeLocalNode ->
-          let (newBusyMap, newLoadedNode) = signalMaybeApply signalMaybeLocalNode busyMap
-              actualAddr = case sequenceA newLoadedNode of
-                Nothing -> pure Nothing
-                Just pair -> sequenceA $ Just $ (^. originalAddress) <$> pair
+      ( \(busyMap, localToActual, oldActives, accumulatedInfoMap) signalMaybeLocalNode ->
+          let (newBusyMap, newLoadedNode) = assignNewAddressToLocalNode signalMaybeLocalNode busyMap
+              (actualAddr, actives, infoVec) = case sequenceA newLoadedNode of
+                Nothing -> (def, oldActives, accumulatedInfoMap)
+                Just localLoadedNode ->
+                  let addressIsActive = (newNodeIsActive . (^. containedNode) <$> localLoadedNode)
+                   in ( sequenceA $ Just $ (^. originalAddress) <$> localLoadedNode
+                      , mux addressIsActive ((replace . (^. originalAddress) <$> localLoadedNode) <*> addressIsActive <*> actives) actives
+                      , accumulatePortsChangesByLoadedNode accumulatedInfoMap localLoadedNode
+                      )
               newLocalToActual = case sequenceA actualAddr of
                 Nothing -> localToActual
                 Just addr -> case sequenceA signalMaybeLocalNode of
                   Nothing -> localToActual
-                  Just signalLocal -> updateLocalActual <$> localToActual <*> signalLocal <*> addr
-           in (newBusyMap, (+>>) <$> newLoadedNode <*> loadedNodes, newLocalToActual)
+                  Just signalLocal -> updateLocalAddressToLoaded localToActual signalLocal addr
+           in (newBusyMap, newLocalToActual, actives, infoVec)
       )
-      (freedFromActivePair, newLoadedNodesStart, localActualMapDef)
+      ( freedFromActivePair
+      , localActualMapDef
+      , pairsAfterDelete
+      , updatesInfo
+      )
       localNodesSignal
-   where
-    newLoadedNodesStart = pure def :: Signal dom (Vec cellsNumber (Maybe _))
-    signalMaybeApply signalMaybeLocalNode busyMap = case sequenceA signalMaybeLocalNode of
-      Nothing -> (busyMap, pure Nothing)
-      Just signalLocalNode ->
-        let (signalBusyMap, loadedSignal) = unbundle (updateFromLocalToLoaded <$> busyMap <*> signalLocalNode)
-         in (signalBusyMap, Just <$> loadedSignal)
-    updateLocalActual oldMap localNode actualAddr x =
-      if x == (localNode ^. localAddress)
-        then LoadedNode (localNode ^. numberedNode) actualAddr
-        else oldMap (localNode ^. localAddress)
-  -- accumulate all port changes from local nodes
-  infoAboutUpdatesByNodes =
-    foldl
-      ( \infoVec signalMaybeLoadedNode -> case sequenceA signalMaybeLoadedNode of
-          Nothing -> infoVec
-          Just signalLoadedNode ->
-            let infoVecByPrimary =
-                  updatePortsInfoByPort
-                    <$> infoVec
-                    <*> signalLoadedNode
-                    <*> ((^. containedNode . primaryPort) <$> signalLoadedNode)
-                    <*> pure Primary
-             in ifoldl
-                  ( \oldInfoVec i signalMaybePort ->
-                      case sequenceA signalMaybePort of
-                        Nothing -> oldInfoVec
-                        Just signalPort ->
-                          updatePortsInfoByPort
-                            <$> oldInfoVec
-                            <*> signalLoadedNode
-                            <*> signalPort
-                            <*> pure (Id i)
-                  )
-                  infoVecByPrimary
-                  (unbundle ((^. containedNode . secondaryPorts) <$> signalLoadedNode))
-      )
-      (def :: Signal dom (Map maxNumOfChangedNodes (NodePortsInfo portsNumber, LocalFlag portsNumber)))
-      (unbundle loaded)
   -- accumulate all ports changes from edges. i.e. connect some external nodes with each other
   infoAboutAllUpdates =
     foldl
@@ -336,22 +309,22 @@ updateMM ram memoryManager delta = (MemoryManager <$> markedBusyBitMap <*> newAc
     map
       ( \signalMaybePair ->
           case sequenceA signalMaybePair of
-            Nothing -> pure Nothing :: Signal dom _
+            Nothing -> def -- same as @pure Nothing@
             Just signalPair ->
-              let addr = fst <$> signalPair
+              let addr = fst <$> signalPair :: Signal dom AddressNumber
                   signalMaybeInfo = snd <$> signalPair
                in case sequenceA signalMaybeInfo of
-                    Nothing -> def -- same as @pure Nothing@
+                    Nothing -> def
                     Just signalInfo ->
-                      let lf = snd <$> signalInfo
+                      let localFlag = snd <$> signalInfo
                           info = fst <$> signalInfo
-                          node = readByAddressAndFlag addr lf
+                          node = readByAddressAndFlag addr localFlag
                        in mux
-                            (lf .==. pure External)
+                            (localFlag .==. pure External)
                             (sequenceA $ Just $ LoadedNode <$> (updateNode <$> node <*> info) <*> addr)
                             ( sequenceA $
                                 Just $
-                                  LoadedNode <$> (updateNode <$> node <*> info) <*> ((^. originalAddress) <$> (localActualMap <*> addr))
+                                  LoadedNode <$> (updateNode <$> node <*> info) <*> ((^. originalAddress) <$> localAddressToLoadedMap addr)
                             )
       )
       (unbundle infoAboutAllUpdates)
@@ -360,25 +333,51 @@ updateMM ram memoryManager delta = (MemoryManager <$> markedBusyBitMap <*> newAc
     map
       (maybe def writeByLoadedNode . sequenceA)
       nodesToWrite
-  -- update active pairs (maybe it should to replace into the first foldl)
-  newActives =
-    foldl
-      ( \actives signalMaybeLocalNode -> case sequenceA signalMaybeLocalNode of
-          Nothing -> actives
-          Just signalLocalNode ->
-            let addressIsActive = (newNodeIsActive . (^. containedNode) <$> signalLocalNode)
-             in mux addressIsActive ((replace . (^. originalAddress) <$> signalLocalNode) <*> addressIsActive <*> actives) actives
-      )
-      pairsAfterDelete
-      (unbundle loaded)
-
+  {-----------------
+  Helping functions
+  -----------------}
+  -- assign new `ActualAddressNumber` to `LocalNode` and mark busy bit map
+  assignNewAddressToLocalNode signalMaybeLocalNode busyMap = case sequenceA signalMaybeLocalNode of
+    Nothing -> (busyMap, def)
+    Just signalLocalNode ->
+      let (signalBusyMap, loadedSignal) = unbundle (updateFromLocalToLoaded <$> busyMap <*> signalLocalNode)
+       in (signalBusyMap, Just <$> loadedSignal)
+  -- read `Node` by `AddressNumber`. From the locals or from the RAM according to the flag
   readByAddressAndFlag addressNumber localFlag = mux (localFlag .==. pure External) externalCase localCase
    where
     externalCase = case sequenceA $ ram addressNumber (pure Nothing) of
       Nothing -> error "There is no Node by this address"
       Just node -> node
-    localCase = (^. containedNode) <$> (localActualMap <*> addressNumber)
+    localCase = (^. containedNode) <$> localAddressToLoadedMap addressNumber
+  -- write `Node` by the `ActualAddressNumber` in the RAM
   writeByLoadedNode loadedNode =
     ram
       ((^. originalAddress) <$> loadedNode)
       (sequenceA $ Just $ bundle ((^. originalAddress) <$> loadedNode, sequenceA $ Just $ (^. containedNode) <$> loadedNode))
+  -- update local-to-loaded map
+  updateLocalAddressToLoaded oldMap localNode actualAddr x =
+    mux
+      (x .==. ((^. localAddress) <$> localNode))
+      ((LoadedNode . (^. numberedNode) <$> localNode) <*> actualAddr)
+      (oldMap ((^. localAddress) <$> localNode))
+  -- accumulate all changes by ports of the given `Node` and write in the `Map`
+  accumulatePortsChangesByLoadedNode infoVec signalLoadedNode =
+    let infoVecByPrimary =
+          updatePortsInfoByPort
+            <$> infoVec
+            <*> signalLoadedNode
+            <*> ((^. containedNode . primaryPort) <$> signalLoadedNode)
+            <*> pure Primary
+     in ifoldl
+          ( \oldInfoVec i signalMaybePort ->
+              case sequenceA signalMaybePort of
+                Nothing -> oldInfoVec
+                Just signalPort ->
+                  updatePortsInfoByPort
+                    <$> oldInfoVec
+                    <*> signalLoadedNode
+                    <*> signalPort
+                    <*> pure (Id i)
+          )
+          infoVecByPrimary
+          (unbundle ((^. containedNode . secondaryPorts) <$> signalLoadedNode))
