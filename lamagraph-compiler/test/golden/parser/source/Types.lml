@@ -15,7 +15,7 @@ type someTuple = T of (int * int)
 type ('a, 'b, 'c) weirdTupleAlias = (('a * 'b) list -> ('c, 'b) either list) -> ('a -> 'b, 'c) either -> 'c
 
 type tooMuchConstrs = C1 of (int -> int list -> int either)
-                    | C2 of (tooMuchConstrs -> int32)
+                    | C2 of (tooMuchConstrs -> int)
                     | C3 of bool
 
 type 'a _t = int
