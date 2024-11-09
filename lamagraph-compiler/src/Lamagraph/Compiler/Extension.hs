@@ -43,10 +43,6 @@ type instance XLmlTyConstr (LmlcPass _) = NoExtField
 type instance XXType (LmlcPass _) = DataConCantHappen
 
 type instance XLmlInt (LmlcPass _) = NoExtField
-type instance XLmlInt32 (LmlcPass _) = NoExtField
-type instance XLmlUInt32 (LmlcPass _) = NoExtField
-type instance XLmlInt64 (LmlcPass _) = NoExtField
-type instance XLmlUInt64 (LmlcPass _) = NoExtField
 type instance XLmlChar (LmlcPass _) = NoExtField
 type instance XLmlString (LmlcPass _) = NoExtField
 type instance XXLit (LmlcPass _) = DataConCantHappen

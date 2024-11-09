@@ -2,14 +2,6 @@ module Const
 
 let x1 = 1
 
-let x2 = 1l
+let x2 = 'a'
 
-let x3 = 1ul
-
-let x4 = 1L
-
-let x5 = 1UL
-
-let x6 = 'a'
-
-let x7 = "ab"
+let x3 = "ab"

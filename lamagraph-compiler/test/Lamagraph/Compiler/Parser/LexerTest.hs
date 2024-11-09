@@ -57,26 +57,6 @@ integerLiteral =
   testCase "Lex Int literal" $ do
     getTokenTypesFromText "42" @?= Right [TokInt 42, TokEOF]
 
-int32Literal :: TestTree
-int32Literal =
-  testCase "Lex Int32 literal" $ do
-    getTokenTypesFromText "42l" @?= Right [TokInt32 42, TokEOF]
-
-uint32Literal :: TestTree
-uint32Literal =
-  testCase "Lex UInt32 literal" $ do
-    getTokenTypesFromText "42ul" @?= Right [TokUInt32 42, TokEOF]
-
-int64Literal :: TestTree
-int64Literal =
-  testCase "Lex Int64 literal" $ do
-    getTokenTypesFromText "42L" @?= Right [TokInt64 42, TokEOF]
-
-uint64Literal :: TestTree
-uint64Literal =
-  testCase "Lex UInt64 literal" $ do
-    getTokenTypesFromText "42UL" @?= Right [TokUInt64 42, TokEOF]
-
 allLetterKeywords :: TestTree -- Yep, strange name
 allLetterKeywords =
   testCase "Lex all letter keywords" $ do
@@ -239,10 +219,6 @@ lexerUnitTests =
     , capitalizedIdent
     , lowercaseIdent
     , integerLiteral
-    , int32Literal
-    , uint32Literal
-    , int64Literal
-    , uint64Literal
     , regularChar
     , escapedChars
     , regularString

@@ -117,10 +117,6 @@ instance Pretty (LmlCase (LmlcPass pass)) where
 instance Pretty (LmlLit (LmlcPass pass)) where
   pretty :: LmlLit (LmlcPass pass) -> Doc ann
   pretty (LmlInt _ int) = pretty int
-  pretty (LmlInt32 _ int32) = pretty int32 <> "l"
-  pretty (LmlUInt32 _ uint32) = pretty uint32 <> "ul"
-  pretty (LmlInt64 _ int64) = pretty int64 <> "L"
-  pretty (LmlUInt64 _ uint64) = pretty uint64 <> "UL"
   pretty (LmlChar _ char) = squotes $ pretty char
   pretty (LmlString _ str) = dquotes $ pretty str
 

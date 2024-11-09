@@ -32,10 +32,6 @@ import Lamagraph.Compiler.Syntax
   lowercase_ident { L _ (TokIdent Lowercase _) }
   -- Integer literals
   integer_literal { L _ (TokInt _) }
-  int32_literal { L _ (TokInt32 _) }
-  uint32_literal { L _ (TokUInt32 _) }
-  int64_literal { L _ (TokInt64 _) }
-  uint64_literal { L _ (TokUInt64 _) }
   -- Character liteal
   char_literal { L _ (TokChar _) }
   -- String literal
@@ -118,7 +114,6 @@ import Lamagraph.Compiler.Syntax
 %nonassoc below_DOT
 %nonassoc '.' -- idents
 %nonassoc '(' ')' capitalized_ident lowercase_ident integer_literal
-          int32_literal uint32_literal int64_literal uint64_literal
           char_literal string_literal 'false' '[' ']' prefix_symbol
           'true' '_'
 
@@ -246,10 +241,6 @@ atomic_type :: { LLmlType LmlcPs }
 ---------------
 constant :: { XLocated LmlcPs (LmlLit LmlcPs) }
   : integer_literal { sL1 $1 $ LmlInt noExtField (getInt $1) }
-  | int32_literal { sL1 $1 $ LmlInt32 noExtField (getInt32 $1) }
-  | uint32_literal { sL1 $1 $ LmlUInt32 noExtField (getUInt32 $1) }
-  | int64_literal { sL1 $1 $ LmlInt64 noExtField (getInt64 $1) }
-  | uint64_literal { sL1 $1 $ LmlUInt64 noExtField (getUInt64 $1) }
   | char_literal { sL1 $1 $ LmlChar noExtField (getChar $1) }
   | string_literal { sL1 $1 $ LmlString noExtField (getString $1)}
 
@@ -540,18 +531,6 @@ getLongident = mkLongident . fmap getIdent
 
 getInt :: LToken -> Int
 getInt (L _ (TokInt val)) = val
-
-getInt32 :: LToken -> Int32
-getInt32 (L _ (TokInt32 val)) = val
-
-getUInt32 :: LToken -> Word32
-getUInt32 (L _ (TokUInt32 val)) = val
-
-getInt64 :: LToken -> Int64
-getInt64 (L _ (TokInt64 val)) = val
-
-getUInt64 :: LToken -> Word64
-getUInt64 (L _ (TokUInt64 val)) = val
 
 getChar :: LToken -> Char
 getChar (L _ (TokChar val)) = val
