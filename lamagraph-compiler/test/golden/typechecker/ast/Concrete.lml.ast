@@ -1,0 +1,184 @@
+(Module
+ (Just
+ (L
+  { :1:8-16 }
+  ("Concrete")))
+ [ (L
+    { :3:1-10 }
+    (ValD
+     (L
+      { :3:5-10 }
+      (NonRec
+       [ (L
+          { :3:5-10 }
+          (Bind
+           (L
+            { :3:5-6 }
+            (PatVar
+             (L
+              { :3:5-6 }
+              "x")))
+           (L
+            { :3:9-10 }
+            (ExprConstant 5)))) ]))))
+ , (L
+    { :4:1-15 }
+    (ValD
+     (L
+      { :4:5-15 }
+      (NonRec
+       [ (L
+          { :4:5-15 }
+          (Bind
+           (L
+            { :4:5-7 }
+            (PatVar
+             (L
+              { :4:5-7 }
+              "ap")))
+           (L
+            { :4:8-15 }
+            (ExprFunction
+             (L
+              { :4:8-9 }
+              (PatVar
+               (L
+                { :4:8-9 }
+                "f")))
+             (L
+              { :4:12-15 }
+              (ExprApply
+               (L
+                { :4:12-13 }
+                (ExprIdent
+                 "f"))
+               [(L { :4:14-15 } (ExprConstant 5))])))))) ]))))
+ , (L
+    { :6:1-36 }
+    (ValD
+     (L
+      { :6:5-36 }
+      (NonRec
+       [ (L
+          { :6:5-36 }
+          (Bind
+           (L
+            { :6:5-6 }
+            (PatVar
+             (L
+              { :6:5-6 }
+              "y")))
+           (L
+            { :6:7-36 }
+            (ExprFunction
+             (L
+              { :6:7-8 }
+              (PatVar
+               (L
+                { :6:7-8 }
+                "a")))
+             (L
+              { :6:9-36 }
+              (ExprFunction
+               (L
+                { :6:9-10 }
+                (PatVar
+                 (L
+                  { :6:9-10 }
+                  "b")))
+               (L
+                { :6:13-36 }
+                (ExprTuple
+                 [ (L
+                    { :6:14-15 }
+                    (ExprConstant 1))
+                 , (L
+                    { :6:17-20 }
+                    (ExprConstant 'c'))
+                 , (L
+                    { :6:22-27 }
+                    (ExprConstant "str"))
+                 , (L
+                    { :6:29-35 }
+                    (ExprTuple
+                     [ (L
+                        { :6:30-31 }
+                        (ExprIdent
+                         "a"))
+                     , (L
+                        { :6:33-34 }
+                        (ExprIdent
+                         "b")) ])) ])))))))) ]))))
+ , (L
+    { :8:1-24 }
+    (ValD
+     (L
+      { :8:5-24 }
+      (NonRec
+       [ (L
+          { :8:5-24 }
+          (Bind
+           (L
+            { :8:5-6 }
+            (PatVar
+             (L
+              { :8:5-6 }
+              "z")))
+           (L
+            { :8:9-24 }
+            (ExprConstraint
+             (L
+              { :8:10-12 }
+              (ExprConstruct
+               (L
+                { :8:10-12 }
+                ("[]"))
+               (Nothing)))
+             (L
+              { :8:15-23 }
+              (TyConstr
+               (L
+                { :8:19-23 }
+                ("list"))
+               [ (L
+                  { :8:15-18 }
+                  (TyConstr
+                   (L
+                    { :8:15-18 }
+                    ("int"))
+                   [])) ])))))) ]))))
+ , (L
+    { :9:1-17 }
+    (ValD
+     (L
+      { :9:5-17 }
+      (NonRec
+       [ (L
+          { :9:5-17 }
+          (Bind
+           (L
+            { :9:5-7 }
+            (PatVar
+             (L
+              { :9:5-7 }
+              "z'")))
+           (L
+            { :9:10-17 }
+            (ExprConstruct
+             (L
+              { :9:12-14 }
+              ("::"))
+             (Just
+             (L
+              { :9:10-17 }
+              (ExprTuple
+               [ (L
+                  { :9:10-11 }
+                  (ExprConstant 1))
+               , (L
+                  { :9:15-17 }
+                  (ExprConstruct
+                   (L
+                    { :9:15-17 }
+                    ("[]"))
+                   (Nothing))) ]))))))) ])))) ])

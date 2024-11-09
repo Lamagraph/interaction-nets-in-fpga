@@ -1,0 +1,10 @@
+module Fac
+
+let fac n =
+  let rec helper = fun m acc ->
+    if m > n then acc
+    else helper (m + 1) (acc * m) in
+  helper 1 1
+
+let rec fac' n =
+  if n < 2 then 1 else n * fac' (n - 1)

@@ -27,6 +27,10 @@ dependencies:
   - lens
   - prettyprinter
   - string-interpolate
+  - mtl
+  - mono-traversable
+  - infinite-list
+  - foldable1-classes-compat
 
 language: GHC2021
 

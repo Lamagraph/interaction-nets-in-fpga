@@ -1,0 +1,17 @@
+module BindGroups
+
+(* let _K x y = x
+let _S f g x = f x (g x)
+let _I x = (_S _K _K) x
+
+let f =
+  let x = 5 in
+  x
+
+let (a, b) = (1, 1) *)
+
+(*let ((id : 'a -> int) : 'c -> 'c) = fun x -> x*)
+
+let a = 1
+
+let a = "str"
