@@ -40,6 +40,14 @@ library
       Lamagraph.Compiler.Syntax.Longident
       Lamagraph.Compiler.Syntax.Pat
       Lamagraph.Compiler.Syntax.Type
+      Lamagraph.Compiler.Typechecker.DefaultEnv
+      Lamagraph.Compiler.Typechecker.Infer
+      Lamagraph.Compiler.Typechecker.Infer.Decl
+      Lamagraph.Compiler.Typechecker.Infer.Expr
+      Lamagraph.Compiler.Typechecker.Infer.Lit
+      Lamagraph.Compiler.Typechecker.Infer.Pat
+      Lamagraph.Compiler.Typechecker.Infer.Type
+      Lamagraph.Compiler.Typechecker.Types
   other-modules:
       Paths_lamagraph_compiler
   hs-source-dirs:
@@ -58,7 +66,11 @@ library
       array
     , base >=4.7 && <5
     , extra
+    , foldable1-classes-compat
+    , infinite-list
     , lens
+    , mono-traversable
+    , mtl
     , prettyprinter
     , relude
     , string-interpolate
@@ -81,8 +93,12 @@ executable lamagraph-compiler-exe
       array
     , base >=4.7 && <5
     , extra
+    , foldable1-classes-compat
+    , infinite-list
     , lamagraph-compiler
     , lens
+    , mono-traversable
+    , mtl
     , prettyprinter
     , relude
     , string-interpolate
@@ -97,6 +113,7 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Parser.ParserRoundtrip
       Lamagraph.Compiler.Parser.PrettyAstGolden
       Lamagraph.Compiler.Parser.PrettyLmlGolden
+      Lamagraph.Compiler.Tc
       Paths_lamagraph_compiler
   hs-source-dirs:
       test
@@ -112,9 +129,13 @@ test-suite lamagraph-compiler-test
     , base >=4.7 && <5
     , extra
     , filepath
+    , foldable1-classes-compat
     , hedgehog
+    , infinite-list
     , lamagraph-compiler
     , lens
+    , mono-traversable
+    , mtl
     , prettyprinter
     , relude
     , string-interpolate

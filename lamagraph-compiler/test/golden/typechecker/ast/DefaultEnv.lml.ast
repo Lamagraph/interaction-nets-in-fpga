@@ -1,0 +1,81 @@
+(Module
+ (Just
+ (L
+  { :1:8-18 }
+  ("DefaultEnv")))
+ [ (L
+    { :3:1-18 }
+    (ValD
+     (L
+      { :3:5-18 }
+      (NonRec
+       [ (L
+          { :3:5-18 }
+          (Bind
+           (L
+            { :3:5-6 }
+            (PatVar
+             (L
+              { :3:5-6 }
+              "x")))
+           (L
+            { :3:7-18 }
+            (ExprFunction
+             (L
+              { :3:7-8 }
+              (PatVar
+               (L
+                { :3:7-8 }
+                "m")))
+             (L
+              { :3:9-18 }
+              (ExprFunction
+               (L
+                { :3:9-10 }
+                (PatVar
+                 (L
+                  { :3:9-10 }
+                  "n")))
+               (L
+                { :3:13-18 }
+                (ExprApply
+                 (L
+                  { :3:15-16 }
+                  (ExprIdent
+                   ">"))
+                 [ (L
+                    { :3:13-14 }
+                    (ExprIdent
+                     "m"))
+                 , (L
+                    { :3:17-18 }
+                    (ExprIdent
+                     "n")) ])))))))) ]))))
+ , (L
+    { :5:1-12 }
+    (ValD
+     (L
+      { :5:5-12 }
+      (NonRec
+       [ (L
+          { :5:5-12 }
+          (Bind
+           (L
+            { :5:5-6 }
+            (PatVar
+             (L
+              { :5:5-6 }
+              "y")))
+           (L
+            { :5:9-12 }
+            (ExprApply
+             (L
+              { :5:10-11 }
+              (ExprIdent
+               "+"))
+             [ (L
+                { :5:9-10 }
+                (ExprConstant 5))
+             , (L
+                { :5:11-12 }
+                (ExprConstant 2)) ])))) ])))) ])
