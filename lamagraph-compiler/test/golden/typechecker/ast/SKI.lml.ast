@@ -1,0 +1,305 @@
+(Module
+ <: int -> int -> bool
+ false: bool
+ -: int -> int -> int
+ >: int -> int -> bool
+ /: int -> int -> int
+ _K: forall 'e 'd. 'd -> 'e -> 'd
+ true: bool
+ None: forall 'a. 'a option
+ +: int -> int -> int
+ _I: forall 'b. 'b -> 'b
+ []: forall 'a. 'a list
+ >=: int -> int -> bool
+ Some: forall 'a. 'a -> 'a option
+ *: int -> int -> int
+ <=: int -> int -> bool
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ _B: forall 'o 't 'v 'r 'n 'u 'w 's. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+ _S: forall 'i 'k 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
+ (Just
+ (L
+  { :1:8-11 }
+  ("SKI")))
+ [ (L
+    { :3:1-13 }
+    (ValD
+     (L
+      { :3:5-13 }
+      (NonRec
+       [ (L
+          { :3:5-13 }
+          (Bind
+           _I: forall 'b. 'b -> 'b
+           (L
+            { :3:5-7 }
+            (PatVar
+             'b -> 'b
+             (L
+              { :3:5-7 }
+              "_I")))
+           (L
+            { :3:8-13 }
+            (ExprFunction
+             'b -> 'b
+             (L
+              { :3:8-9 }
+              (PatVar
+               'b
+               (L
+                { :3:8-9 }
+                "x")))
+             (L
+              { :3:12-13 }
+              (ExprIdent
+               'b
+               "x")))))) ]))))
+ , (L
+    { :4:1-15 }
+    (ValD
+     (L
+      { :4:5-15 }
+      (NonRec
+       [ (L
+          { :4:5-15 }
+          (Bind
+           _K: forall 'e 'd. 'd -> 'e -> 'd
+           (L
+            { :4:5-7 }
+            (PatVar
+             'd -> 'e -> 'd
+             (L
+              { :4:5-7 }
+              "_K")))
+           (L
+            { :4:8-15 }
+            (ExprFunction
+             'd -> 'e -> 'd
+             (L
+              { :4:8-9 }
+              (PatVar
+               'd
+               (L
+                { :4:8-9 }
+                "x")))
+             (L
+              { :4:10-15 }
+              (ExprFunction
+               'e -> 'd
+               (L
+                { :4:10-11 }
+                (PatVar
+                 'e
+                 (L
+                  { :4:10-11 }
+                  "y")))
+               (L
+                { :4:14-15 }
+                (ExprIdent
+                 'd
+                 "x")))))))) ]))))
+ , (L
+    { :5:1-25 }
+    (ValD
+     (L
+      { :5:5-25 }
+      (NonRec
+       [ (L
+          { :5:5-25 }
+          (Bind
+           _S: forall 'i 'k 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
+           (L
+            { :5:5-7 }
+            (PatVar
+             ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
+             (L
+              { :5:5-7 }
+              "_S")))
+           (L
+            { :5:8-25 }
+            (ExprFunction
+             ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
+             (L
+              { :5:8-9 }
+              (PatVar
+               'i -> 'k -> 'j
+               (L
+                { :5:8-9 }
+                "f")))
+             (L
+              { :5:10-25 }
+              (ExprFunction
+               ('i -> 'k) -> 'i -> 'j
+               (L
+                { :5:10-11 }
+                (PatVar
+                 'i -> 'k
+                 (L
+                  { :5:10-11 }
+                  "g")))
+               (L
+                { :5:12-25 }
+                (ExprFunction
+                 'i -> 'j
+                 (L
+                  { :5:12-13 }
+                  (PatVar
+                   'i
+                   (L
+                    { :5:12-13 }
+                    "x")))
+                 (L
+                  { :5:16-25 }
+                  (ExprApply
+                   'j
+                   (L
+                    { :5:16-17 }
+                    (ExprIdent
+                     'i -> 'k -> 'j
+                     "f"))
+                   [ (L
+                      { :5:18-19 }
+                      (ExprIdent
+                       'i
+                       "x"))
+                   , (L
+                      { :5:20-25 }
+                      (ExprApply
+                       'k
+                       (L
+                        { :5:21-22 }
+                        (ExprIdent
+                         'i -> 'k
+                         "g"))
+                       [(L { :5:23-24 } (ExprIdent 'i "x"))])) ])))))))))) ]))))
+ , (L
+    { :7:1-64 }
+    (ValD
+     (L
+      { :7:5-64 }
+      (NonRec
+       [ (L
+          { :7:5-64 }
+          (Bind
+           _B: forall 'o 't 'v 'r 'n 'u 'w 's. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+           (L
+            { :7:5-7 }
+            (PatVar
+             ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+             (L
+              { :7:5-7 }
+              "_B")))
+           (L
+            { :7:8-64 }
+            (ExprFunction
+             ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+             (L
+              { :7:8-9 }
+              (PatVar
+               'o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+               (L
+                { :7:8-9 }
+                "f")))
+             (L
+              { :7:10-64 }
+              (ExprFunction
+               'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+               (L
+                { :7:10-11 }
+                (PatVar
+                 'n
+                 (L
+                  { :7:10-11 }
+                  "g")))
+               (L
+                { :7:12-64 }
+                (ExprFunction
+                 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+                 (L
+                  { :7:12-13 }
+                  (PatVar
+                   'o
+                   (L
+                    { :7:12-13 }
+                    "x")))
+                 (L
+                  { :7:16-64 }
+                  (ExprConstraint
+                   ('r -> 's -> 't) -> 'u -> 'v -> 'w
+                   (L
+                    { :7:17-26 }
+                    (ExprApply
+                     ('r -> 's -> 't) -> 'u -> 'v -> 'w
+                     (L
+                      { :7:18-23 }
+                      (ExprApply
+                       'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+                       (L
+                        { :7:19-20 }
+                        (ExprIdent
+                         'o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+                         "f"))
+                       [(L { :7:21-22 } (ExprIdent 'o "x"))]))
+                     [(L { :7:24-25 } (ExprIdent 'n "g"))]))
+                   (L
+                    { :7:29-63 }
+                    (TyArrow
+                     ('r -> 's -> 't) -> 'u -> 'v -> 'w
+                     (L
+                      { :7:29-45 }
+                      (TyArrow
+                       'r -> 's -> 't
+                       (L
+                        { :7:30-32 }
+                        (TyVar
+                         'r
+                         (L
+                          { :7:31-32 }
+                          "a")))
+                       (L
+                        { :7:36-44 }
+                        (TyArrow
+                         's -> 't
+                         (L
+                          { :7:36-38 }
+                          (TyVar
+                           's
+                           (L
+                            { :7:37-38 }
+                            "b")))
+                         (L
+                          { :7:42-44 }
+                          (TyVar
+                           't
+                           (L
+                            { :7:43-44 }
+                            "c")))))))
+                     (L
+                      { :7:49-63 }
+                      (TyArrow
+                       'u -> 'v -> 'w
+                       (L
+                        { :7:49-51 }
+                        (TyVar
+                         'u
+                         (L
+                          { :7:50-51 }
+                          "b")))
+                       (L
+                        { :7:55-63 }
+                        (TyArrow
+                         'v -> 'w
+                         (L
+                          { :7:55-57 }
+                          (TyVar
+                           'v
+                           (L
+                            { :7:56-57 }
+                            "a")))
+                         (L
+                          { :7:61-63 }
+                          (TyVar
+                           'w
+                           (L
+                            { :7:62-63 }
+                            "c"))))))))))))))))))) ])))) ])
