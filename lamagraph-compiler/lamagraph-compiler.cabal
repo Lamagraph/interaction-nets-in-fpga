@@ -40,6 +40,17 @@ library
       Lamagraph.Compiler.Syntax.Longident
       Lamagraph.Compiler.Syntax.Pat
       Lamagraph.Compiler.Syntax.Type
+      Lamagraph.Compiler.Typechecker.DefaultEnv
+      Lamagraph.Compiler.Typechecker.Helper
+      Lamagraph.Compiler.Typechecker.Infer
+      Lamagraph.Compiler.Typechecker.Infer.Decl
+      Lamagraph.Compiler.Typechecker.Infer.Expr
+      Lamagraph.Compiler.Typechecker.Infer.Lit
+      Lamagraph.Compiler.Typechecker.Infer.Pat
+      Lamagraph.Compiler.Typechecker.Infer.Type
+      Lamagraph.Compiler.Typechecker.Instances
+      Lamagraph.Compiler.Typechecker.TcTypes
+      Lamagraph.Compiler.Typechecker.Unification
   other-modules:
       Paths_lamagraph_compiler
   hs-source-dirs:
@@ -58,7 +69,10 @@ library
       array
     , base >=4.7 && <5
     , extra
+    , foldable1-classes-compat
     , lens
+    , mono-traversable
+    , mtl
     , prettyprinter
     , relude
     , string-interpolate
@@ -81,8 +95,11 @@ executable lamagraph-compiler-exe
       array
     , base >=4.7 && <5
     , extra
+    , foldable1-classes-compat
     , lamagraph-compiler
     , lens
+    , mono-traversable
+    , mtl
     , prettyprinter
     , relude
     , string-interpolate
@@ -92,11 +109,12 @@ test-suite lamagraph-compiler-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Lamagraph.Compiler.Parser.GoldenCommon
+      Lamagraph.Compiler.GoldenCommon
       Lamagraph.Compiler.Parser.LexerTest
       Lamagraph.Compiler.Parser.ParserRoundtrip
       Lamagraph.Compiler.Parser.PrettyAstGolden
       Lamagraph.Compiler.Parser.PrettyLmlGolden
+      Lamagraph.Compiler.Typechecker.PrettyTypedGolden
       Paths_lamagraph_compiler
   hs-source-dirs:
       test
@@ -112,9 +130,12 @@ test-suite lamagraph-compiler-test
     , base >=4.7 && <5
     , extra
     , filepath
+    , foldable1-classes-compat
     , hedgehog
     , lamagraph-compiler
     , lens
+    , mono-traversable
+    , mtl
     , prettyprinter
     , relude
     , string-interpolate

@@ -1,0 +1,27 @@
+module BindGroups
+
+let f =
+  let x = 5 in
+  x
+
+let (a, b) = (1, 1)
+
+let ((id : 'a -> int) : 'c -> 'c) = fun x -> x
+
+let a = 1
+
+let a = "str"
+
+let rec even n =
+  match n with
+    | 0 -> true
+    | x -> odd (x - 1)
+and odd n =
+  match n with
+    | 0 -> false
+    | x -> even (x - 1)
+
+let f x = match x with
+    | Some a when a <= 0 -> None
+    | Some a -> Some a
+    | None -> None

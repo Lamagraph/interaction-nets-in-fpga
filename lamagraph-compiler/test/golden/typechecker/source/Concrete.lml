@@ -1,0 +1,17 @@
+module Concrete
+
+let x = 5
+let ap f = f 5
+
+let y a b = (1, 'c', "str", (a, b))
+
+let z = ([] : int list)
+let z' = 1 :: []
+let z'' = [1; 2]
+
+let s = Some 1
+
+let (a | a) = 1
+
+let rec f x = x + 1
+and g x = f 1

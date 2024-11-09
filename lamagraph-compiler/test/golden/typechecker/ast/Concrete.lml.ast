@@ -1,0 +1,440 @@
+(Module
+ <: int -> int -> bool
+ false: bool
+ -: int -> int -> int
+ >: int -> int -> bool
+ /: int -> int -> int
+ x: int
+ true: bool
+ z: int list
+ None: forall 'a. 'a option
+ +: int -> int -> int
+ []: forall 'a. 'a list
+ g: 'ac -> int
+ >=: int -> int -> bool
+ ap: forall 'd. (int -> 'd) -> 'd
+ a: int
+ y: forall 'g 'f. 'f -> 'g -> (int * char * string * ('f * 'g))
+ Some: forall 'a. 'a -> 'a option
+ *: int -> int -> int
+ <=: int -> int -> bool
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ f: int -> int
+ z': int list
+ z'': int list
+ w: int
+ s: int option
+ (Just
+ (L
+  { :1:8-16 }
+  ("Concrete")))
+ [ (L
+    { :3:1-10 }
+    (ValD
+     (L
+      { :3:5-10 }
+      (NonRec
+       [ (L
+          { :3:5-10 }
+          (Bind
+           x: int
+           (L
+            { :3:5-6 }
+            (PatVar
+             int
+             (L
+              { :3:5-6 }
+              "x")))
+           (L
+            { :3:9-10 }
+            (ExprConstant int int
+             5)))) ]))))
+ , (L
+    { :4:1-15 }
+    (ValD
+     (L
+      { :4:5-15 }
+      (NonRec
+       [ (L
+          { :4:5-15 }
+          (Bind
+           ap: forall 'd. (int -> 'd) -> 'd
+           (L
+            { :4:5-7 }
+            (PatVar
+             (int -> 'd) -> 'd
+             (L
+              { :4:5-7 }
+              "ap")))
+           (L
+            { :4:8-15 }
+            (ExprFunction
+             (int -> 'd) -> 'd
+             (L
+              { :4:8-9 }
+              (PatVar
+               int -> 'd
+               (L
+                { :4:8-9 }
+                "f")))
+             (L
+              { :4:12-15 }
+              (ExprApply
+               'd
+               (L
+                { :4:12-13 }
+                (ExprIdent
+                 int -> 'd
+                 "f"))
+               [(L { :4:14-15 } (ExprConstant int int 5))])))))) ]))))
+ , (L
+    { :6:1-36 }
+    (ValD
+     (L
+      { :6:5-36 }
+      (NonRec
+       [ (L
+          { :6:5-36 }
+          (Bind
+           y: forall 'g 'f. 'f -> 'g -> (int * char * string * ('f * 'g))
+           (L
+            { :6:5-6 }
+            (PatVar
+             'f -> 'g -> (int * char * string * ('f * 'g))
+             (L
+              { :6:5-6 }
+              "y")))
+           (L
+            { :6:7-36 }
+            (ExprFunction
+             'f -> 'g -> (int * char * string * ('f * 'g))
+             (L
+              { :6:7-8 }
+              (PatVar
+               'f
+               (L
+                { :6:7-8 }
+                "a")))
+             (L
+              { :6:9-36 }
+              (ExprFunction
+               'g -> (int * char * string * ('f * 'g))
+               (L
+                { :6:9-10 }
+                (PatVar
+                 'g
+                 (L
+                  { :6:9-10 }
+                  "b")))
+               (L
+                { :6:13-36 }
+                (ExprTuple
+                 (int * char * string * ('f * 'g))
+                 [ (L
+                    { :6:14-15 }
+                    (ExprConstant int int
+                     1))
+                 , (L
+                    { :6:17-20 }
+                    (ExprConstant char char
+                     'c'))
+                 , (L
+                    { :6:22-27 }
+                    (ExprConstant string string
+                     "str"))
+                 , (L
+                    { :6:29-35 }
+                    (ExprTuple
+                     ('f * 'g)
+                     [ (L
+                        { :6:30-31 }
+                        (ExprIdent
+                         'f
+                         "a"))
+                     , (L
+                        { :6:33-34 }
+                        (ExprIdent
+                         'g
+                         "b")) ])) ])))))))) ]))))
+ , (L
+    { :8:1-24 }
+    (ValD
+     (L
+      { :8:5-24 }
+      (NonRec
+       [ (L
+          { :8:5-24 }
+          (Bind
+           z: int list
+           (L
+            { :8:5-6 }
+            (PatVar
+             int list
+             (L
+              { :8:5-6 }
+              "z")))
+           (L
+            { :8:9-24 }
+            (ExprConstraint
+             int list
+             (L
+              { :8:10-12 }
+              (ExprConstruct
+               int list
+               (L
+                { :8:10-12 }
+                ("[]"))
+               (Nothing)))
+             (L
+              { :8:15-23 }
+              (TyConstr
+               int list
+               (L
+                { :8:19-23 }
+                ("list"))
+               [ (L
+                  { :8:15-18 }
+                  (TyConstr
+                   int
+                   (L
+                    { :8:15-18 }
+                    ("int"))
+                   [])) ])))))) ]))))
+ , (L
+    { :9:1-17 }
+    (ValD
+     (L
+      { :9:5-17 }
+      (NonRec
+       [ (L
+          { :9:5-17 }
+          (Bind
+           z': int list
+           (L
+            { :9:5-7 }
+            (PatVar
+             int list
+             (L
+              { :9:5-7 }
+              "z'")))
+           (L
+            { :9:10-17 }
+            (ExprConstruct
+             int list
+             (L
+              { :9:12-14 }
+              ("::"))
+             (Just
+             (L
+              { :9:10-17 }
+              (ExprTuple
+               (int * 'l list)
+               [ (L
+                  { :9:10-11 }
+                  (ExprConstant int int
+                   1))
+               , (L
+                  { :9:15-17 }
+                  (ExprConstruct
+                   'l list
+                   (L
+                    { :9:15-17 }
+                    ("[]"))
+                   (Nothing))) ]))))))) ]))))
+ , (L
+    { :10:1-17 }
+    (ValD
+     (L
+      { :10:5-17 }
+      (NonRec
+       [ (L
+          { :10:5-17 }
+          (Bind
+           z'': int list
+           (L
+            { :10:5-8 }
+            (PatVar
+             int list
+             (L
+              { :10:5-8 }
+              "z''")))
+           (L
+            { :10:12-17 }
+            (ExprConstruct
+             int list
+             (L
+              { <compiler-generated code> }
+              ("::"))
+             (Just
+             (L
+              { :10:12-17 }
+              (ExprTuple
+               (int * int list)
+               [ (L
+                  { :10:12-13 }
+                  (ExprConstant int int
+                   1))
+               , (L
+                  { :10:15-17 }
+                  (ExprConstruct
+                   int list
+                   (L
+                    { <compiler-generated code> }
+                    ("::"))
+                   (Just
+                   (L
+                    { :10:15-17 }
+                    (ExprTuple
+                     (int * 'q list)
+                     [ (L
+                        { :10:15-16 }
+                        (ExprConstant int int
+                         2))
+                     , (L
+                        { :10:16-17 }
+                        (ExprConstruct
+                         'q list
+                         (L
+                          { <compiler-generated code> }
+                          ("[]"))
+                         (Nothing))) ]))))) ]))))))) ]))))
+ , (L
+    { :12:1-15 }
+    (ValD
+     (L
+      { :12:5-15 }
+      (NonRec
+       [ (L
+          { :12:5-15 }
+          (Bind
+           s: int option
+           (L
+            { :12:5-6 }
+            (PatVar
+             int option
+             (L
+              { :12:5-6 }
+              "s")))
+           (L
+            { :12:9-15 }
+            (ExprConstruct
+             int option
+             (L
+              { :12:9-13 }
+              ("Some"))
+             (Just
+             (L
+              { :12:14-15 }
+              (ExprConstant int int
+               1))))))) ]))))
+ , (L
+    { :14:1-16 }
+    (ValD
+     (L
+      { :14:5-16 }
+      (NonRec
+       [ (L
+          { :14:5-16 }
+          (Bind
+           a: int
+           w: int
+           (L
+            { :14:5-12 }
+            (ParOr
+             int
+             (L
+              { :14:6-7 }
+              (PatVar
+               'w
+               (L
+                { :14:6-7 }
+                "a")))
+             (L
+              { :14:10-11 }
+              (PatVar
+               int
+               (L
+                { :14:10-11 }
+                "a")))))
+           (L
+            { :14:15-16 }
+            (ExprConstant int int
+             1)))) ]))))
+ , (L
+    { :(16,1)-(17,14) }
+    (ValD
+     (L
+      { :(16,5)-(17,14) }
+      (Rec
+       [ (L
+          { :16:9-20 }
+          (Bind
+           f: int -> int
+           (L
+            { :16:9-10 }
+            (PatVar
+             int -> int
+             (L
+              { :16:9-10 }
+              "f")))
+           (L
+            { :16:11-20 }
+            (ExprFunction
+             int -> int
+             (L
+              { :16:11-12 }
+              (PatVar
+               int
+               (L
+                { :16:11-12 }
+                "x")))
+             (L
+              { :16:15-20 }
+              (ExprApply
+               int
+               (L
+                { :16:17-18 }
+                (ExprIdent
+                 int -> int -> int
+                 "+"))
+               [ (L
+                  { :16:15-16 }
+                  (ExprIdent
+                   int
+                   "x"))
+               , (L
+                  { :16:19-20 }
+                  (ExprConstant int int
+                   1)) ]))))))
+       , (L
+          { :17:5-14 }
+          (Bind
+           g: 'ac -> int
+           (L
+            { :17:5-6 }
+            (PatVar
+             'ac -> int
+             (L
+              { :17:5-6 }
+              "g")))
+           (L
+            { :17:7-14 }
+            (ExprFunction
+             'ac -> int
+             (L
+              { :17:7-8 }
+              (PatVar
+               'ac
+               (L
+                { :17:7-8 }
+                "x")))
+             (L
+              { :17:11-14 }
+              (ExprApply
+               int
+               (L
+                { :17:11-12 }
+                (ExprIdent
+                 int -> int
+                 "f"))
+               [(L { :17:13-14 } (ExprConstant int int 1))])))))) ])))) ])

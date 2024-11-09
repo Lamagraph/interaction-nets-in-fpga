@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -10,12 +11,15 @@ module Lamagraph.Compiler.PrettyAst () where
 import Relude
 
 import Control.Lens hiding (Empty)
+import Data.HashMap.Strict qualified as HashMap
+import Data.String.Interpolate
 import Prettyprinter
 import Prettyprinter.Internal
 
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
+import Lamagraph.Compiler.Typechecker.TcTypes
 
 ----------------------
 -- Helper functions --
@@ -176,3 +180,54 @@ instance (ForallLmlModule Pretty (LmlcPass pass)) => Pretty (LmlModule (LmlcPass
   pretty (LmlModule ext name decls) = parens $ nest spaceNumber inner
    where
     inner = smartVsep ["Module", pretty ext, prettyMaybe name, list $ map pretty decls]
+
+---------------------------
+-- Typechecker instances --
+---------------------------
+
+instance (Pretty a) => Pretty (Either TypecheckError a) where
+  pretty :: Either TypecheckError a -> Doc ann
+  pretty = \case
+    Left err -> pretty err
+    Right a -> pretty a
+
+instance Pretty TypecheckError where
+  pretty :: TypecheckError -> Doc ann
+  pretty = \case
+    UnboundVariable name -> [i|Error: variable #{pretty name} is unbound|]
+    ConstructorDoesntExist name -> [i|Error: constructor #{pretty name} isn't declared|]
+    OccursCheck name ty -> [i|Error: variable #{pretty name} already present in type #{pretty ty}|]
+    CantUnify lTy rTy -> [i|Error: cannot unify #{pretty lTy} and #{pretty rTy}|]
+    NonVariableInLetRec -> [i|Error: non variable pattern in let rec|]
+    VariableClashInPattern name -> [i|Error: variable #{pretty name} is already bound in this pattern|]
+    VarMustOccurOnBothSidesOfOrPattern name -> [i|Error: variable #{pretty name} must occur on both sides of the or-pattern|]
+
+instance Pretty TyEnv where
+  pretty :: TyEnv -> Doc ann
+  pretty (TyEnv tyEnv) = vsep $ fmap pretty (HashMap.toList tyEnv)
+
+instance {-# OVERLAPS #-} Pretty (Name, TyScheme) where
+  pretty :: (Name, TyScheme) -> Doc ann
+  pretty (name, tyScheme) = pretty name <> ":" <+> pretty tyScheme
+
+instance Pretty TyScheme where
+  pretty :: TyScheme -> Doc ann
+  pretty (Forall [] ty) = pretty ty
+  pretty (Forall names ty) = "forall" <+> hsep (fmap (\name -> "'" <> pretty name) names) <> "." <+> pretty ty
+
+instance Pretty Name where
+  pretty :: Name -> Doc ann
+  -- TODO: Decide whether this really should get into intrinsics of 'Longident'
+  -- or we must have another type in AST that must be quoted
+  pretty (Name (Longident idents)) = hsep $ punctuate comma (map pretty (toList idents))
+
+instance Pretty Ty where
+  pretty :: Ty -> Doc ann
+  pretty = \case
+    TVar var -> "'" <> pretty var
+    lTy@(_ `TArrow` _) `TArrow` rTy -> parens (pretty lTy) <+> "->" <+> pretty rTy
+    lTy `TArrow` rTy -> pretty lTy <+> "->" <+> pretty rTy
+    TConstr tyConstr [] -> pretty tyConstr
+    TConstr tyConstr [ty] -> pretty ty <+> pretty tyConstr
+    TConstr tyConstr tys -> parens (fillSep $ punctuate comma (map pretty tys)) <+> pretty tyConstr
+    TTuple ty tys -> parens $ concatWith (surround " * ") (map pretty (ty : toList tys))

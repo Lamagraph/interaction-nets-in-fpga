@@ -7,13 +7,13 @@ import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
 
+import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.Parser
-import Lamagraph.Compiler.Parser.GoldenCommon
 import Lamagraph.Compiler.PrettyLml ()
 
 parserPrettyLmlGolden :: IO TestTree
 parserPrettyLmlGolden = do
-  lmlFiles <- findByExtension [lmlExt] parserGoldenTestsDir
+  lmlFiles <- findByExtension [lmlExt] parserSourceGoldenTestsDir
   return $
     testGroup
       "Pretty LML Golden tests"
