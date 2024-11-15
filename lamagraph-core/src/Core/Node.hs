@@ -4,8 +4,7 @@ module Core.Node where
 
 import Clash.Prelude
 import Control.Lens (makeLenses, (^.))
-
-type NodeTag = String
+import INet.Net
 
 type AddressNumber = Unsigned 16
 
@@ -30,7 +29,7 @@ $(makeLenses ''Port)
 data Node portsNumber = Node
   { _primaryPort :: Port portsNumber
   , _secondaryPorts :: Vec portsNumber (Maybe (Port portsNumber))
-  , _nodeType :: NodeTag --  looks like we need some kind of node label. Info about and reduction rules contained IN
+  , _nodeType :: Agent --  looks like we need some kind of node label. Info about and reduction rules contained IN
   }
   deriving (NFDataX, Generic, Show, Eq)
 
