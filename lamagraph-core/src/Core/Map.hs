@@ -1,7 +1,16 @@
-module Core.Map (Map, find, insertWith) where
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Eta reduce" #-}
+
+module Core.Map (Map, find, insertWith, insert) where
 
 import Clash.Prelude
 import Core.Node
+
+{- $setup
+>>> import Clash.Prelude
+>>> import Core.Node
+-}
 
 {- | key-value store based on `Vec`. Key is `AddressNumber`, it has linear time to find or change element.
 But iterate (such as map or fold) by value and key is easy.
@@ -19,7 +28,10 @@ find dict key = case dict of
   (Just (k, v) `Cons` t) -> if k == key then v else find t key
   (Nothing `Cons` t) -> find t key
 
--- | Update or insert (by applying function to `Nothing`) value by the key
+{- | Update or insert (by applying function to `Nothing`) value by the key.
+
+TODO: fix @id@ case. If @func@ is isomorphic to @id@ then @insertWith@ works incorrect
+-}
 insertWith ::
   (KnownNat size, Eq v) =>
   Map size v ->
@@ -37,13 +49,15 @@ update ::
   (Maybe v -> Maybe v) ->
   Map size v ->
   Map size v
-update key func dict = case dict of
-  h `Cons` t -> case h of
-    Nothing -> h `Cons` update key func t
-    Just (k, v) -> if k == key then Just (k, func v) `Cons` t else h `Cons` update key func t
-  Nil -> Nil
+update key func dict = map (fmap updateIfKeysEquals) dict
+ where
+  updateIfKeysEquals (k, v) = if k == key then (k, func v) else (k, v)
 
--- | Insert key-value pair in the free space
+{- | Insert key-value pair in the free space
+
+>>> insert 1 (Just 1) (def :: Map 2 AddressNumber)
+Just (1,Just 1) :> Nothing :> Nil
+-}
 insert ::
   AddressNumber ->
   Maybe v ->
