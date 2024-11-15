@@ -90,6 +90,8 @@ library
     Core.Reducer
     Core.MemoryManager
     Core.Map
+    Core.Concrete.ReduceRulesLambda
+    INet.Net
   default-language: Haskell2010
 
 -- Builds the executable 'clash', with lamagraph-core project in scope
