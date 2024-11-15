@@ -19,20 +19,3 @@ loader ram mbAddressNumberToLoad =
   mbNode = case sequenceA mbAddressNumberToLoad of
     Nothing -> pure Nothing
     Just n -> sequenceA $ Just (ram n)
-
-{- | Update RAM function. In fact only way to update data in registers.
-Change `Node` by given `AddressNumber` at given `Node`
--}
-updateRam ::
-  ( KnownDomain dom
-  , HiddenClockResetEnable dom
-  , KnownNat numberOfPorts
-  ) =>
-  (Signal dom AddressNumber -> Signal dom (Node numberOfPorts)) ->
-  Signal dom AddressNumber ->
-  Signal dom (Node numberOfPorts) ->
-  (Signal dom AddressNumber -> Signal dom (Node numberOfPorts))
-updateRam oldRam newAddressNumber newNode address = mux addressesIsEq newNode oldNode
- where
-  addressesIsEq = newAddressNumber .==. address
-  oldNode = oldRam address
