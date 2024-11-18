@@ -4,6 +4,7 @@ version:             0.1
 license:             BSD-2-Clause
 author:              John Smith <john@example.com>
 maintainer:          John Smith <john@example.com>
+extra-doc-files: docs/*.svg
 
 common common-options
   default-extensions:
