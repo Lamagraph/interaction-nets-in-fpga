@@ -64,15 +64,35 @@ data Delta (nodesNumber :: Nat) (edgesNumber :: Nat) (portsNumber :: Nat) = Delt
 
 $(makeLenses ''Delta)
 
--- | Get address from memory manager that is not busy. Return `Nothing` if all addresses are busy
+{- | Cast `Index` to `Unsigned` if possible by adding non-significant zeros
+
+==== __Example__
+
+>>> indexToUnsigned (2 :: Index 4) :: Unsigned 16
+2
+-}
+indexToUnsigned ::
+  forall n m.
+  (KnownNat n, KnownNat m, 1 <= n, CLog 2 n <= m) =>
+  Index n ->
+  Unsigned m
+indexToUnsigned v = unpack ((def :: BitVector (m - BitSize (Index n))) ++# pack v)
+
+{- | Get address from memory manager that is not busy. Return `Nothing` if all addresses are busy
+
+==== __Example__
+
+>>> getUnusedAddress (repeat False :: Vec 65536 Bool)
+Just 0
+-}
 getUnusedAddress ::
-  (KnownNat cellsNumber, 1 <= cellsNumber, CLog 2 cellsNumber ~ 16) =>
+  (KnownNat cellsNumber, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
   Vec cellsNumber Bool ->
   Maybe ActualAddressNumber
 getUnusedAddress busyMap = address
  where
   indexOfUnused = elemIndex False busyMap
-  address = bitCoerce <$> indexOfUnused
+  address = indexToUnsigned <$> indexOfUnused
 
 {- | Mark given `AddressNumber` as busy or not according to passed flag (`True` means busy)
 
@@ -124,7 +144,7 @@ freeUpActivePair busyMap activePairToFree = markAddress (markAddress busyMap Fal
 
 -- | Give unused `AddressNumber` to `LocalNode`
 registerAddressNumToNewNode ::
-  (KnownNat cellsNumber, 1 <= cellsNumber, CLog 2 cellsNumber ~ 16) =>
+  (KnownNat cellsNumber, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
   Vec cellsNumber Bool ->
   ActualAddressNumber
 registerAddressNumToNewNode busyMap = addressNum
@@ -137,7 +157,7 @@ registerAddressNumToNewNode busyMap = addressNum
 It is the composition of `registerAddressNumToNewNode` and `markAddress` just for usability
 -}
 getLoadedFromLocal ::
-  (KnownNat cellsNumber, 1 <= cellsNumber, CLog 2 cellsNumber ~ 16, KnownNat portsNumber) =>
+  (KnownNat cellsNumber, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber, KnownNat portsNumber) =>
   Vec cellsNumber Bool ->
   LocalNode portsNumber ->
   (Vec cellsNumber Bool, LoadedNode portsNumber)
@@ -257,7 +277,7 @@ newNodeIsActive node =
 
 -- | Assign new `ActualAddressNumber` to `LocalNode` and mark busy bit map
 assignNewAddressToLocalNode ::
-  (CLog 2 cellsNumber ~ 16, KnownNat cellsNumber, KnownNat portsNumber, 1 <= cellsNumber) =>
+  (CLog 2 cellsNumber <= BitSize AddressNumber, KnownNat cellsNumber, KnownNat portsNumber, 1 <= cellsNumber) =>
   Signal dom (Maybe (LocalNode portsNumber)) ->
   Signal dom (Vec cellsNumber Bool) ->
   (Signal dom (Vec cellsNumber Bool), Signal dom (Maybe (LoadedNode portsNumber)))
@@ -321,9 +341,9 @@ updateMM ::
   , KnownNat portsNumber
   , KnownNat edgeNumber
   , 1 <= cellsNumber
-  , CLog 2 cellsNumber ~ 16
+  , CLog 2 cellsNumber <= BitSize AddressNumber
   , 1 <= edgeNumber
-  , CLog 2 edgeNumber ~ 16
+  , CLog 2 edgeNumber <= BitSize AddressNumber
   , KnownNat maxNumOfChangedNodes
   , KnownDomain dom
   ) =>
