@@ -76,7 +76,7 @@ indexToUnsigned ::
   (KnownNat n, KnownNat m, 1 <= n, CLog 2 n <= m) =>
   Index n ->
   Unsigned m
-indexToUnsigned v = unpack ((def :: BitVector (m - BitSize (Index n))) ++# pack v)
+indexToUnsigned v = bitCoerce (resize v :: Index (2 ^ m))
 
 {- | Get address from memory manager that is not busy. Return `Nothing` if all addresses are busy
 
