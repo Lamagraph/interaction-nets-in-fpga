@@ -9,9 +9,18 @@
 module Core.MemoryManager where
 
 import Clash.Prelude
-import Control.Lens hiding (ifoldl)
+import Control.Lens hiding (Index, ifoldl)
 import Core.Map
 import Core.Node
+
+{- $setup
+>>> import Clash.Prelude
+>>> import Core.Node
+>>> import Core.Map
+>>> import Control.Lens hiding (ifoldl, Index)
+>>> :set -XAllowAmbiguousTypes
+>>> :set -XLambdaCase
+-}
 
 data EdgeEnd (portsNumber :: Nat) = EdgeEnd
   { _addressOfVertex :: AddressNumber
@@ -37,7 +46,7 @@ data ActivePair (portsNumber :: Nat) = ActivePair
 
 $(makeLenses ''ActivePair)
 
-data MemoryManager (cellsNumber :: Nat) -- (portsNumber :: Nat)
+data MemoryManager (cellsNumber :: Nat)
   = MemoryManager
   { _busyBitMap :: Vec cellsNumber Bool -- map Address : Bool. tell smth like "this Address is busy, so you can not to write here"
   , _activePairs :: Vec cellsNumber Bool
@@ -65,7 +74,13 @@ getUnusedAddress busyMap = address
   indexOfUnused = elemIndex False busyMap
   address = bitCoerce <$> indexOfUnused
 
--- | Mark given `AddressNumber` as busy or not according to passed flag (`True` means busy)
+{- | Mark given `AddressNumber` as busy or not according to passed flag (`True` means busy)
+
+==== __Example__
+
+>>> markAddress (repeat False :: Vec 4 Bool) True 2
+False :> False :> True :> False :> Nil
+-}
 markAddress ::
   (KnownNat cellsNumber) =>
   Vec cellsNumber Bool ->
@@ -167,7 +182,7 @@ data LocalFlag
   deriving (Eq)
 
 {- | Update ports info in attached `Node`.
-It accumulates in key-value map, where key is `ActualAddressNum` and value is a pair of `NodePortsInfo` and `LocalFlag` to distinguish local and external nodes.
+It accumulates in key-value map, where key is `ActualAddressNumber` and value is a pair of `NodePortsInfo` and `LocalFlag` to distinguish local and external nodes.
 The first one we can load from locals and another one we have to load from ram
 -}
 updatePortsInfoByPort ::
