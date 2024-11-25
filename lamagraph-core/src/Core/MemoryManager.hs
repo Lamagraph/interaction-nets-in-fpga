@@ -9,7 +9,7 @@
 module Core.MemoryManager where
 
 import Clash.Prelude
-import Control.Lens hiding (Index, ifoldl)
+import Control.Lens hiding (Index, ifoldl, imap, (:>))
 import Core.Map
 import Core.Node
 
@@ -17,9 +17,11 @@ import Core.Node
 >>> import Clash.Prelude
 >>> import Core.Node
 >>> import Core.Map
->>> import Control.Lens hiding (ifoldl, Index)
+>>> import Control.Lens hiding (Index, ifoldl, imap, (:>))
 >>> :set -XAllowAmbiguousTypes
->>> :set -XLambdaCase
+>>> :set -fplugin GHC.TypeLits.Extra.Solver
+>>> :set -fplugin GHC.TypeLits.KnownNat.Solver
+>>> :set -fplugin GHC.TypeLits.Normalise
 -}
 
 data EdgeEnd (portsNumber :: Nat) = EdgeEnd
