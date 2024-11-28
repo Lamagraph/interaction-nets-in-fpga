@@ -4,8 +4,8 @@ import Clash.Prelude
 
 data AgentSimpleLambda
   = Apply
-  | Abs
-  | Eps
+  | Abstract
+  | Erase
   deriving (NFDataX, Generic, Show, Eq)
 
 -- It is kind of hack. We need do it smarter later

@@ -21,10 +21,10 @@ import INet.Net
   Node 2 ->
   ReduceRuleResult 2 2 2
 lNode |><| rNode = case (lNode ^. nodeType, rNode ^. nodeType) of
-  (Apply, Abs) -> applyToLambdaRule lNode rNode
-  (Abs, Apply) -> applyToLambdaRule lNode rNode
-  (Eps, _) -> epsToAnyRule lNode rNode
-  (_, Eps) -> epsToAnyRule rNode lNode
+  (Apply, Abstract) -> applyToLambdaRule lNode rNode
+  (Abstract, Apply) -> applyToLambdaRule lNode rNode
+  (Erase, _) -> epsToAnyRule lNode rNode
+  (_, Erase) -> epsToAnyRule rNode lNode
   _ -> error "There is no rule for this active pair in the reduction rules"
 
 {- | Reduce rule for `Apply` and `Abs`
@@ -60,7 +60,7 @@ epsToAnyRule ::
   ReduceRuleResult portsNumber edgesNumber portsNumber
 epsToAnyRule _ nSome =
   let arisingEdges = def
-      genNewEpsNode port = Node port def Eps
+      genNewEpsNode port = Node port def Erase
       arisingNodes =
         imap
           (\i maybePort -> flip LocalNode (indexToUnsigned i) . genNewEpsNode <$> maybePort)
