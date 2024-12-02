@@ -41,13 +41,15 @@ library
       Lamagraph.Compiler.Syntax.Pat
       Lamagraph.Compiler.Syntax.Type
       Lamagraph.Compiler.Typechecker.DefaultEnv
+      Lamagraph.Compiler.Typechecker.Helper
       Lamagraph.Compiler.Typechecker.Infer
       Lamagraph.Compiler.Typechecker.Infer.Decl
       Lamagraph.Compiler.Typechecker.Infer.Expr
       Lamagraph.Compiler.Typechecker.Infer.Lit
       Lamagraph.Compiler.Typechecker.Infer.Pat
       Lamagraph.Compiler.Typechecker.Infer.Type
-      Lamagraph.Compiler.Typechecker.Types
+      Lamagraph.Compiler.Typechecker.TcTypes
+      Lamagraph.Compiler.Typechecker.Unification
   other-modules:
       Paths_lamagraph_compiler
   hs-source-dirs:
@@ -67,7 +69,6 @@ library
     , base >=4.7 && <5
     , extra
     , foldable1-classes-compat
-    , infinite-list
     , lens
     , mono-traversable
     , mtl
@@ -94,7 +95,6 @@ executable lamagraph-compiler-exe
     , base >=4.7 && <5
     , extra
     , foldable1-classes-compat
-    , infinite-list
     , lamagraph-compiler
     , lens
     , mono-traversable
@@ -131,7 +131,6 @@ test-suite lamagraph-compiler-test
     , filepath
     , foldable1-classes-compat
     , hedgehog
-    , infinite-list
     , lamagraph-compiler
     , lens
     , mono-traversable

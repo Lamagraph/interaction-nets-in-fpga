@@ -11,9 +11,11 @@ import Data.List.NonEmpty qualified as NE
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
+import Lamagraph.Compiler.Typechecker.Helper
 import Lamagraph.Compiler.Typechecker.Infer.Lit
 import Lamagraph.Compiler.Typechecker.Infer.Type
-import Lamagraph.Compiler.Typechecker.Types
+import Lamagraph.Compiler.Typechecker.TcTypes
+import Lamagraph.Compiler.Typechecker.Unification
 
 -- | Returns total 'Ty' of the 'LmlPat' and substitution over all captured variables
 inferLLmlPat :: TyEnv -> RecFlag -> LLmlPat LmlcPs -> MonadTypecheck (Ty, Subst)
@@ -23,14 +25,14 @@ inferLmlPat :: TyEnv -> RecFlag -> LmlPat LmlcPs -> MonadTypecheck (Ty, Subst)
 inferLmlPat env@(TyEnv tyEnv) NonRecursive = \case
   LmlPatAny _ -> do
     tVar <- freshTVar
-    pure (tVar, Subst HashMap.empty)
+    pure (tVar, nullSubst)
   LmlPatVar _ (L _ ident) -> do
     tVar <- freshTVar
     let name = Name $ mkLongident $ pure ident
     pure (tVar, Subst $ HashMap.singleton name tVar)
   LmlPatConstant _ lit -> do
     ty <- inferLmlLit lit
-    pure (ty, Subst HashMap.empty)
+    pure (ty, nullSubst)
   LmlPatTuple _ lPat lPats -> do
     (patTy, collectedSubst) <- inferLLmlPat env NonRecursive lPat
     pats <- mapM (inferLLmlPat env NonRecursive) lPats
@@ -42,7 +44,7 @@ inferLmlPat env@(TyEnv tyEnv) NonRecursive = \case
     Just tyScheme -> do
       constrTy <- instantiate tyScheme
       case maybeLPat of
-        Nothing -> pure (constrTy, Subst HashMap.empty)
+        Nothing -> pure (constrTy, nullSubst)
         Just lPat -> do
           (patTy, collectedSubst) <- inferLLmlPat env NonRecursive lPat
           tVar <- freshTVar

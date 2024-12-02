@@ -29,8 +29,7 @@ dependencies:
   - string-interpolate
   - mtl
   - mono-traversable
-  - infinite-list
-  - foldable1-classes-compat
+  - foldable1-classes-compat # Remove with GHC 9.6+
 
 language: GHC2021
 

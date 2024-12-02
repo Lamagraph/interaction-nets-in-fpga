@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.Typechecker.Infer.Expr where
+module Lamagraph.Compiler.Typechecker.Infer.Expr (inferLLmlBindGroup) where
 
 import Relude
 
@@ -11,10 +11,12 @@ import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv
+import Lamagraph.Compiler.Typechecker.Helper
 import Lamagraph.Compiler.Typechecker.Infer.Lit
 import Lamagraph.Compiler.Typechecker.Infer.Pat
 import Lamagraph.Compiler.Typechecker.Infer.Type
-import Lamagraph.Compiler.Typechecker.Types
+import Lamagraph.Compiler.Typechecker.TcTypes
+import Lamagraph.Compiler.Typechecker.Unification
 
 inferLLmlExpr :: TyEnv -> LLmlExpr LmlcPs -> MonadTypecheck Ty
 inferLLmlExpr tyEnv (L _ expr) = inferLmlExpr tyEnv expr
