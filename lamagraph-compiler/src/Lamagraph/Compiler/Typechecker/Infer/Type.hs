@@ -5,7 +5,8 @@ import Relude
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
-import Lamagraph.Compiler.Typechecker.Types
+import Lamagraph.Compiler.Typechecker.Helper
+import Lamagraph.Compiler.Typechecker.TcTypes
 
 lLmlTypeToTy :: LLmlType LmlcPs -> MonadTypecheck Ty
 lLmlTypeToTy (L _ lmlType) = lmlTypeToTy lmlType

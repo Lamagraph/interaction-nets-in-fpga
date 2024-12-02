@@ -1,11 +1,11 @@
-module Lamagraph.Compiler.Typechecker.DefaultEnv where
+module Lamagraph.Compiler.Typechecker.DefaultEnv (tyInt, tyChar, tyString, tyBool, defaultEnv) where
 
 import Relude
 
 import Data.HashMap.Strict qualified as HashMap
 
 import Lamagraph.Compiler.Syntax
-import Lamagraph.Compiler.Typechecker.Types
+import Lamagraph.Compiler.Typechecker.TcTypes
 
 mkTConstr :: Text -> [Ty] -> Ty
 mkTConstr name = TConstr (Name $ mkLongident $ pure name)

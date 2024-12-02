@@ -5,7 +5,7 @@ import Relude
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv
-import Lamagraph.Compiler.Typechecker.Types
+import Lamagraph.Compiler.Typechecker.TcTypes
 
 inferLmlLit :: LmlLit LmlcPs -> MonadTypecheck Ty
 inferLmlLit = \case

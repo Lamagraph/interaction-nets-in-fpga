@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.Typechecker.Infer where
+module Lamagraph.Compiler.Typechecker.Infer (inferDef) where
 
 import Relude
 
@@ -8,7 +8,7 @@ import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv
 import Lamagraph.Compiler.Typechecker.Infer.Decl
-import Lamagraph.Compiler.Typechecker.Types
+import Lamagraph.Compiler.Typechecker.TcTypes
 
 inferSeq :: (TyEnv -> a -> MonadTypecheck TyEnv) -> TyEnv -> [a] -> MonadTypecheck TyEnv
 inferSeq inferFunc (TyEnv tyEnv) = \case
