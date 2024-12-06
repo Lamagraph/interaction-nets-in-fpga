@@ -1,6 +1,4 @@
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 {- | Module with types required for typechecking
 
@@ -28,8 +26,6 @@ import Relude
 import Control.Lens
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
-import Data.String.Interpolate
-import Prettyprinter
 
 import Lamagraph.Compiler.Syntax
 
@@ -130,57 +126,3 @@ type MonadTypecheck a = ExceptT TypecheckError (State MonadTypecheckState) a
 
 runMonadTypecheck :: MonadTypecheck a -> Either TypecheckError a
 runMonadTypecheck f = evalState (runExceptT f) defaultMonadTypecheckState
-
---------------------
--- Pretty printer --
---------------------
-
-instance Pretty (Either TypecheckError TyEnv) where
-  pretty :: Either TypecheckError TyEnv -> Doc ann
-  pretty = \case
-    Left err -> pretty err
-    Right tyEnv -> pretty tyEnv
-
-instance Pretty TypecheckError where
-  pretty :: TypecheckError -> Doc ann
-  pretty = \case
-    UnboundVariable name -> "Error: variable" <+> pretty name <+> "is unbound"
-    ConstructorDoestExist name -> [i|Error: constructor #{pretty name} isn't declared|]
-    OccursCheck name ty -> "Error: variable" <+> pretty name <+> "already present in type" <+> pretty ty
-    CantUnify lTy rTy -> "Error: cannot unify" <+> pretty lTy <+> "and" <+> pretty rTy
-    CondNotBool ty -> [i|Error: expected: bool, got #{pretty ty} |]
-    NonVariableInLetRec -> "Error: non variable pattern in let rec"
-    VariableClashInPattern name -> [i|Error: variable #{pretty name} is already bound in this pattern|]
-    VarMustOccurOnBothSidesOfOrPattern name -> [i|Error: variable #{pretty name} must occur on both sides of the or-pattern|]
-
-instance Pretty TyEnv where
-  pretty :: TyEnv -> Doc ann
-  pretty (TyEnv tyEnv) = vsep $ fmap pretty (HashMap.toList tyEnv)
-
-instance {-# OVERLAPS #-} Pretty (Name, TyScheme) where
-  pretty :: (Name, TyScheme) -> Doc ann
-  pretty (name, tyScheme) = pretty name <> ":" <+> pretty tyScheme
-
-instance Pretty TyScheme where
-  pretty :: TyScheme -> Doc ann
-  pretty (Forall [] ty) = pretty ty
-  pretty (Forall names ty) = "forall" <+> hsep (fmap pretty names) <> "." <+> pretty ty
-
-instance Pretty Name where
-  pretty :: Name -> Doc ann
-  pretty (Name longident) = pretty longident
-
-instance Pretty Longident where
-  pretty :: Longident -> Doc ann
-  pretty (Longident idents) = hsep $ punctuate comma (map pretty (toList idents))
-
-instance Pretty Ty where
-  pretty :: Ty -> Doc ann
-  pretty = \case
-    TVar var -> "'" <> pretty var
-    lTy@(_ `TArrow` _) `TArrow` rTy -> parens (pretty lTy) <+> "->" <+> pretty rTy
-    lTy `TArrow` rTy -> pretty lTy <+> "->" <+> pretty rTy
-    TConstr tyConstr [] -> pretty tyConstr
-    TConstr tyConstr [ty] -> pretty ty <+> pretty tyConstr
-    TConstr tyConstr tys -> parens (fillSep $ punctuate comma (map pretty tys)) <+> pretty tyConstr
-    TTuple ty tys -> parens $ concatWith (surround " * ") (map pretty (ty : toList tys))

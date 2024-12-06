@@ -3,10 +3,10 @@ module Lamagraph.Compiler.Typechecker.Infer.Pat (inferLLmlPat) where
 
 import Relude
 
+import Control.Lens
 import Control.Monad.Except
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
-import Data.List.NonEmpty qualified as NE
 
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Parser.SrcLoc
@@ -18,66 +18,72 @@ import Lamagraph.Compiler.Typechecker.TcTypes
 import Lamagraph.Compiler.Typechecker.Unification
 
 -- | Returns total 'Ty' of the 'LmlPat' and substitution over all captured variables
-inferLLmlPat :: TyEnv -> RecFlag -> LLmlPat LmlcPs -> MonadTypecheck (Ty, Subst)
-inferLLmlPat env recFlag (L _ pat) = inferLmlPat env recFlag pat
+inferLLmlPat :: TyEnv -> RecFlag -> LLmlPat LmlcPs -> MonadTypecheck (Ty, Subst, LLmlPat LmlcTc)
+inferLLmlPat env recFlag (L loc pat) = over _3 (L loc) <$> inferLmlPat env recFlag pat
 
-inferLmlPat :: TyEnv -> RecFlag -> LmlPat LmlcPs -> MonadTypecheck (Ty, Subst)
+inferLmlPat :: TyEnv -> RecFlag -> LmlPat LmlcPs -> MonadTypecheck (Ty, Subst, LmlPat LmlcTc)
 inferLmlPat env@(TyEnv tyEnv) NonRecursive = \case
   LmlPatAny _ -> do
     tVar <- freshTVar
-    pure (tVar, nullSubst)
-  LmlPatVar _ (L _ ident) -> do
+    pure (tVar, nullSubst, LmlPatAny tVar)
+  LmlPatVar _ lIdent@(L _ ident) -> do
     tVar <- freshTVar
     let name = Name $ mkLongident $ pure ident
-    pure (tVar, Subst $ HashMap.singleton name tVar)
+    pure (tVar, Subst $ HashMap.singleton name tVar, LmlPatVar tVar lIdent)
   LmlPatConstant _ lit -> do
-    ty <- inferLmlLit lit
-    pure (ty, nullSubst)
+    (ty, lLitTyped) <- inferLmlLit lit
+    pure (ty, nullSubst, LmlPatConstant ty lLitTyped)
   LmlPatTuple _ lPat lPats -> do
-    (patTy, collectedSubst) <- inferLLmlPat env NonRecursive lPat
+    (patTy, collectedSubst, lPatTyped) <- inferLLmlPat env NonRecursive lPat
     pats <- mapM (inferLLmlPat env NonRecursive) lPats
-    let (patTys, collectedSubsts) = NE.unzip pats
+    let (patTys, collectedSubsts, lPatsTyped) = unzip3F pats
     fullCollectedSubst <- foldM (!@@) collectedSubst collectedSubsts
-    pure (TTuple patTy patTys, fullCollectedSubst)
-  LmlPatConstruct _ (L _ longident) maybeLPat -> case HashMap.lookup (Name longident) tyEnv of
+    let outType = TTuple patTy patTys
+    pure (outType, fullCollectedSubst, LmlPatTuple outType lPatTyped lPatsTyped)
+  LmlPatConstruct _ lLongident@(L _ longident) maybeLPat -> case HashMap.lookup (Name longident) tyEnv of
     Nothing -> throwError $ ConstructorDoestExist (coerce longident)
     Just tyScheme -> do
       constrTy <- instantiate tyScheme
       case maybeLPat of
-        Nothing -> pure (constrTy, nullSubst)
+        Nothing -> pure (constrTy, nullSubst, LmlPatConstruct constrTy lLongident Nothing)
         Just lPat -> do
-          (patTy, collectedSubst) <- inferLLmlPat env NonRecursive lPat
+          (patTy, collectedSubst, lPatTyped) <- inferLLmlPat env NonRecursive lPat
           tVar <- freshTVar
           constrSubst <- mostGeneralUnifier constrTy (patTy `TArrow` tVar)
-          pure (apply constrSubst tVar, constrSubst @@ collectedSubst)
+          let outType = apply constrSubst tVar
+          pure (outType, constrSubst @@ collectedSubst, LmlPatConstruct outType lLongident (Just lPatTyped))
   LmlPatOr _ leftLPat rightLPat -> do
-    (leftTy, leftSubst@(Subst leftMap)) <- inferLLmlPat env NonRecursive leftLPat
-    (rightTy, rightSubst@(Subst rightMap)) <- inferLLmlPat env NonRecursive rightLPat
+    (leftTy, leftSubst@(Subst leftMap), leftLPatTyped) <- inferLLmlPat env NonRecursive leftLPat
+    (rightTy, rightSubst@(Subst rightMap), rightLPatTyped) <- inferLLmlPat env NonRecursive rightLPat
     let leftKeys = HashMap.keysSet leftMap
         rightKeys = HashMap.keysSet rightMap
         union = leftKeys `HashSet.union` rightKeys
     if union == leftKeys
       then do
         unifierSubst <- mostGeneralUnifier leftTy rightTy
-        pure (apply unifierSubst leftTy, unifierSubst @@ rightSubst @@ leftSubst)
+        let outTy = apply unifierSubst leftTy
+        pure (outTy, unifierSubst @@ rightSubst @@ leftSubst, LmlPatOr outTy leftLPatTyped rightLPatTyped)
       else do
+        -- TODO: Is this true?
         let difference = leftKeys `HashSet.difference` rightKeys
         case viaNonEmpty head (toList difference) of
           Nothing -> error "Unordered containers internal error!"
           Just name -> throwError $ VarMustOccurOnBothSidesOfOrPattern name
   LmlPatConstraint _ lPat lTy -> do
-    ty <- lLmlTypeToTy lTy
-    (patTy, patSubst) <- inferLLmlPat env NonRecursive lPat
+    (ty, lTyTyped) <- lLmlTypeToTy lTy
+    (patTy, patSubst, lPatTyped) <- inferLLmlPat env NonRecursive lPat
     unifierSubst <- mostGeneralUnifier ty patTy
-    pure (apply unifierSubst ty, unifierSubst @@ patSubst)
+    let outTy = apply unifierSubst ty
+    pure (outTy, unifierSubst @@ patSubst, LmlPatConstraint outTy lPatTyped lTyTyped)
 inferLmlPat env Recursive = \case
-  LmlPatVar _ (L _ ident) -> do
+  LmlPatVar _ lIdent@(L _ ident) -> do
     tVar <- freshTVar
     let name = Name $ mkLongident $ pure ident
-    pure (tVar, Subst $ HashMap.singleton name tVar)
+    pure (tVar, Subst $ HashMap.singleton name tVar, LmlPatVar tVar lIdent)
   LmlPatConstraint _ lPat lTy -> do
-    ty <- lLmlTypeToTy lTy
-    (patTy, patSubst) <- inferLLmlPat env Recursive lPat
+    (ty, lTyTyped) <- lLmlTypeToTy lTy
+    (patTy, patSubst, lPatTyped) <- inferLLmlPat env Recursive lPat
     unifierSubst <- mostGeneralUnifier ty patTy
-    pure (apply unifierSubst ty, unifierSubst @@ patSubst)
+    let outTy = apply unifierSubst ty
+    pure (outTy, unifierSubst @@ patSubst, LmlPatConstraint outTy lPatTyped lTyTyped)
   _ -> throwError NonVariableInLetRec
