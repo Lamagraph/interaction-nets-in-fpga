@@ -6,124 +6,143 @@ import Control.Lens
 import Control.Monad.Except
 import Data.Foldable1 hiding (head)
 import Data.HashMap.Strict qualified as HashMap
+import Data.List.NonEmpty.Extra qualified as NE
 
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Parser.SrcLoc
+import Lamagraph.Compiler.PrettyAst ()
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv
 import Lamagraph.Compiler.Typechecker.Helper
 import Lamagraph.Compiler.Typechecker.Infer.Lit
 import Lamagraph.Compiler.Typechecker.Infer.Pat
 import Lamagraph.Compiler.Typechecker.Infer.Type
+import Lamagraph.Compiler.Typechecker.Instances ()
 import Lamagraph.Compiler.Typechecker.TcTypes
 import Lamagraph.Compiler.Typechecker.Unification
 
-inferLLmlExpr :: TyEnv -> LLmlExpr LmlcPs -> MonadTypecheck Ty
-inferLLmlExpr tyEnv (L _ expr) = inferLmlExpr tyEnv expr
+inferLLmlExpr :: TyEnv -> LLmlExpr LmlcPs -> MonadTypecheck (Ty, LLmlExpr LmlcTc)
+inferLLmlExpr tyEnv (L loc expr) = over _2 (L loc) <$> inferLmlExpr tyEnv expr
 
-inferLmlExpr :: TyEnv -> LmlExpr LmlcPs -> MonadTypecheck Ty
+inferLmlExpr :: TyEnv -> LmlExpr LmlcPs -> MonadTypecheck (Ty, LmlExpr LmlcTc)
 inferLmlExpr env@(TyEnv tyEnv) = \case
   LmlExprIdent _ longident -> case HashMap.lookup (Name longident) tyEnv of
     Nothing -> throwError $ UnboundVariable (coerce longident)
     Just tyScheme -> do
-      instantiate tyScheme
-  LmlExprConstant _ lit -> inferLmlLit lit
+      outTy <- instantiate tyScheme
+      pure (outTy, LmlExprIdent outTy longident)
+  LmlExprConstant _ lit -> do
+    (ty, litTyped) <- inferLmlLit lit
+    pure (ty, LmlExprConstant ty litTyped)
   LmlExprLet _ lBindGroup lExpr -> do
-    bgTyEnv <- inferLLmlBindGroup env lBindGroup
-    inferLLmlExpr bgTyEnv lExpr
+    (bgTyEnv, lBindGroupTyped) <- inferLLmlBindGroup env lBindGroup
+    (outTy, lExprTyped) <- inferLLmlExpr bgTyEnv lExpr
+    pure (outTy, LmlExprLet outTy lBindGroupTyped lExprTyped)
   LmlExprFunction _ lPat lExpr -> do
-    (patTy, Subst substMap) <- inferLLmlPat env NonRecursive lPat
+    (patTy, Subst substMap, lPatTyped) <- inferLLmlPat env NonRecursive lPat
     -- Forall [] here is allowed, since variables inferred from pattern will always be fresh
     let patEnv = fmap (Forall []) substMap
         envWithPats = TyEnv $ patEnv `HashMap.union` tyEnv
-    exprTy <- inferLLmlExpr envWithPats lExpr
-    pure $ patTy `TArrow` exprTy
+    (exprTy, lExprTyped) <- inferLLmlExpr envWithPats lExpr
+    let outTy = patTy `TArrow` exprTy
+    pure (outTy, LmlExprFunction outTy lPatTyped lExprTyped)
   LmlExprApply _ apHead apArgs -> do
     tVar <- freshTVar
-    apHeadTy <- inferLLmlExpr env apHead
-    apArgsInferred <- mapM (inferLLmlExpr env) apArgs
+    (apHeadTy, apHeadTyped) <- inferLLmlExpr env apHead
+    (apArgsInferred, apArgsTyped) <- NE.unzip <$> mapM (inferLLmlExpr env) apArgs
     let apArgsTy = foldr TArrow tVar apArgsInferred
     unify apHeadTy apArgsTy
-    pure tVar
+    pure (tVar, LmlExprApply tVar apHeadTyped apArgsTyped)
   LmlExprMatch _ lExpr lCases -> do
-    exprTy <- inferLLmlExpr env lExpr
-    casesTys <- mapM (inferLLmlCase env) lCases
+    (exprTy, lExprTyped) <- inferLLmlExpr env lExpr
+    (casesTys, lCasesTyped) <- NE.unzip <$> mapM (inferLLmlCase env) lCases
     tVar <- freshTVar
     mapM_ (unify (exprTy `TArrow` tVar)) casesTys
-    pure tVar
+    pure (tVar, LmlExprMatch tVar lExprTyped lCasesTyped)
   LmlExprTuple _ lExpr lExprs -> do
-    ty <- inferLLmlExpr env lExpr
-    tys <- mapM (inferLLmlExpr env) lExprs
-    pure $ TTuple ty tys
-  LmlExprConstruct _ (L _ longident) maybeLExpr -> case HashMap.lookup (Name longident) tyEnv of
+    (ty, lExprTyped) <- inferLLmlExpr env lExpr
+    (tys, lExprsTyped) <- NE.unzip <$> mapM (inferLLmlExpr env) lExprs
+    let outTy = TTuple ty tys
+    pure (outTy, LmlExprTuple outTy lExprTyped lExprsTyped)
+  LmlExprConstruct _ lLongident@(L _ longident) maybeLExpr -> case HashMap.lookup (Name longident) tyEnv of
     Nothing -> throwError $ ConstructorDoestExist (coerce longident)
     Just tyScheme -> do
       constrTy <- instantiate tyScheme
       case maybeLExpr of
-        Nothing -> pure constrTy
+        Nothing -> pure (constrTy, LmlExprConstruct constrTy lLongident Nothing)
         Just lExpr -> do
-          exprTy <- inferLLmlExpr env lExpr
+          (exprTy, lExprTyped) <- inferLLmlExpr env lExpr
           tVar <- freshTVar
           unify constrTy (exprTy `TArrow` tVar)
-          pure tVar
+          pure (tVar, LmlExprConstruct tVar lLongident (Just lExprTyped))
   LmlExprIfThenElse _ lCond lTrue lFalse -> do
-    condTy <- inferLLmlExpr env lCond
-    trueTy <- inferLLmlExpr env lTrue
-    falseTy <- inferLLmlExpr env lFalse
+    (condTy, lCondTyped) <- inferLLmlExpr env lCond
+    (trueTy, lTrueTyped) <- inferLLmlExpr env lTrue
+    (falseTy, lFalseTyped) <- inferLLmlExpr env lFalse
     unify condTy tyBool
     unify trueTy falseTy
-    pure falseTy
+    pure (falseTy, LmlExprIfThenElse falseTy lCondTyped lTrueTyped lFalseTyped)
   LmlExprConstraint _ lExpr lType -> do
-    exprTy <- inferLLmlExpr env lExpr
-    expectedTy <- lLmlTypeToTy lType
+    (exprTy, lExprTyped) <- inferLLmlExpr env lExpr
+    (expectedTy, lTypeTyped) <- lLmlTypeToTy lType
     unify exprTy expectedTy
-    pure expectedTy
+    pure (expectedTy, LmlExprConstraint expectedTy lExprTyped lTypeTyped)
 
-inferLLmlBindGroup :: TyEnv -> LLmlBindGroup LmlcPs -> MonadTypecheck TyEnv
-inferLLmlBindGroup env (L _ bg) = inferLmlBindGroup env bg
+inferLLmlBindGroup :: TyEnv -> LLmlBindGroup LmlcPs -> MonadTypecheck (TyEnv, LLmlBindGroup LmlcTc)
+inferLLmlBindGroup env (L loc bg) = over _2 (L loc) <$> inferLmlBindGroup env bg
 
-inferLmlBindGroup :: TyEnv -> LmlBindGroup LmlcPs -> MonadTypecheck TyEnv
+inferLmlBindGroup :: TyEnv -> LmlBindGroup LmlcPs -> MonadTypecheck (TyEnv, LmlBindGroup LmlcTc)
 inferLmlBindGroup env (LmlBindGroup _ NonRecursive binds) = do
-  newEnvs <- mapM (inferLLmlBind env NonRecursive) binds
+  (newEnvs, lBinds) <- NE.unzip <$> mapM (inferLLmlBind env NonRecursive) binds
   bgEnv <- foldlM1 tyEnvUnionDisj newEnvs
-  pure $ TyEnv $ coerce bgEnv `HashMap.union` coerce env
+  pure (TyEnv $ coerce bgEnv `HashMap.union` coerce env, LmlBindGroup noExtField NonRecursive lBinds)
 inferLmlBindGroup env (LmlBindGroup _ Recursive binds) = do
-  patSubsts <- mapM (\(L _ (LmlBind _ lPat _)) -> snd <$> inferLLmlPat env Recursive lPat) binds
+  patInfo <- mapM (\(L _ (LmlBind _ lPat _)) -> inferLLmlPat env Recursive lPat) binds
+  let (_, patSubsts, _) = unzip3F patInfo
   (Subst patMap) <- foldlM1 (!@@) patSubsts
   -- Forall [] here is allowed, since variables inferred from pattern will always be fresh
   let patsEnv = fmap (Forall []) patMap
       envWithPats = TyEnv $ patsEnv `HashMap.union` coerce env
-  foldM helper envWithPats binds
- where
-  helper :: TyEnv -> LLmlBind LmlcPs -> MonadTypecheck TyEnv
-  helper accEnv@(TyEnv tyEnv) lBind = do
-    (TyEnv outEnv) <- inferLLmlBind accEnv Recursive lBind
-    pure $ TyEnv $ outEnv `HashMap.union` tyEnv
+      t = NE.zip patInfo binds
+  (newEnvs, lBinds) <- NE.unzip <$> mapM (uncurry (inferRecBind envWithPats)) t
+  bgEnv <- foldlM1 tyEnvUnionDisj newEnvs
+  pure (bgEnv, LmlBindGroup noExtField Recursive lBinds)
 
-inferLLmlBind :: TyEnv -> RecFlag -> LLmlBind LmlcPs -> MonadTypecheck TyEnv
-inferLLmlBind env recFlag (L _ bind) = inferLmlBind env recFlag bind
-
-inferLmlBind :: TyEnv -> RecFlag -> LmlBind LmlcPs -> MonadTypecheck TyEnv
-inferLmlBind env recFlag (LmlBind _ lPat lExpr) = do
-  (patTy, Subst patSubst) <- inferLLmlPat env recFlag lPat
-  exprTy <- inferLLmlExpr env lExpr
+inferRecBind :: TyEnv -> (Ty, Subst, LLmlPat LmlcTc) -> LLmlBind LmlcPs -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
+inferRecBind env (patTy, Subst patSubst, lPatTyped) (L loc (LmlBind _ _ lExpr)) = do
+  (exprTy, lExprTyped) <- inferLLmlExpr env lExpr
   unify exprTy patTy
   subst <- use currentSubst
-  pure $ TyEnv $ fmap (generalize (apply subst env)) (apply subst patSubst)
+  let outEnv = TyEnv $ fmap (generalize (apply subst env)) (apply subst patSubst)
+  pure (outEnv, L loc $ LmlBind outEnv (apply subst lPatTyped) (apply subst lExprTyped))
 
-inferLLmlCase :: TyEnv -> LLmlCase LmlcPs -> MonadTypecheck Ty
-inferLLmlCase env (L _ case') = inferLmlCase env case'
+inferLLmlBind :: TyEnv -> RecFlag -> LLmlBind LmlcPs -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
+inferLLmlBind env recFlag (L loc bind) = over _2 (L loc) <$> inferLmlBind env recFlag bind
 
-inferLmlCase :: TyEnv -> LmlCase LmlcPs -> MonadTypecheck Ty
+inferLmlBind :: TyEnv -> RecFlag -> LmlBind LmlcPs -> MonadTypecheck (TyEnv, LmlBind LmlcTc)
+inferLmlBind env recFlag (LmlBind _ lPat lExpr) = do
+  (patTy, Subst patSubst, lPatTyped) <- inferLLmlPat env recFlag lPat
+  (exprTy, lExprTyped) <- inferLLmlExpr env lExpr
+  unify exprTy patTy
+  subst <- use currentSubst
+  let outEnv = TyEnv $ fmap (generalize (apply subst env)) (apply subst patSubst)
+  pure (outEnv, LmlBind outEnv (apply subst lPatTyped) (apply subst lExprTyped))
+
+inferLLmlCase :: TyEnv -> LLmlCase LmlcPs -> MonadTypecheck (Ty, LLmlCase LmlcTc)
+inferLLmlCase env (L loc case') = over _2 (L loc) <$> inferLmlCase env case'
+
+inferLmlCase :: TyEnv -> LmlCase LmlcPs -> MonadTypecheck (Ty, LmlCase LmlcTc)
 inferLmlCase env@(TyEnv tyEnv) (LmlCase _ lPat maybeLGuard lExpr) = do
-  (patTy, Subst substMap) <- inferLLmlPat env NonRecursive lPat
+  (patTy, Subst substMap, lPatTyped) <- inferLLmlPat env NonRecursive lPat
   -- Forall [] here is allowed, since variables inferred from pattern will always be fresh
   let patEnv = fmap (Forall []) substMap
       envWithPats = TyEnv $ patEnv `HashMap.union` tyEnv
-  case maybeLGuard of
-    Nothing -> pure ()
+  maybeLGuardTyped <- case maybeLGuard of
+    Nothing -> pure Nothing
     Just lGuard -> do
-      guardTy <- inferLLmlExpr envWithPats lGuard
+      (guardTy, lGuardTyped) <- inferLLmlExpr envWithPats lGuard
       unify guardTy tyBool
-  exprTy <- inferLLmlExpr envWithPats lExpr
-  pure $ patTy `TArrow` exprTy
+      pure $ Just lGuardTyped
+  (exprTy, lExprTyped) <- inferLLmlExpr envWithPats lExpr
+  let outTy = patTy `TArrow` exprTy
+  pure (outTy, LmlCase outTy lPatTyped maybeLGuardTyped lExprTyped)

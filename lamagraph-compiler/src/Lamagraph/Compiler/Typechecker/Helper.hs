@@ -1,4 +1,12 @@
-module Lamagraph.Compiler.Typechecker.Helper (freshTVar, instantiate, generalize, (@@), (!@@), tyEnvUnionDisj) where
+module Lamagraph.Compiler.Typechecker.Helper (
+  freshTVar,
+  instantiate,
+  generalize,
+  (@@),
+  (!@@),
+  tyEnvUnionDisj,
+  unzip3F,
+) where
 
 import Relude
 import Relude.Unsafe ((!!))
@@ -8,6 +16,7 @@ import Control.Monad.Except
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
 import Data.Sequences qualified
+import Data.Tuple.Extra
 
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.TcTypes
@@ -55,3 +64,6 @@ tyEnvUnionDisj (TyEnv accTyEnv) (TyEnv tyEnv) = do
   case viaNonEmpty head $ HashMap.keys intersectionMap of
     Nothing -> pure $ TyEnv $ accTyEnv `HashMap.union` tyEnv
     Just name -> throwError $ VariableClashInPattern name
+
+unzip3F :: (Functor f) => f (a, b, c) -> (f a, f b, f c)
+unzip3F f = (fst3 <$> f, snd3 <$> f, thd3 <$> f)

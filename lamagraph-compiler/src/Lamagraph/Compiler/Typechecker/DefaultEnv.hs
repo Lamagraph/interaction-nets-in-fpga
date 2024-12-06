@@ -63,4 +63,6 @@ defaultEnv = TyEnv env
         ( Name $ mkLongident $ pure "Some"
         , Forall [Name $ mkLongident $ pure "a"] (TVar (Name $ mkLongident $ pure "a") `TArrow` tyOption)
         )
+      , (Name $ mkLongident $ pure "true", Forall [] tyBool)
+      , (Name $ mkLongident $ pure "false", Forall [] tyBool)
       ]

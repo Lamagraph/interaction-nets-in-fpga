@@ -7,8 +7,8 @@ import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv
 import Lamagraph.Compiler.Typechecker.TcTypes
 
-inferLmlLit :: LmlLit LmlcPs -> MonadTypecheck Ty
+inferLmlLit :: LmlLit LmlcPs -> MonadTypecheck (Ty, LmlLit LmlcTc)
 inferLmlLit = \case
-  LmlInt _ _ -> pure tyInt
-  LmlChar _ _ -> pure tyChar
-  LmlString _ _ -> pure tyString
+  LmlInt _ val -> pure (tyInt, LmlInt tyInt val)
+  LmlChar _ val -> pure (tyChar, LmlChar tyChar val)
+  LmlString _ val -> pure (tyString, LmlString tyString val)

@@ -2,16 +2,18 @@ module Lamagraph.Compiler.Typechecker.Infer.Decl (inferLLmlDecl) where
 
 import Relude
 
+import Control.Lens
+
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.Infer.Expr
 import Lamagraph.Compiler.Typechecker.TcTypes
 
-inferLLmlDecl :: TyEnv -> LLmlDecl LmlcPs -> MonadTypecheck TyEnv
-inferLLmlDecl tyEnv (L _ decl) = inferLmlDecl tyEnv decl
+inferLLmlDecl :: TyEnv -> LLmlDecl LmlcPs -> MonadTypecheck (TyEnv, LLmlDecl LmlcTc)
+inferLLmlDecl tyEnv (L loc decl) = over _2 (L loc) <$> inferLmlDecl tyEnv decl
 
-inferLmlDecl :: TyEnv -> LmlDecl LmlcPs -> MonadTypecheck TyEnv
+inferLmlDecl :: TyEnv -> LmlDecl LmlcPs -> MonadTypecheck (TyEnv, LmlDecl LmlcTc)
 inferLmlDecl tyEnv = \case
-  ValD _ lBindGroup -> inferLLmlBindGroup tyEnv lBindGroup
+  ValD _ lBindGroup -> over _2 (ValD noExtField) <$> inferLLmlBindGroup tyEnv lBindGroup
   _ -> error "Failed to typecheck top-level declaration: unsupported!"
