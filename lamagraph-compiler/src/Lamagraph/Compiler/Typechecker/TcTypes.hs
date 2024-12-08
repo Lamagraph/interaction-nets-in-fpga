@@ -27,6 +27,7 @@ import Control.Lens
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
 
+import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 
 -- | Generic name, probably will be used somewhere afterwards
@@ -66,7 +67,7 @@ class Tys t where
   ftv :: t -> HashSet Name
 
 -- | 'Traversable' is much better choice than 'Data.List.List', because of heavy use of 'NonEmpty' in "Lamagraph.Compiler.Syntax"
-instance (Tys a, Traversable t) => Tys (t a) where
+instance {-# OVERLAPPABLE #-} (Tys a, Traversable t) => Tys (t a) where
   apply :: Subst -> t a -> t a
   apply subst = fmap (apply subst)
   ftv :: t a -> HashSet Name

@@ -11,4 +11,8 @@ let z'' = [1; 2]
 
 let s = Some 1
 
-let (a | b) = 1
+let (a | a) = 1
+
+let rec f x = x + 1
+and g x = f 1
+and h x = f "1"

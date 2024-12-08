@@ -17,6 +17,7 @@ import Lamagraph.Compiler.Typechecker.Helper
 import Lamagraph.Compiler.Typechecker.Infer.Lit
 import Lamagraph.Compiler.Typechecker.Infer.Pat
 import Lamagraph.Compiler.Typechecker.Infer.Type
+import Lamagraph.Compiler.Typechecker.Instances ()
 import Lamagraph.Compiler.Typechecker.TcTypes
 import Lamagraph.Compiler.Typechecker.Unification
 
@@ -115,7 +116,7 @@ inferLmlBind env recFlag (LmlBind _ lPat lExpr) = do
   unify exprTy patTy
   subst <- use currentSubst
   let outEnv = TyEnv $ fmap (generalize (apply subst env)) (apply subst patSubst)
-  pure (outEnv, LmlBind outEnv lPatTyped lExprTyped) -- TODO: apply subst to pat and expr
+  pure (outEnv, LmlBind outEnv (apply subst lPatTyped) lExprTyped) -- TODO: apply subst to pat and expr
 
 inferLLmlCase :: TyEnv -> LLmlCase LmlcPs -> MonadTypecheck (Ty, LLmlCase LmlcTc)
 inferLLmlCase env (L loc case') = over _2 (L loc) <$> inferLmlCase env case'

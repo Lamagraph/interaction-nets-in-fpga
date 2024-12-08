@@ -48,6 +48,7 @@ library
       Lamagraph.Compiler.Typechecker.Infer.Lit
       Lamagraph.Compiler.Typechecker.Infer.Pat
       Lamagraph.Compiler.Typechecker.Infer.Type
+      Lamagraph.Compiler.Typechecker.Instances
       Lamagraph.Compiler.Typechecker.TcTypes
       Lamagraph.Compiler.Typechecker.Unification
   other-modules:

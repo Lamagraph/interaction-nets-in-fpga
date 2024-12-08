@@ -1,171 +1,60 @@
 (Module
+ <: int -> int -> bool
+ -: int -> int -> int
+ >: int -> int -> bool
+ /: int -> int -> int
+ None: forall 'a. 'a option
+ +: int -> int -> int
+ []: forall 'a. 'a list
+ >=: int -> int -> bool
+ a: string
+ Some: forall 'a. 'a -> 'a option
+ *: int -> int -> int
+ <=: int -> int -> bool
+ ::: forall 'a. ('a * 'a list) -> 'a list
  (Just
  (L
   { :1:8-18 }
   ("BindGroups")))
  [ (L
-    { :(3,1)-(5,24) }
+    { :15:1-10 }
     (ValD
      (L
-      { :(3,5)-(5,24) }
+      { :15:5-10 }
       (NonRec
        [ (L
-          { :3:5-15 }
+          { :15:5-10 }
           (Bind
+           a: int
            (L
-            { :3:5-7 }
+            { :15:5-6 }
             (PatVar
+             'a
              (L
-              { :3:5-7 }
-              "_K")))
+              { :15:5-6 }
+              "a")))
            (L
-            { :3:8-15 }
-            (ExprFunction
-             (L
-              { :3:8-9 }
-              (PatVar
-               (L
-                { :3:8-9 }
-                "x")))
-             (L
-              { :3:10-15 }
-              (ExprFunction
-               (L
-                { :3:10-11 }
-                (PatVar
-                 (L
-                  { :3:10-11 }
-                  "y")))
-               (L
-                { :3:14-15 }
-                (ExprIdent
-                 "x"))))))))
-       , (L
-          { :4:5-25 }
-          (Bind
-           (L
-            { :4:5-7 }
-            (PatVar
-             (L
-              { :4:5-7 }
-              "_S")))
-           (L
-            { :4:8-25 }
-            (ExprFunction
-             (L
-              { :4:8-9 }
-              (PatVar
-               (L
-                { :4:8-9 }
-                "f")))
-             (L
-              { :4:10-25 }
-              (ExprFunction
-               (L
-                { :4:10-11 }
-                (PatVar
-                 (L
-                  { :4:10-11 }
-                  "g")))
-               (L
-                { :4:12-25 }
-                (ExprFunction
-                 (L
-                  { :4:12-13 }
-                  (PatVar
-                   (L
-                    { :4:12-13 }
-                    "x")))
-                 (L
-                  { :4:16-25 }
-                  (ExprApply
-                   (L
-                    { :4:16-17 }
-                    (ExprIdent
-                     "f"))
-                   [ (L
-                      { :4:18-19 }
-                      (ExprIdent
-                       "x"))
-                   , (L
-                      { :4:20-25 }
-                      (ExprApply
-                       (L
-                        { :4:21-22 }
-                        (ExprIdent
-                         "g"))
-                       [(L { :4:23-24 } (ExprIdent "x"))])) ]))))))))))
-       , (L
-          { :5:5-24 }
-          (Bind
-           (L
-            { :5:5-7 }
-            (PatVar
-             (L
-              { :5:5-7 }
-              "_I")))
-           (L
-            { :5:8-24 }
-            (ExprFunction
-             (L
-              { :5:8-9 }
-              (PatVar
-               (L
-                { :5:8-9 }
-                "x")))
-             (L
-              { :5:12-24 }
-              (ExprApply
-               (L
-                { :5:12-22 }
-                (ExprApply
-                 (L
-                  { :5:13-15 }
-                  (ExprIdent
-                   "_S"))
-                 [ (L
-                    { :5:16-18 }
-                    (ExprIdent
-                     "_K"))
-                 , (L
-                    { :5:19-21 }
-                    (ExprIdent
-                     "_K")) ]))
-               [(L { :5:23-24 } (ExprIdent "x"))])))))) ]))))
+            { :15:9-10 }
+            (ExprConstant int int
+             1)))) ]))))
  , (L
-    { :(7,1)-(9,4) }
+    { :17:1-14 }
     (ValD
      (L
-      { :(7,5)-(9,4) }
+      { :17:5-14 }
       (NonRec
        [ (L
-          { :(7,5)-(9,4) }
+          { :17:5-14 }
           (Bind
+           a: string
            (L
-            { :7:5-6 }
+            { :17:5-6 }
             (PatVar
+             'b
              (L
-              { :7:5-6 }
-              "f")))
+              { :17:5-6 }
+              "a")))
            (L
-            { :(8,3)-(9,4) }
-            (ExprLet
-             (L
-              { :8:7-12 }
-              (NonRec
-               [ (L
-                  { :8:7-12 }
-                  (Bind
-                   (L
-                    { :8:7-8 }
-                    (PatVar
-                     (L
-                      { :8:7-8 }
-                      "x")))
-                   (L
-                    { :8:11-12 }
-                    (ExprConstant 5)))) ]))
-             (L
-              { :9:3-4 }
-              (ExprIdent
-               "x")))))) ])))) ])
+            { :17:9-14 }
+            (ExprConstant string string
+             "str")))) ])))) ])
