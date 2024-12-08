@@ -1,6 +1,7 @@
 module Core.Loader where
 
 import Clash.Prelude
+import Core.MemoryManager.NodeChanges
 import Core.Node
 
 -- | Get `Node` by his `AddressNumber` from RAM. Actually, preparing to reducer work.

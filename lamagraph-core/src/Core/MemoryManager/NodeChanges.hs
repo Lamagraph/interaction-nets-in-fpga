@@ -2,14 +2,42 @@ module Core.MemoryManager.NodeChanges (
   Changes (..),
   secP,
   primeP,
+  Edge (..),
+  leftEnd,
+  rightEnd,
+  Delta (..),
+  newNodes,
+  newEdges,
+  activePair,
+  Interface,
   updateLoadedNodesByChanges,
 ) where
 
 import Clash.Prelude
 import Control.Lens hiding (Index, ifoldl, imap, (:>))
 import Core.Map
+import Core.MemoryManager.MemoryManager
 import Core.Node
 import Data.Maybe
+
+data Edge (portsNumber :: Nat) = Edge
+  { _leftEnd :: Connection portsNumber
+  , _rightEnd :: Connection portsNumber
+  }
+  deriving (Generic, NFDataX, Show, Eq)
+
+$(makeLenses ''Edge)
+
+data Delta (nodesNumber :: Nat) (edgesNumber :: Nat) (portsNumber :: Nat) = Delta
+  { _newNodes :: Vec nodesNumber (Maybe (LoadedNode portsNumber))
+  , _newEdges :: Vec edgesNumber (Maybe (Edge portsNumber))
+  , _activePair :: ActivePair portsNumber
+  }
+  deriving (Show, Eq, Generic, NFDataX)
+
+$(makeLenses ''Delta)
+
+type Interface externalNodesNumber = Vec externalNodesNumber (Maybe AddressNumber)
 
 -- | Data to accumulate all `Port` changes of the `Node`
 data Changes (portsNumber :: Nat)

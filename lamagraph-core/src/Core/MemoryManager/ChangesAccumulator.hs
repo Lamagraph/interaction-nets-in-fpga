@@ -10,7 +10,6 @@ import Control.Lens hiding (ifoldl)
 import Core.Map
 import Core.MemoryManager.NodeChanges
 import Core.Node
-import Core.Reducer
 
 -- | Type alias for triple (the address of the external node to update, the id of the port to update, the port to update to)
 type UpdateInfo (portsNumber :: Nat) = (AddressNumber, IdOfPort portsNumber, Connection portsNumber)

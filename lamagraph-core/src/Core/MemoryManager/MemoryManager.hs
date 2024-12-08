@@ -7,6 +7,9 @@ module Core.MemoryManager.MemoryManager (
   MemoryManager (..),
   busyBitMap,
   activePairs,
+  ActivePair (..),
+  leftNode,
+  rightNode,
   giveAddresses,
   removeActivePair,
 ) where
@@ -14,7 +17,6 @@ module Core.MemoryManager.MemoryManager (
 import Clash.Prelude
 import Control.Lens hiding (Index, imap)
 import Core.Node
-import Core.Reducer
 
 {- $setup
 >>> import Clash.Prelude
@@ -26,6 +28,22 @@ import Core.Reducer
 >>> :set -fplugin GHC.TypeLits.KnownNat.Solver
 >>> :set -fplugin GHC.TypeLits.Normalise
 -}
+
+data ActivePair (portsNumber :: Nat) = ActivePair
+  { _leftNode :: LoadedNode portsNumber
+  , _rightNode :: LoadedNode portsNumber
+  }
+  deriving (Show, Eq, Generic, NFDataX, Bundle)
+$(makeLenses ''ActivePair)
+
+data MemoryManager (cellsNumber :: Nat)
+  = MemoryManager
+  { _busyBitMap :: Vec cellsNumber Bool -- map Address : Bool. tell smth like "this Address is busy, so you can not to write here"
+  , _activePairs :: Vec cellsNumber Bool
+  }
+  deriving (Generic, NFDataX, Bundle)
+
+$(makeLenses ''MemoryManager)
 
 {- | Cast `Index` to `Unsigned` if possible by adding non-significant zeros
 
@@ -81,15 +99,6 @@ markAddressesAsBusy ::
   Signal dom (Vec n AddressNumber) ->
   Signal dom (Vec cellsNumber Bool)
 markAddressesAsBusy busyMap addresses = bundle $ imap (\i _ -> elem (indexToUnsigned i) <$> addresses) (unbundle busyMap)
-
-data MemoryManager (cellsNumber :: Nat)
-  = MemoryManager
-  { _busyBitMap :: Vec cellsNumber Bool -- map Address : Bool. tell smth like "this Address is busy, so you can not to write here"
-  , _activePairs :: Vec cellsNumber Bool
-  }
-  deriving (Generic, NFDataX, Bundle)
-
-$(makeLenses ''MemoryManager)
 
 giveAddresses ::
   ( (addressesCount + 1) <= cellsNumber
