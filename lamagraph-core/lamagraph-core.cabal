@@ -89,7 +89,9 @@ library
   exposed-modules:
     Core.Node
     Core.Reducer
-    Core.MemoryManager
+    Core.MemoryManager.MemoryManager
+    Core.MemoryManager.ChangesAccumulator
+    Core.MemoryManager.NodeChanges
     Core.Map
     Core.Concrete.ReduceRulesLambda
     INet.Net
