@@ -80,3 +80,9 @@ setConnection ::
 setConnection node portId connection = case portId of
   Primary -> set primaryPort connection node
   Id index -> set secondaryPorts (replace index (Just connection) (node ^. secondaryPorts)) node
+
+getAllConnections ::
+  (KnownNat portsNumber) =>
+  Node portsNumber ->
+  Vec (portsNumber + 1) (Maybe (Connection portsNumber))
+getAllConnections node = Just (node ^. primaryPort) :> (node ^. secondaryPorts)
