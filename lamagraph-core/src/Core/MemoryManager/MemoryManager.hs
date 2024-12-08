@@ -61,16 +61,17 @@ indexToUnsigned v = bitCoerce (resize v :: Index (2 ^ m))
 
 -- | Get `Vec` of free `AddressNumber`s of given size
 getFreeAddresses ::
-  forall addressesCount dom cellsNumber.
-  ( (addressesCount + 1) <= cellsNumber
-  , KnownNat cellsNumber
-  , KnownNat addressesCount
+  forall maxAddressesCount dom cellsNumber.
+  ( KnownNat cellsNumber
+  , KnownNat maxAddressesCount
   , KnownDomain dom
   , CLog 2 cellsNumber <= BitSize AddressNumber
+  , 1 <= cellsNumber
+  , maxAddressesCount <= cellsNumber
   ) =>
-  Signal dom (SNat addressesCount) ->
+  Signal dom (Index cellsNumber) ->
   Signal dom (Vec cellsNumber Bool) ->
-  Signal dom (Vec addressesCount AddressNumber)
+  Signal dom (Vec maxAddressesCount (Maybe AddressNumber))
 getFreeAddresses addressesCount busyMap =
   helper 0 0 (unbundle busyMap) def
  where
@@ -78,17 +79,17 @@ getFreeAddresses addressesCount busyMap =
     Signal dom (Index cellsNumber) ->
     Index cellsNumber ->
     Vec m (Signal dom Bool) ->
-    Vec addressesCount (Signal dom AddressNumber) ->
-    Signal dom (Vec addressesCount AddressNumber)
+    Vec maxAddressesCount (Signal dom (Maybe AddressNumber)) ->
+    Signal dom (Vec maxAddressesCount (Maybe AddressNumber))
   helper allocatedCount busyMapIndex busyMapRemind addresses = case busyMapRemind of
     Nil -> error "Memory space is over"
     Cons isBusy remind ->
       mux
         (not <$> isBusy)
         ( mux
-            ((1 + allocatedCount) .==. (fromSNat <$> addressesCount :: Signal dom (Index cellsNumber)))
-            (bundle (pure (indexToUnsigned busyMapIndex) +>> addresses))
-            (helper (allocatedCount + 1) (busyMapIndex + 1) remind (pure (indexToUnsigned busyMapIndex) +>> addresses))
+            ((1 + allocatedCount) .==. addressesCount)
+            (bundle (pure (Just $ indexToUnsigned busyMapIndex) +>> addresses))
+            (helper (allocatedCount + 1) (busyMapIndex + 1) remind (pure (Just $ indexToUnsigned busyMapIndex) +>> addresses))
         )
         (helper allocatedCount (busyMapIndex + 1) remind addresses)
 
@@ -96,20 +97,21 @@ getFreeAddresses addressesCount busyMap =
 markAddressesAsBusy ::
   (KnownDomain dom, KnownNat cellsNumber, KnownNat n, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
   Signal dom (Vec cellsNumber Bool) ->
-  Signal dom (Vec n AddressNumber) ->
+  Signal dom (Vec n (Maybe AddressNumber)) ->
   Signal dom (Vec cellsNumber Bool)
-markAddressesAsBusy busyMap addresses = bundle $ imap (\i _ -> elem (indexToUnsigned i) <$> addresses) (unbundle busyMap)
+markAddressesAsBusy busyMap addresses = bundle $ imap (\i _ -> elem (Just $ indexToUnsigned i) <$> addresses) (unbundle busyMap)
 
 giveAddresses ::
-  ( (addressesCount + 1) <= cellsNumber
+  ( 1 <= cellsNumber
   , KnownNat cellsNumber
-  , KnownNat addressesCount
+  , KnownNat maxAddressesCount
   , KnownDomain dom
   , CLog 2 cellsNumber <= BitSize AddressNumber
+  , maxAddressesCount <= cellsNumber
   ) =>
-  Signal dom (SNat addressesCount) ->
+  Signal dom (Index cellsNumber) ->
   Signal dom (MemoryManager cellsNumber) ->
-  (Signal dom (Vec addressesCount AddressNumber), Signal dom (MemoryManager cellsNumber))
+  (Signal dom (Vec maxAddressesCount (Maybe AddressNumber)), Signal dom (MemoryManager cellsNumber))
 giveAddresses addressesCount memoryManager = (addresses, set busyBitMap <$> newBusyMap <*> memoryManager)
  where
   addresses = getFreeAddresses addressesCount (view busyBitMap <$> memoryManager)
