@@ -73,8 +73,7 @@ getFreeAddresses ::
   Signal dom (Index cellsNumber) ->
   Signal dom (Vec cellsNumber Bool) ->
   Signal dom (Vec maxAddressesCount (Maybe AddressNumber))
-getFreeAddresses addressesCount busyMap =
-  helper 0 0 (unbundle busyMap) def
+getFreeAddresses addressesCount busyMap = mux (addressesCount .==. pure 0) def (helper 0 0 (unbundle busyMap) def)
  where
   helper ::
     Signal dom (Index cellsNumber) ->
