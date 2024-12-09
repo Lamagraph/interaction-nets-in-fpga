@@ -13,6 +13,8 @@ module Core.MemoryManager.MemoryManager (
   giveAddresses,
   removeActivePair,
   giveActiveAddressNumber,
+  indexToUnsigned,
+  markAddress,
 ) where
 
 import Clash.Prelude
