@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unused-imports #-}
+
 {- | All modules from Concrete are
 
 1. Compiled from some dsl in separate file
@@ -10,22 +12,11 @@ module Core.Concrete.ReduceRulesLambda where
 
 import Clash.Prelude
 import Control.Lens hiding (Index, imap)
-import Core.MemoryManager
+import Core.MemoryManager.NodeChanges
 import Core.Node
 import Core.Reducer
+import Data.Maybe
 import INet.Net
-
--- | One reduce step
-(|><|) ::
-  Node 2 ->
-  Node 2 ->
-  ReduceRuleResult 2 2 2
-lNode |><| rNode = case (lNode ^. nodeType, rNode ^. nodeType) of
-  (Apply, Abstract) -> applyToLambdaRule lNode rNode
-  (Abstract, Apply) -> applyToLambdaRule lNode rNode
-  (Erase, _) -> epsToAnyRule lNode rNode
-  (_, Erase) -> epsToAnyRule rNode lNode
-  _ -> error "There is no rule for this active pair in the reduction rules"
 
 {- | Reduce rule for `Apply` and `Abs`
 
@@ -38,31 +29,8 @@ applyToLambdaRule ::
   ReduceRuleResult nodesNumber 2 2
 applyToLambdaRule n1 n2 =
   let arisingNodes = def
-      portToEdgeEnd p = case p ^. nodeAddress of
-        Nothing -> error "Port must to be connected"
-        Just addr -> case addr of
-          ActualAddress addrNum -> EdgeEnd addrNum (p ^. portConnectedToId)
-          LocalAddress addrNum -> EdgeEnd addrNum (p ^. portConnectedToId) -- Maybe this is should be more complicated
-      portsToEdgeEnds node = map (maybe (error "All Ports must to be presented") portToEdgeEnd) (node ^. secondaryPorts)
+      portsToEdgeEnds node = map (fromMaybe (error "All Ports must to be presented")) (node ^. secondaryPorts)
       lE = portsToEdgeEnds n1
       rE = portsToEdgeEnds n2
       arisingEdges = zipWith (\l r -> Just $ Edge l r) lE (reverse rE)
-   in ReduceRuleResult arisingEdges arisingNodes
-
-{- | Reduce rule for `Eps` and everything else.
-
-<<docs/eps_apply_rule.svg>>
--}
-epsToAnyRule ::
-  (KnownNat portsNumber, KnownNat edgesNumber, CLog 2 portsNumber <= BitSize AddressNumber, 1 <= portsNumber) =>
-  Node portsNumber ->
-  Node portsNumber ->
-  ReduceRuleResult portsNumber edgesNumber portsNumber
-epsToAnyRule _ nSome =
-  let arisingEdges = def
-      genNewEpsNode port = Node port def Erase
-      arisingNodes =
-        imap
-          (\i maybePort -> flip LocalNode (indexToUnsigned i) . genNewEpsNode <$> maybePort)
-          (nSome ^. secondaryPorts)
    in ReduceRuleResult arisingEdges arisingNodes
