@@ -96,6 +96,7 @@ library
     Core.MemoryManager.NodeChanges
     Core.Map
     Core.Concrete.ReduceRulesLambda
+    Core.Concrete.Initial
     INet.Net
   default-language: Haskell2010
 
