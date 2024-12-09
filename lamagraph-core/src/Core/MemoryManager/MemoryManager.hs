@@ -12,6 +12,7 @@ module Core.MemoryManager.MemoryManager (
   rightNode,
   giveAddresses,
   removeActivePair,
+  giveActiveAddressNumber,
 ) where
 
 import Clash.Prelude
@@ -181,3 +182,12 @@ removeActivePair acPair memoryManager =
  where
   newActivePairs = deleteActivePair <$> (view activePairs <$> memoryManager) <*> acPair
   newBusyMap = freeUpActivePair <$> (view busyBitMap <$> memoryManager) <*> acPair
+
+-- | Give `AddressNumber` of some active `Node`. It returns `Nothing` if there is no `ActivePair`s in the net
+giveActiveAddressNumber ::
+  (KnownNat cellsNumber, KnownDomain dom, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
+  Signal dom (MemoryManager cellsNumber) ->
+  Signal dom (Maybe AddressNumber)
+giveActiveAddressNumber memoryManager = case traverse (findIndex id . view activePairs) memoryManager of
+  Just signalIndex -> Just . indexToUnsigned <$> signalIndex
+  Nothing -> def
