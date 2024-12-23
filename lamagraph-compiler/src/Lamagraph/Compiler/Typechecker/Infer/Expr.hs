@@ -93,7 +93,7 @@ inferLLmlBindGroup env (L loc bg) = over _2 (L loc) <$> inferLmlBindGroup env bg
 
 inferLmlBindGroup :: TyEnv -> LmlBindGroup LmlcPs -> MonadTypecheck (TyEnv, LmlBindGroup LmlcTc)
 inferLmlBindGroup env (LmlBindGroup _ NonRecursive binds) = do
-  (newEnvs, lBinds) <- NE.unzip <$> mapM (inferLLmlBind env NonRecursive) binds
+  (newEnvs, lBinds) <- NE.unzip <$> mapM (inferLLmlNonRecBind env) binds
   bgEnv <- foldlM1 tyEnvUnionDisj newEnvs
   pure (TyEnv $ coerce bgEnv `HashMap.union` coerce env, LmlBindGroup noExtField NonRecursive lBinds)
 inferLmlBindGroup env (LmlBindGroup _ Recursive binds) = do
@@ -104,24 +104,27 @@ inferLmlBindGroup env (LmlBindGroup _ Recursive binds) = do
   let patsEnv = fmap (Forall []) patMap
       envWithPats = TyEnv $ patsEnv `HashMap.union` coerce env
       t = NE.zip patInfo binds
-  (newEnvs, lBinds) <- NE.unzip <$> mapM (uncurry (inferRecBind envWithPats)) t
+  (newEnvs, lBinds) <- NE.unzip <$> mapM (uncurry (inferLLmlRecBind envWithPats)) t
   bgEnv <- foldlM1 tyEnvUnionDisj newEnvs
   pure (bgEnv, LmlBindGroup noExtField Recursive lBinds)
 
-inferRecBind :: TyEnv -> (Ty, Subst, LLmlPat LmlcTc) -> LLmlBind LmlcPs -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
-inferRecBind env (patTy, Subst patSubst, lPatTyped) (L loc (LmlBind _ _ lExpr)) = do
+inferLLmlRecBind :: TyEnv -> (Ty, Subst, LLmlPat LmlcTc) -> LLmlBind LmlcPs -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
+inferLLmlRecBind env patInfo (L loc bind) = over _2 (L loc) <$> inferLmlRecBind env patInfo bind
+
+inferLmlRecBind :: TyEnv -> (Ty, Subst, LLmlPat LmlcTc) -> LmlBind LmlcPs -> MonadTypecheck (TyEnv, LmlBind LmlcTc)
+inferLmlRecBind env (patTy, Subst patSubst, lPatTyped) (LmlBind _ _ lExpr) = do
   (exprTy, lExprTyped) <- inferLLmlExpr env lExpr
   unify exprTy patTy
   subst <- use currentSubst
   let outEnv = TyEnv $ fmap (generalize (apply subst env)) (apply subst patSubst)
-  pure (outEnv, L loc $ LmlBind outEnv (apply subst lPatTyped) (apply subst lExprTyped))
+  pure (outEnv, LmlBind outEnv (apply subst lPatTyped) (apply subst lExprTyped))
 
-inferLLmlBind :: TyEnv -> RecFlag -> LLmlBind LmlcPs -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
-inferLLmlBind env recFlag (L loc bind) = over _2 (L loc) <$> inferLmlBind env recFlag bind
+inferLLmlNonRecBind :: TyEnv -> LLmlBind LmlcPs -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
+inferLLmlNonRecBind env (L loc bind) = over _2 (L loc) <$> inferLmlNonRecBind env bind
 
-inferLmlBind :: TyEnv -> RecFlag -> LmlBind LmlcPs -> MonadTypecheck (TyEnv, LmlBind LmlcTc)
-inferLmlBind env recFlag (LmlBind _ lPat lExpr) = do
-  (patTy, Subst patSubst, lPatTyped) <- inferLLmlPat env recFlag lPat
+inferLmlNonRecBind :: TyEnv -> LmlBind LmlcPs -> MonadTypecheck (TyEnv, LmlBind LmlcTc)
+inferLmlNonRecBind env (LmlBind _ lPat lExpr) = do
+  (patTy, Subst patSubst, lPatTyped) <- inferLLmlPat env NonRecursive lPat
   (exprTy, lExprTyped) <- inferLLmlExpr env lExpr
   unify exprTy patTy
   subst <- use currentSubst
