@@ -109,12 +109,12 @@ test-suite lamagraph-compiler-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Lamagraph.Compiler.Parser.GoldenCommon
+      Lamagraph.Compiler.GoldenCommon
       Lamagraph.Compiler.Parser.LexerTest
       Lamagraph.Compiler.Parser.ParserRoundtrip
       Lamagraph.Compiler.Parser.PrettyAstGolden
       Lamagraph.Compiler.Parser.PrettyLmlGolden
-      Lamagraph.Compiler.Tc
+      Lamagraph.Compiler.Typechecker.PrettyTypedGolden
       Paths_lamagraph_compiler
   hs-source-dirs:
       test

@@ -7,8 +7,8 @@ import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
 
+import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.Parser
-import Lamagraph.Compiler.Parser.GoldenCommon
 import Lamagraph.Compiler.PrettyAst ()
 
 newExt :: String
@@ -19,7 +19,7 @@ newDir = ".." </> "ast"
 
 parserPrettyAstGolden :: IO TestTree
 parserPrettyAstGolden = do
-  lmlFiles <- findByExtension [lmlExt] parserGoldenTestsDir
+  lmlFiles <- findByExtension [lmlExt] parserSourceGoldenTestsDir
   return $
     testGroup
       "Pretty AST Golden tests"
