@@ -58,17 +58,17 @@ inferLmlPat env@(TyEnv tyEnv) NonRecursive = \case
     let leftKeys = HashMap.keysSet leftMap
         rightKeys = HashMap.keysSet rightMap
         union = leftKeys `HashSet.union` rightKeys
-    if union == leftKeys
-      then do
+        intersection = leftKeys `HashSet.intersection` rightKeys
+        symmetricDifference = union `HashSet.difference` intersection
+
+    -- Both sides must bind same identifiers with the same type,
+    -- thus symmetric difference must be empty.
+    case viaNonEmpty head (toList symmetricDifference) of
+      Nothing -> do
         unifierSubst <- mostGeneralUnifier leftTy rightTy
         let outTy = apply unifierSubst leftTy
         pure (outTy, unifierSubst @@ rightSubst @@ leftSubst, LmlPatOr outTy leftLPatTyped rightLPatTyped)
-      else do
-        -- TODO: Is this true?
-        let difference = leftKeys `HashSet.difference` rightKeys
-        case viaNonEmpty head (toList difference) of
-          Nothing -> error "Unordered containers internal error!"
-          Just name -> throwError $ VarMustOccurOnBothSidesOfOrPattern name
+      Just name -> throwError $ VarMustOccurOnBothSidesOfOrPattern name
   LmlPatConstraint _ lPat lTy -> do
     (ty, lTyTyped) <- lLmlTypeToTy lTy
     (patTy, patSubst, lPatTyped) <- inferLLmlPat env NonRecursive lPat
