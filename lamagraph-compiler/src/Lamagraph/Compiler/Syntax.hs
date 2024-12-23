@@ -134,14 +134,6 @@ Note that the following code won't be treated as a valid multiline comment!
 {- $lexing_int_lits
 @
 /integer-literal/ ::= \[-] ( 0...9 ) { 0...9 | _ }
-
-/int32-literal/ ::= /integer-literal/ l
-
-/uint32-literal/ ::= /integer-literal/ ul
-
-/int64-literal/ ::= /integer-literal/ L
-
-/uint64-literal/ ::= /integer-literal/ UL
 @
 
 Values outside of type range will overflow.
@@ -240,10 +232,6 @@ Qualified names
 {- $constants
 @
 /constant/ ::= /integer-literal/
-           | /int32-literal/
-           | /uint32-literal/
-           | /int64-literal/
-           | /uint64-literal/
            | /char-literal/
            | /string-literal/
            | /constr/

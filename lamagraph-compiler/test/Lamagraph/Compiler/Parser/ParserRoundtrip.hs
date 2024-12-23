@@ -213,10 +213,6 @@ genLmlLit :: Gen (LmlLit LmlcPs)
 genLmlLit =
   Gen.choice
     [ LmlInt noExtField <$> Gen.int (Range.linear minBound maxBound)
-    , LmlInt32 noExtField <$> Gen.int32 (Range.linear minBound maxBound)
-    , LmlUInt32 noExtField <$> Gen.word32 (Range.linear minBound maxBound)
-    , LmlInt64 noExtField <$> Gen.int64 (Range.linear minBound maxBound)
-    , LmlUInt64 noExtField <$> Gen.word64 (Range.linear minBound maxBound)
     , LmlChar noExtField <$> genChar
     , LmlString noExtField <$> Gen.text (Range.linear 0 25) genChar
     ]

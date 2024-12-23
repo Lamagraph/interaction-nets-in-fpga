@@ -40,11 +40,8 @@ data IdentType = Capitalized | Lowercase
 
 data Token
   = TokIdent IdentType Text
-  | TokInt Int
-  | TokInt32 Int32
-  | TokUInt32 Word32
-  | TokInt64 Int64
-  | TokUInt64 Word64
+  | {- Integer literals -}
+    TokInt Int
   | {- Character literals -}
     TokChar Char
   | {- String literals -}

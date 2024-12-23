@@ -1,6 +1,7 @@
-module Lamagraph.Compiler.Parser.GoldenCommon (
+module Lamagraph.Compiler.GoldenCommon (
   renderPretty,
-  parserGoldenTestsDir,
+  parserSourceGoldenTestsDir,
+  typecheckerSourceGoldenTestsDir,
   lmlExt,
   changeFileDir,
 ) where
@@ -14,8 +15,14 @@ import System.FilePath
 renderPretty :: Doc ann -> LText
 renderPretty = renderLazy . layoutPretty (defaultLayoutOptions{layoutPageWidth = AvailablePerLine 80 1.0})
 
-parserGoldenTestsDir :: FilePath
-parserGoldenTestsDir = "test" </> "golden" </> "parser" </> "source"
+baseGoldenTestsDir :: FilePath
+baseGoldenTestsDir = "test" </> "golden"
+
+parserSourceGoldenTestsDir :: FilePath
+parserSourceGoldenTestsDir = baseGoldenTestsDir </> "parser" </> "source"
+
+typecheckerSourceGoldenTestsDir :: FilePath
+typecheckerSourceGoldenTestsDir = baseGoldenTestsDir </> "typechecker" </> "source"
 
 lmlExt :: FilePath
 lmlExt = ".lml"

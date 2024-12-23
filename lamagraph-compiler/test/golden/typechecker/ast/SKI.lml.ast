@@ -1,0 +1,157 @@
+(Module
+ <: int -> int -> bool
+ false: bool
+ -: int -> int -> int
+ >: int -> int -> bool
+ /: int -> int -> int
+ true: bool
+ None: forall 'a. 'a option
+ +: int -> int -> int
+ []: forall 'a. 'a list
+ >=: int -> int -> bool
+ Some: forall 'a. 'a -> 'a option
+ *: int -> int -> int
+ <=: int -> int -> bool
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ f: int option -> int option
+ (Just
+ (L
+  { :1:8-11 }
+  ("SKI")))
+ [ (L
+    { :(10,1)-(13,19) }
+    (ValD
+     (L
+      { :(10,5)-(13,19) }
+      (NonRec
+       [ (L
+          { :(10,5)-(13,19) }
+          (Bind
+           f: int option -> int option
+           (L
+            { :10:5-6 }
+            (PatVar
+             int option -> int option
+             (L
+              { :10:5-6 }
+              "f")))
+           (L
+            { :(10,7)-(13,19) }
+            (ExprFunction
+             int option -> int option
+             (L
+              { :10:7-8 }
+              (PatVar
+               int option
+               (L
+                { :10:7-8 }
+                "x")))
+             (L
+              { :(10,11)-(13,19) }
+              (ExprMatch
+               int option
+               (L
+                { :10:17-18 }
+                (ExprIdent
+                 int option
+                 "x"))
+               [ (L
+                  { :11:7-33 }
+                  (Case
+                   int option -> int option
+                   (L
+                    { :11:7-13 }
+                    (PatConstruct
+                     int option
+                     (L
+                      { :11:7-11 }
+                      ("Some"))
+                     (Just
+                     (L
+                      { :11:12-13 }
+                      (PatVar
+                       int
+                       (L
+                        { :11:12-13 }
+                        "a"))))))
+                   (Just
+                   (L
+                    { :11:19-25 }
+                    (ExprApply
+                     bool
+                     (L
+                      { :11:21-23 }
+                      (ExprIdent
+                       int -> int -> bool
+                       "<="))
+                     [ (L
+                        { :11:19-20 }
+                        (ExprIdent
+                         int
+                         "a"))
+                     , (L
+                        { :11:24-25 }
+                        (ExprConstant int int
+                         0)) ])))
+                   (L
+                    { :11:29-33 }
+                    (ExprConstruct
+                     int option
+                     (L
+                      { :11:29-33 }
+                      ("None"))
+                     (Nothing)))))
+               , (L
+                  { :12:7-23 }
+                  (Case
+                   int option -> int option
+                   (L
+                    { :12:7-13 }
+                    (PatConstruct
+                     int option
+                     (L
+                      { :12:7-11 }
+                      ("Some"))
+                     (Just
+                     (L
+                      { :12:12-13 }
+                      (PatVar
+                       int
+                       (L
+                        { :12:12-13 }
+                        "a"))))))
+                   (Nothing)
+                   (L
+                    { :12:17-23 }
+                    (ExprConstruct
+                     int option
+                     (L
+                      { :12:17-21 }
+                      ("Some"))
+                     (Just
+                     (L
+                      { :12:22-23 }
+                      (ExprIdent
+                       int
+                       "a")))))))
+               , (L
+                  { :13:7-19 }
+                  (Case
+                   int option -> int option
+                   (L
+                    { :13:7-11 }
+                    (PatConstruct
+                     int option
+                     (L
+                      { :13:7-11 }
+                      ("None"))
+                     (Nothing)))
+                   (Nothing)
+                   (L
+                    { :13:15-19 }
+                    (ExprConstruct
+                     int option
+                     (L
+                      { :13:15-19 }
+                      ("None"))
+                     (Nothing))))) ])))))) ])))) ])

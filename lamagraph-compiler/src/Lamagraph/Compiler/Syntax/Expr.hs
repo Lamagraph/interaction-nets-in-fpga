@@ -8,7 +8,7 @@ module Lamagraph.Compiler.Syntax.Expr (
   ForallLmlExpr,
   LLmlBindGroup,
   LmlBindGroup (..),
-  ForallLmlBindingGroup,
+  ForallLmlBindGroup,
   LLmlBind,
   LmlBind (..),
   ForallLmlBind,
@@ -97,11 +97,11 @@ data LmlBindGroup pass
   = LmlBindGroup (XLmlBindGroup pass) RecFlag (NonEmpty (LLmlBind pass))
   | XLmlBindGroup !(XXBindGroup pass)
 
-type ForallLmlBindingGroup (tc :: Type -> Constraint) pass =
+type ForallLmlBindGroup (tc :: Type -> Constraint) pass =
   (tc (XLmlBindGroup pass), tc (LLmlBind pass), tc (XXBindGroup pass))
 
-deriving instance (ForallLmlBindingGroup Show pass) => Show (LmlBindGroup pass)
-deriving instance (ForallLmlBindingGroup Eq pass) => Eq (LmlBindGroup pass)
+deriving instance (ForallLmlBindGroup Show pass) => Show (LmlBindGroup pass)
+deriving instance (ForallLmlBindGroup Eq pass) => Eq (LmlBindGroup pass)
 
 -- | Located let binder
 type LLmlBind pass = XLocated pass (LmlBind pass)

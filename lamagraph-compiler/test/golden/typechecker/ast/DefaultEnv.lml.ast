@@ -1,0 +1,113 @@
+(Module
+ <: int -> int -> bool
+ false: bool
+ -: int -> int -> int
+ >: int -> int -> bool
+ /: int -> int -> int
+ x: int -> int -> bool
+ true: bool
+ None: forall 'a. 'a option
+ +: int -> int -> int
+ []: forall 'a. 'a list
+ >=: int -> int -> bool
+ y: int
+ Some: forall 'a. 'a -> 'a option
+ *: int -> int -> int
+ <=: int -> int -> bool
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ (Just
+ (L
+  { :1:8-18 }
+  ("DefaultEnv")))
+ [ (L
+    { :3:1-18 }
+    (ValD
+     (L
+      { :3:5-18 }
+      (NonRec
+       [ (L
+          { :3:5-18 }
+          (Bind
+           x: int -> int -> bool
+           (L
+            { :3:5-6 }
+            (PatVar
+             int -> int -> bool
+             (L
+              { :3:5-6 }
+              "x")))
+           (L
+            { :3:7-18 }
+            (ExprFunction
+             int -> int -> bool
+             (L
+              { :3:7-8 }
+              (PatVar
+               int
+               (L
+                { :3:7-8 }
+                "m")))
+             (L
+              { :3:9-18 }
+              (ExprFunction
+               int -> bool
+               (L
+                { :3:9-10 }
+                (PatVar
+                 int
+                 (L
+                  { :3:9-10 }
+                  "n")))
+               (L
+                { :3:13-18 }
+                (ExprApply
+                 bool
+                 (L
+                  { :3:15-16 }
+                  (ExprIdent
+                   int -> int -> bool
+                   ">"))
+                 [ (L
+                    { :3:13-14 }
+                    (ExprIdent
+                     int
+                     "m"))
+                 , (L
+                    { :3:17-18 }
+                    (ExprIdent
+                     int
+                     "n")) ])))))))) ]))))
+ , (L
+    { :5:1-12 }
+    (ValD
+     (L
+      { :5:5-12 }
+      (NonRec
+       [ (L
+          { :5:5-12 }
+          (Bind
+           y: int
+           (L
+            { :5:5-6 }
+            (PatVar
+             int
+             (L
+              { :5:5-6 }
+              "y")))
+           (L
+            { :5:9-12 }
+            (ExprApply
+             int
+             (L
+              { :5:10-11 }
+              (ExprIdent
+               int -> int -> int
+               "+"))
+             [ (L
+                { :5:9-10 }
+                (ExprConstant int int
+                 5))
+             , (L
+                { :5:11-12 }
+                (ExprConstant int int
+                 2)) ])))) ])))) ])

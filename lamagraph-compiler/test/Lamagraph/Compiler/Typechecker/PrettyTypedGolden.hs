@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.Parser.PrettyAstGolden (parserPrettyAstGolden) where
+module Lamagraph.Compiler.Typechecker.PrettyTypedGolden (typecheckerPrettyAstGolden) where
 
 import Relude
 
@@ -10,6 +10,7 @@ import Test.Tasty.Golden
 import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.PrettyAst ()
+import Lamagraph.Compiler.Typechecker.Infer
 
 newExt :: String
 newExt = "ast"
@@ -17,9 +18,9 @@ newExt = "ast"
 newDir :: FilePath
 newDir = ".." </> "ast"
 
-parserPrettyAstGolden :: IO TestTree
-parserPrettyAstGolden = do
-  lmlFiles <- findByExtension [lmlExt] parserSourceGoldenTestsDir
+typecheckerPrettyAstGolden :: IO TestTree
+typecheckerPrettyAstGolden = do
+  lmlFiles <- findByExtension [lmlExt] typecheckerSourceGoldenTestsDir
   return $
     testGroup
       "Pretty AST Golden tests"
@@ -35,4 +36,4 @@ parserPrettyAstGolden = do
         parseResult = parseLamagraphML fileT
     pure $ case parseResult of
       Left err -> encodeUtf8 err
-      Right tree -> encodeUtf8 $ (renderPretty . pretty) tree
+      Right tree -> encodeUtf8 $ (renderPretty . pretty . inferDef) tree

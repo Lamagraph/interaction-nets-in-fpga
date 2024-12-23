@@ -72,10 +72,6 @@ $operator_char = [\! \$ \% & \* \+ \. \/ \: \< \= \> \? \@ \^ \| \~]
 
 -- Integer literals
 @integer_literal = \-? $digit ( $digit | \_ )*
-@int32_literal = @integer_literal l
-@uint32_literal = @integer_literal ul
-@int64_literal = @integer_literal L
-@uint64_literal = @integer_literal UL
 
 -- Operators
 @infix_symbol = ( \= | \< | \> | \@ | \^ | \| | & | \+ | \- | \* | \/ | \$ | \% ) ( $operator_char )*
@@ -152,11 +148,7 @@ lamagraphml :-
 <0> @capitalized_ident { tokAnyIdent (TokIdent Capitalized) }
 <0> @lowercase_ident { tokAnyIdent (TokIdent Lowercase) }
 
-<0> @uint64_literal { tokAnyInt TokUInt64 }
-<0> @uint32_literal { tokAnyInt TokUInt32 }
-<0> @int64_literal { tokAnyInt TokInt64 }
-<0> @int32_literal { tokAnyInt TokInt32 }
-<0> @integer_literal { tokAnyInt TokInt }
+<0> @integer_literal { tokInt }
 
 <0> \' \\n \' { tokEscapedChar '\n' }
 <0> \' \\\' \' { tokEscapedChar '\'' }
@@ -232,19 +224,12 @@ tokAnyIdent ctor input@(startPosn, _, _, str) len = do
     (alexPosnToSrcSpan startPosn $ getEndPos input len)
     (ctor $ Text.take len str)
 
-tokAnyInt :: Read a => (a -> Token) -> AlexAction LToken
-tokAnyInt ctor input@(startPosn, _, _, str) len = do
-  let num = read $ toString $ Text.dropWhileEnd isIntSuffix $ Text.take len str
+tokInt :: AlexAction LToken
+tokInt input@(startPosn, _, _, str) len = do
+  let num = read $ toString $ Text.take len str
   return $ L
     (alexPosnToSrcSpan startPosn $ getEndPos input len)
-    (ctor num)
-  where
-    isIntSuffix :: Char -> Bool
-    isIntSuffix 'u' = True
-    isIntSuffix 'U' = True
-    isIntSuffix 'l' = True
-    isIntSuffix 'L' = True
-    isIntSuffix _ = False
+    (TokInt num)
 
 tok :: Token -> AlexAction LToken
 tok ctor input@(startPosn, _, _, _) len = do

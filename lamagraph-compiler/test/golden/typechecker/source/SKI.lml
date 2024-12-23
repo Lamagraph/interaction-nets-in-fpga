@@ -1,0 +1,13 @@
+module SKI
+
+(*let _I x = x
+let _K x y = x
+let _S f g x = f x (g x)*)
+
+(*let _B f g x = (((f x) g) : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c)*)
+(*let _B f g x = (((f x) g) : string)*)
+
+let f x = match x with
+    | Some a when a <= 0 -> None
+    | Some a -> Some a
+    | None -> None
