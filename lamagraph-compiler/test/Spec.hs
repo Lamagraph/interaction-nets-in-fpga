@@ -3,6 +3,7 @@ import Relude
 import Test.Tasty
 import Test.Tasty.Hedgehog
 
+import Lamagraph.Compiler.Core.PrettyCoreGolden
 import Lamagraph.Compiler.Parser.LexerTest
 import Lamagraph.Compiler.Parser.ParserRoundtrip
 import Lamagraph.Compiler.Parser.PrettyAstGolden
@@ -13,7 +14,8 @@ main :: IO ()
 main = do
   parserTests' <- parserTests
   typecheckerTests' <- typeCheckerTests
-  let tests = testGroup "Lamagraph Compiler" [lexerTests, parserTests', typecheckerTests']
+  coreTests' <- coreTests
+  let tests = testGroup "Lamagraph Compiler" [lexerTests, parserTests', typecheckerTests', coreTests']
   defaultMain tests
 
 lexerTests :: TestTree
@@ -30,3 +32,8 @@ typeCheckerTests :: IO TestTree
 typeCheckerTests = do
   tc <- typecheckerPrettyAstGolden
   pure $ testGroup "Typechecker" [tc]
+
+coreTests :: IO TestTree
+coreTests = do
+  core <- corePrettyGolden
+  pure $ testGroup "Core" [core]

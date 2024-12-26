@@ -1,4 +1,12 @@
-module Lamagraph.Compiler.Typechecker.DefaultEnv (tyInt, tyChar, tyString, tyBool, defaultEnv) where
+module Lamagraph.Compiler.Typechecker.DefaultEnv (
+  tyInt,
+  tyChar,
+  tyString,
+  tyBool,
+  trueConstrName,
+  falseConstrName,
+  defaultEnv,
+) where
 
 import Relude
 
@@ -29,6 +37,12 @@ tyString = mkTConstr "string" []
 
 tyBool :: Ty
 tyBool = mkTConstr "bool" []
+
+trueConstrName :: Name
+trueConstrName = Name $ mkLongident $ pure "true"
+
+falseConstrName :: Name
+falseConstrName = Name $ mkLongident $ pure "false"
 
 tyList :: Ty
 tyList = mkTConstr "list" [TVar $ Name $ mkLongident $ pure "a"]
@@ -63,6 +77,6 @@ defaultEnv = TyEnv env
         ( Name $ mkLongident $ pure "Some"
         , Forall [Name $ mkLongident $ pure "a"] (TVar (Name $ mkLongident $ pure "a") `TArrow` tyOption)
         )
-      , (Name $ mkLongident $ pure "true", Forall [] tyBool)
-      , (Name $ mkLongident $ pure "false", Forall [] tyBool)
+      , (trueConstrName, Forall [] tyBool)
+      , (falseConstrName, Forall [] tyBool)
       ]
