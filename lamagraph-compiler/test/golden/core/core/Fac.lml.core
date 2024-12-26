@@ -1,0 +1,13 @@
+let fac = fun n -> let rec helper = fun m -> fun acc ->
+                                    match (> m) n as t#a with (true, [], acc)
+                                    | ( false
+                                    , []
+                                    , (helper ((+ m) 1)) ((* acc) m) )
+          in (helper 1) 1
+let rec fac' = fun n -> match (< n) 2 as t#b with (true, [], 1)
+                        | (false, [], (* n) (fac' ((- n) 1)))
+let rec fix = fun f -> fun x -> (f (fix f)) x
+let rec fixCBV = fun f -> fun x -> (f (fixCBV f)) x
+let rec fixCBN = fun f -> f (fixCBN f)
+let fac'' = fun self -> fun n -> match (<= n) 1 as t#c with (true, [], 1)
+                                 | (false, [], (* n) (self ((- n) 1)))

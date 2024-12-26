@@ -1,0 +1,4 @@
+let f x = match x with
+    | 1 -> 2
+    | 2 -> 1
+    | y -> y * 7
