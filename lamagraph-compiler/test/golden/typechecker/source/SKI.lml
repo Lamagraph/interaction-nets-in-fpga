@@ -1,0 +1,7 @@
+module SKI
+
+let _I x = x
+let _K x y = x
+let _S f g x = f x (g x)
+
+let _B f g x = (((f x) g) : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c)

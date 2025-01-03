@@ -92,10 +92,6 @@ type family XXType x
 -----------------------------------------------
 
 type family XLmlInt x
-type family XLmlInt32 x
-type family XLmlUInt32 x
-type family XLmlInt64 x
-type family XLmlUInt64 x
 type family XLmlChar x
 type family XLmlString x
 type family XXLit x

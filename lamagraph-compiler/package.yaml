@@ -27,6 +27,9 @@ dependencies:
   - lens
   - prettyprinter
   - string-interpolate
+  - mtl
+  - mono-traversable
+  - foldable1-classes-compat # Remove with GHC 9.6+
 
 language: GHC2021
 
