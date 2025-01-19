@@ -28,7 +28,7 @@ desugarLmlExpr = \case
   LmlExprConstant _ lit -> pure $ Lit $ desugarLmlLit lit
   LmlExprLet _ lBindGroup lExpr -> foldr Let <$> desugarLLmlExpr lExpr <*> desugarLLmlBindGroup lBindGroup
   LmlExprFunction _ lPat lExpr -> Lam <$> desugarLLmlPat lPat <*> desugarLLmlExpr lExpr
-  LmlExprApply _ lExpr lExprs -> App <$> desugarLLmlExpr lExpr <*> (foldr1 App <$> mapM desugarLLmlExpr lExprs)
+  LmlExprApply _ lExpr lExprs -> foldl App <$> desugarLLmlExpr lExpr <*> mapM desugarLLmlExpr lExprs
   LmlExprMatch _ lExpr lCases -> do
     scrutineeVar <- freshVar
     expr <- desugarLLmlExpr lExpr

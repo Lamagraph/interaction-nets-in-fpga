@@ -41,14 +41,13 @@ instance Pretty CoreExpr where
   pretty = \case
     Var var -> pretty var
     Lit lit -> pretty lit
-    App expr1 expr2 ->
-      ( case expr1 of
-          var@(Var{}) -> pretty var
-          lit@(Lit{}) -> pretty lit
-          tuple@(Tuple{}) -> pretty tuple
-          other -> parens $ pretty other
-      )
-        <+> parens (pretty expr2) -- FIXME: Correct parens
+    App expr1 expr2 -> helper expr1 <+> helper expr2
+     where
+      helper expr = case expr of
+        var@(Var{}) -> pretty var
+        lit@(Lit{}) -> pretty lit
+        tuple@(Tuple{}) -> pretty tuple
+        other -> parens $ pretty other
     Lam var expr -> "fun" <+> pretty var <+> "->" <> softline <> pretty expr
     Let bind expr -> pretty bind <> softline <> "in" <+> pretty expr
     Match scrutinee scrutineeVar alts ->
