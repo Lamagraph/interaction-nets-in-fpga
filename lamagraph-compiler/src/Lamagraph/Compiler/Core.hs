@@ -15,7 +15,7 @@ import Relude
 
 import Lamagraph.Compiler.Typechecker.TcTypes
 
-data Literal = LitInt Int | LitChar Char | LitString Text deriving (Show)
+data Literal = LitInt Int | LitChar Char | LitString Text deriving (Show, Eq)
 
 -- FIXME: Must change after addition of ADTs
 type DataCon = Name
@@ -40,7 +40,7 @@ data Expr b
 
 type MatchAlt b = (AltCon, [b], Expr b)
 
-data AltCon = DataAlt DataCon | LitAlt Literal | TupleAlt | DEFAULT deriving (Show)
+data AltCon = DataAlt DataCon | LitAlt Literal | TupleAlt | DEFAULT deriving (Show, Eq)
 
 data Bind b = NonRec b (Expr b) | Rec (NonEmpty (b, Expr b)) deriving (Show)
 
