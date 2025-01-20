@@ -25,6 +25,7 @@ source-repository head
 library
   exposed-modules:
       Lamagraph.Compiler.Core
+      Lamagraph.Compiler.Core.LambdaLifting
       Lamagraph.Compiler.Core.LmlToCore
       Lamagraph.Compiler.Core.MonadDesugar
       Lamagraph.Compiler.Core.Pretty
