@@ -3,6 +3,7 @@ import Relude
 import Test.Tasty
 import Test.Tasty.Hedgehog
 
+import Lamagraph.Compiler.Core.LambdaLiftingGolden
 import Lamagraph.Compiler.Core.PrettyCoreGolden
 import Lamagraph.Compiler.Parser.LexerTest
 import Lamagraph.Compiler.Parser.ParserRoundtrip
@@ -36,4 +37,5 @@ typeCheckerTests = do
 coreTests :: IO TestTree
 coreTests = do
   core <- corePrettyGolden
-  pure $ testGroup "Core" [core]
+  coreLamLifting <- coreLamLiftGolden
+  pure $ testGroup "Core" [core, coreLamLifting]

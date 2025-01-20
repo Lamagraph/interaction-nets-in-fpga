@@ -5,12 +5,14 @@
  >: int -> int -> bool
  /: int -> int -> int
  true: bool
+ <>: forall 'a. 'a -> 'a -> bool
  None: forall 'a. 'a option
  +: int -> int -> int
  []: forall 'a. 'a list
  fixCBV: (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
  fac'': (int -> int) -> int -> int
  >=: int -> int -> bool
+ =: forall 'a. 'a -> 'a -> bool
  fixCBN: ('aj -> 'aj) -> 'aj
  fac: int -> int
  Some: forall 'a. 'a -> 'a option

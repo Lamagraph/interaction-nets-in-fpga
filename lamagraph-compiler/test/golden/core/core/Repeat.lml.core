@@ -1,0 +1,5 @@
+let repeat = fun n -> fun f -> let rec loop = fun m -> fun last ->
+                                              match (< m) n as t#a with ( true
+                                              , []
+                                              , (loop ((+ 1) m)) (f last) )
+                                              | (false, [], last) in loop 0

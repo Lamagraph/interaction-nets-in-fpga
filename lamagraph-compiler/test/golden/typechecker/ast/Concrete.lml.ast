@@ -6,6 +6,7 @@
  /: int -> int -> int
  x: int
  true: bool
+ <>: forall 'a. 'a -> 'a -> bool
  z: int list
  None: forall 'a. 'a option
  +: int -> int -> int
@@ -14,6 +15,7 @@
  >=: int -> int -> bool
  ap: forall 'd. (int -> 'd) -> 'd
  a: int
+ =: forall 'a. 'a -> 'a -> bool
  y: forall 'g 'f. 'f -> 'g -> (int * char * string * ('f * 'g))
  Some: forall 'a. 'a -> 'a option
  *: int -> int -> int

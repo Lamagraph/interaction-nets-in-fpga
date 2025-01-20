@@ -25,6 +25,7 @@ source-repository head
 library
   exposed-modules:
       Lamagraph.Compiler.Core
+      Lamagraph.Compiler.Core.Anf
       Lamagraph.Compiler.Core.LambdaLifting
       Lamagraph.Compiler.Core.LmlToCore
       Lamagraph.Compiler.Core.MonadDesugar
@@ -114,6 +115,7 @@ test-suite lamagraph-compiler-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Lamagraph.Compiler.Core.LambdaLiftingGolden
       Lamagraph.Compiler.Core.PrettyCoreGolden
       Lamagraph.Compiler.GoldenCommon
       Lamagraph.Compiler.Parser.LexerTest

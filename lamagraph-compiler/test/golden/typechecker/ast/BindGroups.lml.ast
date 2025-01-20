@@ -5,6 +5,7 @@
  >: int -> int -> bool
  /: int -> int -> int
  true: bool
+ <>: forall 'a. 'a -> 'a -> bool
  None: forall 'a. 'a option
  +: int -> int -> int
  []: forall 'a. 'a list
@@ -12,6 +13,7 @@
  >=: int -> int -> bool
  a: string
  id: int -> int
+ =: forall 'a. 'a -> 'a -> bool
  h: int -> int
  even: int -> bool
  Some: forall 'a. 'a -> 'a option

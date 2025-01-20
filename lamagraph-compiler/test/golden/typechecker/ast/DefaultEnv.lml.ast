@@ -6,10 +6,12 @@
  /: int -> int -> int
  x: int -> int -> bool
  true: bool
+ <>: forall 'a. 'a -> 'a -> bool
  None: forall 'a. 'a option
  +: int -> int -> int
  []: forall 'a. 'a list
  >=: int -> int -> bool
+ =: forall 'a. 'a -> 'a -> bool
  y: int
  Some: forall 'a. 'a -> 'a option
  *: int -> int -> int

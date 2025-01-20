@@ -1,0 +1,6 @@
+let rec t#b = fun f -> fun n -> fun m -> fun last ->
+              match < (m (n)) as t#a with ( true
+              , []
+              , t#b ((+ (1 (m))) (f (last))) )
+              | (false, [], last)
+let t#c = fun n -> fun f -> ((t#b (f)) (n)) (0)

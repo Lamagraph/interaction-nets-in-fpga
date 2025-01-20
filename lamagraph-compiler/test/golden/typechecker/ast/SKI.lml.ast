@@ -6,11 +6,13 @@
  /: int -> int -> int
  _K: forall 'e 'd. 'd -> 'e -> 'd
  true: bool
+ <>: forall 'a. 'a -> 'a -> bool
  None: forall 'a. 'a option
  +: int -> int -> int
  _I: forall 'b. 'b -> 'b
  []: forall 'a. 'a list
  >=: int -> int -> bool
+ =: forall 'a. 'a -> 'a -> bool
  Some: forall 'a. 'a -> 'a option
  *: int -> int -> int
  <=: int -> int -> bool

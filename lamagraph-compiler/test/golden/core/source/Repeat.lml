@@ -1,0 +1,9 @@
+module Repeat
+
+let repeat n f =
+  let rec loop m last =
+    if m < n
+    then loop (1 + m) (f last)
+    else last
+  in
+  loop 0
