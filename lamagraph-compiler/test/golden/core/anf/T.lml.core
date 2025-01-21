@@ -1,0 +1,3 @@
+let t#b = fun x -> match x as t#a with (1, [], 2)
+                   | (2, [], 1)
+                   | (DEFAULT, [], (* t#a) 7)

@@ -3,6 +3,7 @@ import Relude
 import Test.Tasty
 import Test.Tasty.Hedgehog
 
+import Lamagraph.Compiler.Core.AnfCoreGolden
 import Lamagraph.Compiler.Core.LambdaLiftingGolden
 import Lamagraph.Compiler.Core.PrettyCoreGolden
 import Lamagraph.Compiler.Parser.LexerTest
@@ -38,4 +39,5 @@ coreTests :: IO TestTree
 coreTests = do
   core <- corePrettyGolden
   coreLamLifting <- coreLamLiftGolden
-  pure $ testGroup "Core" [core, coreLamLifting]
+  coreAnf <- coreAnfGolden
+  pure $ testGroup "Core" [core, coreLamLifting, coreAnf]

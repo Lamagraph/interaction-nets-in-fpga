@@ -1,0 +1,8 @@
+let t#b = fun x -> fun y -> fun z -> let t#q = (+ y) z in let t#n = (+ x) z
+          in let t#k = (* t#n) t#q in let t#h = (+ x) y in (* t#h) t#k
+let rec t#r = fun y -> let t#z = t#s y in let t#x = t#s y in (+ t#x) t#z
+and
+t#s = fun x -> let t#ad = (> x) 1 in match t#ad as t#a with ( true
+                                     , []
+                                     , let t#ai = (- x) 1 in t#r t#ai )
+                                     | (false, [], 1)

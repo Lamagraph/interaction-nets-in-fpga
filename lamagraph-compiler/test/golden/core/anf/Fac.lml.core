@@ -1,0 +1,22 @@
+let rec t#d = fun n -> fun m -> fun acc -> let t#i = (> m) n
+              in match t#i as t#a with (true, [], acc)
+                 | ( false
+                 , []
+                 , let t#r = (* acc) m in let t#o = (+ m) 1 in (t#d t#o) t#r )
+let t#e = fun n -> ((t#d n) 1) 1
+let rec t#w = fun n -> let t#aa = (< n) 2 in match t#aa as t#b with ( true
+                                             , []
+                                             , 1 )
+                                             | ( false
+                                             , []
+                                             , let t#ai = (- n) 1
+                                             in let t#af = t#w t#ai
+                                             in (* n) t#af )
+let rec t#aj = fun f -> fun x -> let t#ao = t#aj f in (f t#ao) x
+let rec t#ap = fun f -> fun x -> let t#au = t#ap f in (f t#au) x
+let rec t#av = fun f -> let t#az = t#av f in f t#az
+let t#ba = fun self -> fun n -> let t#be = (<= n) 1
+           in match t#be as t#c with (true, [], 1)
+              | ( false
+              , []
+              , let t#bm = (- n) 1 in let t#bj = self t#bm in (* n) t#bj )

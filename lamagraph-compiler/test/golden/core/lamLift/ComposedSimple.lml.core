@@ -1,0 +1,5 @@
+let t#b = fun x -> fun y -> fun z -> (* ((+ x) y)) ((* ((+ x) z)) ((+ y) z))
+let rec t#c = fun y -> (+ (t#d y)) (t#d y)
+and
+t#d = fun x -> match (> x) 1 as t#a with (true, [], t#c ((- x) 1))
+               | (false, [], 1)
