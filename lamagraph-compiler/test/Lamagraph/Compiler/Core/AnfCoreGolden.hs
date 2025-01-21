@@ -12,7 +12,6 @@ import Lamagraph.Compiler.Core.MonadDesugar
 
 import Lamagraph.Compiler.Core.Pretty ()
 
-import Control.Monad.Extra
 import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Typechecker.Infer
@@ -49,11 +48,11 @@ coreAnfGolden = do
       Right tree -> case inferDef tree of
         Left err -> show err
         Right core ->
-          let binds = applyLL core
+          let binds = applyAnf core
            in case runMonadDesugar binds of
                 Left _ -> "FIXME: Either add constructors to DesugarError, or get rid of ExceptT"
                 Right pureBinds -> encodeUtf8 $ (renderPretty . pretty) pureBinds
-  applyLL :: LmlModule LmlcTc -> MonadDesugar [CoreBind]
-  applyLL x = do
+  applyAnf :: LmlModule LmlcTc -> MonadDesugar [CoreBind]
+  applyAnf x = do
     binds <- desugarLmlModule x
-    concatMapM bindsLlAnf binds
+    bindsLlAnf binds

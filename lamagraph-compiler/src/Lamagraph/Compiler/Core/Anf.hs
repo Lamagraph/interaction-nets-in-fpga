@@ -31,8 +31,8 @@ data ABind = ANonRec Var CompExpr | ARec (NonEmpty (Var, CompExpr))
 
 type AMatchAlt = (AltCon, [Var], AExpr)
 
-bindsLlAnf :: CoreBind -> MonadDesugar [CoreBind]
-bindsLlAnf bind = lambdaLiftingBind bind >>= bindsToAnf
+bindsLlAnf :: [CoreBind] -> MonadDesugar [CoreBind]
+bindsLlAnf bind = lambdaLiftingProgram bind >>= bindsToAnf
  where
   bindsToAnf :: [CoreBind] -> MonadDesugar [CoreBind]
   bindsToAnf binds = mapM bindToAnf binds

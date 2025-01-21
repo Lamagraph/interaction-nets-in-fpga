@@ -2,8 +2,9 @@
 
 {-# HLINT ignore "Avoid NonEmpty.unzip" #-}
 {-# HLINT ignore "Eta reduce" #-}
-module Lamagraph.Compiler.Core.LambdaLifting (lambdaLiftingBind, freeVars) where
+module Lamagraph.Compiler.Core.LambdaLifting (freeVars, lambdaLiftingProgram) where
 
+import Control.Monad.Extra
 import Data.HashMap.Strict qualified as HashMap
 import Data.List qualified as List
 import Data.List.NonEmpty qualified as NonEmpty
@@ -121,11 +122,11 @@ defaultGlobals = map Id (HashMap.keys hashMap)
   TyEnv hashMap = defaultEnv
 
 -- | Lambda lifting. It returns list of top level bindings and lifted expression
-liftLams :: CoreExpr -> MonadDesugar ([CoreBind], CoreExpr)
-liftLams = \case
+liftLams :: [Var] -> CoreExpr -> MonadDesugar ([CoreBind], CoreExpr)
+liftLams globals = \case
   App le re -> do
-    (lBinds, lLifted) <- liftLams le
-    (rBinds, rLifted) <- liftLams re
+    (lBinds, lLifted) <- liftLams globals le
+    (rBinds, rLifted) <- liftLams globals re
     return
       ( lBinds ++ rBinds
       , App
@@ -136,22 +137,34 @@ liftLams = \case
     (binds, lifted, lamVars) <- accumulateLams expr
     fresh <- freshVar
     let bindedVars = concatMap getVarsFromBind binds
-        fVars = freeVars expr `without` (var : defaultGlobals ++ bindedVars ++ lamVars)
+        fVars = freeVars expr `without` (var : globals ++ bindedVars ++ lamVars)
         newBind = NonRec fresh $ manyAbstraction lifted (var : lamVars ++ fVars)
     return (binds ++ [newBind], Var fresh `applyTo` reverse fVars)
   Let (NonRec var varBody) inBody -> do
     (varBinds, varLifted, lamVars) <- accumulateLams varBody
-    fresh <- freshVar
     let bindedVars = concatMap getVarsFromBind varBinds
-        freeVarsVarBody = freeVars varBody `without` (var : defaultGlobals ++ bindedVars ++ lamVars)
-        newBind = NonRec fresh $ manyAbstraction varLifted (lamVars ++ freeVarsVarBody)
-    (bodyBinds, bodyLifted) <- liftLams inBody
-    return
-      ( varBinds
-          ++ bodyBinds
-          ++ [newBind]
-      , substExprByVar (Var fresh `applyTo` reverse freeVarsVarBody) var bodyLifted
-      )
+        freeVarsVarBody = freeVars varBody `without` (var : globals ++ bindedVars ++ lamVars)
+    (bodyBinds, bodyLifted) <- liftLams globals inBody
+    if var `elem` globals
+      then
+        let liftedExpression = substExprByVar (Var var `applyTo` reverse freeVarsVarBody) var bodyLifted
+            newBind = NonRec var $ manyAbstraction varLifted (lamVars ++ freeVarsVarBody)
+         in return
+              ( varBinds
+                  ++ bodyBinds
+                  ++ [newBind]
+              , liftedExpression
+              )
+      else do
+        fresh <- freshVar
+        let liftedExpression = substExprByVar (Var fresh `applyTo` reverse freeVarsVarBody) var bodyLifted
+            newBind = NonRec fresh $ manyAbstraction varLifted (lamVars ++ freeVarsVarBody)
+         in return
+              ( varBinds
+                  ++ bodyBinds
+                  ++ [newBind]
+              , liftedExpression
+              )
   Let b@(Rec binds) body -> do
     let bindsList = NonEmpty.toList binds
     (varBinds, varsLifted, varsForLams) <-
@@ -161,17 +174,19 @@ liftLams = \case
           bindsList
     let freeVarsVarBody =
           map
-            (`without` (defaultGlobals ++ concatMap getVarsFromBind (concat varBinds) ++ concat varsForLams))
+            (`without` (globals ++ concatMap getVarsFromBind (concat varBinds) ++ concat varsForLams))
             (NonEmpty.toList $ freeVarsBind b)
-    (bodyBinds, bodyLifted) <- liftLams body
+    (bodyBinds, bodyLifted) <- liftLams globals body
     newVarBinds <-
       mapM
-        ( \(lifted, lamVars, fVars) ->
-            do
-              fresh <- freshVar
-              return (fresh, manyAbstraction lifted (lamVars ++ fVars))
+        ( \(lifted, lamVars, fVars, (var, _)) ->
+            if var `notElem` globals
+              then do
+                fresh <- freshVar
+                return (fresh, manyAbstraction lifted (lamVars ++ fVars))
+              else return (var, manyAbstraction lifted (lamVars ++ fVars))
         )
-        (zip3 varsLifted varsForLams freeVarsVarBody)
+        (List.zip4 varsLifted varsForLams freeVarsVarBody bindsList)
     let substitutedBody =
           List.foldl
             (\bodyLiftedSubst ((v, _), (fresh, _), fVars) -> substExprByVar (Var fresh `applyTo` reverse fVars) v bodyLiftedSubst)
@@ -186,8 +201,8 @@ liftLams = \case
         newBinds
         (zip oldBinds newBinds)
   Match casedExpr v alts -> do
-    (casedBind, casedLifted) <- liftLams casedExpr
-    (altBinds, altsBodyLifted) <- mapAndUnzipM (\(_, _, altExpr) -> liftLams altExpr) (NonEmpty.toList alts)
+    (casedBind, casedLifted) <- liftLams globals casedExpr
+    (altBinds, altsBodyLifted) <- mapAndUnzipM (\(_, _, altExpr) -> liftLams globals altExpr) (NonEmpty.toList alts)
     let altsLifted =
           NonEmpty.zipWith
             (\(con, vars, _) lifted -> (con, vars, lifted))
@@ -196,8 +211,8 @@ liftLams = \case
         matchExpr = Match casedLifted v altsLifted
     return (concat altBinds ++ casedBind, matchExpr)
   Tuple fstExpr otherExprs -> do
-    (fstBinds, fstLifted) <- liftLams fstExpr
-    (otherBinds, othersLifted) <- mapAndUnzipM liftLams (NonEmpty.toList otherExprs)
+    (fstBinds, fstLifted) <- liftLams globals fstExpr
+    (otherBinds, othersLifted) <- mapAndUnzipM (liftLams globals) (NonEmpty.toList otherExprs)
     return (fstBinds ++ concat otherBinds, Tuple fstLifted (NonEmpty.fromList othersLifted))
   e -> return ([], e)
  where
@@ -206,11 +221,19 @@ liftLams = \case
       (binds, lifted, vars) <- accumulateLams e
       return (binds, lifted, vars ++ [v])
     e -> do
-      (binds, lifted) <- liftLams e
+      (binds, lifted) <- liftLams globals e
       return (binds, lifted, [])
 
 -- | Evaluate lambda lifting for Bind.
-lambdaLiftingBind :: CoreBind -> MonadDesugar [CoreBind]
-lambdaLiftingBind b = do
-  (binds, _) <- liftLams $ Let b (Lit $ LitInt 0) -- kinda hack
+lambdaLiftingBind :: [Var] -> CoreBind -> MonadDesugar [CoreBind]
+lambdaLiftingBind globals b = do
+  (binds, _) <- liftLams globals $ Let b (Lit $ LitInt 0) -- kinda hack
   return binds
+
+lambdaLiftingProgram :: [CoreBind] -> MonadDesugar [CoreBind]
+lambdaLiftingProgram bs = concatMapM (lambdaLiftingBind globals) bs
+ where
+  globals = defaultGlobals ++ concatMap getTopLevelVars bs
+  getTopLevelVars = \case
+    NonRec v _ -> [v]
+    Rec binds -> NonEmpty.toList $ NonEmpty.map fst binds

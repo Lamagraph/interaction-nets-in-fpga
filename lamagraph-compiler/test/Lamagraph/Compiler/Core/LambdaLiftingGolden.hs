@@ -12,7 +12,6 @@ import Lamagraph.Compiler.Core.MonadDesugar
 
 import Lamagraph.Compiler.Core.Pretty ()
 
-import Control.Monad.Extra
 import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Typechecker.Infer
@@ -56,4 +55,4 @@ coreLamLiftGolden = do
   applyLL :: LmlModule LmlcTc -> MonadDesugar [CoreBind]
   applyLL x = do
     binds <- desugarLmlModule x
-    concatMapM lambdaLiftingBind binds
+    lambdaLiftingProgram binds
