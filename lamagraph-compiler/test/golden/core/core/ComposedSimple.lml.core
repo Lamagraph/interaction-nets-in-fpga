@@ -2,3 +2,5 @@ let mulAdd = fun x -> fun y -> fun z -> (* ((+ x) y)) ((* ((+ x) z)) ((+ y) z))
 let rec f = fun y -> (+ (g y)) (g y)
 and
 g = fun x -> match (> x) 1 as t#a with (true, [], f ((- x) 1)) | (false, [], 1)
+let h = fun flag -> match flag as t#b with (true, [], * 2) | (false, [], + 100)
+let t = h true

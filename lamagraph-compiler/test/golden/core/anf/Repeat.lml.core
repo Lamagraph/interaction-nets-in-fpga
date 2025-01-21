@@ -1,6 +1,6 @@
-let rec t#b = fun f -> fun n -> fun m -> fun last -> let t#g = (< m) n
-              in match t#g as t#a with ( true
+let rec t#b = fun f -> fun n -> fun m -> fun last -> let t#f = (< m) n
+              in match t#f as t#a with ( true
                  , []
-                 , let t#o = f last in let t#m = (+ 1) m in (t#b t#m) t#o )
+                 , let t#n = f last in let t#l = (+ 1) m in (t#b t#l) t#n )
                  | (false, [], last)
-let t#c = fun n -> fun f -> ((t#b f) n) 0
+let repeat = fun n -> fun f -> ((t#b f) n) 0

@@ -4,3 +4,7 @@ let mulAdd x y z = (x + y) * (x + z) * (y + z)
 
 let rec f y = (g y) + (g y)
   and g x = if x > 1 then f (x - 1) else 1
+
+let h flag = if flag then (( * ) 2) else ((+) 100)
+
+let t = h true

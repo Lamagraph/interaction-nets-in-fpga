@@ -4,11 +4,11 @@ let rec t#d = fun n -> fun m -> fun acc -> match (> m) n as t#a with ( true
                                            | ( false
                                            , []
                                            , (t#d ((+ m) 1)) ((* acc) m) )
-let t#e = fun n -> ((t#d n) 1) 1
-let rec t#f = fun n -> match (< n) 2 as t#b with (true, [], 1)
-                       | (false, [], (* n) (t#f ((- n) 1)))
-let rec t#g = fun f -> fun x -> (f (t#g f)) x
-let rec t#h = fun f -> fun x -> (f (t#h f)) x
-let rec t#i = fun f -> f (t#i f)
-let t#j = fun self -> fun n -> match (<= n) 1 as t#c with (true, [], 1)
-                               | (false, [], (* n) (self ((- n) 1)))
+let fac = fun n -> ((t#d n) 1) 1
+let rec fac' = fun n -> match (< n) 2 as t#b with (true, [], 1)
+                        | (false, [], (* n) (fac' ((- n) 1)))
+let rec fix = fun f -> fun x -> (f (fix f)) x
+let rec fixCBV = fun f -> fun x -> (f (fixCBV f)) x
+let rec fixCBN = fun f -> f (fixCBN f)
+let fac'' = fun self -> fun n -> match (<= n) 1 as t#c with (true, [], 1)
+                                 | (false, [], (* n) (self ((- n) 1)))
