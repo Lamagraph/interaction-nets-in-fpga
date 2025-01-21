@@ -30,16 +30,15 @@ getVarsFromBind = \case
 -- | Get free vars from expression
 freeVars :: CoreExpr -> [Var]
 freeVars (Var v) = [v]
-freeVars (App lExpr rExpr) = freeVars lExpr ++ freeVars rExpr
-freeVars (Lam var expr) = filter (/= var) $ freeVars expr
-freeVars (Let (NonRec var _) bodyExpr) =
+freeVars (App lExpr rExpr) = List.nub $ freeVars lExpr ++ freeVars rExpr
+freeVars (Lam var expr) = List.nub $ filter (/= var) $ freeVars expr
+freeVars (Let (NonRec var varBody) bodyExpr) =
   List.nub $
     filter (/= var) $
-      freeVars bodyExpr
+      freeVars bodyExpr ++ freeVars varBody
 freeVars (Let (Rec binds) bodyExpr) =
   List.nub $
     concatMap freeVars (bodyExpr NonEmpty.<| varsBodyExpr) `without` vars
-      ++ freeVars bodyExpr `without` vars
  where
   (vars, varsBodyExpr) = NonEmpty.unzip binds
 freeVars (Match casedExpression v alts) =
@@ -64,6 +63,17 @@ freeVarsBind = \case
  where
   pureBind vars e = freeVars e `without` vars
 
+allVars :: CoreExpr -> [Var]
+allVars = \case
+  Var v -> [v]
+  App l r -> allVars l ++ allVars r
+  Lam v e -> v : allVars e
+  Let (NonRec v varBody) body -> v : allVars varBody ++ allVars body
+  Let (Rec binds) body -> concatMap (\(v, vB) -> v : allVars vB) binds ++ allVars body
+  Tuple fstE otherE -> allVars fstE ++ concatMap allVars otherE
+  Match casedE v alts -> v : allVars casedE ++ concatMap (\(_, vars, altE) -> vars ++ allVars altE) alts
+  Lit _ -> []
+
 {- | substitute expression instead of var in some other expression
 
 __NOTE__: it can not substitute if var is bounded
@@ -81,7 +91,10 @@ substExprByVar expr var =
           if var `isFreeIn` e
             then
               Lam v $ sub e
-            else error "an attempt to change bounded var (var is not free in e)"
+            else
+              if var `notElem` allVars e
+                then Lam v e
+                else error "an attempt to change bounded var (var is not free in e)"
     Let (NonRec v varE) bodyE ->
       if v == var
         then error "an attempt to change letted var"
@@ -169,9 +182,9 @@ liftLams = \case
     substFresh :: [(Var, CoreExpr)] -> [(Var, CoreExpr)] -> [(Var, CoreExpr)]
     oldBinds `substFresh` newBinds =
       List.foldl
-        (\bind (old, _) -> map (\(fresh, lifted) -> (fresh, substExprByVar (Var fresh) old lifted)) bind)
+        (\bind ((old, _), (new, _)) -> map (second (substExprByVar (Var new) old)) bind)
         newBinds
-        oldBinds
+        (zip oldBinds newBinds)
   Match casedExpr v alts -> do
     (casedBind, casedLifted) <- liftLams casedExpr
     (altBinds, altsBodyLifted) <- mapAndUnzipM (\(_, _, altExpr) -> liftLams altExpr) (NonEmpty.toList alts)
