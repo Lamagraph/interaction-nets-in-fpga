@@ -67,8 +67,16 @@ defaultEnv = TyEnv env
       , (Name $ mkLongident $ pure ">=", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
       , (Name $ mkLongident $ pure "<", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
       , (Name $ mkLongident $ pure "<=", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
-      , (Name $ mkLongident $ pure "=", Forall [Name $ mkLongident $ pure "a"] $ TVar (Name $ mkLongident $ pure "a") `TArrow` TVar (Name $ mkLongident $ pure "a") `TArrow` tyBool)
-      , (Name $ mkLongident $ pure "<>", Forall [Name $ mkLongident $ pure "a"] $ TVar (Name $ mkLongident $ pure "a") `TArrow` TVar (Name $ mkLongident $ pure "a") `TArrow` tyBool)
+      ,
+        ( Name $ mkLongident $ pure "="
+        , Forall [Name $ mkLongident $ pure "a"] $
+            TVar (Name $ mkLongident $ pure "a") `TArrow` TVar (Name $ mkLongident $ pure "a") `TArrow` tyBool
+        )
+      ,
+        ( Name $ mkLongident $ pure "<>"
+        , Forall [Name $ mkLongident $ pure "a"] $
+            TVar (Name $ mkLongident $ pure "a") `TArrow` TVar (Name $ mkLongident $ pure "a") `TArrow` tyBool
+        )
       , (Name $ mkLongident $ pure "[]", Forall [Name $ mkLongident $ pure "a"] tyList)
       ,
         ( Name $ mkLongident $ pure "::"
