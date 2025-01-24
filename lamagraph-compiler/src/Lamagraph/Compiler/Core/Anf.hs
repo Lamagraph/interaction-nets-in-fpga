@@ -1,7 +1,14 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Eta reduce" #-}
-module Lamagraph.Compiler.Core.Anf (bindsLlAnf) where
+module Lamagraph.Compiler.Core.Anf (
+  bindsLlAnf,
+  ImmExpr (..),
+  CompExpr (..),
+  AExpr (..),
+  ABind (..),
+  AMatchAlt,
+) where
 
 import Data.Foldable
 
@@ -31,24 +38,30 @@ data ABind = ANonRec Var CompExpr | ARec (NonEmpty (Var, CompExpr))
 
 type AMatchAlt = (AltCon, [Var], AExpr)
 
-bindsLlAnf :: [CoreBind] -> MonadDesugar [CoreBind]
+bindsLlAnf :: [CoreBind] -> MonadDesugar [ABind]
 bindsLlAnf bind = lambdaLiftingProgram bind >>= bindsToAnf
  where
-  bindsToAnf :: [CoreBind] -> MonadDesugar [CoreBind]
+  bindsToAnf :: [CoreBind] -> MonadDesugar [ABind]
   bindsToAnf binds = mapM bindToAnf binds
-  bindToAnf :: CoreBind -> MonadDesugar CoreBind
-  bindToAnf (NonRec v e) = (NonRec v . anfToCore) . anfSimplify <$> toAnf e exprWithHoleBasic
-  bindToAnf (Rec binds) = Rec <$> desugarAnf
-   where
-    desugarAnf = do
-      anfBinds <-
-        mapM
-          ( \(v, e) -> do
-              anfE <- toAnf e exprWithHoleBasic
-              return (v, anfToCore $ anfSimplify anfE)
-          )
-          (NonEmpty.toList binds)
-      return $ NonEmpty.fromList anfBinds
+  bindToAnf :: CoreBind -> MonadDesugar ABind
+  bindToAnf (NonRec v e) = do
+    anf <- anfSimplify <$> toAnf e exprWithHoleBasic
+    case anf of
+      ACompExpr compExpr -> pure $ ANonRec v compExpr
+      _ -> error "anf error"
+  bindToAnf _ = undefined
+
+-- bindToAnf (Rec binds) = Rec <$> desugarAnf
+--  where
+--   desugarAnf = do
+--     anfBinds <-
+--       mapM
+--         ( \(v, e) -> do
+--             anfE <- toAnf e exprWithHoleBasic
+--             return (v, anfToCore $ anfSimplify anfE)
+--         )
+--         (NonEmpty.toList binds)
+--     return $ NonEmpty.fromList anfBinds
 
 -- arityAnalysis :: HashMap Var Int -> CoreBind -> HashMap Var Int
 -- arityAnalysis hashMap = \case

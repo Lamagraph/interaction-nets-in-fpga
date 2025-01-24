@@ -5,6 +5,7 @@ import Test.Tasty.Hedgehog
 
 import Lamagraph.Compiler.Core.AnfCoreGolden
 import Lamagraph.Compiler.Core.LambdaLiftingGolden
+import Lamagraph.Compiler.Core.LlvmCoreGolden
 import Lamagraph.Compiler.Core.PrettyCoreGolden
 import Lamagraph.Compiler.Parser.LexerTest
 import Lamagraph.Compiler.Parser.ParserRoundtrip
@@ -40,4 +41,5 @@ coreTests = do
   core <- corePrettyGolden
   coreLamLifting <- coreLamLiftGolden
   coreAnf <- coreAnfGolden
-  pure $ testGroup "Core" [core, coreLamLifting, coreAnf]
+  llvmTests <- llvmGolden
+  pure $ testGroup "Core" [core, coreLamLifting, coreAnf, llvmTests]

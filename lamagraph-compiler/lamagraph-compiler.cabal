@@ -26,6 +26,7 @@ library
   exposed-modules:
       Lamagraph.Compiler.Core
       Lamagraph.Compiler.Core.Anf
+      Lamagraph.Compiler.Core.AnfToLllvm
       Lamagraph.Compiler.Core.LambdaLifting
       Lamagraph.Compiler.Core.LmlToCore
       Lamagraph.Compiler.Core.MonadDesugar
@@ -77,6 +78,7 @@ library
     , extra
     , foldable1-classes-compat
     , lens
+    , llvm-pretty
     , mono-traversable
     , mtl
     , prettyprinter
@@ -104,6 +106,7 @@ executable lamagraph-compiler-exe
     , foldable1-classes-compat
     , lamagraph-compiler
     , lens
+    , llvm-pretty
     , mono-traversable
     , mtl
     , prettyprinter
@@ -117,6 +120,7 @@ test-suite lamagraph-compiler-test
   other-modules:
       Lamagraph.Compiler.Core.AnfCoreGolden
       Lamagraph.Compiler.Core.LambdaLiftingGolden
+      Lamagraph.Compiler.Core.LlvmCoreGolden
       Lamagraph.Compiler.Core.PrettyCoreGolden
       Lamagraph.Compiler.GoldenCommon
       Lamagraph.Compiler.Parser.LexerTest
@@ -143,6 +147,7 @@ test-suite lamagraph-compiler-test
     , hedgehog
     , lamagraph-compiler
     , lens
+    , llvm-pretty
     , mono-traversable
     , mtl
     , prettyprinter
