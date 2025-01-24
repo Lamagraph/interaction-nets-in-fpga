@@ -30,6 +30,7 @@ dependencies:
   - mtl
   - mono-traversable
   - foldable1-classes-compat # Remove with GHC 9.6+
+  - llvm-pretty
 
 language: GHC2021
 

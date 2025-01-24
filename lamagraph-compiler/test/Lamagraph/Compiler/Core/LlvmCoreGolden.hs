@@ -1,8 +1,8 @@
-module Lamagraph.Compiler.Core.AnfCoreGolden (coreAnfGolden) where
+module Lamagraph.Compiler.Core.LlvmCoreGolden (llvmGolden) where
 
-import Relude
+import Relude hiding (head)
+import Relude.Unsafe (head)
 
-import Prettyprinter
 import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
@@ -10,29 +10,31 @@ import Test.Tasty.Golden
 import Lamagraph.Compiler.Core.LmlToCore
 import Lamagraph.Compiler.Core.MonadDesugar
 
-import Lamagraph.Compiler.Core.Pretty ()
-
 import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Typechecker.Infer
 
+import Data.HashMap.Strict qualified as HashMap
 import Lamagraph.Compiler.Core (CoreBind)
-import Lamagraph.Compiler.Core.Anf (bindsLlAnf)
+import Lamagraph.Compiler.Core.Anf (ABind, bindsLlAnf)
+import Lamagraph.Compiler.Core.AnfToLllvm
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Syntax
+import Text.LLVM
+import Text.LLVM.PP
 
 newExt :: String
-newExt = "core"
+newExt = "ll"
 
 newDir :: FilePath
-newDir = ".." </> "anf"
+newDir = ".." </> "llvm"
 
-coreAnfGolden :: IO TestTree
-coreAnfGolden = do
+llvmGolden :: IO TestTree
+llvmGolden = do
   lmlFiles <- findByExtension [lmlExt] coreSourceGoldenTestsDir
   return $
     testGroup
-      "Core anf Golden tests"
+      "Llvm Golden tests"
       [ goldenVsString (takeBaseName lmlFile) resLmlFile (helper lmlFile)
       | lmlFile <- lmlFiles
       , let resLmlFile = addExtension (changeFileDir lmlFile newDir) newExt
@@ -51,10 +53,10 @@ coreAnfGolden = do
           let binds = applyAnf core
            in case runMonadDesugar binds of
                 Left _ -> "FIXME: Either add constructors to DesugarError, or get rid of ExceptT"
-                Right pureBinds -> encodeUtf8 $ (renderPretty . pretty) pureBinds
-  applyAnf :: LmlModule LmlcTc -> MonadDesugar [CoreBind]
+                Right pureBinds ->
+                  let moduleL = snd $ runLLVM (aBindToLlvm HashMap.empty (head pureBinds))
+                   in show $ withConfig (Config{cfgVer = 17}) ppModule moduleL
+  applyAnf :: LmlModule LmlcTc -> MonadDesugar [ABind]
   applyAnf x = do
     binds <- desugarLmlModule x
-    pure []
-
--- bindsLlAnf binds
+    bindsLlAnf binds

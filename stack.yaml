@@ -51,6 +51,9 @@ extra-deps:
   - alex-3.5.1.0@sha256:de553eefe0b6548a560e9d8100486310548470a403c1fa21108dd03713da5fc7,3886
   - happy-2.0.2@sha256:df315b5554b84d313ae54ad8d79dabe5a69f943f50ad5279a3009fe6a9313fc9,4995
   - happy-lib-2.0.2@sha256:4768c8c1a34d4e9aaa61fff3f7dd7cde0cd36d2130081e5acf030389ec357189,5099
+  - git: https://github.com/GaloisInc/llvm-pretty.git
+    commit: f33aabfa765b61ceb0f44669f6235b15880c698d
+  - monadLib-3.10.3@sha256:026ba169762e63f0fe5f5c78829808f522a28730043bc3ad9b7c146baedf709f,637
 # Override default flag values for local packages and extra-deps
 # flags: {}
 
