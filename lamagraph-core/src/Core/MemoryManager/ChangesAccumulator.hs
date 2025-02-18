@@ -78,11 +78,11 @@ insertInInfoVec infoVec maybeInsertionInfo =
 
 -- | Accumulate all changes by ports of the given `Node` and write it in the `Map`
 accumulatePortsChangesByLoadedNode ::
-  forall portsNumber maxNumOfChangedNodes.
+  forall portsNumber maxNumOfChangedNodes agentType.
   (KnownNat portsNumber, KnownNat maxNumOfChangedNodes) =>
   Map maxNumOfChangedNodes (Changes portsNumber) ->
   Interface maxNumOfChangedNodes ->
-  LoadedNode portsNumber ->
+  LoadedNode portsNumber agentType ->
   Map maxNumOfChangedNodes (Changes portsNumber)
 accumulatePortsChangesByLoadedNode infoVec interface signalLoadedNode =
   let updateToConcreteNode = getUpdateInfoByPort signalAddress interface
@@ -107,7 +107,7 @@ accumulateUpdatesByNodes ::
   (KnownNat nodesNumber, KnownNat portsNumber, KnownNat maxNumOfChangedNodes) =>
   Map maxNumOfChangedNodes (Changes portsNumber) ->
   Interface maxNumOfChangedNodes ->
-  Vec nodesNumber (Maybe (LoadedNode portsNumber)) ->
+  Vec nodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   Map maxNumOfChangedNodes (Changes portsNumber)
 accumulateUpdatesByNodes infoVec interface loadedNodes =
   foldl
@@ -145,7 +145,7 @@ accumulateUpdatesByEdges infoVec edgesForUpdate =
 -- | Get all changes from `Delta`
 getAllChangesByDelta ::
   (KnownNat edgesNumber, KnownNat nodesNumber, KnownNat maxNumOfChangedNodes, KnownNat portsNumber, KnownDomain dom) =>
-  Signal dom (Delta nodesNumber edgesNumber portsNumber) ->
+  Signal dom (Delta nodesNumber edgesNumber portsNumber agentType) ->
   Signal dom (Interface maxNumOfChangedNodes) ->
   Signal dom (Map maxNumOfChangedNodes (Changes portsNumber))
 getAllChangesByDelta delta interface = accumulateUpdatesByNodes <$> (accumulateUpdatesByEdges def <$> edgesForUpdate) <*> interface <*> nodesForUpdate

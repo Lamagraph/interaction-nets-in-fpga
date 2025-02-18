@@ -20,18 +20,10 @@ import Core.MemoryManager.MemoryManager
 import Core.Node
 import Data.Maybe
 
-data Edge (portsNumber :: Nat) = Edge
-  { _leftEnd :: Connection portsNumber
-  , _rightEnd :: Connection portsNumber
-  }
-  deriving (Generic, NFDataX, Show, Eq)
-
-$(makeLenses ''Edge)
-
-data Delta (nodesNumber :: Nat) (edgesNumber :: Nat) (portsNumber :: Nat) = Delta
-  { _newNodes :: Vec nodesNumber (Maybe (LoadedNode portsNumber))
+data Delta (nodesNumber :: Nat) (edgesNumber :: Nat) (portsNumber :: Nat) agentType = Delta
+  { _newNodes :: Vec nodesNumber (Maybe (LoadedNode portsNumber agentType))
   , _newEdges :: Vec edgesNumber (Maybe (Edge portsNumber))
-  , _activePair :: ActivePair portsNumber
+  , _activePair :: ActivePair portsNumber agentType
   }
   deriving (Show, Eq, Generic, NFDataX)
 
@@ -52,9 +44,9 @@ $(makeLenses ''Changes)
 -- | Update `Port`s of `Node` by `Changes`
 applyChangesToNode ::
   (KnownNat portsNumber) =>
-  Node portsNumber ->
+  Node portsNumber agentType ->
   Changes portsNumber ->
-  Node portsNumber
+  Node portsNumber agentType
 applyChangesToNode oldNode (Changes maybeSecPortsAddr maybePrimaryPort) =
   set primaryPort newPrimaryPort (set secondaryPorts newSecondaryPorts oldNode)
  where
@@ -70,9 +62,9 @@ applyChangesToNode oldNode (Changes maybeSecPortsAddr maybePrimaryPort) =
 -- | Update external `LoadedNode`s by accumulated `Changes`
 updateLoadedNodesByChanges ::
   (KnownNat portsNumber, KnownNat maxNumOfChangedNodes) =>
-  Vec maxNumOfChangedNodes (Maybe (LoadedNode portsNumber)) ->
+  Vec maxNumOfChangedNodes (Maybe (LoadedNode portsNumber agentType)) ->
   Map maxNumOfChangedNodes (Changes portsNumber) ->
-  Vec maxNumOfChangedNodes (Maybe (LoadedNode portsNumber))
+  Vec maxNumOfChangedNodes (Maybe (LoadedNode portsNumber agentType))
 updateLoadedNodesByChanges externalLoadedNodes mapOfChanges =
   map
     (\maybeLoadedNode -> applyChangesToLoadedNode <$> maybeLoadedNode <*> (getChangesByLoadedNode <$> maybeLoadedNode))

@@ -2,15 +2,15 @@ module Core.Loader where
 
 import Clash.Prelude
 import Control.Lens (view)
-import Core.MemoryManager.MemoryManager (ActivePair (ActivePair))
+import Core.MemoryManager.MemoryManager (ActivePair (ActivePair), leftNode, rightNode)
 import Core.MemoryManager.NodeChanges
 import Core.Node
 
 -- | Type alias for partial applied `blockRam`
-type Ram dom portsNumber =
+type Ram dom portsNumber agentType =
   ( Signal dom AddressNumber ->
-    Signal dom (Maybe (AddressNumber, Maybe (Node portsNumber))) ->
-    Signal dom (Maybe (Node portsNumber))
+    Signal dom (Maybe (AddressNumber, Maybe (Node portsNumber agentType))) ->
+    Signal dom (Maybe (Node portsNumber agentType))
   )
 
 -- | Read external `Node`s from ram
@@ -20,9 +20,9 @@ loadInterface ::
   , KnownNat portsNumber
   , KnownNat externalNodesNumber
   ) =>
-  Ram dom portsNumber ->
+  Ram dom portsNumber agentType ->
   Signal dom (Interface externalNodesNumber) ->
-  Signal dom (Vec externalNodesNumber (Maybe (LoadedNode portsNumber)))
+  Signal dom (Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)))
 loadInterface ram interface =
   bundle $
     map
@@ -37,9 +37,9 @@ loadInterface ram interface =
 -- | Load `ActivePair` by `AddressNumber`. It is assumed that `AddressNumber` is actually active
 loadActivePair ::
   (KnownDomain dom, HiddenClockResetEnable dom, KnownNat portsNumber) =>
-  Ram dom portsNumber ->
+  Ram dom portsNumber agentType ->
   Signal dom AddressNumber ->
-  Signal dom (ActivePair portsNumber)
+  Signal dom (ActivePair portsNumber agentType)
 loadActivePair ram leftActiveNodeAddress =
   ActivePair
     <$> (LoadedNode <$> leftActiveNode <*> leftActiveNodeAddress)
@@ -55,3 +55,13 @@ loadActivePair ram leftActiveNodeAddress =
   leftActiveNode = getNodeByAddress leftActiveNodeAddress
   rightActiveNodeAddress = getRightActiveNodeAddress <$> leftActiveNode
   rightActiveNode = getNodeByAddress rightActiveNodeAddress
+
+removeActivePairFromRam ::
+  Ram dom portsNumber agentType ->
+  Signal dom (ActivePair portsNumber agentType) ->
+  Vec 2 (Signal dom (Maybe (Node portsNumber agentType)))
+removeActivePairFromRam ram acPair = map (\address -> partRam (Just <$> bundle (address, def))) (leftAddress :> rightAddress :> Nil)
+ where
+  partRam = ram def
+  leftAddress = view (leftNode . originalAddress) <$> acPair
+  rightAddress = view (rightNode . originalAddress) <$> acPair

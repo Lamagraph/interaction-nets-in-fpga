@@ -32,9 +32,9 @@ import Core.Node
 >>> :set -fplugin GHC.TypeLits.Normalise
 -}
 
-data ActivePair (portsNumber :: Nat) = ActivePair
-  { _leftNode :: LoadedNode portsNumber
-  , _rightNode :: LoadedNode portsNumber
+data ActivePair (portsNumber :: Nat) agentType = ActivePair
+  { _leftNode :: LoadedNode portsNumber agentType
+  , _rightNode :: LoadedNode portsNumber agentType
   }
   deriving (Show, Eq, Generic, NFDataX, Bundle)
 $(makeLenses ''ActivePair)
@@ -44,7 +44,7 @@ data MemoryManager (cellsNumber :: Nat)
   { _busyBitMap :: Vec cellsNumber Bool -- map Address : Bool. tell smth like "this Address is busy, so you can not to write here"
   , _activePairs :: Vec cellsNumber Bool
   }
-  deriving (Generic, NFDataX, Bundle)
+  deriving (Generic, NFDataX, Bundle, Show)
 
 $(makeLenses ''MemoryManager)
 
@@ -139,7 +139,7 @@ markAddress busyMap marker address =
 deleteActivePair ::
   (KnownNat cellsNumber, KnownNat portsNumber) =>
   Vec cellsNumber Bool ->
-  ActivePair portsNumber ->
+  ActivePair portsNumber agentType ->
   Vec cellsNumber Bool
 deleteActivePair oldActivePairs activePairToDelete =
   if leftInVec `xor` rightInVec
@@ -159,7 +159,7 @@ deleteActivePair oldActivePairs activePairToDelete =
 freeUpActivePair ::
   (KnownNat cellsNumber, KnownNat portsNumber) =>
   Vec cellsNumber Bool ->
-  ActivePair portsNumber ->
+  ActivePair portsNumber agentType ->
   Vec cellsNumber Bool
 freeUpActivePair busyMap activePairToFree = markAddress (markAddress busyMap False leftNodeAddress) False rightNodeAddress
  where
@@ -170,7 +170,7 @@ freeUpActivePair busyMap activePairToFree = markAddress (markAddress busyMap Fal
 -- | Remove all information about `ActivePair` from `MemoryManager`
 removeActivePair ::
   (KnownNat cellsNumber, KnownNat portsNumber, KnownDomain dom) =>
-  Signal dom (ActivePair portsNumber) ->
+  Signal dom (ActivePair portsNumber agentType) ->
   Signal dom (MemoryManager cellsNumber) ->
   Signal dom (MemoryManager cellsNumber)
 removeActivePair acPair memoryManager =

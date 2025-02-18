@@ -1,11 +1,12 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Core.Node where
 
 import Clash.Prelude
-import Control.Lens (makeLenses, set, (^.))
-import INet.Net
+import Control.Lens (makeLenses, (^.))
 
 {- | Type alias for `Maybe Port` with aliased constructors too.
 This can be useful for distinguish connected to something `Port`, free `Port` that is not connected and void `Port`.
@@ -37,10 +38,10 @@ data Port (portsNumber :: Nat) = Port
 $(makeLenses ''Port)
 
 -- | Node in the RAM.
-data Node portsNumber = Node
+data Node portsNumber agentType = Node
   { _primaryPort :: Connection portsNumber
   , _secondaryPorts :: Vec portsNumber (Maybe (Connection portsNumber))
-  , _nodeType :: Agent --  looks like we need some kind of node label. Info about and reduction rules contained IN
+  , _nodeType :: agentType --  looks like we need some kind of node label. Info about and reduction rules contained IN
   }
   deriving (NFDataX, Generic, Show, Eq)
 
@@ -51,19 +52,25 @@ Original address can be useful when reducer working.
 For example, if this `Node` has reduced then his `Address` is become free
 and info about this should be passed to the memory manager.
 -}
-data LoadedNode (portsNumber :: Nat) = LoadedNode
-  { _containedNode :: Node portsNumber
+data LoadedNode (portsNumber :: Nat) agentType = LoadedNode
+  { _containedNode :: Node portsNumber agentType
   , _originalAddress :: ActualAddressNumber
   }
   deriving (NFDataX, Generic, Show, Eq)
 
 $(makeLenses ''LoadedNode)
 
-{- | Check if pair of `LoadedNode` are active, i.e. they are connected by primary ports.
-| Check if `Node` is active
--}
+data Edge (portsNumber :: Nat) = Edge
+  { _leftEnd :: Connection portsNumber
+  , _rightEnd :: Connection portsNumber
+  }
+  deriving (Generic, NFDataX, Show, Eq)
+
+$(makeLenses ''Edge)
+
+-- | Check if `Node` is active
 nodeIsActive ::
-  (KnownNat portsNumber) => Node portsNumber -> Bool
+  (KnownNat portsNumber) => Node portsNumber agentType -> Bool
 nodeIsActive node =
   case node ^. primaryPort of
     Just port -> case port ^. portConnectedToId of
@@ -71,18 +78,9 @@ nodeIsActive node =
       _ -> False
     _ -> False
 
-setConnection ::
-  (KnownNat portsNumber) =>
-  Node portsNumber ->
-  IdOfPort portsNumber ->
-  Connection portsNumber ->
-  Node portsNumber
-setConnection node portId connection = case portId of
-  Primary -> set primaryPort connection node
-  Id index -> set secondaryPorts (replace index (Just connection) (node ^. secondaryPorts)) node
-
+-- | Get `Vec` all `Connection`s of `Node`
 getAllConnections ::
   (KnownNat portsNumber) =>
-  Node portsNumber ->
+  Node portsNumber agentType ->
   Vec (portsNumber + 1) (Maybe (Connection portsNumber))
 getAllConnections node = Just (node ^. primaryPort) :> (node ^. secondaryPorts)
