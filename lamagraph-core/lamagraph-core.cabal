@@ -144,4 +144,6 @@ test-suite test-library
     hedgehog,
     tasty >= 1.2 && < 1.6,
     tasty-hedgehog,
-    tasty-th
+    tasty-th,
+    tasty-hunit,
+    text
