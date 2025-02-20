@@ -38,4 +38,28 @@ initialIdApplyToIdMM :: MemoryManager (2 ^ BitSize AddressNumber)
 initialIdApplyToIdMM = MemoryManager busyMap activePairsMap
  where
   busyMap = replicate (SNat @3) True ++ repeat False
-  activePairsMap = replicate (SNat @3) True ++ repeat False
+  activePairsMap = replicate (SNat @1) True ++ repeat False
+
+initialLoopEdge :: Vec (2 ^ BitSize AddressNumber) (Maybe (LoadedNode 2 AgentSimpleLambda))
+initialLoopEdge = Just applyNode +>> Just abstractNode +>> def
+ where
+  applyAddressNumber = 0
+  abstractAddressNumber = 1
+  applyNode =
+    let prPort = Connected $ Port abstractAddressNumber Primary
+        port0 = Port applyAddressNumber (Id 1)
+        port1 = Port applyAddressNumber (Id 0)
+        secPorts = Just (Connected port0) :> Just (Connected port1) :> Nil
+     in LoadedNode (Node prPort secPorts Apply) applyAddressNumber
+  abstractNode =
+    let prPort = Connected $ Port applyAddressNumber Primary
+        port0 = Port abstractAddressNumber (Id 1)
+        port1 = Port abstractAddressNumber (Id 0)
+        secPorts = Just (Connected port0) :> Just (Connected port1) :> Nil
+     in LoadedNode (Node prPort secPorts Abstract) abstractAddressNumber
+
+initialLoopEdgeMM :: MemoryManager (2 ^ BitSize AddressNumber)
+initialLoopEdgeMM = MemoryManager busyMap activePairsMap
+ where
+  busyMap = replicate (SNat @2) True ++ repeat False
+  activePairsMap = replicate (SNat @1) True ++ repeat False
