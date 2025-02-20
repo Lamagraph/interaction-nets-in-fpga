@@ -37,10 +37,10 @@ edgesReduction
     snd $
       ifoldl
         ( \(excludeEdges, resEdges) i maybeEdge ->
-            let (exEdges, rEdge) = if excludeEdges !! i then (repeat False, def) else edgeProcessing maybeEdge (repeat False)
+            let (exEdges, rEdge) = if excludeEdges !! i then (repeat False, Nothing) else edgeProcessing maybeEdge (repeat False)
              in (exEdges `insertVec` excludeEdges, rEdge +>> resEdges)
         )
-        (repeat @edgesNumber False, def)
+        (repeat @edgesNumber False, repeat @edgesNumber Nothing)
         fullEdges
    where
     insertVec insertedVec toVec =
@@ -58,13 +58,7 @@ edgesReduction
           case (leftConnectionTo, rightConnectionTo) of
             (NotConnected, NotConnected) -> (acc, Nothing)
             (NotConnected, Connected _) -> handleOneEndEdge leftConnection rightConnectionTo NotConnected
-            -- if isActive address
-            --   then oneEndIsActive leftConnection rightConnectionTo
-            --   else (acc, Just $ Edge leftConnectionTo rightConnectionTo)
             (Connected _, NotConnected) -> handleOneEndEdge rightConnection leftConnectionTo NotConnected
-            -- if isActive address
-            --   then oneEndIsActive rightConnection leftConnectionTo
-            --   else (acc, Just $ Edge leftConnectionTo rightConnectionTo)
             (Connected (Port lAddress _), Connected (Port rAddress _)) -> case (isActive lAddress, isActive rAddress) of
               (False, False) -> (acc, Just $ Edge leftConnectionTo rightConnectionTo)
               (False, True) -> oneEndIsActive leftConnection rightConnectionTo
@@ -79,18 +73,14 @@ edgesReduction
                         (replace leftIndex True (replace rightIndex True acc))
                 (_, _) -> (acc, Nothing)
         (Nothing, Just rightConnectionTo) -> case rightConnectionTo of
-          NotConnected -> (acc, Just $ Edge leftConnection NotConnected)
+          NotConnected -> if leftConnection == NotConnected then (acc, Nothing) else (acc, Just $ Edge leftConnection NotConnected)
           Connected _ -> handleOneEndEdge leftConnection rightConnectionTo leftConnection
-        -- if isActive address
-        --   then oneEndIsActive leftConnection rightConnectionTo
-        --   else (acc, Just $ Edge leftConnection rightConnectionTo)
         (Just leftConnectionTo, Nothing) -> case leftConnectionTo of
-          NotConnected -> (acc, Just $ Edge NotConnected rightConnection)
+          NotConnected -> if rightConnection == NotConnected then (acc, Nothing) else (acc, Just $ Edge NotConnected rightConnection)
           Connected _ -> handleOneEndEdge rightConnection leftConnectionTo rightConnection
-        -- if isActive address
-        --   then oneEndIsActive leftConnectionTo rightConnection
-        --   else (acc, Just $ Edge leftConnectionTo rightConnection)
-        (Nothing, Nothing) -> (acc, edge)
+        (Nothing, Nothing) -> case (leftConnection, rightConnection) of
+          (NotConnected, NotConnected) -> (acc, Nothing)
+          (_, _) -> (acc, edge)
      where
       oneEndIsActive fixEnd steppedEnd = case findNextEnd fullEdges steppedEnd of
         Just (connection, i) ->
