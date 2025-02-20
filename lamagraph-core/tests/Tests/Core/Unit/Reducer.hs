@@ -1,4 +1,5 @@
 {-# LANGUAGE PartialTypeSignatures #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module Tests.Core.Unit.Reducer where
@@ -7,20 +8,14 @@ import qualified Clash.Prelude as C
 import Core.MemoryManager.NodeChanges
 import Core.Reducer
 
--- import qualified Hedgehog as H
--- import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 import Test.Tasty.HUnit
 
--- import Test.Tasty.Hedgehog
--- import Test.Tasty.TH
-
-import Clash.Explicit.Verification (RenderAs (SVA), check, cover)
 import Core.Concrete.Initial
 import Core.Concrete.ReduceRulesLambda
 import Core.MemoryManager.MemoryManager
 import Core.Node
-import Data.Text
+
 import INet.Net
 import Prelude
 
@@ -69,6 +64,7 @@ nonEmptyRecursiveInterface =
   expected = C.def
   actual = getInterface @2 @2 (ActivePair leftActiveNode rightActiveNode)
 
+-- | <<docs/idToIdReduceRes.svg>>
 reduceIdAppId :: TestTree
 reduceIdAppId =
   testCase "reduce Id apply to Id" $
@@ -76,15 +72,35 @@ reduceIdAppId =
       ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualDelta)))
       deltasAreEqual
  where
-  (Just applyNode C.:> Just abs1Node C.:> Just abs2Node C.:> _) = initialIdApplyToId
+  (Just applyNode C.:> Just _ C.:> Just abs2Node C.:> _) = initialIdApplyToId
   acPair = ActivePair applyNode abs2Node
   expectedEdges =
-    Just (Edge NotConnected (Connected $ Port 1 Primary))
-      C.:> Nothing -- Just (Edge (Connected $ Port 1 Primary) (Connected $ Port 2 $ Id 1))
+    Just (Edge (Connected $ Port 1 Primary) NotConnected)
+      C.:> Nothing
       C.:> C.Nil
   expectedDelta = Delta (C.def :: C.Vec 2 _) expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
     reduce getReduceRuleInfo (pure initialIdApplyToIdMM) (pure acPair) ::
+      (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
+  deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
+
+-- | <<docs/reduceLoopEdge.svg>>
+reduceLoopEdge :: TestTree
+reduceLoopEdge =
+  testCase "reduce closed lambda and closed apply agents" $
+    assertBool
+      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualDelta)))
+      deltasAreEqual
+ where
+  (Just applyNode C.:> Just absNode C.:> _) = initialLoopEdge
+  acPair = ActivePair applyNode absNode
+  expectedEdges =
+    Nothing
+      C.:> Nothing
+      C.:> C.Nil
+  expectedDelta = Delta (C.def :: C.Vec 2 _) expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
+  (systemActualDelta, _) =
+    reduce getReduceRuleInfo (pure initialLoopEdgeMM) (pure acPair) ::
       (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
   deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
 
@@ -97,4 +113,5 @@ reducerUnitTests =
     , nonEmptyInterface
     , nonEmptyRecursiveInterface
     , reduceIdAppId
+    , reduceLoopEdge
     ]
