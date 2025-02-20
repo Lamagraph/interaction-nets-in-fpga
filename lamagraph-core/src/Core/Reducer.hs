@@ -128,20 +128,20 @@ findNextEnd fullEdges connection =
     Connection portsNumber ->
     Index n ->
     Maybe (Connection portsNumber, Index n)
-  helper es end@(Connected (Port address _)) indexCounter =
-    case es of
+  helper allEdges end@(Connected (Port address _)) indexCounter =
+    case allEdges of
       Nil -> Nothing
-      Cons e es' ->
-        case e of
-          Nothing -> helper es' end (indexCounter + 1)
-          Just (Edge c1@(Connected (Port a1 _)) c2@(Connected (Port a2 _))) ->
-            if a1 == address
-              then Just (c2, indexCounter)
-              else if a2 == address then Just (c1, indexCounter) else helper es' end (indexCounter + 1)
+      Cons edge otherEdges ->
+        case edge of
+          Nothing -> helper otherEdges end (indexCounter + 1)
+          Just (Edge leftConnection@(Connected (Port leftAddress _)) rightConnection@(Connected (Port rightAddress _))) ->
+            if leftAddress == address
+              then Just (rightConnection, indexCounter)
+              else if rightAddress == address then Just (leftConnection, indexCounter) else helper otherEdges end (indexCounter + 1)
           Just (Edge NotConnected (Connected (Port a _))) ->
-            if a == address then Just (NotConnected, indexCounter) else helper es' end (indexCounter + 1)
-          Just (Edge (Connected (Port a _)) NotConnected) -> if a == address then Just (NotConnected, indexCounter) else helper es' end (indexCounter + 1)
-          Just (Edge NotConnected NotConnected) -> helper es' end (indexCounter + 1)
+            if a == address then Just (NotConnected, indexCounter) else helper otherEdges end (indexCounter + 1)
+          Just (Edge (Connected (Port a _)) NotConnected) -> if a == address then Just (NotConnected, indexCounter) else helper otherEdges end (indexCounter + 1)
+          Just (Edge NotConnected NotConnected) -> helper otherEdges end (indexCounter + 1)
   helper _ NotConnected _ = undefined
 
 {- | Get all `AddressNumber`s of external `Node`s of `ActivePair`, i.e. collect addresses of connected to active pair nodes
