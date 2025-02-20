@@ -84,3 +84,15 @@ getAllConnections ::
   Node portsNumber agentType ->
   Vec (portsNumber + 1) (Maybe (Connection portsNumber))
 getAllConnections node = Just (node ^. primaryPort) :> (node ^. secondaryPorts)
+
+findConnection ::
+  (KnownNat portsNumber) =>
+  Node portsNumber agentType ->
+  Connection portsNumber ->
+  Maybe (Connection portsNumber)
+findConnection (Node primPort secPorts _) = \case
+  NotConnected -> Nothing
+  Connected (Port _ portId) ->
+    case portId of
+      Primary -> Just primPort
+      Id i -> secPorts !! i

@@ -3,10 +3,12 @@
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+{-# HLINT ignore "Avoid lambda" #-}
+
 module Core.Reducer where
 
 import Clash.Prelude
-import Control.Lens hiding (Index, (:>))
+import Control.Lens hiding (Index, ifoldl, (:>))
 import Core.MemoryManager.MemoryManager
 import Core.MemoryManager.NodeChanges
 import Core.Node
@@ -18,7 +20,129 @@ toDelta ::
   ActivePair portsNumber agentType ->
   ReduceRuleResult nodesNumber edgesNumber portsNumber agentType ->
   Delta nodesNumber edgesNumber portsNumber agentType
-toDelta acPair (ReduceRuleResult resultEdges resultNodes) = Delta resultNodes resultEdges acPair
+toDelta acPair (ReduceRuleResult resultEdges resultNodes) = Delta resultNodes (edgesReduction acPair resultEdges) acPair
+
+edgesReduction ::
+  forall portsNumber edgesNumber agentType.
+  (KnownNat portsNumber, KnownNat edgesNumber) =>
+  ActivePair portsNumber agentType ->
+  Vec edgesNumber (Maybe (Edge portsNumber)) ->
+  Vec edgesNumber (Maybe (Edge portsNumber))
+edgesReduction
+  ( ActivePair
+      (LoadedNode leftActiveNode leftActiveAddress)
+      (LoadedNode rightActiveNode rightActiveAddress)
+    )
+  fullEdges =
+    snd $
+      ifoldl
+        ( \(excludeEdges, resEdges) i maybeEdge ->
+            let (exEdges, rEdge) = if excludeEdges !! i then (repeat False, def) else edgeProcessing maybeEdge (repeat False)
+             in (exEdges `insertVec` excludeEdges, rEdge +>> resEdges)
+        )
+        (repeat @edgesNumber False, def)
+        fullEdges
+   where
+    insertVec insertedVec toVec =
+      ifoldl
+        (\acc i el -> (if el then replace i True acc else acc))
+        toVec
+        insertedVec
+    edgeProcessing ::
+      Maybe (Edge portsNumber) ->
+      Vec edgesNumber Bool ->
+      (Vec edgesNumber Bool, Maybe (Edge portsNumber))
+    edgeProcessing edge@(Just (Edge leftConnection rightConnection)) acc =
+      case (getActiveNodeByConnection leftConnection, getActiveNodeByConnection rightConnection) of
+        (Just leftConnectionTo, Just rightConnectionTo) ->
+          case (leftConnectionTo, rightConnectionTo) of
+            (NotConnected, NotConnected) -> (acc, Nothing)
+            (NotConnected, Connected _) -> handleOneEndEdge leftConnection rightConnectionTo NotConnected
+            -- if isActive address
+            --   then oneEndIsActive leftConnection rightConnectionTo
+            --   else (acc, Just $ Edge leftConnectionTo rightConnectionTo)
+            (Connected _, NotConnected) -> handleOneEndEdge rightConnection leftConnectionTo NotConnected
+            -- if isActive address
+            --   then oneEndIsActive rightConnection leftConnectionTo
+            --   else (acc, Just $ Edge leftConnectionTo rightConnectionTo)
+            (Connected (Port lAddress _), Connected (Port rAddress _)) -> case (isActive lAddress, isActive rAddress) of
+              (False, False) -> (acc, Just $ Edge leftConnectionTo rightConnectionTo)
+              (False, True) -> oneEndIsActive leftConnection rightConnectionTo
+              (True, False) -> oneEndIsActive rightConnection leftConnectionTo
+              (True, True) -> case (findNextEnd fullEdges leftConnectionTo, findNextEnd fullEdges rightConnectionTo) of
+                (Just (leftNextConnection, leftIndex), Just (rightNextConnection, rightIndex)) ->
+                  if acc !! leftIndex || acc !! rightIndex
+                    then (acc, Nothing)
+                    else
+                      edgeProcessing
+                        (Just $ Edge leftNextConnection rightNextConnection)
+                        (replace leftIndex True (replace rightIndex True acc))
+                (_, _) -> (acc, Nothing)
+        (Nothing, Just rightConnectionTo) -> case rightConnectionTo of
+          NotConnected -> (acc, Just $ Edge leftConnection NotConnected)
+          Connected _ -> handleOneEndEdge leftConnection rightConnectionTo leftConnection
+        -- if isActive address
+        --   then oneEndIsActive leftConnection rightConnectionTo
+        --   else (acc, Just $ Edge leftConnection rightConnectionTo)
+        (Just leftConnectionTo, Nothing) -> case leftConnectionTo of
+          NotConnected -> (acc, Just $ Edge NotConnected rightConnection)
+          Connected _ -> handleOneEndEdge rightConnection leftConnectionTo rightConnection
+        -- if isActive address
+        --   then oneEndIsActive leftConnectionTo rightConnection
+        --   else (acc, Just $ Edge leftConnectionTo rightConnection)
+        (Nothing, Nothing) -> (acc, edge)
+     where
+      oneEndIsActive fixEnd steppedEnd = case findNextEnd fullEdges steppedEnd of
+        Just (connection, i) ->
+          if acc !! i then (acc, Nothing) else edgeProcessing (Just $ Edge fixEnd connection) (replace i True acc)
+        Nothing -> (acc, Nothing)
+      handleOneEndEdge fixedConnection steppedOverActiveConnection@(Connected (Port address _)) externalConnection =
+        if isActive address
+          then oneEndIsActive fixedConnection steppedOverActiveConnection
+          else (acc, Just $ Edge steppedOverActiveConnection externalConnection)
+      handleOneEndEdge _ NotConnected _ = error ""
+    edgeProcessing Nothing _ = (repeat False, Nothing)
+    getActiveNodeByConnection connection =
+      ( \(Port address _) ->
+          if address == leftActiveAddress
+            then findConnection leftActiveNode connection
+            else if address == rightActiveAddress then findConnection rightActiveNode connection else Nothing
+      )
+        =<< connection
+    isActive a = a == leftActiveAddress || a == rightActiveAddress
+
+-- | Find adjacent `Connection` and index of it in `Vec` among `Edge`s
+findNextEnd ::
+  forall n portsNumber.
+  (KnownNat n) =>
+  Vec n (Maybe (Edge portsNumber)) ->
+  Connection portsNumber ->
+  Maybe (Connection portsNumber, Index n)
+findNextEnd fullEdges connection =
+  helper fullEdges connection 0
+ where
+  helper ::
+    forall n1.
+    (KnownNat n1) =>
+    Vec n1 (Maybe (Edge portsNumber)) ->
+    Connection portsNumber ->
+    Index n ->
+    Maybe (Connection portsNumber, Index n)
+  helper es end@(Connected (Port address _)) indexCounter =
+    case es of
+      Nil -> Nothing
+      Cons e es' ->
+        case e of
+          Nothing -> helper es' end (indexCounter + 1)
+          Just (Edge c1@(Connected (Port a1 _)) c2@(Connected (Port a2 _))) ->
+            if a1 == address
+              then Just (c2, indexCounter)
+              else if a2 == address then Just (c1, indexCounter) else helper es' end (indexCounter + 1)
+          Just (Edge NotConnected (Connected (Port a _))) ->
+            if a == address then Just (NotConnected, indexCounter) else helper es' end (indexCounter + 1)
+          Just (Edge (Connected (Port a _)) NotConnected) -> if a == address then Just (NotConnected, indexCounter) else helper es' end (indexCounter + 1)
+          Just (Edge NotConnected NotConnected) -> helper es' end (indexCounter + 1)
+  helper _ NotConnected _ = undefined
 
 {- | Get all `AddressNumber`s of external `Node`s of `ActivePair`, i.e. collect addresses of connected to active pair nodes
 
