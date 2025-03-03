@@ -1,5 +1,9 @@
 # Interaction nets based processor in Clash
 
+> [!NOTE]
+> This branch contains code for Closure Conversion, Lambda Lifting, ANF and pretty basic LLVM codegen.
+> This code was written for the compiler course at our uni and this branch is here for historical reasons.
+
 ## Required tools
 
 ### Pre-commit
