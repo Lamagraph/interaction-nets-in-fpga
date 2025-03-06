@@ -31,6 +31,9 @@ tyChar = mkTConstr "char" []
 tyString :: Ty
 tyString = mkTConstr "string" []
 
+tyUnit :: Ty
+tyUnit = mkTConstr "()" []
+
 ---------------------
 -- Algebraic types --
 ---------------------
@@ -79,4 +82,6 @@ defaultEnv = TyEnv env
         )
       , (trueConstrName, Forall [] tyBool)
       , (falseConstrName, Forall [] tyBool)
+      , (Name $ mkLongident $ pure "~-", Forall [] $ tyInt `TArrow` tyInt)
+      , (Name $ mkLongident $ pure "print_int", Forall [] $ tyInt `TArrow` tyUnit)
       ]

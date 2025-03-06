@@ -28,6 +28,7 @@ library
       Lamagraph.Compiler.Core.LmlToCore
       Lamagraph.Compiler.Core.MonadDesugar
       Lamagraph.Compiler.Core.Pretty
+      Lamagraph.Compiler.Eval
       Lamagraph.Compiler.Extension
       Lamagraph.Compiler.Parser
       Lamagraph.Compiler.Parser.Lexer
@@ -55,6 +56,7 @@ library
       Lamagraph.Compiler.Typechecker.Instances
       Lamagraph.Compiler.Typechecker.TcTypes
       Lamagraph.Compiler.Typechecker.Unification
+      Lamagraph.Compiler.Utils
   other-modules:
       Paths_lamagraph_compiler
   hs-source-dirs:
@@ -80,6 +82,7 @@ library
     , prettyprinter
     , relude
     , string-interpolate
+    , unliftio
   default-language: GHC2021
 
 executable lamagraph-compiler-exe
@@ -107,6 +110,7 @@ executable lamagraph-compiler-exe
     , prettyprinter
     , relude
     , string-interpolate
+    , unliftio
   default-language: GHC2021
 
 test-suite lamagraph-compiler-test
@@ -114,6 +118,7 @@ test-suite lamagraph-compiler-test
   main-is: Spec.hs
   other-modules:
       Lamagraph.Compiler.Core.PrettyCoreGolden
+      Lamagraph.Compiler.Eval.EvalGolden
       Lamagraph.Compiler.GoldenCommon
       Lamagraph.Compiler.Parser.LexerTest
       Lamagraph.Compiler.Parser.ParserRoundtrip
@@ -148,4 +153,5 @@ test-suite lamagraph-compiler-test
     , tasty-golden
     , tasty-hedgehog
     , tasty-hunit
+    , unliftio
   default-language: GHC2021

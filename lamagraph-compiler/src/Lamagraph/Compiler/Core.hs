@@ -23,7 +23,7 @@ type DataCon = Name
 -- TODO: Is this wrapper really required?
 newtype Var
   = Id Name -- Term variable
-  deriving (Eq, Show)
+  deriving (Eq, Show, Hashable)
 
 data Expr b
   = Var b

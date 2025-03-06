@@ -15,15 +15,11 @@ import Control.Lens
 import Control.Monad.Except
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
-import Data.Sequences qualified
 import Data.Tuple.Extra
 
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.TcTypes
-
--- | This function generates words @a@, ..., @z@, @aa@, ..., @az@ and so on.
-letters :: [Text]
-letters = [1 ..] >>= flip Data.Sequences.replicateM ['a' .. 'z']
+import Lamagraph.Compiler.Utils
 
 freshTVar :: MonadTypecheck Ty
 freshTVar = do

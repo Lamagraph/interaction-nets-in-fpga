@@ -14,6 +14,7 @@
  >=: int -> int -> bool
  ap: forall 'd. (int -> 'd) -> 'd
  a: int
+ print_int: int -> ()
  y: forall 'g 'f. 'f -> 'g -> (int * char * string * ('f * 'g))
  Some: forall 'a. 'a -> 'a option
  *: int -> int -> int
@@ -23,6 +24,7 @@
  z': int list
  z'': int list
  w: int
+ ~-: int -> int
  s: int option
  (Just
  (L
