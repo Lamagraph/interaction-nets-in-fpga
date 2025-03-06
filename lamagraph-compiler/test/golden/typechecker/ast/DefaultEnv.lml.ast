@@ -10,11 +10,13 @@
  +: int -> int -> int
  []: forall 'a. 'a list
  >=: int -> int -> bool
+ print_int: int -> ()
  y: int
  Some: forall 'a. 'a -> 'a option
  *: int -> int -> int
  <=: int -> int -> bool
  ::: forall 'a. ('a * 'a list) -> 'a list
+ ~-: int -> int
  (Just
  (L
   { :1:8-18 }

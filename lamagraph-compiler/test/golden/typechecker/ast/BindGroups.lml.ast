@@ -11,6 +11,7 @@
  e: int
  >=: int -> int -> bool
  a: string
+ print_int: int -> ()
  id: int -> int
  h: int -> int
  even: int -> bool
@@ -19,6 +20,7 @@
  <=: int -> int -> bool
  ::: forall 'a. ('a * 'a list) -> 'a list
  f: int option -> int option
+ ~-: int -> int
  odd: int -> bool
  b: int
  (Just

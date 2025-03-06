@@ -105,7 +105,7 @@ inferLmlBindGroup env (LmlBindGroup _ Recursive binds) = do
       envWithPats = TyEnv $ patsEnv `HashMap.union` coerce env
       t = NE.zip patInfo binds
   (newEnvs, lBinds) <- NE.unzip <$> mapM (uncurry (inferLLmlRecBind envWithPats)) t
-  bgEnv <- foldlM1 tyEnvUnionDisj newEnvs
+  bgEnv <- foldlM1 tyEnvUnionDisj (NE.cons env newEnvs)
   pure (bgEnv, LmlBindGroup noExtField Recursive lBinds)
 
 inferLLmlRecBind :: TyEnv -> (Ty, Subst, LLmlPat LmlcTc) -> LLmlBind LmlcPs -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)

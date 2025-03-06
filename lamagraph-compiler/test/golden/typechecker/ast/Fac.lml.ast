@@ -11,6 +11,7 @@
  fixCBV: (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
  fac'': (int -> int) -> int -> int
  >=: int -> int -> bool
+ print_int: int -> ()
  fixCBN: ('aj -> 'aj) -> 'aj
  fac: int -> int
  Some: forall 'a. 'a -> 'a option
@@ -20,6 +21,7 @@
  fix: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
  w: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
  fac': int -> int
+ ~-: int -> int
  (Just
  (L
   { :1:8-11 }

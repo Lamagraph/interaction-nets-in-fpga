@@ -11,10 +11,12 @@
  _I: forall 'b. 'b -> 'b
  []: forall 'a. 'a list
  >=: int -> int -> bool
+ print_int: int -> ()
  Some: forall 'a. 'a -> 'a option
  *: int -> int -> int
  <=: int -> int -> bool
  ::: forall 'a. ('a * 'a list) -> 'a list
+ ~-: int -> int
  _B: forall 'o 't 'v 'r 'n 'u 'w 's. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
  _S: forall 'i 'k 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
  (Just

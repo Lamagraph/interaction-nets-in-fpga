@@ -3,6 +3,7 @@ module Lamagraph.Compiler.GoldenCommon (
   parserSourceGoldenTestsDir,
   typecheckerSourceGoldenTestsDir,
   coreSourceGoldenTestsDir,
+  evalSourceGoldenTestsDir,
   lmlExt,
   changeFileDir,
 ) where
@@ -27,6 +28,9 @@ typecheckerSourceGoldenTestsDir = baseGoldenTestsDir </> "typechecker" </> "sour
 
 coreSourceGoldenTestsDir :: FilePath
 coreSourceGoldenTestsDir = baseGoldenTestsDir </> "core" </> "source"
+
+evalSourceGoldenTestsDir :: FilePath
+evalSourceGoldenTestsDir = baseGoldenTestsDir </> "eval" </> "source"
 
 lmlExt :: FilePath
 lmlExt = ".lml"

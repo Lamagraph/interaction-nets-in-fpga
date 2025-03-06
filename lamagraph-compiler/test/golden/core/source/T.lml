@@ -2,3 +2,13 @@ let f x = match x with
     | 1 -> 2
     | 2 -> 1
     | y -> y * 7
+
+let h x = match x with
+    | [] -> "Why empty?!"
+    | hd :: tl -> match hd with
+        | Some a -> "We got Some!"
+        | None -> "None, no..."
+
+let g x = match x with | [] -> "Why empty?!" | hd :: tl -> match hd with | Some a -> "We got Some!" | None -> "None, no..."
+
+let v = [Some 1]

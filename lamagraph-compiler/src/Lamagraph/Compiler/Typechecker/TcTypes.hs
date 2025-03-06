@@ -111,7 +111,8 @@ data TypecheckError
   | NonVariableInLetRec
   | VariableClashInPattern Name
   | VarMustOccurOnBothSidesOfOrPattern Name
-  deriving (Show)
+  deriving (Show, Typeable)
+instance Exception TypecheckError
 
 data MonadTypecheckState = MonadTypecheckState {_freshCounter :: Int, _currentSubst :: Subst}
 

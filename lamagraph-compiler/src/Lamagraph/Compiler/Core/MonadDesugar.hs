@@ -6,11 +6,11 @@ import Relude
 import Relude.Unsafe ((!!))
 
 import Control.Lens
-import Data.Sequences qualified
 
 import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.TcTypes
+import Lamagraph.Compiler.Utils
 
 newtype MonadDesugarState = MonadDesugarState {_freshDsCounter :: Int}
 
@@ -26,12 +26,6 @@ type MonadDesugar a = State MonadDesugarState a
 
 runMonadDesugar :: MonadDesugar a -> a
 runMonadDesugar f = evalState f defaultMonadDesugarState
-
--- FIXME: Copied from Typechecker
-
--- | This function generates words @a@, ..., @z@, @aa@, ..., @az@ and so on.
-letters :: [Text]
-letters = [1 ..] >>= flip Data.Sequences.replicateM ['a' .. 'z']
 
 freshVar :: MonadDesugar Var
 freshVar = do

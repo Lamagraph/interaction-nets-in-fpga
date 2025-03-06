@@ -1,0 +1,6 @@
+let fac n =
+  let rec helper n acc = if n < 2 then acc else helper (n - 1) (n * acc)
+  in helper n 1
+
+let out1 = print_int (fac 1)
+let out2 = print_int (fac 5)
