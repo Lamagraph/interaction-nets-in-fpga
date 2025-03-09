@@ -13,6 +13,7 @@ import Core.MemoryManager.MemoryManager
 import Core.MemoryManager.NodeChanges
 import Core.Node
 
+import Data.Maybe (isNothing)
 import INet.Net
 
 toDelta ::
@@ -22,6 +23,7 @@ toDelta ::
   Delta nodesNumber edgesNumber portsNumber agentType
 toDelta acPair (ReduceRuleResult resultEdges resultNodes) = Delta resultNodes (edgesReduction acPair resultEdges) acPair
 
+-- | Make transitive reduction of `Edge`s
 edgesReduction ::
   forall portsNumber edgesNumber agentType.
   (KnownNat portsNumber, KnownNat edgesNumber) =>
@@ -183,3 +185,32 @@ reduce chooseReductionRule memoryManager activeP = (toDelta <$> activeP <*> redu
   (freeAddresses, newMemoryManager) =
     giveAddresses (view necessaryAddressesCount <$> reductionRuleInfo) memoryManager
   reduceRuleResult = transitionFunction <*> freeAddresses <*> leftLoadedNode <*> rightLoadedNode
+
+{- | Give the next root `Node` after reduction that
+1) Contains exactly one `NotConnected` `Port`
+1) Is the only one
+3) Is contained in one and only component of connectivity
+-}
+changeRootNode ::
+  forall portsNumber nodesNumber edgesNumber agentType.
+  ( KnownNat portsNumber
+  , KnownNat nodesNumber
+  , KnownNat edgesNumber
+  ) =>
+  ActivePair portsNumber agentType ->
+  AddressNumber ->
+  Delta nodesNumber edgesNumber portsNumber agentType ->
+  AddressNumber
+changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress)) oldRootNode delta =
+  if oldRootNode == leftAddress || oldRootNode == rightAddress
+    then case findInMaybeNodes (delta ^. newNodes) of
+      Nothing -> error "There is must be a root Node in the Net"
+      Just x -> x
+    else oldRootNode
+ where
+  nodeHasFreePort (Node primPort secPorts _) = any (maybe False isNothing) (Just primPort :> secPorts)
+  findInMaybeNodes :: forall n. (KnownNat n) => Vec n (Maybe (LoadedNode portsNumber agentType)) -> Maybe AddressNumber
+  findInMaybeNodes = \case
+    Nil -> Nothing
+    Cons (Just (LoadedNode n a)) ns -> if nodeHasFreePort n then Just a else findInMaybeNodes ns
+    Cons Nothing ns -> findInMaybeNodes ns
