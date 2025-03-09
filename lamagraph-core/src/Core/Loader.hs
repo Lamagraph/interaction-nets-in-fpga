@@ -16,7 +16,6 @@ type Ram dom portsNumber agentType =
 -- | Read external `Node`s from ram
 loadInterface ::
   ( KnownDomain dom
-  , HiddenClockResetEnable dom
   , KnownNat portsNumber
   , KnownNat externalNodesNumber
   ) =>
@@ -36,7 +35,7 @@ loadInterface ram interface =
 
 -- | Load `ActivePair` by `AddressNumber`. It is assumed that `AddressNumber` is actually active
 loadActivePair ::
-  (KnownDomain dom, HiddenClockResetEnable dom, KnownNat portsNumber) =>
+  (KnownDomain dom, KnownNat portsNumber) =>
   Ram dom portsNumber agentType ->
   Signal dom AddressNumber ->
   Signal dom (ActivePair portsNumber agentType)
