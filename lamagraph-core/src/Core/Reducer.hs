@@ -204,8 +204,10 @@ changeRootNode ::
 changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress)) oldRootNode delta =
   if oldRootNode == leftAddress || oldRootNode == rightAddress
     then case findInMaybeNodes (delta ^. newNodes) of
-      Nothing -> error "There is must be a root Node in the Net"
-      Just x -> x
+      Nothing -> case findInMaybeEdges (delta ^. newEdges) of
+        Nothing -> error "There is must be a root Node in the Net"
+        Just a -> a
+      Just a -> a
     else oldRootNode
  where
   nodeHasFreePort (Node primPort secPorts _) = any (maybe False isNothing) (Just primPort :> secPorts)
@@ -214,3 +216,12 @@ changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress
     Nil -> Nothing
     Cons (Just (LoadedNode n a)) ns -> if nodeHasFreePort n then Just a else findInMaybeNodes ns
     Cons Nothing ns -> findInMaybeNodes ns
+  findInMaybeEdges :: forall n. (KnownNat n) => Vec n (Maybe (Edge portsNumber)) -> Maybe AddressNumber
+  findInMaybeEdges = \case
+    Nil -> Nothing
+    Cons (Just (Edge leftConnection rightConnection)) es -> case (leftConnection, rightConnection) of
+      (NotConnected, NotConnected) -> errorX "Wrong delta: NotConnected -- NotConnected edge"
+      (NotConnected, Connected (Port address _)) -> Just address
+      (Connected (Port address _), NotConnected) -> Just address
+      (Connected _, Connected _) -> findInMaybeEdges es
+    Cons Nothing es -> findInMaybeEdges es
