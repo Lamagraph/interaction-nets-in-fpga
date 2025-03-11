@@ -38,7 +38,7 @@ applyToLambdaRule _ loadedNodeLeft loadedNodeRight =
       portsToEdgeEnds node = map (fromMaybe (error "Agent type of the node is incorrect")) (node ^. containedNode . secondaryPorts)
       lE = portsToEdgeEnds loadedNodeLeft
       rE = portsToEdgeEnds loadedNodeRight
-      arisingEdges = zipWith (\l r -> Just $ Edge l r) lE (reverse rE)
+      arisingEdges = zipWith (\l r -> Just $ Edge l r) lE rE
    in ReduceRuleResult arisingEdges arisingNodes
 
 {- | Reduce rule fot `Erase` and `Abstract` or `Apply`
