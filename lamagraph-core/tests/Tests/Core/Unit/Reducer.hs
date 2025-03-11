@@ -107,7 +107,7 @@ reduceLoopEdge =
 reducerUnitTests :: TestTree
 reducerUnitTests =
   testGroup
-    "Unit tests"
+    "Reducer"
     [ noInterface
     , emptyInterface
     , nonEmptyInterface
