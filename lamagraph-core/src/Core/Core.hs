@@ -8,8 +8,7 @@ module Core.Core where
 
 import Clash.Explicit.Prelude (unsafeSynchronizer)
 import Clash.Prelude
-import Control.Lens hiding ((:>))
-import Core.Loader (Ram, loadActivePair, loadInterface, removeActivePairFromRam)
+import Core.Loader (Ram, loadActivePair, loadInterface, removeActivePairFromRam, writeChanges)
 import Core.MemoryManager.ChangesAccumulator (getAllChangesByDelta)
 import Core.MemoryManager.MemoryManager (
   MemoryManager,
@@ -19,6 +18,7 @@ import Core.MemoryManager.MemoryManager (
 import Core.MemoryManager.NodeChanges
 import Core.Node
 import Core.Reducer
+import Data.Maybe (fromJust, isJust)
 import INet.Net
 
 data CoreStatus = Start | InProgress | Done deriving (Eq, Show, Generic, NFDataX, ShowX)
@@ -66,58 +66,49 @@ core ::
   (Signal domSlow AddressNumber, Signal domSlow CoreStatus) -- maybe we should return also memory manager
 core clkSlow clkFast myAsyncRam initialRootNodeAddress initialMemoryManager chooseReductionRule = (rootNodeAddress, status)
  where
-  -- registerExposed initial next= exposeClockResetEnable (register @domSlow initial next) clkSlow resetGen enableGen
   memoryManager = exposeClockResetEnable (register @domSlow initialMemoryManager nextMemoryManager) clkSlow resetGen enableGen
   rootNodeAddress = exposeClockResetEnable (register @domSlow initialRootNodeAddress nextRootNodeAddress) clkSlow resetGen enableGen
   status = exposeClockResetEnable (register @domSlow Start nextStatusCode) clkSlow resetGen enableGen
 
   (nextMemoryManager, nextRootNodeAddress, nextStatusCode) =
-    case sequenceA $ giveActiveAddressNumber memoryManager of
-      Just activeAddress ->
-        ( allocatedAddressesMemoryManagerAsync
-        , changeRootNode <$> acPairSlowed <*> rootNodeAddress <*> deltaAsync
-        , pure InProgress
-        )
-       where
-        -- read
-        acPair = loadActivePair @domFast myAsyncRam (unsafeSynchronizer clkSlow clkFast activeAddress)
-        acPairSlowed = unsafeSynchronizer clkFast clkSlow acPair
-        -- ========
-        -- no ram block
-        -- ========
-        -- first part of read
-        removedActivePairMemoryManagerAsync = removeActivePair acPairSlowed memoryManager
-        (deltaAsync, allocatedAddressesMemoryManagerAsync) = reduce chooseReductionRule removedActivePairMemoryManagerAsync acPairSlowed
-        interfaceAsync = getInterface @portsNumber @nodesNumber <$> acPairSlowed
+    unbundle $
+      mux
+        thereIsActivePairExists
+        (bundle $ takeAStep (fromJust <$> giveActiveAddressNumber memoryManager))
+        (bundle (memoryManager, rootNodeAddress, pure Done))
+   where
+    thereIsActivePairExists = isJust <$> giveActiveAddressNumber memoryManager
+    takeAStep activeAddress =
+      ( allocatedAddressesMemoryManager
+      , changeRootNode <$> acPairSlowed <*> rootNodeAddress <*> deltaAsync
+      , pure InProgress
+      )
+     where
+      -- read
+      acPair = loadActivePair @domFast myAsyncRam (unsafeSynchronizer clkSlow clkFast activeAddress)
+      acPairSlowed = unsafeSynchronizer clkFast clkSlow acPair
+      -- ========
+      -- no ram block
+      -- ========
+      -- first part of read
+      removedActivePairMemoryManager = removeActivePair acPairSlowed memoryManager
+      (deltaAsync, allocatedAddressesMemoryManager) = reduce chooseReductionRule removedActivePairMemoryManager acPairSlowed
+      interface = getInterface @portsNumber @((*) 2 portsNumber) <$> acPairSlowed
 
-        -- read [Can I merge read and write?]
-        externalNodesAsync = loadInterface myAsyncRam (unsafeSynchronizer clkSlow clkFast interfaceAsync)
-        -- ======
-        -- no ram block
-        -- ======
-        -- second part of read
-        changesAsync =
-          updateLoadedNodesByChanges
-            <$> externalNodesAsync
-            <*> unsafeSynchronizer clkSlow clkFast (getAllChangesByDelta deltaAsync interfaceAsync)
+      -- read [Can I merge read and write?]
+      externalNodes = loadInterface myAsyncRam (unsafeSynchronizer clkSlow clkFast interface)
+      -- ======
+      -- no ram block
+      -- ======
+      -- second part of read
+      changes =
+        updateLoadedNodesByChanges
+          <$> externalNodes
+          <*> unsafeSynchronizer clkSlow clkFast (getAllChangesByDelta deltaAsync interface)
 
-        -- write TODO: merge it
-        !_ = removeActivePairFromRam myAsyncRam acPair
-        !_ =
-          writeChanges
-            myAsyncRam
-            changesAsync
-      Nothing -> (memoryManager, rootNodeAddress, pure Done)
-
-writeChanges ::
-  (KnownNat maxNumOfChangedNodes, KnownNat portsNumber, KnownDomain domWrite) =>
-  Ram domWrite portsNumber agentType ->
-  Signal domWrite (Vec maxNumOfChangedNodes (Maybe (LoadedNode portsNumber agentType))) ->
-  Vec maxNumOfChangedNodes (Signal domWrite (Maybe (Node portsNumber agentType)))
-writeChanges ram changes = map writeByLoadedNode (unbundle changes)
- where
-  writeByLoadedNode signalMaybeLoadedNode = case sequenceA signalMaybeLoadedNode of
-    Nothing -> ram (pure 0) def
-    Just signalLoadedNode ->
-      let f = Just (view originalAddress <$> signalLoadedNode, Just . view containedNode <$> signalLoadedNode)
-       in ram (pure 0) (traverse bundle f)
+      -- write TODO: merge it
+      !_ = removeActivePairFromRam myAsyncRam acPair
+      !_ =
+        writeChanges
+          myAsyncRam
+          changes

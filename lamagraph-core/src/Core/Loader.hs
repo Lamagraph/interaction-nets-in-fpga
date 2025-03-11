@@ -5,6 +5,7 @@ import Control.Lens (view)
 import Core.MemoryManager.MemoryManager (ActivePair (ActivePair), leftNode, rightNode)
 import Core.MemoryManager.NodeChanges
 import Core.Node
+import Data.Maybe (fromJust, fromMaybe, isJust)
 
 -- | Type alias for partial applied `blockRam`
 type Ram dom portsNumber agentType =
@@ -25,13 +26,20 @@ loadInterface ::
 loadInterface ram interface =
   bundle $
     map
-      (traverse readFromRam . sequenceA)
+      ( \signalMaybeAddress ->
+          mux
+            (isJust <$> signalMaybeAddress)
+            ( let a = fromJust <$> signalMaybeAddress
+               in Just <$> readFromRam a
+            )
+            (pure Nothing)
+      )
       (unbundle interface)
  where
   partRam address = ram address def
-  readFromRam address = case sequenceA (partRam address) of
-    Just node -> LoadedNode <$> node <*> address
-    Nothing -> error "An attempt to read at a free address"
+  readFromRam address = (LoadedNode . fromMaybeErrorX <$> partRam address) <*> address
+   where
+    fromMaybeErrorX = fromMaybe (error "An attempt to read at a free address")
 
 -- | Load `ActivePair` by `AddressNumber`. It is assumed that `AddressNumber` is actually active
 loadActivePair ::
@@ -45,12 +53,8 @@ loadActivePair ram leftActiveNodeAddress =
     <*> (LoadedNode <$> rightActiveNode <*> rightActiveNodeAddress)
  where
   partRam address = ram address def
-  getNodeByAddress address = case sequenceA $ partRam address of
-    Just node -> node
-    Nothing -> error "An attempt to read at a free address"
-  getRightActiveNodeAddress node = case view primaryPort node of
-    Connected port -> view nodeAddress port
-    NotConnected -> error "Wrong definition of active pair"
+  getNodeByAddress address = fromMaybe (errorX "An attempt to read at a free address") <$> partRam address
+  getRightActiveNodeAddress node = view nodeAddress (fromMaybe (errorX "Wrong definition of active pair") $ view primaryPort node)
   leftActiveNode = getNodeByAddress leftActiveNodeAddress
   rightActiveNodeAddress = getRightActiveNodeAddress <$> leftActiveNode
   rightActiveNode = getNodeByAddress rightActiveNodeAddress
@@ -64,3 +68,20 @@ removeActivePairFromRam ram acPair = map (\address -> partRam (Just <$> bundle (
   partRam = ram def
   leftAddress = view (leftNode . originalAddress) <$> acPair
   rightAddress = view (rightNode . originalAddress) <$> acPair
+
+writeChanges ::
+  (KnownNat maxNumOfChangedNodes, KnownNat portsNumber, KnownDomain domWrite) =>
+  Ram domWrite portsNumber agentType ->
+  Signal domWrite (Vec maxNumOfChangedNodes (Maybe (LoadedNode portsNumber agentType))) ->
+  Vec maxNumOfChangedNodes (Signal domWrite (Maybe (Node portsNumber agentType)))
+writeChanges ram changes = map writeByLoadedNode (unbundle changes)
+ where
+  writeByLoadedNode signalMaybeLoadedNode =
+    mux
+      (isJust <$> signalMaybeLoadedNode)
+      (g (fromJust <$> signalMaybeLoadedNode))
+      (ram (pure 0) def)
+   where
+    g signalLoadedNode =
+      let f = Just (view originalAddress <$> signalLoadedNode, Just . view containedNode <$> signalLoadedNode)
+       in ram (pure 0) (traverse bundle f)
