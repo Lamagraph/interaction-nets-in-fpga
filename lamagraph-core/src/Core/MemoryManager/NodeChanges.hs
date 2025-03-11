@@ -70,6 +70,6 @@ updateLoadedNodesByChanges externalLoadedNodes mapOfChanges =
     (\maybeLoadedNode -> applyChangesToLoadedNode <$> maybeLoadedNode <*> (getChangesByLoadedNode <$> maybeLoadedNode))
     externalLoadedNodes
  where
-  getChangesByAddress address = fromMaybe (error "some error") (find mapOfChanges address) -- TODO: think about error message
+  getChangesByAddress address = fromMaybe (errorX "External node has no changes") (find mapOfChanges address)
   getChangesByLoadedNode loadedNode = getChangesByAddress $ loadedNode ^. originalAddress
   applyChangesToLoadedNode loadedNode change = over containedNode (`applyChangesToNode` change) loadedNode
