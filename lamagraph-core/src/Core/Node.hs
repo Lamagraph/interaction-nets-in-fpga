@@ -27,13 +27,13 @@ type LocalAddressNumber = AddressNumber
 type ActualAddressNumber = AddressNumber
 
 data IdOfPort (portsNumber :: Nat) = Id (Index portsNumber) | Primary
-  deriving (Generic, Show, Eq, NFDataX)
+  deriving (Generic, Show, Eq, NFDataX, ShowX)
 
 data Port (portsNumber :: Nat) = Port
   { _nodeAddress :: AddressNumber
   , _portConnectedToId :: IdOfPort portsNumber
   }
-  deriving (NFDataX, Generic, Show, Eq)
+  deriving (NFDataX, Generic, Show, Eq, ShowX)
 
 $(makeLenses ''Port)
 
@@ -43,7 +43,7 @@ data Node portsNumber agentType = Node
   , _secondaryPorts :: Vec portsNumber (Maybe (Connection portsNumber))
   , _nodeType :: agentType --  looks like we need some kind of node label. Info about and reduction rules contained IN
   }
-  deriving (NFDataX, Generic, Show, Eq)
+  deriving (NFDataX, Generic, Show, Eq, ShowX)
 
 $(makeLenses ''Node)
 
@@ -56,7 +56,7 @@ data LoadedNode (portsNumber :: Nat) agentType = LoadedNode
   { _containedNode :: Node portsNumber agentType
   , _originalAddress :: ActualAddressNumber
   }
-  deriving (NFDataX, Generic, Show, Eq)
+  deriving (NFDataX, Generic, Show, Eq, ShowX)
 
 $(makeLenses ''LoadedNode)
 

@@ -21,7 +21,7 @@ import Core.Node
 import Core.Reducer
 import INet.Net
 
-data CoreStatus = Start | InProgress | Done deriving (Eq, Show, Generic, NFDataX)
+data CoreStatus = Start | InProgress | Done deriving (Eq, Show, Generic, NFDataX, ShowX)
 
 -- | Load program into ram
 initializer ::
