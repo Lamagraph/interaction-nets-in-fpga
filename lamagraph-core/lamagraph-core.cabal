@@ -80,7 +80,8 @@ common common-options
     lens,
     ghc-typelits-natnormalise,
     ghc-typelits-extra,
-    ghc-typelits-knownnat
+    ghc-typelits-knownnat,
+    template-haskell
 
 
 library
@@ -98,6 +99,7 @@ library
     Core.Concrete.ReduceRulesLambda
     Core.Concrete.Initial
     INet.Net
+    Core.Concrete.TypesTH
   default-language: Haskell2010
 
 -- Builds the executable 'clash', with lamagraph-core project in scope
