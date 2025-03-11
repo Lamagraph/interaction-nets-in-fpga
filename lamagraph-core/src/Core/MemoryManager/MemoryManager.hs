@@ -36,7 +36,7 @@ data ActivePair (portsNumber :: Nat) agentType = ActivePair
   { _leftNode :: LoadedNode portsNumber agentType
   , _rightNode :: LoadedNode portsNumber agentType
   }
-  deriving (Show, Eq, Generic, NFDataX, Bundle)
+  deriving (Show, Eq, Generic, NFDataX, Bundle, ShowX)
 $(makeLenses ''ActivePair)
 
 data MemoryManager (cellsNumber :: Nat)
@@ -189,6 +189,7 @@ giveActiveAddressNumber ::
   (KnownNat cellsNumber, KnownDomain dom, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
   Signal dom (MemoryManager cellsNumber) ->
   Signal dom (Maybe AddressNumber)
-giveActiveAddressNumber memoryManager = case traverse (findIndex id . view activePairs) memoryManager of
-  Just signalIndex -> Just . indexToUnsigned <$> signalIndex
-  Nothing -> def
+giveActiveAddressNumber memoryManager = fmap (indexToUnsigned <$>) signalMaybeIndexAddress
+ where
+  signalActivePairsBusyMap = view activePairs <$> memoryManager
+  signalMaybeIndexAddress = findIndex id <$> signalActivePairsBusyMap
