@@ -1,0 +1,11 @@
+let |> = fun x -> fun f -> f x
+let reverse = fun l -> let rec helper = fun l -> fun acc ->
+                                        match l as t#a with ([], [], acc)
+                                        | ( ::
+                                        , [hd, tl]
+                                        , (helper tl) (:: ((hd), (acc))) )
+              in (helper l) []
+let head = fun l -> match l as t#b with (::, [hd, tl], hd)
+let l1 = :: ((1), (:: ((2), (:: ((3), ([]))))))
+let t1 = print_int (head (reverse l1))
+let t2 = (|> ((|> (reverse l1)) head)) print_int
