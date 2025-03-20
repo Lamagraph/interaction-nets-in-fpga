@@ -1,0 +1,510 @@
+(Module
+ <: int -> int -> bool
+ false: bool
+ -: int -> int -> int
+ t1: ()
+ >: int -> int -> bool
+ /: int -> int -> int
+ true: bool
+ |>: forall 'd 'b. 'b -> ('b -> 'd) -> 'd
+ None: forall 'a. 'a option
+ +: int -> int -> int
+ []: forall 'a. 'a list
+ l1: int list
+ >=: int -> int -> bool
+ print_int: int -> ()
+ t2: ()
+ head: forall 'x. 'x list -> 'x
+ Some: forall 'a. 'a -> 'a option
+ *: int -> int -> int
+ <=: int -> int -> bool
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ reverse: forall 't. 't list -> 't list
+ ~-: int -> int
+ (Just
+ (L
+  { :1:8-12 }
+  ("List")))
+ [ (L
+    { :3:1-19 }
+    (ValD
+     (L
+      { :3:5-19 }
+      (NonRec
+       [ (L
+          { :3:5-19 }
+          (Bind
+           |>: forall 'd 'b. 'b -> ('b -> 'd) -> 'd
+           (L
+            { :3:5-9 }
+            (PatVar
+             'b -> ('b -> 'd) -> 'd
+             (L
+              { :3:5-9 }
+              "|>")))
+           (L
+            { :3:10-19 }
+            (ExprFunction
+             'b -> ('b -> 'd) -> 'd
+             (L
+              { :3:10-11 }
+              (PatVar
+               'b
+               (L
+                { :3:10-11 }
+                "x")))
+             (L
+              { :3:12-19 }
+              (ExprFunction
+               ('b -> 'd) -> 'd
+               (L
+                { :3:12-13 }
+                (PatVar
+                 'b -> 'd
+                 (L
+                  { :3:12-13 }
+                  "f")))
+               (L
+                { :3:16-19 }
+                (ExprApply
+                 'd
+                 (L
+                  { :3:16-17 }
+                  (ExprIdent
+                   'b -> 'd
+                   "f"))
+                 [(L { :3:18-19 } (ExprIdent 'b "x"))])))))))) ]))))
+ , (L
+    { :(5,1)-(9,17) }
+    (ValD
+     (L
+      { :(5,5)-(9,17) }
+      (NonRec
+       [ (L
+          { :(5,5)-(9,17) }
+          (Bind
+           reverse: forall 't. 't list -> 't list
+           (L
+            { :5:5-12 }
+            (PatVar
+             't list -> 't list
+             (L
+              { :5:5-12 }
+              "reverse")))
+           (L
+            { :(5,13)-(9,17) }
+            (ExprFunction
+             't list -> 't list
+             (L
+              { :5:13-14 }
+              (PatVar
+               't list
+               (L
+                { :5:13-14 }
+                "l")))
+             (L
+              { :(6,3)-(9,17) }
+              (ExprLet
+               't list
+               (L
+                { :(6,7)-(8,41) }
+                (Rec
+                 [ (L
+                    { :(6,11)-(8,41) }
+                    (Bind
+                     helper: 't list -> 't list -> 't list
+                     (L
+                      { :6:11-17 }
+                      (PatVar
+                       't list -> 't list -> 't list
+                       (L
+                        { :6:11-17 }
+                        "helper")))
+                     (L
+                      { :(6,18)-(8,41) }
+                      (ExprFunction
+                       't list -> 't list -> 't list
+                       (L
+                        { :6:18-19 }
+                        (PatVar
+                         't list
+                         (L
+                          { :6:18-19 }
+                          "l")))
+                       (L
+                        { :(6,20)-(8,41) }
+                        (ExprFunction
+                         't list -> 't list
+                         (L
+                          { :6:20-23 }
+                          (PatVar
+                           't list
+                           (L
+                            { :6:20-23 }
+                            "acc")))
+                         (L
+                          { :(6,26)-(8,41) }
+                          (ExprMatch
+                           't list
+                           (L
+                            { :6:32-33 }
+                            (ExprIdent
+                             't list
+                             "l"))
+                           [ (L
+                              { :7:7-16 }
+                              (Case
+                               't list -> 't list
+                               (L
+                                { :7:7-9 }
+                                (PatConstruct
+                                 't list
+                                 (L
+                                  { :7:7-9 }
+                                  ("[]"))
+                                 (Nothing)))
+                               (Nothing)
+                               (L
+                                { :7:13-16 }
+                                (ExprIdent
+                                 't list
+                                 "acc"))))
+                           , (L
+                              { :8:7-41 }
+                              (Case
+                               't list -> 't list
+                               (L
+                                { :8:7-15 }
+                                (PatConstruct
+                                 't list
+                                 (L
+                                  { :8:10-12 }
+                                  ("::"))
+                                 (Just
+                                 (L
+                                  { :8:7-15 }
+                                  (PatTuple
+                                   ('t * 'm)
+                                   [ (L
+                                      { :8:7-9 }
+                                      (PatVar
+                                       't
+                                       (L
+                                        { :8:7-9 }
+                                        "hd")))
+                                   , (L
+                                      { :8:13-15 }
+                                      (PatVar
+                                       'm
+                                       (L
+                                        { :8:13-15 }
+                                        "tl"))) ])))))
+                               (Nothing)
+                               (L
+                                { :8:20-41 }
+                                (ExprApply
+                                 't list
+                                 (L
+                                  { :8:20-26 }
+                                  (ExprIdent
+                                   't list -> 't list -> 't list
+                                   "helper"))
+                                 [ (L
+                                    { :8:27-29 }
+                                    (ExprIdent
+                                     't list
+                                     "tl"))
+                                 , (L
+                                    { :8:30-41 }
+                                    (ExprConstruct
+                                     't list
+                                     (L
+                                      { :8:34-36 }
+                                      ("::"))
+                                     (Just
+                                     (L
+                                      { :8:31-40 }
+                                      (ExprTuple
+                                       ('t * 't list)
+                                       [ (L
+                                          { :8:31-33 }
+                                          (ExprIdent
+                                           't
+                                           "hd"))
+                                       , (L
+                                          { :8:37-40 }
+                                          (ExprIdent
+                                           't list
+                                           "acc")) ]))))) ])))) ])))))))) ]))
+               (L
+                { :9:6-17 }
+                (ExprApply
+                 't list
+                 (L
+                  { :9:6-12 }
+                  (ExprIdent
+                   't list -> 't list -> 't list
+                   "helper"))
+                 [ (L
+                    { :9:13-14 }
+                    (ExprIdent
+                     't list
+                     "l"))
+                 , (L
+                    { :9:15-17 }
+                    (ExprConstruct
+                     't list
+                     (L
+                      { :9:15-17 }
+                      ("[]"))
+                     (Nothing))) ])))))))) ]))))
+ , (L
+    { :11:1-41 }
+    (ValD
+     (L
+      { :11:5-41 }
+      (NonRec
+       [ (L
+          { :11:5-41 }
+          (Bind
+           head: forall 'x. 'x list -> 'x
+           (L
+            { :11:5-9 }
+            (PatVar
+             'x list -> 'x
+             (L
+              { :11:5-9 }
+              "head")))
+           (L
+            { :11:10-41 }
+            (ExprFunction
+             'x list -> 'x
+             (L
+              { :11:10-11 }
+              (PatVar
+               'x list
+               (L
+                { :11:10-11 }
+                "l")))
+             (L
+              { :11:14-41 }
+              (ExprMatch
+               'x
+               (L
+                { :11:20-21 }
+                (ExprIdent
+                 'x list
+                 "l"))
+               [ (L
+                  { :11:27-41 }
+                  (Case
+                   'x list -> 'x
+                   (L
+                    { :11:27-35 }
+                    (PatConstruct
+                     'x list
+                     (L
+                      { :11:30-32 }
+                      ("::"))
+                     (Just
+                     (L
+                      { :11:27-35 }
+                      (PatTuple
+                       ('x * 'y)
+                       [ (L
+                          { :11:27-29 }
+                          (PatVar
+                           'x
+                           (L
+                            { :11:27-29 }
+                            "hd")))
+                       , (L
+                          { :11:33-35 }
+                          (PatVar
+                           'y
+                           (L
+                            { :11:33-35 }
+                            "tl"))) ])))))
+                   (Nothing)
+                   (L
+                    { :11:39-41 }
+                    (ExprIdent
+                     'x
+                     "hd")))) ])))))) ]))))
+ , (L
+    { :13:1-19 }
+    (ValD
+     (L
+      { :13:5-19 }
+      (NonRec
+       [ (L
+          { :13:5-19 }
+          (Bind
+           l1: int list
+           (L
+            { :13:5-7 }
+            (PatVar
+             int list
+             (L
+              { :13:5-7 }
+              "l1")))
+           (L
+            { :13:11-19 }
+            (ExprConstruct
+             int list
+             (L
+              { <compiler-generated code> }
+              ("::"))
+             (Just
+             (L
+              { :13:11-19 }
+              (ExprTuple
+               (int * int list)
+               [ (L
+                  { :13:11-12 }
+                  (ExprConstant int int
+                   1))
+               , (L
+                  { :13:14-19 }
+                  (ExprConstruct
+                   int list
+                   (L
+                    { <compiler-generated code> }
+                    ("::"))
+                   (Just
+                   (L
+                    { :13:14-19 }
+                    (ExprTuple
+                     (int * int list)
+                     [ (L
+                        { :13:14-15 }
+                        (ExprConstant int int
+                         2))
+                     , (L
+                        { :13:17-19 }
+                        (ExprConstruct
+                         int list
+                         (L
+                          { <compiler-generated code> }
+                          ("::"))
+                         (Just
+                         (L
+                          { :13:17-19 }
+                          (ExprTuple
+                           (int * 'af list)
+                           [ (L
+                              { :13:17-18 }
+                              (ExprConstant int int
+                               3))
+                           , (L
+                              { :13:18-19 }
+                              (ExprConstruct
+                               'af list
+                               (L
+                                { <compiler-generated code> }
+                                ("[]"))
+                               (Nothing))) ]))))) ]))))) ]))))))) ]))))
+ , (L
+    { :14:1-39 }
+    (ValD
+     (L
+      { :14:5-39 }
+      (NonRec
+       [ (L
+          { :14:5-39 }
+          (Bind
+           t1: ()
+           (L
+            { :14:5-7 }
+            (PatVar
+             ()
+             (L
+              { :14:5-7 }
+              "t1")))
+           (L
+            { :14:10-39 }
+            (ExprApply
+             ()
+             (L
+              { :14:10-19 }
+              (ExprIdent
+               int -> ()
+               "print_int"))
+             [ (L
+                { :14:20-39 }
+                (ExprApply
+                 int
+                 (L
+                  { :14:21-25 }
+                  (ExprIdent
+                   int list -> int
+                   "head"))
+                 [ (L
+                    { :14:26-38 }
+                    (ExprApply
+                     int list
+                     (L
+                      { :14:27-34 }
+                      (ExprIdent
+                       int list -> int list
+                       "reverse"))
+                     [ (L
+                        { :14:35-37 }
+                        (ExprIdent
+                         int list
+                         "l1")) ])) ])) ])))) ]))))
+ , (L
+    { :15:1-45 }
+    (ValD
+     (L
+      { :15:5-45 }
+      (NonRec
+       [ (L
+          { :15:5-45 }
+          (Bind
+           t2: ()
+           (L
+            { :15:5-7 }
+            (PatVar
+             ()
+             (L
+              { :15:5-7 }
+              "t2")))
+           (L
+            { :15:10-45 }
+            (ExprApply
+             ()
+             (L
+              { :15:33-35 }
+              (ExprIdent
+               int -> (int -> ()) -> ()
+               "|>"))
+             [ (L
+                { :15:10-32 }
+                (ExprApply
+                 int
+                 (L
+                  { :15:24-26 }
+                  (ExprIdent
+                   int list -> (int list -> int) -> int
+                   "|>"))
+                 [ (L
+                    { :15:11-23 }
+                    (ExprApply
+                     int list
+                     (L
+                      { :15:12-19 }
+                      (ExprIdent
+                       int list -> int list
+                       "reverse"))
+                     [(L { :15:20-22 } (ExprIdent int list "l1"))]))
+                 , (L
+                    { :15:27-31 }
+                    (ExprIdent
+                     int list -> int
+                     "head")) ]))
+             , (L
+                { :15:36-45 }
+                (ExprIdent
+                 int -> ()
+                 "print_int")) ])))) ])))) ])
