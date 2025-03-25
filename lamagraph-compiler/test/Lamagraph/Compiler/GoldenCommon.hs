@@ -1,5 +1,6 @@
 module Lamagraph.Compiler.GoldenCommon (
   renderPretty,
+  baseGoldenTestsDir,
   parserSourceGoldenTestsDir,
   typecheckerSourceGoldenTestsDir,
   coreSourceGoldenTestsDir,
