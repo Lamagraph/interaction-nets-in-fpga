@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -30,6 +30,12 @@ library
       Lamagraph.Compiler.Core.Pretty
       Lamagraph.Compiler.Eval
       Lamagraph.Compiler.Extension
+      Lamagraph.Compiler.MonadFresh
+      Lamagraph.Compiler.Nets.Examples
+      Lamagraph.Compiler.Nets.Processing
+      Lamagraph.Compiler.Nets.Reduction
+      Lamagraph.Compiler.Nets.Types
+      Lamagraph.Compiler.Nets.Utils
       Lamagraph.Compiler.Parser
       Lamagraph.Compiler.Parser.Lexer
       Lamagraph.Compiler.Parser.LexerTypes
@@ -65,7 +71,6 @@ library
       NoImplicitPrelude
       OverloadedStrings
       LambdaCase
-      NoFieldSelectors
       MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-tools:
@@ -94,7 +99,6 @@ executable lamagraph-compiler-exe
       NoImplicitPrelude
       OverloadedStrings
       LambdaCase
-      NoFieldSelectors
       MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
@@ -118,6 +122,7 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Core.PrettyCoreGolden
       Lamagraph.Compiler.Eval.EvalGolden
       Lamagraph.Compiler.GoldenCommon
+      Lamagraph.Compiler.NetsGolden
       Lamagraph.Compiler.Parser.LexerTest
       Lamagraph.Compiler.Parser.ParserRoundtrip
       Lamagraph.Compiler.Parser.PrettyAstGolden
@@ -130,7 +135,6 @@ test-suite lamagraph-compiler-test
       NoImplicitPrelude
       OverloadedStrings
       LambdaCase
-      NoFieldSelectors
       MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:

@@ -37,7 +37,6 @@ default-extensions:
   - NoImplicitPrelude
   - OverloadedStrings
   - LambdaCase # Remove with GHC2024
-  - NoFieldSelectors
   - MonoLocalBinds # Remove with GHC2024
 
 ghc-options:
