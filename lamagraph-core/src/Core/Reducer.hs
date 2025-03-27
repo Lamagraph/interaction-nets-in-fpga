@@ -13,7 +13,7 @@ import Core.MemoryManager.MemoryManager
 import Core.MemoryManager.NodeChanges
 import Core.Node
 
-import Data.Maybe (isNothing)
+import Data.Maybe (fromMaybe, isNothing)
 import INet.Net
 
 toDelta ::
@@ -21,7 +21,11 @@ toDelta ::
   ActivePair portsNumber agentType ->
   ReduceRuleResult nodesNumber edgesNumber portsNumber agentType ->
   Delta nodesNumber edgesNumber portsNumber agentType
-toDelta acPair (ReduceRuleResult resultEdges resultNodes) = Delta resultNodes (edgesReduction acPair resultEdges) acPair
+toDelta acPair (ReduceRuleResult resultEdges resultNodes) =
+  Delta
+    (nodesActiveReflexivityReduction acPair resultNodes)
+    (edgesReduction acPair resultEdges)
+    acPair
 
 -- | Make transitive reduction of `Edge`s
 edgesReduction ::
@@ -135,6 +139,64 @@ findNextEnd fullEdges connection =
           Just (Edge (Connected (Port a _)) NotConnected) -> if a == address then Just (NotConnected, indexCounter) else helper otherEdges end (indexCounter + 1)
           Just (Edge NotConnected NotConnected) -> helper otherEdges end (indexCounter + 1)
   helper _ NotConnected _ = undefined
+
+nodesActiveReflexivityReduction ::
+  forall portsNumber nodesNumber agentType.
+  (KnownNat portsNumber, KnownNat nodesNumber) =>
+  ActivePair portsNumber agentType ->
+  Vec nodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
+  Vec nodesNumber (Maybe (LoadedNode portsNumber agentType))
+nodesActiveReflexivityReduction
+  ( ActivePair
+      (LoadedNode leftActiveNode leftActiveAddress)
+      (LoadedNode rightActiveNode rightActiveAddress)
+    )
+  fullNodes = map (fmap nodeProcessing) fullNodes
+   where
+    -- TODO: think about error messages
+    connectionProcessing connection@(Connected (Port a _))
+      | a == leftActiveAddress = case findConnection leftActiveNode connection of
+          Nothing -> errorX "1"
+          Just activeConnection -> fromMaybe (errorX "2") $ findAdjacentConnection fullNodes activeConnection
+      | a == rightActiveAddress = case findConnection rightActiveNode connection of
+          Nothing -> errorX "3"
+          Just pointer -> fromMaybe (errorX "4") $ findAdjacentConnection fullNodes pointer
+      | otherwise = connection
+    connectionProcessing NotConnected = NotConnected
+    nodeProcessing lN@(LoadedNode n@Node{..} _) =
+      set
+        containedNode
+        (set secondaryPorts newSecondaryPorts (set primaryPort newPrimaryPort n))
+        lN
+     where
+      newPrimaryPort = connectionProcessing _primaryPort
+      newSecondaryPorts =
+        foldl
+          (\sPorts connection -> sPorts <<+ (connectionProcessing <$> connection))
+          def
+          _secondaryPorts
+
+findAdjacentConnection ::
+  forall n portsNumber agentType.
+  (KnownNat n, KnownNat portsNumber) =>
+  Vec n (Maybe (LoadedNode portsNumber agentType)) ->
+  Connection portsNumber ->
+  Maybe (Connection portsNumber)
+findAdjacentConnection fullNodes end = case fullNodes of
+  Nil -> Nothing
+  Cons node otherNodes -> case node of
+    Nothing -> findAdjacentConnection otherNodes end
+    Just (LoadedNode n a) ->
+      if (n ^. primaryPort) == end
+        then Just $ Connected (Port a Primary)
+        else case findIndex (maybe False isPointerAtActive) (n ^. secondaryPorts) of
+          Nothing -> findAdjacentConnection otherNodes end
+          Just i -> Just $ Connected (Port a (Id i))
+   where
+    -- isPointerAtActive NotConnected = False
+    isPointerAtActive x = x == end
+
+-- findAdjacentConnection _ NotConnected = Nothing
 
 {- | Get all `AddressNumber`s of external `Node`s of `ActivePair`, i.e. collect addresses of connected to active pair nodes
 
