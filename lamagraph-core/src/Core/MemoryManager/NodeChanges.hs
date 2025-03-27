@@ -11,6 +11,7 @@ module Core.MemoryManager.NodeChanges (
   activePair,
   Interface,
   updateLoadedNodesByChanges,
+  writeNewActives,
 ) where
 
 import Clash.Prelude
@@ -73,3 +74,46 @@ updateLoadedNodesByChanges externalLoadedNodes mapOfChanges =
   getChangesByAddress address = fromMaybe (errorX "External node has no changes") (find mapOfChanges address)
   getChangesByLoadedNode loadedNode = getChangesByAddress $ loadedNode ^. originalAddress
   applyChangesToLoadedNode loadedNode change = over containedNode (`applyChangesToNode` change) loadedNode
+
+getActiveAddresses ::
+  forall nodesNumber edgesNumber portsNumber agentType.
+  (KnownNat portsNumber, KnownNat nodesNumber, KnownNat edgesNumber) =>
+  Delta nodesNumber edgesNumber portsNumber agentType ->
+  Vec (Div nodesNumber 2 + Div edgesNumber 2) (Maybe AddressNumber)
+getActiveAddresses (Delta nodes edges _) = newActivesByEdges
+ where
+  getPrimaryAddressByLoadedNode (LoadedNode (Node (Connected (Port adjacentAddress Primary)) _ _) address) = Just (adjacentAddress, address)
+  getPrimaryAddressByLoadedNode _ = Nothing
+  newActivesByNodes =
+    foldl
+      ( \actives maybeLoadedNode ->
+          maybe
+            actives
+            (\(adjacentAddress, address) -> if Just adjacentAddress `notElem` actives then Just address +>> actives else actives)
+            (getPrimaryAddressByLoadedNode =<< maybeLoadedNode)
+      )
+      (def :: Vec (Div nodesNumber 2 + Div edgesNumber 2) (Maybe AddressNumber))
+      nodes
+  newActivesByEdges =
+    foldl
+      ( \actives -> \case
+          Just (Edge (Connected (Port address Primary)) (Connected (Port _ Primary))) -> Just address +>> actives
+          _ -> actives
+      )
+      newActivesByNodes
+      edges
+
+-- | Mark new active `Address` in active bit map
+writeNewActives ::
+  forall nodesNumber edgesNumber portsNumber cellsNumber agentType.
+  (KnownNat nodesNumber, KnownNat edgesNumber, KnownNat cellsNumber, KnownNat portsNumber) =>
+  Delta nodesNumber edgesNumber portsNumber agentType ->
+  MemoryManager cellsNumber ->
+  MemoryManager cellsNumber
+writeNewActives delta memoryManager = set activePairs newActivePairs memoryManager
+ where
+  newActivePairs =
+    foldl
+      (\acPairs maybeAddress -> maybe acPairs (markAddress acPairs True) maybeAddress)
+      (memoryManager ^. activePairs)
+      (getActiveAddresses delta)

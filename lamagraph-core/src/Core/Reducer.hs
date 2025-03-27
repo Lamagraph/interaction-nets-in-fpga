@@ -174,7 +174,7 @@ reduce ::
   Signal dom (MemoryManager cellsNumber) ->
   Signal dom (ActivePair portsNumber agentType) ->
   (Signal dom (Delta nodesNumber edgesNumber portsNumber agentType), Signal dom (MemoryManager cellsNumber))
-reduce chooseReductionRule memoryManager activeP = (toDelta <$> activeP <*> reduceRuleResult, newMemoryManager)
+reduce chooseReductionRule memoryManager activeP = (delta, writeNewActives <$> delta <*> newMemoryManager)
  where
   leftLoadedNode = view leftNode <$> activeP
   rightLoadedNode = view rightNode <$> activeP
@@ -185,6 +185,7 @@ reduce chooseReductionRule memoryManager activeP = (toDelta <$> activeP <*> redu
   (freeAddresses, newMemoryManager) =
     giveAddresses (view necessaryAddressesCount <$> reductionRuleInfo) memoryManager
   reduceRuleResult = transitionFunction <*> freeAddresses <*> leftLoadedNode <*> rightLoadedNode
+  delta = toDelta <$> activeP <*> reduceRuleResult
 
 {- | Give the next root `Node` after reduction that
 1) Contains exactly one `NotConnected` `Port`
