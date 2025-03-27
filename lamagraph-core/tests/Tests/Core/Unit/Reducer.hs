@@ -104,6 +104,114 @@ reduceLoopEdge =
       (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
   deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
 
+reduceEpsAppId :: TestTree
+reduceEpsAppId =
+  testCase "reduce Id apply to Eps" $
+    assertBool
+      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualDelta)))
+      deltasAreEqual
+ where
+  (_ C.:> _ C.:> _ C.:> Just applyEraseNode C.:> Just eraseNode C.:> _) = initialEpsAppToId
+  acPair = ActivePair applyEraseNode eraseNode
+  expectedEdges = C.def
+  expectedNodes =
+    Just
+      ( LoadedNode
+          ( Node
+              (Connected (Port 2 (Id 1)))
+              C.def
+              Erase
+          )
+          6
+      )
+      C.:> Just
+        ( LoadedNode
+            ( Node
+                (Connected (Port 2 (Id 0)))
+                C.def
+                Erase
+            )
+            5
+        )
+      C.:> C.Nil
+  expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
+  (systemActualDelta, _) =
+    reduce getReduceRuleInfo (pure initialEpsAppToIdMM) (pure acPair) ::
+      (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
+  deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
+
+reduceEpsAppIdSimple :: TestTree
+reduceEpsAppIdSimple =
+  testCase "reduce Id apply to Eps Simple" $
+    assertBool
+      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualDelta)))
+      deltasAreEqual
+ where
+  (_ C.:> Just applyEraseNode C.:> Just eraseNode C.:> _) = initialEpsAppToIdSimple
+  acPair = ActivePair applyEraseNode eraseNode
+  expectedEdges = C.def
+  expectedNodes =
+    Just
+      ( LoadedNode
+          ( Node
+              NotConnected
+              C.def
+              Erase
+          )
+          4
+      )
+      C.:> Just
+        ( LoadedNode
+            ( Node
+                (Connected (Port 0 Primary))
+                C.def
+                Erase
+            )
+            3
+        )
+      C.:> C.Nil
+  expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
+  (systemActualDelta, _) =
+    reduce getReduceRuleInfo (pure initialEpsAppToIdSimpleMM) (pure acPair) ::
+      (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
+  deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
+
+reduceEraseId :: TestTree
+reduceEraseId =
+  testCase "reduce Erase Id" $
+    assertBool
+      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualDelta)))
+      deltasAreEqual
+ where
+  (Just idNode C.:> Just eraseNode C.:> _) = initialIdErase
+  acPair = ActivePair idNode eraseNode
+  expectedEdges = C.def
+  expectedNodes =
+    Just
+      ( LoadedNode
+          ( Node
+              (Connected (Port 2 Primary))
+              C.def
+              Erase
+          )
+          3
+      )
+      C.:> Just
+        ( LoadedNode
+            ( Node
+                (Connected (Port 3 Primary))
+                C.def
+                Erase
+            )
+            2
+        )
+      C.:> C.Nil
+  expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
+  (systemActualDelta, _) =
+    reduce getReduceRuleInfo (pure initialIdEraseMM) (pure acPair) ::
+      (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
+  deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
+
 reducerUnitTests :: TestTree
 reducerUnitTests =
   testGroup
@@ -114,4 +222,7 @@ reducerUnitTests =
     , nonEmptyRecursiveInterface
     , reduceIdAppId
     , reduceLoopEdge
+    , reduceEpsAppIdSimple
+    , reduceEpsAppId
+    , reduceEraseId
     ]
