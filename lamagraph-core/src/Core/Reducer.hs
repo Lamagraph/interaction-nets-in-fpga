@@ -210,7 +210,8 @@ changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress
       Just a -> a
     else oldRootNode
  where
-  nodeHasFreePort (Node primPort secPorts _) = any (maybe False isNothing) (Just primPort :> secPorts)
+  isNotConnected = isNothing
+  nodeHasFreePort (Node primPort secPorts _) = any (maybe False isNotConnected) (Just primPort :> secPorts)
   findInMaybeNodes :: forall n. (KnownNat n) => Vec n (Maybe (LoadedNode portsNumber agentType)) -> Maybe AddressNumber
   findInMaybeNodes = \case
     Nil -> Nothing
