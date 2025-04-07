@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
@@ -14,11 +15,15 @@ data ReduceRuleResult (nodesNumber :: Nat) (edgesNumber :: Nat) (portsNumber :: 
   { _edges :: Vec edgesNumber (Maybe (Edge portsNumber))
   , _nodes :: Vec nodesNumber (Maybe (LoadedNode portsNumber agentType))
   }
+  deriving (Generic, NFDataX, Show)
 
 $(makeLenses ''ReduceRuleResult)
 
 type ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType =
   agentType -> agentType -> ReductionRuleInfo cellsNumber nodesNumber edgesNumber portsNumber agentType
+
+instance Show (ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType) where
+  show _ = ""
 
 -- | Information about concrete reduction rule: reduction function and count of new nodes
 data
@@ -36,6 +41,19 @@ data
       ReduceRuleResult maxNumOfNewNodes maxNumOfNewEdges portsNumber agentType
   , _necessaryAddressesCount :: Index cellsNumber
   }
+  deriving (Generic, NFDataX)
+
+instance
+  Show
+    ( ReductionRuleInfo
+        (cellsNumber :: Nat)
+        (maxNumOfNewNodes :: Nat)
+        (maxNumOfNewEdges :: Nat)
+        (portsNumber :: Nat)
+        agentType
+    )
+  where
+  show _ = ""
 
 $(makeLenses ''ReductionRuleInfo)
 

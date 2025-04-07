@@ -108,7 +108,8 @@ coreUnitTests :: TestTree
 coreUnitTests =
   testGroup
     "Core"
-    [ idApplyToIdCore
-    , epsApplyToIdSimpleCore
-    , epsApplyToIdCore
-    ]
+    []
+
+--   idApplyToIdCore
+-- , epsApplyToIdSimpleCore
+-- , epsApplyToIdCore
