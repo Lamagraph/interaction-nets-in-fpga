@@ -238,6 +238,22 @@ initialIdErase = Just idNode +>> Just eraseNode +>> def
         secPorts = def
      in LoadedNode (Node prPort secPorts Erase) eraseAddress
 
+initialIdEraseNode :: Vec (2 ^ BitSize AddressNumber) (Maybe (Node 2 AgentSimpleLambda))
+initialIdEraseNode = Just idNode +>> Just eraseNode +>> def
+ where
+  idAddress = 0
+  eraseAddress = 1
+  idNode =
+    let prPort = Connected $ Port eraseAddress Primary
+        port0 = Connected $ Port idAddress (Id 1)
+        port1 = Connected $ Port idAddress (Id 0)
+        secPorts = Just port0 :> Just port1 :> Nil
+     in Node prPort secPorts Abstract
+  eraseNode =
+    let prPort = Connected $ Port idAddress Primary
+        secPorts = def
+     in Node prPort secPorts Erase
+
 initialIdEraseMM :: MemoryManager (2 ^ BitSize AddressNumber)
 initialIdEraseMM = MemoryManager busyMap activePairsMap
  where
