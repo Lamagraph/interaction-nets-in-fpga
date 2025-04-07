@@ -3,7 +3,7 @@
 {-# HLINT ignore "Eta reduce" #-}
 {-# HLINT ignore "Functor law" #-}
 
-module Core.MemoryManager.ChangesAccumulator (getAllChangesByDelta) where
+module Core.MemoryManager.ChangesAccumulator (getAllChangesByDelta, getAllChangesByDeltaNoSignal) where
 
 import Clash.Prelude
 import Control.Lens hiding (ifoldl)
@@ -152,3 +152,14 @@ getAllChangesByDelta delta interface = accumulateUpdatesByNodes <$> (accumulateU
  where
   edgesForUpdate = view newEdges <$> delta
   nodesForUpdate = view newNodes <$> delta
+
+-- | Get all changes from `Delta`
+getAllChangesByDeltaNoSignal ::
+  (KnownNat edgesNumber, KnownNat nodesNumber, KnownNat maxNumOfChangedNodes, KnownNat portsNumber) =>
+  Delta nodesNumber edgesNumber portsNumber agentType ->
+  Interface maxNumOfChangedNodes ->
+  Map maxNumOfChangedNodes (Changes portsNumber)
+getAllChangesByDeltaNoSignal delta interface = accumulateUpdatesByNodes (accumulateUpdatesByEdges def edgesForUpdate) interface nodesForUpdate
+ where
+  edgesForUpdate = view newEdges delta
+  nodesForUpdate = view newNodes delta

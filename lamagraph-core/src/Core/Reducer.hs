@@ -15,6 +15,7 @@ import Core.Node
 
 import Data.Maybe (fromMaybe, isNothing)
 import INet.Net
+import qualified Prelude as P
 
 toDelta ::
   (KnownNat portsNumber, KnownNat edgesNumber, KnownNat nodesNumber) =>
@@ -40,8 +41,8 @@ edgesReduction
       (LoadedNode rightActiveNode rightActiveAddress)
     )
   fullEdges =
-    snd $
-      ifoldl
+    snd
+      $ ifoldl
         ( \(excludeEdges, resEdges) i maybeEdge ->
             let (exEdges, rEdge) = if excludeEdges !! i then (repeat False, Nothing) else edgeProcessing maybeEdge (repeat False)
              in (exEdges `insertVec` excludeEdges, rEdge +>> resEdges)
@@ -259,6 +260,7 @@ changeRootNode ::
   ( KnownNat portsNumber
   , KnownNat nodesNumber
   , KnownNat edgesNumber
+  , Show agentType
   ) =>
   ActivePair portsNumber agentType ->
   AddressNumber ->
@@ -268,7 +270,7 @@ changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress
   if oldRootNode == leftAddress || oldRootNode == rightAddress
     then case findInMaybeNodes (delta ^. newNodes) of
       Nothing -> case findInMaybeEdges (delta ^. newEdges) of
-        Nothing -> error "There is must be a root Node in the Net"
+        Nothing -> errorX $ "There is must be a root Node in the Net" P.++ show delta
         Just a -> a
       Just a -> a
     else oldRootNode
@@ -289,3 +291,32 @@ changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress
       (Connected (Port address _), NotConnected) -> Just address
       (Connected _, Connected _) -> findInMaybeEdges es
     Cons Nothing es -> findInMaybeEdges es
+
+-- | Apply reduction rule by `ActivePair` and allocate necessary amount of memory
+reduceNoSignal ::
+  forall portsNumber nodesNumber edgesNumber cellsNumber agentType.
+  ( KnownNat portsNumber
+  , KnownNat nodesNumber
+  , KnownNat edgesNumber
+  , KnownNat cellsNumber
+  , 1 <= cellsNumber
+  , CLog 2 cellsNumber <= BitSize AddressNumber
+  , nodesNumber <= cellsNumber
+  , INet agentType cellsNumber nodesNumber edgesNumber portsNumber
+  ) =>
+  ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType ->
+  MemoryManager cellsNumber ->
+  ActivePair portsNumber agentType ->
+  (Delta nodesNumber edgesNumber portsNumber agentType, MemoryManager cellsNumber)
+reduceNoSignal chooseReductionRule memoryManager activeP = (delta, writeNewActives delta newMemoryManager)
+ where
+  leftLoadedNode = view leftNode activeP
+  rightLoadedNode = view rightNode activeP
+  leftNodeType = view (containedNode . nodeType) leftLoadedNode
+  rightNodeType = view (containedNode . nodeType) rightLoadedNode
+  reductionRuleInfo = chooseReductionRule leftNodeType rightNodeType
+  transitionFunction = view reductionFunction reductionRuleInfo
+  (freeAddresses, newMemoryManager) =
+    giveAddressesNoSignal (view necessaryAddressesCount reductionRuleInfo) memoryManager
+  reduceRuleResult = transitionFunction freeAddresses leftLoadedNode rightLoadedNode
+  delta = toDelta activeP reduceRuleResult
