@@ -6,19 +6,18 @@
 
 module Core.Core where
 
-import Clash.Explicit.Prelude (unsafeSynchronizer)
+-- import Clash.Explicit.Prelude (unsafeSynchronizer)
 import Clash.Prelude
 import Core.Loader
-import Core.MemoryManager.ChangesAccumulator (getAllChangesByDelta)
-import Core.MemoryManager.MemoryManager (
-  MemoryManager,
-  giveActiveAddressNumber,
-  removeActivePair,
- )
-import Core.MemoryManager.NodeChanges
+
+-- import Core.MemoryManager.ChangesAccumulator (getAllChangesByDelta)
+import Core.MemoryManager.MemoryManager
+
+-- import Core.MemoryManager.NodeChanges
 import Core.Node
-import Core.Reducer
-import Data.Maybe (fromJust, isJust)
+
+-- import Core.Reducer
+-- import Data.Maybe (fromJust, isJust)
 import INet.Net
 
 data CoreStatus = Start | InProgress | Done deriving (Eq, Show, Generic, NFDataX, ShowX)
@@ -64,7 +63,7 @@ core ::
   MemoryManager cellsNumber -> -- Initial information about busy addresses and active pairs
   ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType ->
   (Signal domSlow AddressNumber, Signal domSlow CoreStatus) -- maybe we should return also memory manager
-core clkSlow clkFast ram initialRootNodeAddress initialMemoryManager chooseReductionRule = undefined -- (rootNodeAddress, status)
+core = undefined -- (rootNodeAddress, status)
 --  where
 --   memoryManager = exposeClockResetEnable (register @domSlow initialMemoryManager nextMemoryManager) clkSlow resetGen enableGen
 --   rootNodeAddress = exposeClockResetEnable (register @domSlow initialRootNodeAddress nextRootNodeAddress) clkSlow resetGen enableGen
