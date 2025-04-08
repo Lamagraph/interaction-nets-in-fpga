@@ -270,7 +270,7 @@ changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress
   if oldRootNode == leftAddress || oldRootNode == rightAddress
     then case findInMaybeNodes (delta ^. newNodes) of
       Nothing -> case findInMaybeEdges (delta ^. newEdges) of
-        Nothing -> errorX $ "There is must be a root Node in the Net" P.++ show delta
+        Nothing -> errorX $ "There is must be a root Node in the Net\n" P.++ show delta
         Just a -> a
       Just a -> a
     else oldRootNode

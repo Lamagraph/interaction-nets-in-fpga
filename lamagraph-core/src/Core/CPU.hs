@@ -42,7 +42,8 @@ data CPUOut portsNumber agentType = CPUOut
 data Phase
   = Init
   | ExtraInit (Unsigned 3)
-  | WriteChanges
+  | WriteChanges1
+  | WriteChanges2
   | GetInterface
   | FetchActivePair
   | Reduce
@@ -115,18 +116,24 @@ step s@(CPUState ph mm ch maybeExNodes) i@(CPUIn chooseReductionRule (maybeActiv
     allChanges = getAllChangesByDeltaNoSignal delta interface
     newRootAddress = changeRootNode acPair rootAddress delta
   GetInterface ->
-    ( CPUState WriteChanges mm ch maybeExNodes
+    ( CPUState WriteChanges1 mm ch maybeExNodes
     , CPUOut
-        maybeActiveAddress
+        def
         rootAddress
         updatedExNodes
         (fromMaybe (errorX $ "cpu: 5\nstate=\n" P.++ show s) maybeExNodes)
     )
    where
     updatedExNodes = maybe (errorX "cpu: 2") (updateLoadedNodesByChanges exNodes) ch
-  WriteChanges ->
+  WriteChanges1 ->
     ( CPUState FetchActivePair mm ch maybeExNodes
-    , CPUOut maybeActiveAddress rootAddress def (fromMaybe (errorX $ "cpu: 5\nstate=\n" P.++ show s) maybeExNodes)
+    , CPUOut def rootAddress updatedExNodes (fromMaybe (errorX $ "cpu: 5\nstate=\n" P.++ show s) maybeExNodes)
+    )
+   where
+    updatedExNodes = maybe (errorX "cpu: 5") (updateLoadedNodesByChanges exNodes) ch
+  WriteChanges2 ->
+    ( CPUState FetchActivePair mm ch maybeExNodes
+    , CPUOut def rootAddress updatedExNodes (fromMaybe (errorX $ "cpu: 5\nstate=\n" P.++ show s) maybeExNodes)
     )
    where
     updatedExNodes = maybe (errorX "cpu: 5") (updateLoadedNodesByChanges exNodes) ch
@@ -185,8 +192,9 @@ logicBroad ::
   AddressNumber ->
   MemoryManager cellsNumber -> -- Initial information about busy addresses and active pairs
   ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType ->
-  Signal dom AddressNumber
-logicBroad initialNet initialRootNodeAddress initialMemoryManager chooseReductionRule = root
+  -- Signal dom AddressNumber
+  Signal dom (CPUOut portsNumber agentType)
+logicBroad initialNet initialRootNodeAddress initialMemoryManager chooseReductionRule = o
  where
   ram = exposeEnable (blockRam initialNet)
   initialCPUIn = CPUIn chooseReductionRule def def initialRootNodeAddress
@@ -202,8 +210,9 @@ logicBroad initialNet initialRootNodeAddress initialMemoryManager chooseReductio
   -- load `ActivePair` and clean up it
   nextProcessActivePair = loadActivePair ram maybeActiveAddress
   -- load external `Node`s by it's addresses
-  loadedInterface = loadInterface ram interface
+  !loadedInterface = loadInterface ram interface maybeUpdatedExternalNodes
+
   -- write accumulated changes to the ram
-  !updatedExternalNodes = bundle (writeChanges ram maybeUpdatedExternalNodes)
+  -- !updatedExternalNodes = bundle (writeChanges ram maybeUpdatedExternalNodes)
 
   nextInput = CPUIn chooseReductionRule <$> bundle (maybeActiveAddress, nextProcessActivePair) <*> loadedInterface <*> root
