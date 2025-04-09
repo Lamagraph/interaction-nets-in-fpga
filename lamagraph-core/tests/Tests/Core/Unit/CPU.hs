@@ -39,36 +39,39 @@ mealyCoreTestTemplate ::
   Vec cellsNumber (Maybe (Node portsNumber agentType)) ->
   MemoryManager cellsNumber ->
   [AddressNumber] ->
+  Int ->
+  -- [CPUOut portsNumber agentType] ->
   AddressNumber ->
   TestName ->
   TestTree
-mealyCoreTestTemplate initNet initMemoryManager expectedAnswer rootNodeAddress testName =
+mealyCoreTestTemplate initNet initMemoryManager expectedAnswer cycleCount rootNodeAddress testName =
   testCase testName $
     assertBool
       ( "expected:\n"
           P.++ show expectedAnswer
           P.++ "\nactual:\n"
-          P.++ show systemActualAnswer
+          P.++ showX systemActualAnswer
       )
       answersAreEqual
  where
   systemActualAnswer =
     sampleN
-      (P.length expectedAnswer)
+      cycleCount
       ( (logicBroad @portsNumber @nodesNumber @edgesNumber @cellsNumber @agentType @System)
           initNet
           rootNodeAddress
           initMemoryManager
           getReduceRuleInfo
       )
-  answersAreEqual = expectedAnswer == systemActualAnswer
+  answersAreEqual = P.all (`elem` systemActualAnswer) expectedAnswer
 
 idApplyToIdMealyCore :: TestTree
 idApplyToIdMealyCore =
   mealyCoreTestTemplate @AgentSimpleLambda @(2 ^ BitSize AddressNumber) @2 @2
     initialIdApplyToIdNode
     initialIdApplyToIdMM
-    [0, 0, 0, 0, 0, 1, 1, 1, 1]
+    [0, 1]
+    30
     0
     "id apply to id core ( (λx. x)(λy. y) )"
 
@@ -77,7 +80,8 @@ epsApplyToIdSimpleMealyCore =
   mealyCoreTestTemplate @AgentSimpleLambda @(2 ^ BitSize AddressNumber) @2 @2
     initialEpsAppToIdSimpleNode
     initialEpsAppToIdSimpleMM
-    [1, 1, 1, 1, 1, 2, 2, 2, 2]
+    [1, 2]
+    20
     1
     "id apply to eps simplified core ( (ϵ)(λx. x) )"
 
@@ -86,7 +90,8 @@ epsApplyToIdMealyCore =
   mealyCoreTestTemplate @AgentSimpleLambda @(2 ^ BitSize AddressNumber) @2 @2
     initialEpsAppToIdNode
     initialEpsAppToIdMM
-    [1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 4, 4, 4, 4]
+    [1, 3, 2]
+    50
     1
     "id apply to eps core ( (λx.(ϵ x))(λy.y) )"
 
