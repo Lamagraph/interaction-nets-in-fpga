@@ -12,6 +12,7 @@ module Core.MemoryManager.NodeChanges (
   Interface,
   updateLoadedNodesByChanges,
   writeNewActives,
+  applyChangesToNode,
 ) where
 
 import Clash.Prelude
