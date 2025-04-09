@@ -69,7 +69,7 @@ reduceIdAppId :: TestTree
 reduceIdAppId =
   testCase "reduce Id apply to Id" $
     assertBool
-      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualDelta)))
+      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show systemActualDelta)
       deltasAreEqual
  where
   (Just applyNode C.:> Just _ C.:> Just abs2Node C.:> _) = initialIdApplyToId
@@ -80,16 +80,15 @@ reduceIdAppId =
       C.:> C.Nil
   expectedDelta = Delta (C.def :: C.Vec 2 _) expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
-    reduce getReduceRuleInfo (pure initialIdApplyToIdMM) (pure acPair) ::
-      (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
-  deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
+    reduceNoSignal getReduceRuleInfo initialIdApplyToIdMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
+  deltasAreEqual = systemActualDelta == expectedDelta
 
 -- | <<docs/reduceLoopEdge.svg>>
 reduceLoopEdge :: TestTree
 reduceLoopEdge =
   testCase "reduce closed lambda and closed apply agents" $
     assertBool
-      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualDelta)))
+      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show systemActualDelta)
       deltasAreEqual
  where
   (Just applyNode C.:> Just absNode C.:> _) = initialLoopEdge
@@ -100,15 +99,14 @@ reduceLoopEdge =
       C.:> C.Nil
   expectedDelta = Delta (C.def :: C.Vec 2 _) expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
-    reduce getReduceRuleInfo (pure initialLoopEdgeMM) (pure acPair) ::
-      (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
-  deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
+    reduceNoSignal getReduceRuleInfo initialLoopEdgeMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
+  deltasAreEqual = systemActualDelta == expectedDelta
 
 reduceEpsAppId :: TestTree
 reduceEpsAppId =
   testCase "reduce Id apply to Eps" $
     assertBool
-      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualDelta)))
+      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show systemActualDelta)
       deltasAreEqual
  where
   (_ C.:> _ C.:> _ C.:> Just applyEraseNode C.:> Just eraseNode C.:> _) = initialEpsAppToId
@@ -136,15 +134,14 @@ reduceEpsAppId =
       C.:> C.Nil
   expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
-    reduce getReduceRuleInfo (pure initialEpsAppToIdMM) (pure acPair) ::
-      (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
-  deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
+    reduceNoSignal getReduceRuleInfo initialEpsAppToIdMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
+  deltasAreEqual = systemActualDelta == expectedDelta
 
 reduceEpsAppIdSimple :: TestTree
 reduceEpsAppIdSimple =
   testCase "reduce Id apply to Eps Simple" $
     assertBool
-      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualDelta)))
+      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show systemActualDelta)
       deltasAreEqual
  where
   (_ C.:> Just applyEraseNode C.:> Just eraseNode C.:> _) = initialEpsAppToIdSimple
@@ -172,15 +169,14 @@ reduceEpsAppIdSimple =
       C.:> C.Nil
   expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
-    reduce getReduceRuleInfo (pure initialEpsAppToIdSimpleMM) (pure acPair) ::
-      (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
-  deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
+    reduceNoSignal getReduceRuleInfo initialEpsAppToIdSimpleMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
+  deltasAreEqual = systemActualDelta == expectedDelta
 
 reduceEraseId :: TestTree
 reduceEraseId =
   testCase "reduce Erase Id" $
     assertBool
-      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualDelta)))
+      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show systemActualDelta)
       deltasAreEqual
  where
   (Just idNode C.:> Just eraseNode C.:> _) = initialIdErase
@@ -208,9 +204,8 @@ reduceEraseId =
       C.:> C.Nil
   expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
-    reduce getReduceRuleInfo (pure initialIdEraseMM) (pure acPair) ::
-      (C.Signal C.System (Delta 2 2 2 AgentSimpleLambda), _)
-  deltasAreEqual = or (C.sampleN 1 ((C..==. systemActualDelta) $ pure expectedDelta))
+    reduceNoSignal getReduceRuleInfo initialIdEraseMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
+  deltasAreEqual = systemActualDelta == expectedDelta
 
 reducerUnitTests :: TestTree
 reducerUnitTests =

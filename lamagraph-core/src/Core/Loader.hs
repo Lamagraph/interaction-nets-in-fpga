@@ -6,6 +6,7 @@ import Core.MemoryManager.MemoryManager
 import Core.MemoryManager.NodeChanges
 import Core.Node
 import Data.Maybe (fromMaybe, isJust)
+import qualified Prelude as P
 
 -- | Type alias for partial applied `blockRam`
 type Ram dom portsNumber agentType =
@@ -59,14 +60,15 @@ loadInterface ::
   , NFDataX agentType
   , HiddenClockResetEnable dom
   , Eq agentType
+  , Show agentType
   ) =>
   (Enable dom -> Ram dom portsNumber agentType) ->
   Signal dom (Interface externalNodesNumber) ->
   Signal dom (Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType))) ->
   Signal dom (Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)))
 loadInterface ram interface changedInterface =
-  bundle $
-    map
+  bundle
+    $ map
       (\ramForm -> fromRamFormToLoadedNode <$> delayedMaybeRam ram ramForm <*> ramForm)
       (unbundle interfaceRamForm)
  where
@@ -82,7 +84,8 @@ loadActivePair ::
 loadActivePair ram leftActiveNodeAddress = toMaybeActivePair <$> maybeLeftLoadedNode <*> maybeRightLoadedNode
  where
   getRightNodeAddress maybeLoadedNode =
-    (view nodeAddress . (fromMaybe (errorX "Wrong definition of active pair") <$> view primaryPort)) . view containedNode
+    (view nodeAddress . (fromMaybe (errorX "Wrong definition of active pair") <$> view primaryPort))
+      . view containedNode
       <$> maybeLoadedNode
   addressToRamForm a = (\address -> (address, Just (address, Nothing))) <$> a
   fromRamFormToLoadedNode maybeNode maybeAddress = LoadedNode <$> maybeNode <*> maybeAddress
@@ -91,8 +94,8 @@ loadActivePair ram leftActiveNodeAddress = toMaybeActivePair <$> maybeLeftLoaded
   maybeRightLoadedNode = constructLoadedNode $ getRightNodeAddress <$> maybeLeftLoadedNode
   toMaybeActivePair leftLoadedNode rightLoadedNode = ActivePair <$> leftLoadedNode <*> rightLoadedNode
 
-writeChanges ::
-  ( KnownNat maxNumOfChangedNodes
+writeNewNodes ::
+  ( KnownNat nodesNumber
   , KnownNat portsNumber
   , KnownDomain dom
   , HiddenClockResetEnable dom
@@ -100,24 +103,27 @@ writeChanges ::
   , Eq agentType
   ) =>
   (Enable dom -> Ram dom portsNumber agentType) ->
-  Signal dom (Vec maxNumOfChangedNodes (Maybe (LoadedNode portsNumber agentType))) ->
-  Vec maxNumOfChangedNodes (Signal dom (Maybe (Node portsNumber agentType)))
-writeChanges ram changes = map (\x -> delayedMaybeRam ram (maybeLoadedNodeToRamForm <$> x)) (unbundle changes)
+  Signal dom (Vec nodesNumber (Maybe (LoadedNode portsNumber agentType))) ->
+  Vec nodesNumber (Signal dom (Maybe (Node portsNumber agentType)))
+writeNewNodes ram changes = map (\x -> delayedMaybeRam ram (maybeLoadedNodeToRamForm <$> x)) (unbundle changes)
  where
   maybeLoadedNodeToRamForm maybeLn = (\LoadedNode{..} -> (_originalAddress, Just (_originalAddress, Just _containedNode))) <$> maybeLn
 
 zipInterfaceUpdatedToRamForm ::
+  (Show agentType) =>
   Interface externalNodesNumber ->
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   Vec externalNodesNumber (Maybe (RamForm portsNumber agentType))
-zipInterfaceUpdatedToRamForm =
+zipInterfaceUpdatedToRamForm x y =
   zipWith
     ( \maybeAddress maybeLoadedNode -> case (maybeAddress, maybeLoadedNode) of
         (Just address, Just (LoadedNode{..})) ->
           if _originalAddress == address
             then Just (address, Just (_originalAddress, Just _containedNode))
-            else errorX "interfaced address and address of loaded node are not equal"
+            else errorX ("interfaced address and address of loaded node are not equal\n" P.++ show x P.++ "\n" P.++ show y)
         (Nothing, Nothing) -> def
         (Just address, Nothing) -> Just (address, def)
         (Nothing, Just _) -> errorX " interfaced address is Nothing and external node is not "
     )
+    x
+    y

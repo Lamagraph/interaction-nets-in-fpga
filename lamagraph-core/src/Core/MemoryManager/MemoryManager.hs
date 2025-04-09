@@ -10,9 +10,6 @@ module Core.MemoryManager.MemoryManager (
   ActivePair (..),
   leftNode,
   rightNode,
-  giveAddresses,
-  removeActivePair,
-  giveActiveAddressNumber,
   indexToUnsigned,
   markAddress,
   giveActiveAddressNumberNoSignal,
@@ -67,63 +64,6 @@ indexToUnsigned ::
 indexToUnsigned v = bitCoerce (resize v :: Index (2 ^ m))
 
 -- | Get `Vec` of free `AddressNumber`s of given size
-getFreeAddresses ::
-  forall maxAddressesCount dom cellsNumber.
-  ( KnownNat cellsNumber
-  , KnownNat maxAddressesCount
-  , KnownDomain dom
-  , CLog 2 cellsNumber <= BitSize AddressNumber
-  , 1 <= cellsNumber
-  , maxAddressesCount <= cellsNumber
-  ) =>
-  Signal dom (Index cellsNumber) ->
-  Signal dom (Vec cellsNumber Bool) ->
-  Signal dom (Vec maxAddressesCount (Maybe AddressNumber))
-getFreeAddresses addressesCount busyMap = mux (addressesCount .==. pure 0) def (helper 0 0 (unbundle busyMap) def)
- where
-  helper ::
-    Signal dom (Index cellsNumber) ->
-    Index cellsNumber ->
-    Vec m (Signal dom Bool) ->
-    Vec maxAddressesCount (Signal dom (Maybe AddressNumber)) ->
-    Signal dom (Vec maxAddressesCount (Maybe AddressNumber))
-  helper allocatedCount busyMapIndex busyMapRemind addresses = case busyMapRemind of
-    Nil -> error "Memory space is over"
-    Cons isBusy remind ->
-      mux
-        (not <$> isBusy)
-        ( mux
-            ((1 + allocatedCount) .==. addressesCount)
-            (bundle (pure (Just $ indexToUnsigned busyMapIndex) +>> addresses))
-            (helper (allocatedCount + 1) (busyMapIndex + 1) remind (pure (Just $ indexToUnsigned busyMapIndex) +>> addresses))
-        )
-        (helper allocatedCount (busyMapIndex + 1) remind addresses)
-
--- | Mark given `AddressNumber`s as busy in busy map
-markAddressesAsBusy ::
-  (KnownDomain dom, KnownNat cellsNumber, KnownNat n, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
-  Signal dom (Vec cellsNumber Bool) ->
-  Signal dom (Vec n (Maybe AddressNumber)) ->
-  Signal dom (Vec cellsNumber Bool)
-markAddressesAsBusy busyMap addresses = bundle $ imap (\i _ -> elem (Just $ indexToUnsigned i) <$> addresses) (unbundle busyMap)
-
-giveAddresses ::
-  ( 1 <= cellsNumber
-  , KnownNat cellsNumber
-  , KnownNat maxAddressesCount
-  , KnownDomain dom
-  , CLog 2 cellsNumber <= BitSize AddressNumber
-  , maxAddressesCount <= cellsNumber
-  ) =>
-  Signal dom (Index cellsNumber) ->
-  Signal dom (MemoryManager cellsNumber) ->
-  (Signal dom (Vec maxAddressesCount (Maybe AddressNumber)), Signal dom (MemoryManager cellsNumber))
-giveAddresses addressesCount memoryManager = (addresses, set busyBitMap <$> newBusyMap <*> memoryManager)
- where
-  addresses = getFreeAddresses addressesCount (view busyBitMap <$> memoryManager)
-  newBusyMap = markAddressesAsBusy (view busyBitMap <$> memoryManager) addresses
-
--- | Get `Vec` of free `AddressNumber`s of given size
 getFreeAddressesNoSignal ::
   forall maxAddressesCount cellsNumber.
   ( KnownNat cellsNumber
@@ -163,7 +103,7 @@ markAddressesAsBusyNoSignal ::
   Vec cellsNumber Bool ->
   Vec n (Maybe AddressNumber) ->
   Vec cellsNumber Bool
-markAddressesAsBusyNoSignal busyMap addresses = imap (\i _ -> Just (indexToUnsigned i) `elem` addresses) busyMap
+markAddressesAsBusyNoSignal busyMap addresses = imap (\i x -> Just (indexToUnsigned i) `elem` addresses || x) busyMap
 
 giveAddressesNoSignal ::
   ( 1 <= cellsNumber
@@ -229,56 +169,22 @@ freeUpActivePair busyMap activePairToFree = markAddress (markAddress busyMap Fal
   rightNodeAddress = chooseAddress rightNode
 
 -- | Remove all information about `ActivePair` from `MemoryManager`
-removeActivePair ::
-  (KnownNat cellsNumber, KnownNat portsNumber, KnownDomain dom) =>
-  Signal dom (ActivePair portsNumber agentType) ->
-  Signal dom (MemoryManager cellsNumber) ->
-  Signal dom (MemoryManager cellsNumber)
-removeActivePair acPair memoryManager =
-  set busyBitMap
-    <$> newBusyMap
-    <*> ( set activePairs
-            <$> newActivePairs
-            <*> memoryManager
-        )
- where
-  newActivePairs = deleteActivePair <$> (view activePairs <$> memoryManager) <*> acPair
-  newBusyMap = freeUpActivePair <$> (view busyBitMap <$> memoryManager) <*> acPair
-
--- | Give `AddressNumber` of some active `Node`. It returns `Nothing` if there is no `ActivePair`s in the net
-giveActiveAddressNumber ::
-  (KnownNat cellsNumber, KnownDomain dom, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
-  Signal dom (MemoryManager cellsNumber) ->
-  Signal dom (Maybe AddressNumber)
-giveActiveAddressNumber memoryManager = fmap (indexToUnsigned <$>) signalMaybeIndexAddress
- where
-  signalActivePairsBusyMap = view activePairs <$> memoryManager
-  signalMaybeIndexAddress = findIndex id <$> signalActivePairsBusyMap
-
 removeActivePairNoSignal ::
   (KnownNat cellsNumber, KnownNat portsNumber) =>
   ActivePair portsNumber agentType ->
   MemoryManager cellsNumber ->
   MemoryManager cellsNumber
-removeActivePairNoSignal acPair memoryManager =
-  set
-    busyBitMap
-    newBusyMap
-    ( set
-        activePairs
-        newActivePairs
-        memoryManager
-    )
+removeActivePairNoSignal acPair memoryManager = MemoryManager{..}
  where
-  newActivePairs = deleteActivePair (view activePairs memoryManager) acPair
-  newBusyMap = freeUpActivePair (view busyBitMap memoryManager) acPair
+  _activePairs = deleteActivePair (view activePairs memoryManager) acPair
+  _busyBitMap = freeUpActivePair (view busyBitMap memoryManager) acPair
 
 -- | Give `AddressNumber` of some active `Node`. It returns `Nothing` if there is no `ActivePair`s in the net
 giveActiveAddressNumberNoSignal ::
   (KnownNat cellsNumber, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
   MemoryManager cellsNumber ->
   Maybe AddressNumber
-giveActiveAddressNumberNoSignal memoryManager = fmap indexToUnsigned signalMaybeIndexAddress
+giveActiveAddressNumberNoSignal memoryManager = fmap indexToUnsigned maybeIndexAddress
  where
-  signalActivePairsBusyMap = view activePairs memoryManager
-  signalMaybeIndexAddress = findIndex id signalActivePairsBusyMap
+  activePairsBusyMap = view activePairs memoryManager
+  maybeIndexAddress = findIndex id activePairsBusyMap

@@ -220,36 +220,6 @@ getInterface (ActivePair (LoadedNode lNode leftAddress) (LoadedNode rNode rightA
     Connected (Port address _) -> if isExternal address && Just address `notElem` interface then Just address +>> interface else interface
     NotConnected -> interface
 
--- | Apply reduction rule by `ActivePair` and allocate necessary amount of memory
-reduce ::
-  forall dom portsNumber nodesNumber edgesNumber cellsNumber agentType.
-  ( KnownDomain dom
-  , KnownNat portsNumber
-  , KnownNat nodesNumber
-  , KnownNat edgesNumber
-  , KnownNat cellsNumber
-  , 1 <= cellsNumber
-  , CLog 2 cellsNumber <= BitSize AddressNumber
-  , nodesNumber <= cellsNumber
-  , INet agentType cellsNumber nodesNumber edgesNumber portsNumber
-  ) =>
-  ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType ->
-  Signal dom (MemoryManager cellsNumber) ->
-  Signal dom (ActivePair portsNumber agentType) ->
-  (Signal dom (Delta nodesNumber edgesNumber portsNumber agentType), Signal dom (MemoryManager cellsNumber))
-reduce chooseReductionRule memoryManager activeP = (delta, writeNewActives <$> delta <*> newMemoryManager)
- where
-  leftLoadedNode = view leftNode <$> activeP
-  rightLoadedNode = view rightNode <$> activeP
-  leftNodeType = view (containedNode . nodeType) <$> leftLoadedNode
-  rightNodeType = view (containedNode . nodeType) <$> rightLoadedNode
-  reductionRuleInfo = chooseReductionRule <$> leftNodeType <*> rightNodeType
-  transitionFunction = view reductionFunction <$> reductionRuleInfo
-  (freeAddresses, newMemoryManager) =
-    giveAddresses (view necessaryAddressesCount <$> reductionRuleInfo) memoryManager
-  reduceRuleResult = transitionFunction <*> freeAddresses <*> leftLoadedNode <*> rightLoadedNode
-  delta = toDelta <$> activeP <*> reduceRuleResult
-
 {- | Give the next root `Node` after reduction that
 1) Contains exactly one `NotConnected` `Port`
 1) Is the only one

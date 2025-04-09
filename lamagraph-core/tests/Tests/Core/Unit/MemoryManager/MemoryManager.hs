@@ -17,23 +17,23 @@ idApplyToIdTwoFreeAddresses :: TestTree
 idApplyToIdTwoFreeAddresses =
   testCase "give two free addresses: first three are busy" $
     assertBool
-      ("expected:\n" ++ show expectedAddresses ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualAddresses)))
+      ("expected:\n" ++ show expectedAddresses ++ "\nactual:\n" ++ show actualAddresses)
       addressesAreEqual
  where
   expectedAddresses = Just 4 C.:> Just 3 C.:> C.Nil :: C.Vec 2 (Maybe AddressNumber)
-  (systemActualAddresses, _) = giveAddresses @(2 C.^ C.BitSize AddressNumber) @2 (pure 2) (pure initialIdApplyToIdMM)
-  addressesAreEqual = or (C.sampleN @C.System 1 (systemActualAddresses C..==. pure expectedAddresses))
+  (actualAddresses, _) = giveAddressesNoSignal @(2 C.^ C.BitSize AddressNumber) @2 2 initialIdApplyToIdMM
+  addressesAreEqual = actualAddresses == expectedAddresses
 
 idApplyToIdGiveActiveAddress :: TestTree
 idApplyToIdGiveActiveAddress =
   testCase "get address of active node" $
     assertBool
-      ("expected:\n" ++ show expectedAddress ++ "\nactual:\n" ++ show (Prelude.head (C.sampleN 1 systemActualAddress)))
+      ("expected:\n" ++ show expectedAddress ++ "\nactual:\n" ++ show systemActualAddress)
       addressesAreEqual
  where
   expectedAddress = Just (0 :: AddressNumber)
-  systemActualAddress = giveActiveAddressNumber (pure initialIdApplyToIdMM)
-  addressesAreEqual = or (C.sampleN @C.System 1 (systemActualAddress C..==. pure expectedAddress))
+  systemActualAddress = giveActiveAddressNumberNoSignal initialIdApplyToIdMM
+  addressesAreEqual = systemActualAddress == expectedAddress
 
 memoryManagerUnitTests :: TestTree
 memoryManagerUnitTests =
