@@ -11,7 +11,7 @@ import Clash.Prelude
 import Control.Lens hiding (Index)
 import Core.Loader
 import Core.Map
-import Core.MemoryManager.ChangesAccumulator (getAllChangesByDeltaNoSignal)
+import Core.MemoryManager.ChangesAccumulator (getAllChangesByDelta)
 import Core.MemoryManager.MemoryManager
 import Core.MemoryManager.NodeChanges
 import Core.Node
@@ -113,7 +113,7 @@ step s@(CPUState{..}) i@(CPUIn processedLoadedNode) = case _phase of
         )
       else (s{_phase = Done}, defaultOut _rootNodeAddress)
    where
-    activeAddress = giveActiveAddressNumberNoSignal _memoryManager
+    activeAddress = giveActiveAddressNumber _memoryManager
     ramForm = (\address -> (address, Just (address, Nothing))) <$> activeAddress
   FetchRightActiveAddress ->
     ( s{_phase = Delay Reduce, _previousLoadedNode = processedLoadedNode, _previousRamForm = ramForm}
@@ -139,10 +139,10 @@ step s@(CPUState{..}) i@(CPUIn processedLoadedNode) = case _phase of
     )
    where
     acPair = fromMaybe (errorX $ "cpu: 1. i = \n" P.++ show i) (ActivePair <$> _previousLoadedNode <*> processedLoadedNode)
-    removedActivePairMemoryManager = removeActivePairNoSignal acPair _memoryManager
-    (delta, allocatedAddressesMemoryManager) = reduceNoSignal _chooseReductionRule removedActivePairMemoryManager acPair
+    removedActivePairMemoryManager = removeActivePair acPair _memoryManager
+    (delta, allocatedAddressesMemoryManager) = reduce _chooseReductionRule removedActivePairMemoryManager acPair
     newInterface = getInterface @portsNumber @((*) 2 portsNumber) acPair
-    allChanges = getAllChangesByDeltaNoSignal delta newInterface
+    allChanges = getAllChangesByDelta delta newInterface
     newRootAddress = changeRootNode acPair _rootNodeAddress delta
   ReadExternal counter ->
     (s{_phase = nextPhase, _previousRamForm = _ramForm}, CPUOut{..})

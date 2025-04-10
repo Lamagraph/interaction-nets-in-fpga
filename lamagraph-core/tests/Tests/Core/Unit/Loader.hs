@@ -56,7 +56,7 @@ activePairGettingTemplate testName initialMM initialNet expectedActivePair =
       2
       ( loadActivePair
           (exposeEnable (blockRam initialNet))
-          (pure $ giveActiveAddressNumberNoSignal initialMM)
+          (pure $ giveActiveAddressNumber initialMM)
       )
   answersAreEqual = expectedActivePair `elem` systemActualAnswer
 
@@ -303,14 +303,14 @@ interfaceReadWriteIdToIdChangeToErase =
  where
   eraseNode =
     let prPort = Connected $ Port 0 (Id 1)
-        secPorts = def
-     in LoadedNode (Node prPort secPorts Erase) 1
+        sPorts = def
+     in LoadedNode (Node prPort sPorts Erase) 1
   absIdNode =
     let prPort = Connected $ Port 0 (Id 1)
         port0 = Connected $ Port 1 (Id 1)
         port1 = Connected $ Port 1 (Id 0)
-        secPorts = Just port0 :> Just port1 :> Nil
-     in LoadedNode (Node prPort secPorts Abstract) 1
+        sPorts = Just port0 :> Just port1 :> Nil
+     in LoadedNode (Node prPort sPorts Abstract) 1
 
 interfaceReadWriteComplexIdToIdChangeToErase :: TestTree
 interfaceReadWriteComplexIdToIdChangeToErase =
@@ -324,18 +324,18 @@ interfaceReadWriteComplexIdToIdChangeToErase =
  where
   eraseNode1 =
     let prPort = Connected $ Port 0 (Id 1)
-        secPorts = def
-     in LoadedNode (Node prPort secPorts Erase) 1
+        sPorts = def
+     in LoadedNode (Node prPort sPorts Erase) 1
   eraseNode2 =
     let prPort = Connected $ Port 1 (Id 0)
-        secPorts = def
-     in LoadedNode (Node prPort secPorts Erase) 1
+        sPorts = def
+     in LoadedNode (Node prPort sPorts Erase) 1
   absIdNode =
     let prPort = Connected $ Port 0 (Id 1)
         port0 = Connected $ Port 1 (Id 1)
         port1 = Connected $ Port 1 (Id 0)
-        secPorts = Just port0 :> Just port1 :> Nil
-     in LoadedNode (Node prPort secPorts Abstract) 1
+        sPorts = Just port0 :> Just port1 :> Nil
+     in LoadedNode (Node prPort sPorts Abstract) 1
 
 combinationComplex :: TestTree
 combinationComplex =

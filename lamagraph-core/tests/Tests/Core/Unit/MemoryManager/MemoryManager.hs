@@ -21,7 +21,7 @@ idApplyToIdTwoFreeAddresses =
       addressesAreEqual
  where
   expectedAddresses = Just 4 C.:> Just 3 C.:> C.Nil :: C.Vec 2 (Maybe AddressNumber)
-  (actualAddresses, _) = giveAddressesNoSignal @(2 C.^ C.BitSize AddressNumber) @2 2 initialIdApplyToIdMM
+  (actualAddresses, _) = giveAddresses @(2 C.^ C.BitSize AddressNumber) @2 2 initialIdApplyToIdMM
   addressesAreEqual = actualAddresses == expectedAddresses
 
 idApplyToIdGiveActiveAddress :: TestTree
@@ -32,7 +32,7 @@ idApplyToIdGiveActiveAddress =
       addressesAreEqual
  where
   expectedAddress = Just (0 :: AddressNumber)
-  systemActualAddress = giveActiveAddressNumberNoSignal initialIdApplyToIdMM
+  systemActualAddress = giveActiveAddressNumber initialIdApplyToIdMM
   addressesAreEqual = systemActualAddress == expectedAddress
 
 memoryManagerUnitTests :: TestTree

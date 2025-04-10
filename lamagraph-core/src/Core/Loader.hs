@@ -6,7 +6,6 @@ import Core.MemoryManager.MemoryManager
 import Core.MemoryManager.NodeChanges
 import Core.Node
 import Data.Maybe (fromMaybe, isJust)
-import qualified Prelude as P
 
 -- | Type alias for partial applied `blockRam`
 type Ram dom portsNumber agentType =
@@ -16,24 +15,6 @@ type Ram dom portsNumber agentType =
   )
 
 type RamForm portsNumber agentType = (AddressNumber, Maybe (AddressNumber, Maybe (Node portsNumber agentType)))
-
-{- | Read and Write by `Maybe` `RamForm` from RAM. It return `Nothing` if input is `Nothing` and __do not touch ram__
-Specialized version with an inequality condition for the values of the current and previous cycles
--}
-delayedMaybeRamWithNEQ ::
-  (KnownDomain dom, HiddenClockResetEnable dom, KnownNat portsNumber, NFDataX agentType, Eq agentType) =>
-  (Enable dom -> Ram dom portsNumber agentType) ->
-  Signal dom (Maybe (RamForm portsNumber agentType)) ->
-  Signal dom (Maybe (Node portsNumber agentType))
-delayedMaybeRamWithNEQ ram inputRamForm =
-  mux
-    (isJust <$> delayedRamForm)
-    (exposedRam $ unbundle $ fromJustX <$> inputRamForm)
-    def
- where
-  delayedRamForm = delay Nothing inputRamForm
-  enableFlag = toEnable $ isJust <$> inputRamForm .&&. (delayedRamForm ./=. inputRamForm)
-  exposedRam (readAddress, writeData) = ram enableFlag readAddress writeData
 
 -- | Read and Write by `Maybe` `RamForm` from RAM. It return `Nothing` if input is `Nothing` and __do not touch ram__
 delayedMaybeRam ::
@@ -49,6 +30,25 @@ delayedMaybeRam ram inputRamForm =
  where
   delayedRamForm = delay Nothing inputRamForm
   enableFlag = toEnable $ isJust <$> inputRamForm
+  exposedRam (readAddress, writeData) = ram enableFlag readAddress writeData
+
+{- | Read and Write by `Maybe` `RamForm` from RAM. It return `Nothing` if input is `Nothing` and __do not touch ram__
+Specialized version with an inequality condition for the values of the current and previous cycles
+__Deprecated__
+-}
+delayedMaybeRamWithNEQ ::
+  (KnownDomain dom, HiddenClockResetEnable dom, KnownNat portsNumber, NFDataX agentType, Eq agentType) =>
+  (Enable dom -> Ram dom portsNumber agentType) ->
+  Signal dom (Maybe (RamForm portsNumber agentType)) ->
+  Signal dom (Maybe (Node portsNumber agentType))
+delayedMaybeRamWithNEQ ram inputRamForm =
+  mux
+    (isJust <$> delayedRamForm)
+    (exposedRam $ unbundle $ fromJustX <$> inputRamForm)
+    def
+ where
+  delayedRamForm = delay Nothing inputRamForm
+  enableFlag = toEnable $ isJust <$> inputRamForm .&&. (delayedRamForm ./=. inputRamForm)
   exposedRam (readAddress, writeData) = ram enableFlag readAddress writeData
 
 -- | Read external `Node`s from ram
@@ -67,15 +67,18 @@ loadInterface ::
   Signal dom (Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType))) ->
   Signal dom (Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)))
 loadInterface ram interface changedInterface =
-  bundle
-    $ map
+  bundle $
+    map
       (\ramForm -> fromRamFormToLoadedNode <$> delayedMaybeRam ram ramForm <*> ramForm)
       (unbundle interfaceRamForm)
  where
   interfaceRamForm = zipInterfaceUpdatedToRamForm <$> interface <*> changedInterface
   fromRamFormToLoadedNode maybeNode maybeRamForm = let address = fst <$> maybeRamForm in LoadedNode <$> maybeNode <*> address
 
--- | Load `ActivePair` by `AddressNumber`. It is assumed that `AddressNumber` is actually active
+{- | Load `ActivePair` by `AddressNumber`. It is assumed that `AddressNumber` is actually active
+
+__Deprecated__
+-}
 loadActivePair ::
   (KnownDomain dom, KnownNat portsNumber, HiddenClockResetEnable dom, NFDataX agentType, Eq agentType) =>
   (Enable dom -> Ram dom portsNumber agentType) ->
@@ -94,6 +97,10 @@ loadActivePair ram leftActiveNodeAddress = toMaybeActivePair <$> maybeLeftLoaded
   maybeRightLoadedNode = constructLoadedNode $ getRightNodeAddress <$> maybeLeftLoadedNode
   toMaybeActivePair leftLoadedNode rightLoadedNode = ActivePair <$> leftLoadedNode <*> rightLoadedNode
 
+{- | Write new `Node`s to RAM
+
+__Deprecated__
+-}
 writeNewNodes ::
   ( KnownNat nodesNumber
   , KnownNat portsNumber
@@ -114,16 +121,14 @@ zipInterfaceUpdatedToRamForm ::
   Interface externalNodesNumber ->
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   Vec externalNodesNumber (Maybe (RamForm portsNumber agentType))
-zipInterfaceUpdatedToRamForm x y =
+zipInterfaceUpdatedToRamForm =
   zipWith
     ( \maybeAddress maybeLoadedNode -> case (maybeAddress, maybeLoadedNode) of
         (Just address, Just (LoadedNode{..})) ->
           if _originalAddress == address
             then Just (address, Just (_originalAddress, Just _containedNode))
-            else errorX ("interfaced address and address of loaded node are not equal\n" P.++ show x P.++ "\n" P.++ show y)
+            else errorX "interfaced address and address of loaded node are not equal"
         (Nothing, Nothing) -> def
         (Just address, Nothing) -> Just (address, def)
         (Nothing, Just _) -> errorX " interfaced address is Nothing and external node is not "
     )
-    x
-    y

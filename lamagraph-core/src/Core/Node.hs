@@ -23,9 +23,6 @@ pattern NotConnected = Nothing
 
 type AddressNumber = Unsigned 16
 
-type LocalAddressNumber = AddressNumber
-type ActualAddressNumber = AddressNumber
-
 data IdOfPort (portsNumber :: Nat) = Id (Index portsNumber) | Primary
   deriving (Generic, Show, Eq, NFDataX, ShowX)
 
@@ -54,7 +51,7 @@ and info about this should be passed to the memory manager.
 -}
 data LoadedNode (portsNumber :: Nat) agentType = LoadedNode
   { _containedNode :: Node portsNumber agentType
-  , _originalAddress :: ActualAddressNumber
+  , _originalAddress :: AddressNumber
   }
   deriving (NFDataX, Generic, Show, Eq, ShowX)
 

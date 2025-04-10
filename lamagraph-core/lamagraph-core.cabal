@@ -89,7 +89,6 @@ library
   hs-source-dirs: src
   exposed-modules:
     Core.Loader
-    Core.Core
     Core.Node
     Core.Reducer
     Core.MemoryManager.MemoryManager

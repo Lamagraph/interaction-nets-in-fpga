@@ -41,8 +41,8 @@ edgesReduction
       (LoadedNode rightActiveNode rightActiveAddress)
     )
   fullEdges =
-    snd
-      $ ifoldl
+    snd $
+      ifoldl
         ( \(excludeEdges, resEdges) i maybeEdge ->
             let (exEdges, rEdge) = if excludeEdges !! i then (repeat False, Nothing) else edgeProcessing maybeEdge (repeat False)
              in (exEdges `insertVec` excludeEdges, rEdge +>> resEdges)
@@ -246,7 +246,7 @@ changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress
     else oldRootNode
  where
   isNotConnected = isNothing
-  nodeHasFreePort (Node primPort secPorts _) = any (maybe False isNotConnected) (Just primPort :> secPorts)
+  nodeHasFreePort (Node primPort sPorts _) = any (maybe False isNotConnected) (Just primPort :> sPorts)
   findInMaybeNodes :: forall n. (KnownNat n) => Vec n (Maybe (LoadedNode portsNumber agentType)) -> Maybe AddressNumber
   findInMaybeNodes = \case
     Nil -> Nothing
@@ -263,7 +263,7 @@ changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress
     Cons Nothing es -> findInMaybeEdges es
 
 -- | Apply reduction rule by `ActivePair` and allocate necessary amount of memory
-reduceNoSignal ::
+reduce ::
   forall portsNumber nodesNumber edgesNumber cellsNumber agentType.
   ( KnownNat portsNumber
   , KnownNat nodesNumber
@@ -278,7 +278,7 @@ reduceNoSignal ::
   MemoryManager cellsNumber ->
   ActivePair portsNumber agentType ->
   (Delta nodesNumber edgesNumber portsNumber agentType, MemoryManager cellsNumber)
-reduceNoSignal chooseReductionRule memoryManager activeP = (delta, writeNewActives delta newMemoryManager)
+reduce chooseReductionRule memoryManager activeP = (delta, writeNewActives delta newMemoryManager)
  where
   leftLoadedNode = view leftNode activeP
   rightLoadedNode = view rightNode activeP
@@ -287,6 +287,6 @@ reduceNoSignal chooseReductionRule memoryManager activeP = (delta, writeNewActiv
   reductionRuleInfo = chooseReductionRule leftNodeType rightNodeType
   transitionFunction = view reductionFunction reductionRuleInfo
   (freeAddresses, newMemoryManager) =
-    giveAddressesNoSignal (view necessaryAddressesCount reductionRuleInfo) memoryManager
+    giveAddresses (view necessaryAddressesCount reductionRuleInfo) memoryManager
   reduceRuleResult = transitionFunction freeAddresses leftLoadedNode rightLoadedNode
   delta = toDelta activeP reduceRuleResult

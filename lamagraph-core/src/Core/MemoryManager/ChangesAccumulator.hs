@@ -3,7 +3,7 @@
 {-# HLINT ignore "Eta reduce" #-}
 {-# HLINT ignore "Functor law" #-}
 
-module Core.MemoryManager.ChangesAccumulator (getAllChangesByDelta, getAllChangesByDeltaNoSignal) where
+module Core.MemoryManager.ChangesAccumulator (getAllChangesByDelta) where
 
 import Clash.Prelude
 import Control.Lens hiding (ifoldl)
@@ -35,7 +35,7 @@ getUpdateInfoByPort addressPointTo interface port portId =
       update addressNum = Just (addressNum, connectedToPortId, newPort)
     NotConnected -> Nothing
 
-{- | The same as `updatePortsInfoByPort`, but updating happens by `Edge`.
+{- | The same as `getUpdateInfoByPort`, but updating happens by `Edge`.
 In fact it accumulate info about which external `LoadedNode` have become connected with each other
 -}
 getUpdateInfoByEdge ::
@@ -73,8 +73,8 @@ insertInInfoVec infoVec maybeInsertionInfo =
   insertFunction portId newPort maybeInfo = Just $ maybe (constructNewInfo def) constructNewInfo maybeInfo
    where
     constructNewInfo info@(Changes secPortsInfo _) = case portId of
-      Primary -> set primeP (Just newPort) info
-      Id i -> set secP (replace i (Just newPort) secPortsInfo) info
+      Primary -> set primePort (Just newPort) info
+      Id i -> set secPorts (replace i (Just newPort) secPortsInfo) info
 
 -- | Accumulate all changes by ports of the given `Node` and write it in the `Map`
 accumulatePortsChangesByLoadedNode ::
@@ -144,22 +144,8 @@ accumulateUpdatesByEdges infoVec edgesForUpdate =
 
 -- | Get all changes from `Delta`
 getAllChangesByDelta ::
-  (KnownNat edgesNumber, KnownNat nodesNumber, KnownNat maxNumOfChangedNodes, KnownNat portsNumber, KnownDomain dom) =>
-  Signal dom (Delta nodesNumber edgesNumber portsNumber agentType) ->
-  Signal dom (Interface maxNumOfChangedNodes) ->
-  Signal dom (Map maxNumOfChangedNodes (Changes portsNumber))
-getAllChangesByDelta delta interface = accumulateUpdatesByNodes <$> (accumulateUpdatesByEdges def <$> edgesForUpdate) <*> interface <*> nodesForUpdate
- where
-  edgesForUpdate = view newEdges <$> delta
-  nodesForUpdate = view newNodes <$> delta
-
--- | Get all changes from `Delta`
-getAllChangesByDeltaNoSignal ::
   (KnownNat edgesNumber, KnownNat nodesNumber, KnownNat maxNumOfChangedNodes, KnownNat portsNumber) =>
   Delta nodesNumber edgesNumber portsNumber agentType ->
   Interface maxNumOfChangedNodes ->
   Map maxNumOfChangedNodes (Changes portsNumber)
-getAllChangesByDeltaNoSignal delta interface = accumulateUpdatesByNodes (accumulateUpdatesByEdges def edgesForUpdate) interface nodesForUpdate
- where
-  edgesForUpdate = view newEdges delta
-  nodesForUpdate = view newNodes delta
+getAllChangesByDelta Delta{..} interface = accumulateUpdatesByNodes (accumulateUpdatesByEdges def _newEdges) interface _newNodes

@@ -3,20 +3,7 @@
 {-# HLINT ignore "Eta reduce" #-}
 {-# HLINT ignore "Functor law" #-}
 
-module Core.MemoryManager.MemoryManager (
-  MemoryManager (..),
-  busyBitMap,
-  activePairs,
-  ActivePair (..),
-  leftNode,
-  rightNode,
-  indexToUnsigned,
-  markAddress,
-  giveActiveAddressNumberNoSignal,
-  removeActivePairNoSignal,
-  markAddressesAsBusyNoSignal,
-  giveAddressesNoSignal,
-) where
+module Core.MemoryManager.MemoryManager where
 
 import Clash.Prelude
 import Control.Lens hiding (Index, imap)
@@ -64,7 +51,7 @@ indexToUnsigned ::
 indexToUnsigned v = bitCoerce (resize v :: Index (2 ^ m))
 
 -- | Get `Vec` of free `AddressNumber`s of given size
-getFreeAddressesNoSignal ::
+getFreeAddresses ::
   forall maxAddressesCount cellsNumber.
   ( KnownNat cellsNumber
   , KnownNat maxAddressesCount
@@ -75,7 +62,7 @@ getFreeAddressesNoSignal ::
   Index cellsNumber ->
   Vec cellsNumber Bool ->
   Vec maxAddressesCount (Maybe AddressNumber)
-getFreeAddressesNoSignal addressesCount busyMap = if addressesCount == 0 then def else helper 0 0 busyMap def
+getFreeAddresses addressesCount busyMap = if addressesCount == 0 then def else helper 0 0 busyMap def
  where
   helper ::
     Index cellsNumber ->
@@ -98,14 +85,14 @@ getFreeAddressesNoSignal addressesCount busyMap = if addressesCount == 0 then de
           helper allocatedCount (busyMapIndex + 1) remind addresses
 
 -- | Mark given `AddressNumber`s as busy in busy map
-markAddressesAsBusyNoSignal ::
+markAddressesAsBusy ::
   (KnownNat cellsNumber, KnownNat n, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
   Vec cellsNumber Bool ->
   Vec n (Maybe AddressNumber) ->
   Vec cellsNumber Bool
-markAddressesAsBusyNoSignal busyMap addresses = imap (\i x -> Just (indexToUnsigned i) `elem` addresses || x) busyMap
+markAddressesAsBusy busyMap addresses = imap (\address addressIsBusy -> Just (indexToUnsigned address) `elem` addresses || addressIsBusy) busyMap
 
-giveAddressesNoSignal ::
+giveAddresses ::
   ( 1 <= cellsNumber
   , KnownNat cellsNumber
   , KnownNat maxAddressesCount
@@ -115,10 +102,10 @@ giveAddressesNoSignal ::
   Index cellsNumber ->
   MemoryManager cellsNumber ->
   (Vec maxAddressesCount (Maybe AddressNumber), MemoryManager cellsNumber)
-giveAddressesNoSignal addressesCount memoryManager = (addresses, set busyBitMap newBusyMap memoryManager)
+giveAddresses addressesCount mm@(MemoryManager busyMap _) = (addresses, mm{_busyBitMap = newBusyMap})
  where
-  addresses = getFreeAddressesNoSignal addressesCount (view busyBitMap memoryManager)
-  newBusyMap = markAddressesAsBusyNoSignal (view busyBitMap memoryManager) addresses
+  addresses = getFreeAddresses addressesCount busyMap
+  newBusyMap = markAddressesAsBusy busyMap addresses
 
 {- | Mark given `AddressNumber` as busy or not according to passed flag (`True` means busy)
 
@@ -131,7 +118,7 @@ markAddress ::
   (KnownNat cellsNumber) =>
   Vec cellsNumber Bool ->
   Bool ->
-  ActualAddressNumber ->
+  AddressNumber ->
   Vec cellsNumber Bool
 markAddress busyMap marker address =
   replace address marker busyMap
@@ -169,22 +156,21 @@ freeUpActivePair busyMap activePairToFree = markAddress (markAddress busyMap Fal
   rightNodeAddress = chooseAddress rightNode
 
 -- | Remove all information about `ActivePair` from `MemoryManager`
-removeActivePairNoSignal ::
+removeActivePair ::
   (KnownNat cellsNumber, KnownNat portsNumber) =>
   ActivePair portsNumber agentType ->
   MemoryManager cellsNumber ->
   MemoryManager cellsNumber
-removeActivePairNoSignal acPair memoryManager = MemoryManager{..}
+removeActivePair acPair memoryManager = MemoryManager{..}
  where
   _activePairs = deleteActivePair (view activePairs memoryManager) acPair
   _busyBitMap = freeUpActivePair (view busyBitMap memoryManager) acPair
 
 -- | Give `AddressNumber` of some active `Node`. It returns `Nothing` if there is no `ActivePair`s in the net
-giveActiveAddressNumberNoSignal ::
+giveActiveAddressNumber ::
   (KnownNat cellsNumber, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
   MemoryManager cellsNumber ->
   Maybe AddressNumber
-giveActiveAddressNumberNoSignal memoryManager = fmap indexToUnsigned maybeIndexAddress
+giveActiveAddressNumber MemoryManager{..} = fmap indexToUnsigned maybeIndexAddress
  where
-  activePairsBusyMap = view activePairs memoryManager
-  maybeIndexAddress = findIndex id activePairsBusyMap
+  maybeIndexAddress = findIndex id _activePairs

@@ -13,8 +13,6 @@ module Core.Concrete.ReduceRulesLambda where
 
 import Clash.Prelude
 import Control.Lens hiding (Index, imap, (:>))
-import Core.Concrete.TypesTH
-import Core.MemoryManager.NodeChanges
 import Core.Node
 import Data.Maybe
 import INet.Net
@@ -86,5 +84,3 @@ instance INet AgentSimpleLambda 65536 2 2 2 where
     (Erase, _) -> ReduceFunctionInfo eraseToAbstractOrApplyRule 2
     (_, Erase) -> ReduceFunctionInfo (\addresses nodeAny nodeErase -> eraseToAbstractOrApplyRule addresses nodeErase nodeAny) 2
     (_, _) -> errorX "There is no rule for this pair of agent in reduction rules"
-
-$(makeAgentsType "FulledLambda" ["Apply1", "Abstract1", "Erase1", "Duplicator"] (Just 64))
