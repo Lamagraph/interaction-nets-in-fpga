@@ -10,15 +10,14 @@
 module Tests.Core.Unit.CPU where
 
 import Clash.Prelude
-import Test.Tasty
-import Test.Tasty.HUnit
-
-import Core.CPU
 import Core.Concrete.Initial
 import Core.Concrete.ReduceRulesLambda
+import Core.Core
 import Core.MemoryManager.MemoryManager
 import Core.Node
 import INet.Net
+import Test.Tasty
+import Test.Tasty.HUnit
 import Prelude as P
 
 mealyCoreTestTemplate ::
