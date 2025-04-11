@@ -44,20 +44,19 @@ data Phase (externalNodesNumber :: Nat) (newNodesNumber :: Nat)
   | Delay (Phase externalNodesNumber newNodesNumber)
   deriving (Generic, NFDataX, Show)
 
-data CPUState cellsNumber portsNumber nodesNumber edgesNumber agentType = CPUState
+data CPUState portsNumber nodesNumber edgesNumber agentType = CPUState
   { _phase :: Phase ((*) 2 portsNumber) nodesNumber
-  , _memoryManager :: MemoryManager cellsNumber
+  , _memoryManager :: MemoryManager
   , _previousLoadedNode :: Maybe (LoadedNode portsNumber agentType)
   , _previousRamForm :: Maybe (RamForm portsNumber agentType)
   , _changes :: Map ((*) 2 portsNumber) (Changes portsNumber)
   , _interface :: Interface ((*) 2 portsNumber)
   , _nodesToWrite :: Vec nodesNumber (Maybe (LoadedNode portsNumber agentType))
-  , _chooseReductionRule :: ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType
   , _rootNodeAddress :: AddressNumber
   }
   deriving (Generic, NFDataX)
 
-instance (Show (CPUState cellsNumber portsNumber nodesNumber edgesNumber agentType)) where
+instance (Show (CPUState portsNumber nodesNumber edgesNumber agentType)) where
   show CPUState{..} =
     "phase = "
       P.++ show _phase
@@ -68,11 +67,10 @@ instance (Show (CPUState cellsNumber portsNumber nodesNumber edgesNumber agentTy
 
 initCPUState ::
   (KnownNat portsNumber, KnownNat nodesNumber) =>
-  MemoryManager cellsNumber ->
-  ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType ->
+  MemoryManager ->
   AddressNumber ->
-  CPUState cellsNumber portsNumber nodesNumber edgesNumber agentType
-initCPUState initMM reductionRule initRootNodeAddress =
+  CPUState portsNumber nodesNumber edgesNumber agentType
+initCPUState initMM initRootNodeAddress =
   CPUState
     { _phase = Init
     , _memoryManager = initMM
@@ -81,27 +79,24 @@ initCPUState initMM reductionRule initRootNodeAddress =
     , _changes = def
     , _interface = def
     , _nodesToWrite = def
-    , _chooseReductionRule = reductionRule
-    , _rootNodeAddress = initRootNodeAddress
+    , -- , _chooseReductionRule = reductionRule
+      _rootNodeAddress = initRootNodeAddress
     }
 
 -- TODO: make it with State Monad
 step ::
-  forall portsNumber nodesNumber edgesNumber cellsNumber agentType.
+  forall portsNumber nodesNumber edgesNumber agentType.
   ( KnownNat portsNumber
-  , KnownNat cellsNumber
-  , 1 <= cellsNumber
-  , CLog 2 cellsNumber <= BitSize AddressNumber
-  , nodesNumber <= cellsNumber
+  , nodesNumber <= CellsNumber
   , KnownNat nodesNumber
   , KnownNat edgesNumber
-  , INet agentType cellsNumber nodesNumber edgesNumber portsNumber
+  , INet agentType nodesNumber edgesNumber portsNumber
   , Show agentType
   , Eq agentType
   ) =>
-  CPUState cellsNumber portsNumber nodesNumber edgesNumber agentType ->
+  CPUState portsNumber nodesNumber edgesNumber agentType ->
   CPUIn portsNumber agentType ->
-  (CPUState cellsNumber portsNumber nodesNumber edgesNumber agentType, CPUOut portsNumber agentType)
+  (CPUState portsNumber nodesNumber edgesNumber agentType, CPUOut portsNumber agentType)
 step s@(CPUState{..}) i@(CPUIn processedLoadedNode) = case _phase of
   Init ->
     (s{_phase = FetchLeftActiveAddress}, defaultOut _rootNodeAddress)
@@ -140,7 +135,7 @@ step s@(CPUState{..}) i@(CPUIn processedLoadedNode) = case _phase of
    where
     acPair = fromMaybe (errorX $ "cpu: 1. i = \n" P.++ show i) (ActivePair <$> _previousLoadedNode <*> processedLoadedNode)
     removedActivePairMemoryManager = removeActivePair acPair _memoryManager
-    (delta, allocatedAddressesMemoryManager) = reduce _chooseReductionRule removedActivePairMemoryManager acPair
+    (delta, allocatedAddressesMemoryManager) = reduce @portsNumber @nodesNumber @edgesNumber @agentType removedActivePairMemoryManager acPair
     newInterface = getInterface @portsNumber @((*) 2 portsNumber) acPair
     allChanges = getAllChangesByDelta delta newInterface
     newRootAddress = changeRootNode acPair _rootNodeAddress delta
@@ -177,24 +172,21 @@ step s@(CPUState{..}) i@(CPUIn processedLoadedNode) = case _phase of
   Delay ph -> (s{_phase = ph}, CPUOut{_ramForm = _previousRamForm, _nextRootNodeAddress = _rootNodeAddress})
 
 mealyCore ::
-  forall portsNumber nodesNumber edgesNumber cellsNumber agentType dom.
+  forall portsNumber nodesNumber edgesNumber agentType dom.
   ( KnownNat portsNumber
-  , KnownNat cellsNumber
-  , 1 <= cellsNumber
-  , CLog 2 cellsNumber <= BitSize AddressNumber
-  , nodesNumber <= cellsNumber
+  , nodesNumber <= CellsNumber
   , KnownNat nodesNumber
   , KnownNat edgesNumber
-  , INet agentType cellsNumber nodesNumber edgesNumber portsNumber
+  , INet agentType nodesNumber edgesNumber portsNumber
   , KnownDomain dom
   , HiddenClockResetEnable dom
   , Show agentType
   , NFDataX agentType
   , Eq agentType
   ) =>
-  MemoryManager cellsNumber ->
-  ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType ->
+  MemoryManager ->
   AddressNumber ->
   Signal dom (CPUIn portsNumber agentType) ->
   Signal dom (CPUOut portsNumber agentType)
-mealyCore initialMM reductionRule initRootNodeAddress = mealy step (initCPUState initialMM reductionRule initRootNodeAddress)
+mealyCore initialMM initRootNodeAddress =
+  mealy (step @portsNumber @nodesNumber @edgesNumber @agentType) (initCPUState initialMM initRootNodeAddress)

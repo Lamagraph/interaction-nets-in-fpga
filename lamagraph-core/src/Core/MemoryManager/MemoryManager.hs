@@ -27,10 +27,10 @@ data ActivePair (portsNumber :: Nat) agentType = ActivePair
   deriving (Show, Eq, Generic, NFDataX, Bundle, ShowX)
 $(makeLenses ''ActivePair)
 
-data MemoryManager (cellsNumber :: Nat)
+data MemoryManager
   = MemoryManager
-  { _busyBitMap :: Vec cellsNumber Bool -- map Address : Bool. tell smth like "this Address is busy, so you can not to write here"
-  , _activePairs :: Vec cellsNumber Bool
+  { _busyBitMap :: Vec CellsNumber Bool -- map Address : Bool. tell smth like "this Address is busy, so you can not to write here"
+  , _activePairs :: Vec CellsNumber Bool
   }
   deriving (Generic, NFDataX, Bundle, Show)
 
@@ -52,21 +52,20 @@ indexToUnsigned v = bitCoerce (resize v :: Index (2 ^ m))
 
 -- | Get `Vec` of free `AddressNumber`s of given size
 getFreeAddresses ::
-  forall maxAddressesCount cellsNumber.
-  ( KnownNat cellsNumber
-  , KnownNat maxAddressesCount
-  , CLog 2 cellsNumber <= BitSize AddressNumber
-  , 1 <= cellsNumber
-  , maxAddressesCount <= cellsNumber
+  forall maxAddressesCount.
+  ( KnownNat maxAddressesCount
+  , CLog 2 CellsNumber <= BitSize AddressNumber
+  , 1 <= CellsNumber
+  , maxAddressesCount <= CellsNumber
   ) =>
-  Index cellsNumber ->
-  Vec cellsNumber Bool ->
+  Index CellsNumber ->
+  Vec CellsNumber Bool ->
   Vec maxAddressesCount (Maybe AddressNumber)
 getFreeAddresses addressesCount busyMap = if addressesCount == 0 then def else helper 0 0 busyMap def
  where
   helper ::
-    Index cellsNumber ->
-    Index cellsNumber ->
+    Index CellsNumber ->
+    Index CellsNumber ->
     Vec m Bool ->
     Vec maxAddressesCount (Maybe AddressNumber) ->
     Vec maxAddressesCount (Maybe AddressNumber)
@@ -86,22 +85,22 @@ getFreeAddresses addressesCount busyMap = if addressesCount == 0 then def else h
 
 -- | Mark given `AddressNumber`s as busy in busy map
 markAddressesAsBusy ::
-  (KnownNat cellsNumber, KnownNat n, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
-  Vec cellsNumber Bool ->
+  (KnownNat n, 1 <= CellsNumber, CLog 2 CellsNumber <= BitSize AddressNumber) =>
+  Vec CellsNumber Bool ->
   Vec n (Maybe AddressNumber) ->
-  Vec cellsNumber Bool
+  Vec CellsNumber Bool
 markAddressesAsBusy busyMap addresses = imap (\address addressIsBusy -> Just (indexToUnsigned address) `elem` addresses || addressIsBusy) busyMap
 
 giveAddresses ::
-  ( 1 <= cellsNumber
-  , KnownNat cellsNumber
+  ( 1 <= CellsNumber
+  , KnownNat CellsNumber
   , KnownNat maxAddressesCount
-  , CLog 2 cellsNumber <= BitSize AddressNumber
-  , maxAddressesCount <= cellsNumber
+  , CLog 2 CellsNumber <= BitSize AddressNumber
+  , maxAddressesCount <= CellsNumber
   ) =>
-  Index cellsNumber ->
-  MemoryManager cellsNumber ->
-  (Vec maxAddressesCount (Maybe AddressNumber), MemoryManager cellsNumber)
+  Index CellsNumber ->
+  MemoryManager ->
+  (Vec maxAddressesCount (Maybe AddressNumber), MemoryManager)
 giveAddresses addressesCount mm@(MemoryManager busyMap _) = (addresses, mm{_busyBitMap = newBusyMap})
  where
   addresses = getFreeAddresses addressesCount busyMap
@@ -115,20 +114,19 @@ giveAddresses addressesCount mm@(MemoryManager busyMap _) = (addresses, mm{_busy
 False :> False :> True :> False :> Nil
 -}
 markAddress ::
-  (KnownNat cellsNumber) =>
-  Vec cellsNumber Bool ->
+  Vec CellsNumber Bool ->
   Bool ->
   AddressNumber ->
-  Vec cellsNumber Bool
+  Vec CellsNumber Bool
 markAddress busyMap marker address =
   replace address marker busyMap
 
 -- | Replace processed active pair at `False` in `Vec` of active pairs
 deleteActivePair ::
-  (KnownNat cellsNumber, KnownNat portsNumber) =>
-  Vec cellsNumber Bool ->
+  (KnownNat portsNumber) =>
+  Vec CellsNumber Bool ->
   ActivePair portsNumber agentType ->
-  Vec cellsNumber Bool
+  Vec CellsNumber Bool
 deleteActivePair oldActivePairs activePairToDelete =
   if leftInVec `xor` rightInVec
     then newActivePairs
@@ -145,10 +143,10 @@ deleteActivePair oldActivePairs activePairToDelete =
 
 -- | Mark `ActivePair`'s place as free
 freeUpActivePair ::
-  (KnownNat cellsNumber, KnownNat portsNumber) =>
-  Vec cellsNumber Bool ->
+  (KnownNat portsNumber) =>
+  Vec CellsNumber Bool ->
   ActivePair portsNumber agentType ->
-  Vec cellsNumber Bool
+  Vec CellsNumber Bool
 freeUpActivePair busyMap activePairToFree = markAddress (markAddress busyMap False leftNodeAddress) False rightNodeAddress
  where
   chooseAddress choice = activePairToFree ^. choice . originalAddress
@@ -157,10 +155,10 @@ freeUpActivePair busyMap activePairToFree = markAddress (markAddress busyMap Fal
 
 -- | Remove all information about `ActivePair` from `MemoryManager`
 removeActivePair ::
-  (KnownNat cellsNumber, KnownNat portsNumber) =>
+  (KnownNat portsNumber) =>
   ActivePair portsNumber agentType ->
-  MemoryManager cellsNumber ->
-  MemoryManager cellsNumber
+  MemoryManager ->
+  MemoryManager
 removeActivePair acPair memoryManager = MemoryManager{..}
  where
   _activePairs = deleteActivePair (view activePairs memoryManager) acPair
@@ -168,8 +166,8 @@ removeActivePair acPair memoryManager = MemoryManager{..}
 
 -- | Give `AddressNumber` of some active `Node`. It returns `Nothing` if there is no `ActivePair`s in the net
 giveActiveAddressNumber ::
-  (KnownNat cellsNumber, 1 <= cellsNumber, CLog 2 cellsNumber <= BitSize AddressNumber) =>
-  MemoryManager cellsNumber ->
+  -- (1 <= CellsNumber, CLog 2 CellsNumber <= BitSize AddressNumber) =>
+  MemoryManager ->
   Maybe AddressNumber
 giveActiveAddressNumber MemoryManager{..} = fmap indexToUnsigned maybeIndexAddress
  where

@@ -91,11 +91,11 @@ getActiveAddresses (Delta nodes edges _) = newActivesByEdges
 
 -- | Mark new active `Address` in active bit map
 writeNewActives ::
-  forall nodesNumber edgesNumber portsNumber cellsNumber agentType.
-  (KnownNat nodesNumber, KnownNat edgesNumber, KnownNat cellsNumber, KnownNat portsNumber) =>
+  forall nodesNumber edgesNumber portsNumber agentType.
+  (KnownNat nodesNumber, KnownNat edgesNumber, KnownNat portsNumber) =>
   Delta nodesNumber edgesNumber portsNumber agentType ->
-  MemoryManager cellsNumber ->
-  MemoryManager cellsNumber
+  MemoryManager ->
+  MemoryManager
 writeNewActives delta memoryManager = set activePairs newActivePairs memoryManager
  where
   newActivePairs =

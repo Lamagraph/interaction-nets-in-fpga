@@ -7,8 +7,8 @@ import Core.MemoryManager.MemoryManager (MemoryManager (MemoryManager), indexToU
 import Core.Node
 
 initialNodeToLoadedNode ::
-  Vec (2 ^ BitSize AddressNumber) (Maybe (Node 2 AgentSimpleLambda)) ->
-  Vec (2 ^ BitSize AddressNumber) (Maybe (LoadedNode 2 AgentSimpleLambda))
+  Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda)) ->
+  Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
 initialNodeToLoadedNode =
   imap
     ( \i maybeNode ->
@@ -20,7 +20,7 @@ initialNodeToLoadedNode =
 
 <<docs/apply.svg>>
 -}
-initialIdApplyToIdNode :: Vec (2 ^ BitSize AddressNumber) (Maybe (Node 2 AgentSimpleLambda))
+initialIdApplyToIdNode :: Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda))
 initialIdApplyToIdNode = Just applyNode +>> Just abstract1Node +>> Just abstract2Node +>> def
  where
   applyAddressNumber = 0
@@ -44,17 +44,17 @@ initialIdApplyToIdNode = Just applyNode +>> Just abstract1Node +>> Just abstract
         secPorts = Just (Connected port0) :> Just (Connected port1) :> Nil
      in Node (Just prPort) secPorts Abstract
 
-initialIdApplyToId :: Vec (2 ^ BitSize AddressNumber) (Maybe (LoadedNode 2 AgentSimpleLambda))
+initialIdApplyToId :: Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
 initialIdApplyToId = initialNodeToLoadedNode initialIdApplyToIdNode
 
-initialIdApplyToIdMM :: MemoryManager (2 ^ BitSize AddressNumber)
+initialIdApplyToIdMM :: MemoryManager
 initialIdApplyToIdMM = MemoryManager busyMap activePairsMap
  where
   busyMap = replicate (SNat @3) True ++ repeat False
   activePairsMap = replicate (SNat @1) True ++ repeat False
 
 -- | Not correct net that should reduce to `Nothing`
-initialLoopEdge :: Vec (2 ^ BitSize AddressNumber) (Maybe (LoadedNode 2 AgentSimpleLambda))
+initialLoopEdge :: Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
 initialLoopEdge = Just applyNode +>> Just abstractNode +>> def
  where
   applyAddressNumber = 0
@@ -72,14 +72,14 @@ initialLoopEdge = Just applyNode +>> Just abstractNode +>> def
         secPorts = Just (Connected port0) :> Just (Connected port1) :> Nil
      in LoadedNode (Node prPort secPorts Abstract) abstractAddressNumber
 
-initialLoopEdgeMM :: MemoryManager (2 ^ BitSize AddressNumber)
+initialLoopEdgeMM :: MemoryManager
 initialLoopEdgeMM = MemoryManager busyMap activePairsMap
  where
   busyMap = replicate (SNat @2) True ++ repeat False
   activePairsMap = replicate (SNat @1) True ++ repeat False
 
 -- | \((\lambda x. (\varepsilon) (x))(\lambda y. y)\)
-initialEpsAppToIdNode :: Vec (2 ^ BitSize AddressNumber) (Maybe (Node 2 AgentSimpleLambda))
+initialEpsAppToIdNode :: Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda))
 initialEpsAppToIdNode = Just absIdNode +>> Just applyMainNode +>> Just absEraseNode +>> Just applyEraseNode +>> Just eraseNode +>> def
  where
   absAddressId = 0
@@ -116,17 +116,17 @@ initialEpsAppToIdNode = Just absIdNode +>> Just applyMainNode +>> Just absEraseN
         secPorts = Nothing :> Nothing :> Nil
      in Node prPort secPorts Erase
 
-initialEpsAppToId :: Vec (2 ^ BitSize AddressNumber) (Maybe (LoadedNode 2 AgentSimpleLambda))
+initialEpsAppToId :: Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
 initialEpsAppToId = initialNodeToLoadedNode initialEpsAppToIdNode
 
-initialEpsAppToIdMM :: MemoryManager (2 ^ BitSize AddressNumber)
+initialEpsAppToIdMM :: MemoryManager
 initialEpsAppToIdMM = MemoryManager busyMap activePairsMap
  where
   busyMap = replicate (SNat @5) True ++ repeat False
   activePairsMap = (False :> True :> False :> True :> Nil) ++ repeat False
 
 -- | \(( \varepsilon (\lambda y. y)\)
-initialEpsAppToIdSimpleNode :: Vec (2 ^ BitSize AddressNumber) (Maybe (Node 2 AgentSimpleLambda))
+initialEpsAppToIdSimpleNode :: Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda))
 initialEpsAppToIdSimpleNode = Just absIdNode +>> Just applyEraseNode +>> Just eraseNode +>> def
  where
   absAddressId = 0
@@ -149,20 +149,20 @@ initialEpsAppToIdSimpleNode = Just absIdNode +>> Just applyEraseNode +>> Just er
         secPorts = Nothing :> Nothing :> Nil
      in Node prPort secPorts Erase
 
-initialEpsAppToIdSimple :: Vec (2 ^ BitSize AddressNumber) (Maybe (LoadedNode 2 AgentSimpleLambda))
+initialEpsAppToIdSimple :: Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
 initialEpsAppToIdSimple = initialNodeToLoadedNode initialEpsAppToIdSimpleNode
 
-initialEpsAppToIdSimpleMM :: MemoryManager (2 ^ BitSize AddressNumber)
+initialEpsAppToIdSimpleMM :: MemoryManager
 initialEpsAppToIdSimpleMM = MemoryManager busyMap activePairsMap
  where
   busyMap = replicate (SNat @3) True ++ repeat False
   activePairsMap = (False :> True :> False :> Nil) ++ repeat False
 
 -- | \(\lambda x. x\) connected to eraser by primary ports. It is not expressible in lambdas
-initialIdErase :: Vec (2 ^ BitSize AddressNumber) (Maybe (LoadedNode 2 AgentSimpleLambda))
+initialIdErase :: Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
 initialIdErase = initialNodeToLoadedNode initialIdEraseNode
 
-initialIdEraseNode :: Vec (2 ^ BitSize AddressNumber) (Maybe (Node 2 AgentSimpleLambda))
+initialIdEraseNode :: Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda))
 initialIdEraseNode = Just idNode +>> Just eraseNode +>> def
  where
   idAddress = 0
@@ -178,7 +178,7 @@ initialIdEraseNode = Just idNode +>> Just eraseNode +>> def
         secPorts = def
      in Node prPort secPorts Erase
 
-initialIdEraseMM :: MemoryManager (2 ^ BitSize AddressNumber)
+initialIdEraseMM :: MemoryManager
 initialIdEraseMM = MemoryManager busyMap activePairsMap
  where
   busyMap = replicate (SNat @2) True ++ repeat False

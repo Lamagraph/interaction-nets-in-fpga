@@ -21,7 +21,9 @@ pattern NotConnected :: Connection portsNumber
 pattern NotConnected = Nothing
 {-# COMPLETE Connected, NotConnected #-}
 
-type AddressNumber = Unsigned 16
+type AddressBitSize = 16
+type AddressNumber = Unsigned AddressBitSize
+type CellsNumber = 2 ^ AddressBitSize
 
 data IdOfPort (portsNumber :: Nat) = Id (Index portsNumber) | Primary
   deriving (Generic, Show, Eq, NFDataX, ShowX)

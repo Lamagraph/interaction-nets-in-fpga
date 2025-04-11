@@ -16,7 +16,6 @@ import Core.Concrete.ReduceRulesLambda
 import Core.MemoryManager.MemoryManager
 import Core.Node
 
-import INet.Net
 import Prelude
 
 -- | <<docs/eraseEraseEmptyInterface.svg>>
@@ -80,7 +79,7 @@ reduceIdAppId =
       C.:> C.Nil
   expectedDelta = Delta (C.def :: C.Vec 2 _) expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
-    reduce getReduceRuleInfo initialIdApplyToIdMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
+    reduce initialIdApplyToIdMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
   deltasAreEqual = systemActualDelta == expectedDelta
 
 -- | <<docs/reduceLoopEdge.svg>>
@@ -99,7 +98,7 @@ reduceLoopEdge =
       C.:> C.Nil
   expectedDelta = Delta (C.def :: C.Vec 2 _) expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
-    reduce getReduceRuleInfo initialLoopEdgeMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
+    reduce initialLoopEdgeMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
   deltasAreEqual = systemActualDelta == expectedDelta
 
 reduceEpsAppId :: TestTree
@@ -134,7 +133,7 @@ reduceEpsAppId =
       C.:> C.Nil
   expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
-    reduce getReduceRuleInfo initialEpsAppToIdMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
+    reduce initialEpsAppToIdMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
   deltasAreEqual = systemActualDelta == expectedDelta
 
 reduceEpsAppIdSimple :: TestTree
@@ -169,7 +168,7 @@ reduceEpsAppIdSimple =
       C.:> C.Nil
   expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
-    reduce getReduceRuleInfo initialEpsAppToIdSimpleMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
+    reduce initialEpsAppToIdSimpleMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
   deltasAreEqual = systemActualDelta == expectedDelta
 
 reduceEraseId :: TestTree
@@ -204,7 +203,7 @@ reduceEraseId =
       C.:> C.Nil
   expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
-    reduce getReduceRuleInfo initialIdEraseMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
+    reduce initialIdEraseMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
   deltasAreEqual = systemActualDelta == expectedDelta
 
 reducerUnitTests :: TestTree

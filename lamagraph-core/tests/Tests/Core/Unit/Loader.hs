@@ -25,19 +25,16 @@ import Core.Node
 import qualified Prelude as P
 
 activePairGettingTemplate ::
-  forall agentType cellsNumber portsNumber.
+  forall agentType portsNumber.
   ( KnownNat portsNumber
-  , KnownNat cellsNumber
-  , 1 <= cellsNumber
-  , CLog 2 cellsNumber <= BitSize AddressNumber
   , NFDataX agentType
   , Show agentType
   , ShowX agentType
   , Eq agentType
   ) =>
   TestName ->
-  MemoryManager cellsNumber ->
-  Vec cellsNumber (Maybe (Node portsNumber agentType)) ->
+  MemoryManager ->
+  Vec CellsNumber (Maybe (Node portsNumber agentType)) ->
   Maybe (ActivePair portsNumber agentType) ->
   TestTree
 activePairGettingTemplate testName initialMM initialNet expectedActivePair =
@@ -61,18 +58,15 @@ activePairGettingTemplate testName initialMM initialNet expectedActivePair =
   answersAreEqual = expectedActivePair `elem` systemActualAnswer
 
 activePairGettingComplexTemplate ::
-  forall agentType cellsNumber portsNumber.
+  forall agentType portsNumber.
   ( KnownNat portsNumber
-  , KnownNat cellsNumber
-  , 1 <= cellsNumber
-  , CLog 2 cellsNumber <= BitSize AddressNumber
   , NFDataX agentType
   , Show agentType
   , ShowX agentType
   , Eq agentType
   ) =>
   TestName ->
-  Vec cellsNumber (Maybe (Node portsNumber agentType)) ->
+  Vec CellsNumber (Maybe (Node portsNumber agentType)) ->
   [Maybe AddressNumber] ->
   [Maybe (ActivePair portsNumber agentType)] ->
   TestTree
@@ -97,19 +91,16 @@ activePairGettingComplexTemplate testName initialNet activeAddresses expectedAct
   answersAreEqual = P.all (`elem` systemActualAnswer) expectedActivePairs
 
 interfaceReadWriteTemplate ::
-  forall agentType cellsNumber portsNumber externalNodesNumber.
+  forall agentType portsNumber externalNodesNumber.
   ( KnownNat portsNumber
-  , KnownNat cellsNumber
   , KnownNat externalNodesNumber
-  , 1 <= cellsNumber
-  , CLog 2 cellsNumber <= BitSize AddressNumber
   , NFDataX agentType
   , Show agentType
   , ShowX agentType
   , Eq agentType
   ) =>
   TestName ->
-  Vec cellsNumber (Maybe (Node portsNumber agentType)) ->
+  Vec CellsNumber (Maybe (Node portsNumber agentType)) ->
   Interface externalNodesNumber ->
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
@@ -138,19 +129,16 @@ interfaceReadWriteTemplate testName initialNet interface changedExNodes expected
   answersAreEqual = expectedNotWrittenInterface `elem` systemActualAnswer && changedExNodes `elem` systemActualAnswer
 
 interfaceReadWriteComplexTemplate ::
-  forall agentType cellsNumber portsNumber externalNodesNumber.
+  forall agentType portsNumber externalNodesNumber.
   ( KnownNat portsNumber
-  , KnownNat cellsNumber
   , KnownNat externalNodesNumber
-  , 1 <= cellsNumber
-  , CLog 2 cellsNumber <= BitSize AddressNumber
   , NFDataX agentType
   , Show agentType
   , ShowX agentType
   , Eq agentType
   ) =>
   TestName ->
-  Vec cellsNumber (Maybe (Node portsNumber agentType)) ->
+  Vec CellsNumber (Maybe (Node portsNumber agentType)) ->
   [Interface externalNodesNumber] ->
   [Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType))] ->
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
@@ -186,19 +174,16 @@ interfaceReadWriteComplexTemplate testName initialNet interface changedExNodes e
       `elem` systemActualAnswer
 
 combinationComplexTemplate ::
-  forall agentType cellsNumber portsNumber externalNodesNumber.
+  forall agentType portsNumber externalNodesNumber.
   ( KnownNat portsNumber
-  , KnownNat cellsNumber
   , KnownNat externalNodesNumber
-  , 1 <= cellsNumber
-  , CLog 2 cellsNumber <= BitSize AddressNumber
   , NFDataX agentType
   , Show agentType
   , ShowX agentType
   , Eq agentType
   ) =>
   TestName ->
-  Vec cellsNumber (Maybe (Node portsNumber agentType)) ->
+  Vec CellsNumber (Maybe (Node portsNumber agentType)) ->
   [Maybe AddressNumber] ->
   [Interface externalNodesNumber] ->
   [Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType))] ->

@@ -21,22 +21,19 @@ import Test.Tasty.HUnit
 import Prelude as P
 
 mealyCoreTestTemplate ::
-  forall agentType cellsNumber nodesNumber edgesNumber portsNumber.
+  forall agentType nodesNumber edgesNumber portsNumber.
   ( KnownNat portsNumber
   , KnownNat nodesNumber
   , KnownNat edgesNumber
-  , KnownNat cellsNumber
-  , 1 <= cellsNumber
-  , CLog 2 cellsNumber <= BitSize AddressNumber
-  , nodesNumber <= cellsNumber
-  , INet agentType cellsNumber nodesNumber edgesNumber portsNumber
+  , nodesNumber <= CellsNumber
+  , INet agentType nodesNumber edgesNumber portsNumber
   , NFDataX agentType
   , Show agentType
   , ShowX agentType
   , Eq agentType
   ) =>
-  Vec cellsNumber (Maybe (Node portsNumber agentType)) ->
-  MemoryManager cellsNumber ->
+  Vec CellsNumber (Maybe (Node portsNumber agentType)) ->
+  MemoryManager ->
   [AddressNumber] ->
   Int ->
   -- [CPUOut portsNumber agentType] ->
@@ -56,17 +53,16 @@ mealyCoreTestTemplate initNet initMemoryManager expectedAnswer cycleCount rootNo
   systemActualAnswer =
     sampleN
       cycleCount
-      ( (logicBroad @portsNumber @nodesNumber @edgesNumber @cellsNumber @agentType @System)
+      ( (logicBroad @portsNumber @nodesNumber @edgesNumber @agentType @System)
           initNet
           rootNodeAddress
           initMemoryManager
-          getReduceRuleInfo
       )
   answersAreEqual = P.all (`elem` systemActualAnswer) expectedAnswer
 
 idApplyToIdMealyCore :: TestTree
 idApplyToIdMealyCore =
-  mealyCoreTestTemplate @AgentSimpleLambda @(2 ^ BitSize AddressNumber) @2 @2
+  mealyCoreTestTemplate @AgentSimpleLambda @2 @2
     initialIdApplyToIdNode
     initialIdApplyToIdMM
     [0, 1]
@@ -76,7 +72,7 @@ idApplyToIdMealyCore =
 
 epsApplyToIdSimpleMealyCore :: TestTree
 epsApplyToIdSimpleMealyCore =
-  mealyCoreTestTemplate @AgentSimpleLambda @(2 ^ BitSize AddressNumber) @2 @2
+  mealyCoreTestTemplate @AgentSimpleLambda @2 @2
     initialEpsAppToIdSimpleNode
     initialEpsAppToIdSimpleMM
     [1, 2]
@@ -86,7 +82,7 @@ epsApplyToIdSimpleMealyCore =
 
 epsApplyToIdMealyCore :: TestTree
 epsApplyToIdMealyCore =
-  mealyCoreTestTemplate @AgentSimpleLambda @(2 ^ BitSize AddressNumber) @2 @2
+  mealyCoreTestTemplate @AgentSimpleLambda @2 @2
     initialEpsAppToIdNode
     initialEpsAppToIdMM
     [1, 3, 2]

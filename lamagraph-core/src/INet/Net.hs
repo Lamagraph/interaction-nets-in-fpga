@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -19,16 +20,15 @@ data ReduceRuleResult (nodesNumber :: Nat) (edgesNumber :: Nat) (portsNumber :: 
 
 $(makeLenses ''ReduceRuleResult)
 
-type ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType =
-  agentType -> agentType -> ReductionRuleInfo cellsNumber nodesNumber edgesNumber portsNumber agentType
+type ChooseReductionRule nodesNumber edgesNumber portsNumber agentType =
+  agentType -> agentType -> ReductionRuleInfo nodesNumber edgesNumber portsNumber agentType
 
-instance Show (ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType) where
+instance Show (ChooseReductionRule nodesNumber edgesNumber portsNumber agentType) where
   show _ = ""
 
 -- | Information about concrete reduction rule: reduction function and count of new nodes
 data
   ReductionRuleInfo
-    (cellsNumber :: Nat)
     (maxNumOfNewNodes :: Nat)
     (maxNumOfNewEdges :: Nat)
     (portsNumber :: Nat)
@@ -39,14 +39,13 @@ data
       LoadedNode portsNumber agentType ->
       LoadedNode portsNumber agentType ->
       ReduceRuleResult maxNumOfNewNodes maxNumOfNewEdges portsNumber agentType
-  , _necessaryAddressesCount :: Index cellsNumber
+  , _necessaryAddressesCount :: Index CellsNumber
   }
   deriving (Generic, NFDataX)
 
 instance
   Show
     ( ReductionRuleInfo
-        (cellsNumber :: Nat)
         (maxNumOfNewNodes :: Nat)
         (maxNumOfNewEdges :: Nat)
         (portsNumber :: Nat)
@@ -57,10 +56,10 @@ instance
 
 $(makeLenses ''ReductionRuleInfo)
 
-class INet agentType cellsNumber nodesNumber edgesNumber portsNumber where
+class INet agentType nodesNumber edgesNumber portsNumber where
   -- | A function to determine which reduction rule should be applied and how much memory is required for this
   getReduceRuleInfo ::
-    (KnownNat cellsNumber, KnownNat nodesNumber, KnownNat edgesNumber, KnownNat portsNumber) =>
+    (KnownNat nodesNumber, KnownNat edgesNumber, KnownNat portsNumber) =>
     agentType ->
     agentType ->
-    ReductionRuleInfo cellsNumber nodesNumber edgesNumber portsNumber agentType
+    ReductionRuleInfo nodesNumber edgesNumber portsNumber agentType

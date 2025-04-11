@@ -264,27 +264,23 @@ changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress
 
 -- | Apply reduction rule by `ActivePair` and allocate necessary amount of memory
 reduce ::
-  forall portsNumber nodesNumber edgesNumber cellsNumber agentType.
+  forall portsNumber nodesNumber edgesNumber agentType.
   ( KnownNat portsNumber
   , KnownNat nodesNumber
   , KnownNat edgesNumber
-  , KnownNat cellsNumber
-  , 1 <= cellsNumber
-  , CLog 2 cellsNumber <= BitSize AddressNumber
-  , nodesNumber <= cellsNumber
-  , INet agentType cellsNumber nodesNumber edgesNumber portsNumber
+  , nodesNumber <= CellsNumber
+  , INet agentType nodesNumber edgesNumber portsNumber
   ) =>
-  ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType ->
-  MemoryManager cellsNumber ->
+  MemoryManager ->
   ActivePair portsNumber agentType ->
-  (Delta nodesNumber edgesNumber portsNumber agentType, MemoryManager cellsNumber)
-reduce chooseReductionRule memoryManager activeP = (delta, writeNewActives delta newMemoryManager)
+  (Delta nodesNumber edgesNumber portsNumber agentType, MemoryManager)
+reduce memoryManager activeP = (delta, writeNewActives delta newMemoryManager)
  where
   leftLoadedNode = view leftNode activeP
   rightLoadedNode = view rightNode activeP
   leftNodeType = view (containedNode . nodeType) leftLoadedNode
   rightNodeType = view (containedNode . nodeType) rightLoadedNode
-  reductionRuleInfo = chooseReductionRule leftNodeType rightNodeType
+  reductionRuleInfo = getReduceRuleInfo leftNodeType rightNodeType
   transitionFunction = view reductionFunction reductionRuleInfo
   (freeAddresses, newMemoryManager) =
     giveAddresses (view necessaryAddressesCount reductionRuleInfo) memoryManager

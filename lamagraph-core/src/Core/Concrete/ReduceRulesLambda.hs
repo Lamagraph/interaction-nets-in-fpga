@@ -76,7 +76,11 @@ eraseToErase ::
   ReduceRuleResult 2 2 2 AgentSimpleLambda
 eraseToErase _ _ _ = ReduceRuleResult def def
 
-instance INet AgentSimpleLambda 65536 2 2 2 where
+instance INet AgentSimpleLambda 2 2 2 where
+  getReduceRuleInfo ::
+    AgentSimpleLambda ->
+    AgentSimpleLambda ->
+    ReductionRuleInfo 2 2 2 AgentSimpleLambda
   getReduceRuleInfo agent1 agent2 = case (agent1, agent2) of
     (Apply, Abstract) -> ReduceFunctionInfo applyToLambdaRule 0
     (Abstract, Apply) -> ReduceFunctionInfo applyToLambdaRule 0
