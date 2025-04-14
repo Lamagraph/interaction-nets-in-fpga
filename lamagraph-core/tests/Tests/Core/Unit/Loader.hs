@@ -303,8 +303,7 @@ interfaceReadWriteComplexIdToIdChangeToErase =
     "change 1 node (id) to erase complex"
     initialIdApplyToIdNode
     (def : P.replicate 7 (Just 1 :> Nil) P.++ [def, def] P.++ P.replicate 7 (Just 1 :> Nil))
-    ( [def, def] P.++ P.replicate 5 (Just eraseNode1 :> Nil) P.++ [def, def, def] P.++ P.replicate 5 (Just eraseNode2 :> Nil)
-    )
+    ([def, def] P.++ P.replicate 5 (Just eraseNode1 :> Nil) P.++ [def, def, def] P.++ P.replicate 5 (Just eraseNode2 :> Nil))
     (Just absIdNode :> Nil)
  where
   eraseNode1 =

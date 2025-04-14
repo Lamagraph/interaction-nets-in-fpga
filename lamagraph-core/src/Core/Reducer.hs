@@ -41,8 +41,8 @@ edgesReduction
       (LoadedNode rightActiveNode rightActiveAddress)
     )
   fullEdges =
-    snd
-      $ ifoldl
+    snd $
+      ifoldl
         ( \(excludeEdges, resEdges) i maybeEdge ->
             let (exEdges, rEdge) = if excludeEdges !! i then (repeat False, Nothing) else edgeProcessing maybeEdge 0 (repeat False)
              in (exEdges `insertVec` excludeEdges, rEdge +>> resEdges)

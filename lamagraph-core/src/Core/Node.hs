@@ -21,7 +21,7 @@ pattern NotConnected :: Connection portsNumber
 pattern NotConnected = Nothing
 {-# COMPLETE Connected, NotConnected #-}
 
-type AddressBitSize = 16
+type AddressBitSize = 4
 type AddressNumber = Unsigned AddressBitSize
 type CellsNumber = 2 ^ AddressBitSize
 

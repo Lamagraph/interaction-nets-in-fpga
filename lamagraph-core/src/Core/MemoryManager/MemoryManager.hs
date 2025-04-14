@@ -52,8 +52,7 @@ indexToUnsigned v = bitCoerce (resize v :: Index (2 ^ m))
 -- | Get `Vec` of free `AddressNumber`s of given size
 getFreeAddresses ::
   forall maxAddressesCount.
-  ( KnownNat maxAddressesCount
-  ) =>
+  (KnownNat maxAddressesCount) =>
   Index CellsNumber ->
   Vec CellsNumber Bool ->
   Vec maxAddressesCount (Maybe AddressNumber)
