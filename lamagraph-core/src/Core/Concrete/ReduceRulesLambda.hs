@@ -77,14 +77,24 @@ eraseToErase ::
 eraseToErase _ _ _ = ReduceRuleResult def def
 
 instance INet AgentSimpleLambda 2 2 2 where
-  getReduceRuleInfo ::
-    AgentSimpleLambda ->
-    AgentSimpleLambda ->
-    ReductionRuleInfo 2 2 2 AgentSimpleLambda
-  getReduceRuleInfo agent1 agent2 = case (agent1, agent2) of
-    (Apply, Abstract) -> ReduceFunctionInfo applyToLambdaRule 0
-    (Abstract, Apply) -> ReduceFunctionInfo applyToLambdaRule 0
-    (Erase, Erase) -> ReduceFunctionInfo eraseToErase 0
-    (Erase, _) -> ReduceFunctionInfo eraseToAbstractOrApplyRule 2
-    (_, Erase) -> ReduceFunctionInfo (\addresses nodeAny nodeErase -> eraseToAbstractOrApplyRule addresses nodeErase nodeAny) 2
-    (_, _) -> errorX "There is no rule for this pair of agent in reduction rules"
+  getAddressesAllocationCount :: AgentSimpleLambda -> AgentSimpleLambda -> Index CellsNumber
+  getAddressesAllocationCount left right = case (left, right) of
+    (Apply, Abstract) -> 0
+    (Abstract, Apply) -> 0
+    (Erase, Erase) -> 0
+    (Erase, _) -> 2
+    (_, Erase) -> 2
+    _ -> errorX "No rule for this pair"
+
+  makeReduction ::
+    Vec 2 (Maybe AddressNumber) ->
+    LoadedNode 2 AgentSimpleLambda ->
+    LoadedNode 2 AgentSimpleLambda ->
+    ReduceRuleResult 2 2 2 AgentSimpleLambda
+  makeReduction freeAddresses lN rN = case (lN ^. containedNode . nodeType, rN ^. containedNode . nodeType) of
+    (Apply, Abstract) -> applyToLambdaRule freeAddresses lN rN
+    (Abstract, Apply) -> applyToLambdaRule freeAddresses rN lN
+    (Erase, Erase) -> eraseToErase freeAddresses lN rN
+    (Erase, _) -> eraseToAbstractOrApplyRule freeAddresses lN rN
+    (_, Erase) -> eraseToAbstractOrApplyRule freeAddresses rN lN
+    _ -> errorX "No rule for this pair"

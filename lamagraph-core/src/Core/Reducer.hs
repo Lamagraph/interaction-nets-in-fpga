@@ -268,7 +268,6 @@ reduce ::
   ( KnownNat portsNumber
   , KnownNat nodesNumber
   , KnownNat edgesNumber
-  , nodesNumber <= CellsNumber
   , INet agentType nodesNumber edgesNumber portsNumber
   ) =>
   MemoryManager ->
@@ -280,9 +279,8 @@ reduce memoryManager activeP = (delta, writeNewActives delta newMemoryManager)
   rightLoadedNode = view rightNode activeP
   leftNodeType = view (containedNode . nodeType) leftLoadedNode
   rightNodeType = view (containedNode . nodeType) rightLoadedNode
-  reductionRuleInfo = getReduceRuleInfo leftNodeType rightNodeType
-  transitionFunction = view reductionFunction reductionRuleInfo
+  freeAddressesNumber = getAddressesAllocationCount @agentType @nodesNumber @edgesNumber @portsNumber leftNodeType rightNodeType
   (freeAddresses, newMemoryManager) =
-    giveAddresses (view necessaryAddressesCount reductionRuleInfo) memoryManager
-  reduceRuleResult = transitionFunction freeAddresses leftLoadedNode rightLoadedNode
+    giveAddresses freeAddressesNumber memoryManager
+  reduceRuleResult = makeReduction freeAddresses leftLoadedNode rightLoadedNode
   delta = toDelta activeP reduceRuleResult
