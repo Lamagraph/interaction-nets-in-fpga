@@ -27,8 +27,7 @@ logicBroad ::
   ) =>
   Vec CellsNumber (Maybe (Node portsNumber agentType)) ->
   AddressNumber ->
-  MemoryManager -> -- Initial information about busy addresses and active pairs
-  -- ChooseReductionRule cellsNumber nodesNumber edgesNumber portsNumber agentType ->
+  MemoryManager ->
   Signal dom AddressNumber
 logicBroad initialNet initialRootNodeAddress initialMemoryManager = _nextRootNodeAddress <$> o
  where
@@ -45,15 +44,10 @@ logicBroad initialNet initialRootNodeAddress initialMemoryManager = _nextRootNod
 
   makeLoadedNodeFromRamForm n ramForm = LoadedNode <$> n <*> (fst <$> ramForm)
 
--- может быть вшить getReduceRuleInfo прямо в logicBoard, чтобы не передавать как аргумент?
 topEntity ::
   "clk" ::: Clock System ->
   "rst" ::: Reset System ->
   "en" ::: Enable System ->
-  -- "initialNet" ::: Vec 65536 (Maybe (Node 2 AgentSimpleLambda)) ->
-  -- "initialRootNodeAddress" ::: AddressNumber ->
-  -- "initialMemoryManager" ::: MemoryManager 65536 ->
-  -- "chooseReductionRule" ::: Signal System (ChooseReductionRule 65536 2 2 2 AgentSimpleLambda)
   "rootNodeAddress" ::: Signal System AddressNumber
 topEntity =
   exposeClockResetEnable

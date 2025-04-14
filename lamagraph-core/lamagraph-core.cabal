@@ -82,7 +82,7 @@ common common-options
     ghc-typelits-extra,
     ghc-typelits-knownnat,
     template-haskell,
-
+    mtl
 
 library
   import: common-options
