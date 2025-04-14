@@ -6,13 +6,12 @@
 module Core.MemoryManager.MemoryManager where
 
 import Clash.Prelude
-import Control.Lens hiding (Index, imap)
+import Control.Lens hiding (Index, ifoldl, imap)
 import Core.Node
 
 {- $setup
 >>> import Clash.Prelude
 >>> import Core.Node
->>> import Core.Map
 >>> import Control.Lens hiding (Index, ifoldl, imap, (:>))
 >>> :set -XAllowAmbiguousTypes
 >>> :set -fplugin GHC.TypeLits.Extra.Solver
@@ -54,34 +53,24 @@ indexToUnsigned v = bitCoerce (resize v :: Index (2 ^ m))
 getFreeAddresses ::
   forall maxAddressesCount.
   ( KnownNat maxAddressesCount
-  , CLog 2 CellsNumber <= BitSize AddressNumber
-  , 1 <= CellsNumber
-  , maxAddressesCount <= CellsNumber
   ) =>
   Index CellsNumber ->
   Vec CellsNumber Bool ->
   Vec maxAddressesCount (Maybe AddressNumber)
-getFreeAddresses addressesCount busyMap = if addressesCount == 0 then def else helper 0 0 busyMap def
- where
-  helper ::
-    Index CellsNumber ->
-    Index CellsNumber ->
-    Vec m Bool ->
-    Vec maxAddressesCount (Maybe AddressNumber) ->
-    Vec maxAddressesCount (Maybe AddressNumber)
-  helper allocatedCount busyMapIndex busyMapRemind addresses = case busyMapRemind of
-    Nil -> error "Memory space is over"
-    Cons isBusy remind ->
-      if not isBusy
-        then
-          ( if (1 + allocatedCount) == addressesCount
-              then
-                Just (indexToUnsigned busyMapIndex) +>> addresses
-              else
-                helper (allocatedCount + 1) (busyMapIndex + 1) remind (Just (indexToUnsigned busyMapIndex) +>> addresses)
+getFreeAddresses addressesCount busyMap =
+  if addressesCount == 0
+    then def
+    else
+      snd $
+        ifoldl
+          ( \(allocatedCount, addresses) i isBusy ->
+              ( if (allocatedCount < addressesCount) && not isBusy
+                  then (allocatedCount + 1, Just (indexToUnsigned i) +>> addresses)
+                  else (allocatedCount, addresses)
+              )
           )
-        else
-          helper allocatedCount (busyMapIndex + 1) remind addresses
+          (0, def)
+          busyMap
 
 -- | Mark given `AddressNumber`s as busy in busy map
 markAddressesAsBusy ::
@@ -92,12 +81,7 @@ markAddressesAsBusy ::
 markAddressesAsBusy busyMap addresses = imap (\address addressIsBusy -> Just (indexToUnsigned address) `elem` addresses || addressIsBusy) busyMap
 
 giveAddresses ::
-  ( 1 <= CellsNumber
-  , KnownNat CellsNumber
-  , KnownNat maxAddressesCount
-  , CLog 2 CellsNumber <= BitSize AddressNumber
-  , maxAddressesCount <= CellsNumber
-  ) =>
+  (KnownNat maxAddressesCount) =>
   Index CellsNumber ->
   MemoryManager ->
   (Vec maxAddressesCount (Maybe AddressNumber), MemoryManager)
@@ -106,13 +90,7 @@ giveAddresses addressesCount mm@(MemoryManager busyMap _) = (addresses, mm{_busy
   addresses = getFreeAddresses addressesCount busyMap
   newBusyMap = markAddressesAsBusy busyMap addresses
 
-{- | Mark given `AddressNumber` as busy or not according to passed flag (`True` means busy)
-
-==== __Example__
-
->>> markAddress (repeat False :: Vec 4 Bool) True 2
-False :> False :> True :> False :> Nil
--}
+-- | Mark given `AddressNumber` as busy or not according to passed flag (`True` means busy)
 markAddress ::
   Vec CellsNumber Bool ->
   Bool ->
@@ -130,7 +108,7 @@ deleteActivePair ::
 deleteActivePair oldActivePairs activePairToDelete =
   if leftInVec `xor` rightInVec
     then newActivePairs
-    else error "In active pairs map should be exact one address" -- TODO: add link to the docs
+    else errorX "In active pairs map should be exact one address" -- TODO: add link to the docs
  where
   leftInVec = oldActivePairs !! (activePairToDelete ^. leftNode . originalAddress)
   rightInVec = oldActivePairs !! (activePairToDelete ^. rightNode . originalAddress)
@@ -149,9 +127,8 @@ freeUpActivePair ::
   Vec CellsNumber Bool
 freeUpActivePair busyMap activePairToFree = markAddress (markAddress busyMap False leftNodeAddress) False rightNodeAddress
  where
-  chooseAddress choice = activePairToFree ^. choice . originalAddress
-  leftNodeAddress = chooseAddress leftNode
-  rightNodeAddress = chooseAddress rightNode
+  leftNodeAddress = activePairToFree ^. leftNode . originalAddress
+  rightNodeAddress = activePairToFree ^. rightNode . originalAddress
 
 -- | Remove all information about `ActivePair` from `MemoryManager`
 removeActivePair ::
@@ -166,7 +143,6 @@ removeActivePair acPair memoryManager = MemoryManager{..}
 
 -- | Give `AddressNumber` of some active `Node`. It returns `Nothing` if there is no `ActivePair`s in the net
 giveActiveAddressNumber ::
-  -- (1 <= CellsNumber, CLog 2 CellsNumber <= BitSize AddressNumber) =>
   MemoryManager ->
   Maybe AddressNumber
 giveActiveAddressNumber MemoryManager{..} = fmap indexToUnsigned maybeIndexAddress
