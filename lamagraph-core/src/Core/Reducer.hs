@@ -41,10 +41,10 @@ edgesReduction
       (LoadedNode rightActiveNode rightActiveAddress)
     )
   fullEdges =
-    snd $
-      ifoldl
+    snd
+      $ ifoldl
         ( \(excludeEdges, resEdges) i maybeEdge ->
-            let (exEdges, rEdge) = if excludeEdges !! i then (repeat False, Nothing) else edgeProcessing maybeEdge (repeat False)
+            let (exEdges, rEdge) = if excludeEdges !! i then (repeat False, Nothing) else edgeProcessing maybeEdge 0 (repeat False)
              in (exEdges `insertVec` excludeEdges, rEdge +>> resEdges)
         )
         (repeat @edgesNumber False, repeat @edgesNumber Nothing)
@@ -57,56 +57,60 @@ edgesReduction
         insertedVec
     edgeProcessing ::
       Maybe (Edge portsNumber) ->
+      Index edgesNumber ->
       Vec edgesNumber Bool ->
       (Vec edgesNumber Bool, Maybe (Edge portsNumber))
-    edgeProcessing edge@(Just (Edge leftConnection rightConnection)) acc =
-      case (getActiveNodeByConnection leftConnection, getActiveNodeByConnection rightConnection) of
-        (Just leftConnectionTo, Just rightConnectionTo) ->
-          case (leftConnectionTo, rightConnectionTo) of
+    edgeProcessing edge@(Just (Edge leftConnection rightConnection)) counter acc =
+      if counter <= (maxBound @(Index edgesNumber))
+        then case (getActiveNodeByConnection leftConnection, getActiveNodeByConnection rightConnection) of
+          (Just leftConnectionTo, Just rightConnectionTo) ->
+            case (leftConnectionTo, rightConnectionTo) of
+              (NotConnected, NotConnected) -> (acc, Nothing)
+              (NotConnected, Connected _) -> handleOneEndEdge leftConnection rightConnectionTo NotConnected
+              (Connected _, NotConnected) -> handleOneEndEdge rightConnection leftConnectionTo NotConnected
+              (Connected (Port lAddress _), Connected (Port rAddress _)) -> case (isActive lAddress, isActive rAddress) of
+                (False, False) -> (acc, Just $ Edge leftConnectionTo rightConnectionTo)
+                (False, True) -> oneEndIsActive leftConnection rightConnectionTo
+                (True, False) -> oneEndIsActive rightConnection leftConnectionTo
+                (True, True) -> case (findNextEnd fullEdges leftConnectionTo, findNextEnd fullEdges rightConnectionTo) of
+                  (Just (leftNextConnection, leftIndex), Just (rightNextConnection, rightIndex)) ->
+                    if acc !! leftIndex || acc !! rightIndex
+                      then (acc, Nothing)
+                      else
+                        edgeProcessing
+                          (Just $ Edge leftNextConnection rightNextConnection)
+                          (counter + 1)
+                          (replace leftIndex True (replace rightIndex True acc))
+                  (_, _) -> (acc, Nothing)
+          (Nothing, Just rightConnectionTo) -> case rightConnectionTo of
+            NotConnected -> if leftConnection == NotConnected then (acc, Nothing) else (acc, Just $ Edge leftConnection NotConnected)
+            Connected _ -> handleOneEndEdge leftConnection rightConnectionTo leftConnection
+          (Just leftConnectionTo, Nothing) -> case leftConnectionTo of
+            NotConnected -> if rightConnection == NotConnected then (acc, Nothing) else (acc, Just $ Edge NotConnected rightConnection)
+            Connected _ -> handleOneEndEdge rightConnection leftConnectionTo rightConnection
+          (Nothing, Nothing) -> case (leftConnection, rightConnection) of
             (NotConnected, NotConnected) -> (acc, Nothing)
-            (NotConnected, Connected _) -> handleOneEndEdge leftConnection rightConnectionTo NotConnected
-            (Connected _, NotConnected) -> handleOneEndEdge rightConnection leftConnectionTo NotConnected
-            (Connected (Port lAddress _), Connected (Port rAddress _)) -> case (isActive lAddress, isActive rAddress) of
-              (False, False) -> (acc, Just $ Edge leftConnectionTo rightConnectionTo)
-              (False, True) -> oneEndIsActive leftConnection rightConnectionTo
-              (True, False) -> oneEndIsActive rightConnection leftConnectionTo
-              (True, True) -> case (findNextEnd fullEdges leftConnectionTo, findNextEnd fullEdges rightConnectionTo) of
-                (Just (leftNextConnection, leftIndex), Just (rightNextConnection, rightIndex)) ->
-                  if acc !! leftIndex || acc !! rightIndex
-                    then (acc, Nothing)
-                    else
-                      edgeProcessing
-                        (Just $ Edge leftNextConnection rightNextConnection)
-                        (replace leftIndex True (replace rightIndex True acc))
-                (_, _) -> (acc, Nothing)
-        (Nothing, Just rightConnectionTo) -> case rightConnectionTo of
-          NotConnected -> if leftConnection == NotConnected then (acc, Nothing) else (acc, Just $ Edge leftConnection NotConnected)
-          Connected _ -> handleOneEndEdge leftConnection rightConnectionTo leftConnection
-        (Just leftConnectionTo, Nothing) -> case leftConnectionTo of
-          NotConnected -> if rightConnection == NotConnected then (acc, Nothing) else (acc, Just $ Edge NotConnected rightConnection)
-          Connected _ -> handleOneEndEdge rightConnection leftConnectionTo rightConnection
-        (Nothing, Nothing) -> case (leftConnection, rightConnection) of
-          (NotConnected, NotConnected) -> (acc, Nothing)
-          (_, _) -> (acc, edge)
+            (_, _) -> (acc, edge)
+        else (acc, Nothing)
      where
       oneEndIsActive fixEnd steppedEnd = case findNextEnd fullEdges steppedEnd of
         Just (connection, i) ->
-          if acc !! i then (acc, Nothing) else edgeProcessing (Just $ Edge fixEnd connection) (replace i True acc)
+          if acc !! i then (acc, Nothing) else edgeProcessing (Just $ Edge fixEnd connection) (counter + 1) (replace i True acc)
         Nothing -> (acc, Nothing)
       handleOneEndEdge fixedConnection steppedOverActiveConnection@(Connected (Port address _)) externalConnection =
         if isActive address
           then oneEndIsActive fixedConnection steppedOverActiveConnection
           else (acc, Just $ Edge steppedOverActiveConnection externalConnection)
       handleOneEndEdge _ NotConnected _ = error ""
-    edgeProcessing Nothing _ = (repeat False, Nothing)
-    getActiveNodeByConnection connection =
-      ( \(Port address _) ->
-          if address == leftActiveAddress
-            then findConnection leftActiveNode connection
-            else if address == rightActiveAddress then findConnection rightActiveNode connection else Nothing
-      )
-        =<< connection
-    isActive a = a == leftActiveAddress || a == rightActiveAddress
+      getActiveNodeByConnection connection =
+        ( \(Port address _) ->
+            if address == leftActiveAddress
+              then findConnection leftActiveNode connection
+              else if address == rightActiveAddress then findConnection rightActiveNode connection else Nothing
+        )
+          =<< connection
+      isActive a = a == leftActiveAddress || a == rightActiveAddress
+    edgeProcessing Nothing _ _ = (repeat False, Nothing)
 
 -- | Find adjacent `Connection` and index of it in `Vec` among `Edge`s
 findNextEnd ::
