@@ -23,9 +23,10 @@ data LmlPat pass
     LmlPatConstant (XLmlPatConstant pass) (LmlLit pass)
   | -- | Tuple pattern, invariant \(n \geq 2\)
     LmlPatTuple (XLmlPatTuple pass) (LLmlPat pass) (NonEmpty (LLmlPat pass))
-  | -- | Constructor application pattern
-    --
-    -- Constructors aren't curried, this means that they must be applied to a tuple.
+  | {- | Constructor application pattern
+
+    Constructors aren't curried, this means that they must be applied to a tuple.
+    -}
     LmlPatConstruct (XLmlPatConstruct pass) (LLongident pass) (Maybe (LLmlPat pass))
   | -- | Pattern alternation @pat | pat@
     LmlPatOr (XLmlPatOr pass) (LLmlPat pass) (LLmlPat pass)

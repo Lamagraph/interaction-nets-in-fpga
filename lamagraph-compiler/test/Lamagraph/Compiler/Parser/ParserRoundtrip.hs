@@ -60,7 +60,7 @@ notKeyword = not . isKeyword
 
 -- | Mostly 'Gen.alphaNum', but with @_@
 identChar :: Gen Char
-identChar = Gen.element "abcdefghiklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+identChar = Gen.element ("abcdefghiklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_" :: [Char])
 
 identRange :: Range Int
 identRange = Range.linear 0 11
@@ -108,13 +108,13 @@ genValueName :: Gen Text
 genValueName = Gen.choice [genLowercaseIdent, genPrefixSymbol, genInfixSymbolFiltered]
  where
   opTailRange = Range.linear 0 5
-  genOpChar = Gen.element "!$%&*+./:<=>?@^|~"
+  genOpChar = Gen.element ("!$%&*+./:<=>?@^|~" :: [Char])
   genPrefixSymbol =
     Gen.choice
       [ pure "!" .<>. Gen.text opTailRange genOpChar
       , Gen.choice [pure "?", pure "~"] .<>. Gen.text (Range.linear 1 5) genOpChar
       ]
-  genInfixSymbol = (T.singleton <$> Gen.element "=<>@^|&+-*/$%") .<>. Gen.text opTailRange genOpChar
+  genInfixSymbol = (T.singleton <$> Gen.element ("=<>@^|&+-*/$%" :: [Char])) .<>. Gen.text opTailRange genOpChar
   genInfixSymbolFiltered = Gen.filter (\x -> not (T.isPrefixOf "|" x || T.isPrefixOf "->" x)) genInfixSymbol
 
 genLValueName :: Gen (Located Text)

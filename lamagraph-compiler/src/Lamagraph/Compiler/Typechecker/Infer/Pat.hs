@@ -4,6 +4,7 @@ module Lamagraph.Compiler.Typechecker.Infer.Pat (inferLLmlPat) where
 import Relude
 
 import Control.Lens
+import Control.Monad
 import Control.Monad.Except
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet

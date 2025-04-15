@@ -19,16 +19,18 @@ data LmlType pass
     LmlTyVar (XLmlTyVar pass) (XLocated pass Text)
   | -- | Type arrow like @'a -> 'a@.
     LmlTyArrow (XLmlTyArrow pass) (LLmlType pass) (LLmlType pass)
-  | -- | Tuple on type level.
-    --
-    -- /Invariant/: \(n \geq 2\)
+  | {- | Tuple on type level.
+
+    /Invariant/: \(n \geq 2\)
+    -}
     LmlTyTuple (XLmlTyTuple pass) (LLmlType pass) (NonEmpty (LLmlType pass))
-  | -- | Type constructor application.
-    -- @"'LmlTyConstr' _ lindent types"@  represents
-    --
-    -- - @/typeconstr/@ when @types = []@
-    -- - @/typexpr/ /typeconstr/@ when @types = [type]@
-    -- - @( /typexpr/ { , /typexpr/ } ) /typeconstr/@ when @types = [type1, ..., typen]@
+  | {- | Type constructor application.
+    @"'LmlTyConstr' _ lindent types"@  represents
+
+    - @/typeconstr/@ when @types = []@
+    - @/typexpr/ /typeconstr/@ when @types = [type]@
+    - @( /typexpr/ { , /typexpr/ } ) /typeconstr/@ when @types = [type1, ..., typen]@
+    -}
     LmlTyConstr (XLmlTyConstr pass) (LLongident pass) [LLmlType pass]
   | XLmlType !(XXType pass)
 

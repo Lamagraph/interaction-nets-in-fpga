@@ -29,7 +29,6 @@ dependencies:
   - string-interpolate
   - mtl
   - mono-traversable
-  - foldable1-classes-compat # Remove with GHC 9.6+
   - unliftio
 
 language: GHC2021

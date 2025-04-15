@@ -43,18 +43,20 @@ data LmlExpr pass
     LmlExprFunction (XLmlExprFunction pass) (LLmlPat pass) (LLmlExpr pass)
   | -- | Function application @f x y z@
     LmlExprApply (XLmlExprApply pass) (LLmlExpr pass) (NonEmpty (LLmlExpr pass))
-  | -- | Match expression
-    --
-    -- @
-    -- match x with
-    -- | pat -> expr
-    -- @
+  | {- | Match expression
+
+    @
+    match x with
+    | pat -> expr
+    @
+    -}
     LmlExprMatch (XLmlExprMatch pass) (LLmlExpr pass) (NonEmpty (LLmlCase pass))
   | -- | Tuple representation, invariant \(n \geq 2\)
     LmlExprTuple (XLmlExprTuple pass) (LLmlExpr pass) (NonEmpty (LLmlExpr pass))
-  | -- | Constructor application
-    --
-    -- Constructors aren't curried, this means that they must be applied to a tuple.
+  | {- | Constructor application
+
+    Constructors aren't curried, this means that they must be applied to a tuple.
+    -}
     LmlExprConstruct (XLmlExprConstruct pass) (LLongident pass) (Maybe (LLmlExpr pass))
   | -- | Represents @if expr then expr else expr@
     LmlExprIfThenElse (XLmlExprIfThenElse pass) (LLmlExpr pass) (LLmlExpr pass) (LLmlExpr pass)

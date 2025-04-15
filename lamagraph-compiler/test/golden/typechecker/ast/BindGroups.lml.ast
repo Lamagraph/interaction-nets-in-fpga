@@ -1,28 +1,28 @@
 (Module
- <: int -> int -> bool
- false: bool
- -: int -> int -> int
- >: int -> int -> bool
- /: int -> int -> int
- true: bool
- None: forall 'a. 'a option
- +: int -> int -> int
- []: forall 'a. 'a list
- e: int
+ ~-: int -> int
  >=: int -> int -> bool
  a: string
- print_int: int -> ()
- id: int -> int
- h: int -> int
- even: int -> bool
- Some: forall 'a. 'a -> 'a option
+ /: int -> int -> int
  *: int -> int -> int
- <=: int -> int -> bool
  ::: forall 'a. ('a * 'a list) -> 'a list
- f: int option -> int option
- ~-: int -> int
- odd: int -> bool
+ <: int -> int -> bool
+ []: forall 'a. 'a list
+ h: int -> int
  b: int
+ -: int -> int -> int
+ e: int
+ +: int -> int -> int
+ >: int -> int -> bool
+ id: int -> int
+ <=: int -> int -> bool
+ Some: forall 'a. 'a -> 'a option
+ odd: int -> bool
+ None: forall 'a. 'a option
+ false: bool
+ true: bool
+ f: int option -> int option
+ print_int: int -> ()
+ even: int -> bool
  (Just
  (L
   { :1:8-18 }
@@ -121,9 +121,9 @@
        [ (L
           { :9:5-47 }
           (Bind
+           h: int -> int
            e: int
            id: int -> int
-           h: int -> int
            f: int
            (L
             { :9:5-34 }
