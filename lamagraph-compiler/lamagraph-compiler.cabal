@@ -75,7 +75,6 @@ library
       array
     , base >=4.7 && <5
     , extra
-    , foldable1-classes-compat
     , lens
     , mono-traversable
     , mtl
@@ -102,7 +101,6 @@ executable lamagraph-compiler-exe
       array
     , base >=4.7 && <5
     , extra
-    , foldable1-classes-compat
     , lamagraph-compiler
     , lens
     , mono-traversable
@@ -140,7 +138,6 @@ test-suite lamagraph-compiler-test
     , base >=4.7 && <5
     , extra
     , filepath
-    , foldable1-classes-compat
     , hedgehog
     , lamagraph-compiler
     , lens

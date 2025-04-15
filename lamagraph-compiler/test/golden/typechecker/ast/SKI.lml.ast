@@ -1,24 +1,24 @@
 (Module
- <: int -> int -> bool
- false: bool
- -: int -> int -> int
- >: int -> int -> bool
- /: int -> int -> int
- _K: forall 'e 'd. 'd -> 'e -> 'd
- true: bool
- None: forall 'a. 'a option
- +: int -> int -> int
  _I: forall 'b. 'b -> 'b
- []: forall 'a. 'a list
- >=: int -> int -> bool
- print_int: int -> ()
- Some: forall 'a. 'a -> 'a option
- *: int -> int -> int
- <=: int -> int -> bool
- ::: forall 'a. ('a * 'a list) -> 'a list
  ~-: int -> int
- _B: forall 'o 't 'v 'r 'n 'u 'w 's. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
- _S: forall 'i 'k 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
+ >=: int -> int -> bool
+ _B: forall 'o 'w 't 'u 's 'v 'r 'n. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+ /: int -> int -> int
+ *: int -> int -> int
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ <: int -> int -> bool
+ []: forall 'a. 'a list
+ -: int -> int -> int
+ +: int -> int -> int
+ >: int -> int -> bool
+ <=: int -> int -> bool
+ Some: forall 'a. 'a -> 'a option
+ _K: forall 'd 'e. 'd -> 'e -> 'd
+ None: forall 'a. 'a option
+ false: bool
+ true: bool
+ _S: forall 'k 'i 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
+ print_int: int -> ()
  (Just
  (L
   { :1:8-11 }
@@ -65,7 +65,7 @@
        [ (L
           { :4:5-15 }
           (Bind
-           _K: forall 'e 'd. 'd -> 'e -> 'd
+           _K: forall 'd 'e. 'd -> 'e -> 'd
            (L
             { :4:5-7 }
             (PatVar
@@ -109,7 +109,7 @@
        [ (L
           { :5:5-25 }
           (Bind
-           _S: forall 'i 'k 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
+           _S: forall 'k 'i 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
            (L
             { :5:5-7 }
             (PatVar
@@ -183,7 +183,7 @@
        [ (L
           { :7:5-64 }
           (Bind
-           _B: forall 'o 't 'v 'r 'n 'u 'w 's. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+           _B: forall 'o 'w 't 'u 's 'v 'r 'n. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
            (L
             { :7:5-7 }
             (PatVar

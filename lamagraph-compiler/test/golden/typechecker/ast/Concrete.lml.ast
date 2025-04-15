@@ -1,31 +1,31 @@
 (Module
- <: int -> int -> bool
- false: bool
- -: int -> int -> int
- >: int -> int -> bool
- /: int -> int -> int
- x: int
- true: bool
- z: int list
- None: forall 'a. 'a option
- +: int -> int -> int
- []: forall 'a. 'a list
- g: 'ac -> int
- >=: int -> int -> bool
- ap: forall 'd. (int -> 'd) -> 'd
- a: int
- print_int: int -> ()
- y: forall 'g 'f. 'f -> 'g -> (int * char * string * ('f * 'g))
- Some: forall 'a. 'a -> 'a option
- *: int -> int -> int
- <=: int -> int -> bool
- ::: forall 'a. ('a * 'a list) -> 'a list
- f: int -> int
- z': int list
- z'': int list
- w: int
  ~-: int -> int
+ w: int
+ ap: forall 'd. (int -> 'd) -> 'd
+ >=: int -> int -> bool
+ a: int
+ z: int list
+ /: int -> int -> int
+ *: int -> int -> int
+ z': int list
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ <: int -> int -> bool
+ []: forall 'a. 'a list
+ -: int -> int -> int
+ g: 'ac -> int
+ z'': int list
  s: int option
+ y: forall 'g 'f. 'f -> 'g -> (int * char * string * ('f * 'g))
+ +: int -> int -> int
+ >: int -> int -> bool
+ <=: int -> int -> bool
+ x: int
+ Some: forall 'a. 'a -> 'a option
+ None: forall 'a. 'a option
+ false: bool
+ true: bool
+ f: int -> int
+ print_int: int -> ()
  (Just
  (L
   { :1:8-16 }
@@ -338,8 +338,8 @@
        [ (L
           { :14:5-16 }
           (Bind
-           a: int
            w: int
+           a: int
            (L
             { :14:5-12 }
             (ParOr

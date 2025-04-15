@@ -1,26 +1,26 @@
 (Module
- <: int -> int -> bool
- false: bool
- -: int -> int -> int
- t1: ()
- >: int -> int -> bool
- /: int -> int -> int
- true: bool
- |>: forall 'd 'b. 'b -> ('b -> 'd) -> 'd
- None: forall 'a. 'a option
- +: int -> int -> int
- []: forall 'a. 'a list
- l1: int list
- >=: int -> int -> bool
- print_int: int -> ()
- t2: ()
- head: forall 'x. 'x list -> 'x
- Some: forall 'a. 'a -> 'a option
- *: int -> int -> int
- <=: int -> int -> bool
- ::: forall 'a. ('a * 'a list) -> 'a list
- reverse: forall 't. 't list -> 't list
  ~-: int -> int
+ >=: int -> int -> bool
+ t2: ()
+ |>: forall 'd 'b. 'b -> ('b -> 'd) -> 'd
+ /: int -> int -> int
+ reverse: forall 't. 't list -> 't list
+ *: int -> int -> int
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ <: int -> int -> bool
+ []: forall 'a. 'a list
+ -: int -> int -> int
+ +: int -> int -> int
+ >: int -> int -> bool
+ <=: int -> int -> bool
+ Some: forall 'a. 'a -> 'a option
+ head: forall 'x. 'x list -> 'x
+ None: forall 'a. 'a option
+ false: bool
+ true: bool
+ l1: int list
+ print_int: int -> ()
+ t1: ()
  (Just
  (L
   { :1:8-12 }

@@ -1,27 +1,27 @@
 (Module
- <: int -> int -> bool
- false: bool
- -: int -> int -> int
- >: int -> int -> bool
+ ~-: int -> int
+ w: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+ >=: int -> int -> bool
+ fac: int -> int
+ fac'': (int -> int) -> int -> int
  /: int -> int -> int
- true: bool
- None: forall 'a. 'a option
- +: int -> int -> int
+ *: int -> int -> int
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ <: int -> int -> bool
  []: forall 'a. 'a list
  fixCBV: (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
- fac'': (int -> int) -> int -> int
- >=: int -> int -> bool
- print_int: int -> ()
+ -: int -> int -> int
+ +: int -> int -> int
  fixCBN: ('aj -> 'aj) -> 'aj
- fac: int -> int
- Some: forall 'a. 'a -> 'a option
- *: int -> int -> int
+ >: int -> int -> bool
  <=: int -> int -> bool
- ::: forall 'a. ('a * 'a list) -> 'a list
+ Some: forall 'a. 'a -> 'a option
  fix: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
- w: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+ None: forall 'a. 'a option
  fac': int -> int
- ~-: int -> int
+ false: bool
+ true: bool
+ print_int: int -> ()
  (Just
  (L
   { :1:8-11 }
@@ -289,8 +289,8 @@
        [ (L
           { :12:9-78 }
           (Bind
-           fix: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
            w: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+           fix: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
            (L
             { :12:9-53 }
             (PatConstraint
