@@ -1,13 +1,20 @@
 import Prelude
 
 import Test.Tasty
-
-import qualified Tests.Example.Project
+import qualified Tests.Core.Node
+import Tests.Core.Unit.CPU
+import Tests.Core.Unit.Loader
+import Tests.Core.Unit.MemoryManager.MemoryManager
+import Tests.Core.Unit.Reducer
 
 main :: IO ()
 main =
   defaultMain $
     testGroup
-      "."
-      [ Tests.Example.Project.accumTests
+      "Unit tests"
+      [ Tests.Core.Node.accumTests
+      , reducerUnitTests
+      , memoryManagerUnitTests
+      , mealyCoreUnitTests
+      , loaderUnitTests
       ]

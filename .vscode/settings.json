@@ -36,7 +36,8 @@
     "**/*.hi-boot": true
   },
   "cSpell.words": [
-    "Lamagraph"
+    "Lamagraph",
+    "varepsilon"
   ],
   "[alex]": {
     "editor.tabSize": 2,
@@ -49,5 +50,8 @@
     "editor.rulers": [
       120
     ]
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
   }
 }

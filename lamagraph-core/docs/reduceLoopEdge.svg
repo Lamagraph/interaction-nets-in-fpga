@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" width="104.856" height="107.751" viewBox="0 0 104.856 107.751">
+<path transform="matrix(1,0,0,-1,34.109,53.875)" stroke-width=".64406" stroke-linecap="square" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M0 5.65585C0-4.9165 0 3.15527 0-7.4171"/>
+<path transform="matrix(1,0,0,-1,34.109,53.875)" stroke-width=".64406" stroke-linecap="square" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M-5.66003-25.04076C-5.66003-33.62865 5.66006-33.62865 5.66006-25.04076"/>
+<path transform="matrix(1,0,0,-1,34.109,53.875)" stroke-width=".64406" stroke-linecap="square" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M-6.16844 25.04077C-6.16844 33.62866 6.16847 33.62866 6.16847 25.04077"/>
+<path transform="matrix(1,0,0,-1,34.109,35.957998)" d="M0-13.38747 9.2746 2.67758C10.43382 4.68552 9.27444 6.69377 6.95601 6.69377H-6.956C-9.27443 6.69377-10.43384 4.68553-9.27461 2.6776Z" fill="#ffffff"/>
+<path transform="matrix(1,0,0,-1,34.109,35.957998)" stroke-width=".85876" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M0-13.38747 9.2746 2.67758C10.43382 4.68552 9.27444 6.69377 6.95601 6.69377H-6.956C-9.27443 6.69377-10.43384 4.68553-9.27461 2.6776Z"/>
+<text xml:space="preserve" transform="matrix(1 0 -0 1 0 107.75099)" font-size="9.96264" font-family="CMR10"><tspan y="-68.334" x="30.235">@</tspan></text>
+<path transform="matrix(1,0,0,-1,34.109,72.38)" d="M0 12.2133-8.46115-2.44272C-9.5187-4.27457-8.46101-6.10667-6.34592-6.10667H6.3459C8.461-6.10667 9.51872-4.27458 8.46117-2.44273Z" fill="#ffffff"/>
+<path transform="matrix(1,0,0,-1,34.109,72.38)" stroke-width=".85876" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M0 12.2133-8.46115-2.44272C-9.5187-4.27457-8.46101-6.10667-6.34592-6.10667H6.3459C8.461-6.10667 9.51872-4.27458 8.46117-2.44273Z"/>
+<text xml:space="preserve" transform="matrix(1 0 -0 1 .0000019073487 107.751)" font-size="9.96264" font-family="CMMI10" font-style="italic"><tspan y="-31.912" x="31.203">&#x03bb;</tspan></text>
+<text xml:space="preserve" transform="matrix(1 0 -0 1 0 107.751)" font-size="9.96264" font-family="CMSY10" font-style="italic"><tspan y="-52.048" x="71.647">&#x2192;</tspan></text>
+</svg>

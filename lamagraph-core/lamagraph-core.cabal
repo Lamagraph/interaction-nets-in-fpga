@@ -4,6 +4,7 @@ version:             0.1
 license:             BSD-2-Clause
 author:              John Smith <john@example.com>
 maintainer:          John Smith <john@example.com>
+extra-doc-files: docs/*.svg
 
 common common-options
   default-extensions:
@@ -76,16 +77,30 @@ common common-options
 
     -- clash-prelude will set suitable version bounds for the plugins
     clash-prelude >= 1.8.1 && < 1.10,
+    lens,
     ghc-typelits-natnormalise,
     ghc-typelits-extra,
-    ghc-typelits-knownnat
-
+    ghc-typelits-knownnat,
+    template-haskell,
+    mtl
 
 library
   import: common-options
   hs-source-dirs: src
   exposed-modules:
-    Example.Project
+    Core.Loader
+    Core.Node
+    Core.Reducer
+    Core.MemoryManager.MemoryManager
+    Core.MemoryManager.ChangesAccumulator
+    Core.MemoryManager.NodeChanges
+    Core.Map
+    Core.Concrete.ReduceRulesLambda
+    Core.Concrete.Initial
+    INet.Net
+    Core.Concrete.TypesTH
+    Core.CPU
+    Core.Core
   default-language: Haskell2010
 
 -- Builds the executable 'clash', with lamagraph-core project in scope
@@ -123,7 +138,8 @@ test-suite test-library
   ghc-options: -threaded
   main-is: unittests.hs
   other-modules:
-    Tests.Example.Project
+    Tests.Core.Node
+    NodeGenerate
   build-depends:
     lamagraph-core,
     QuickCheck,
@@ -131,4 +147,6 @@ test-suite test-library
     hedgehog,
     tasty >= 1.2 && < 1.6,
     tasty-hedgehog,
-    tasty-th
+    tasty-th,
+    tasty-hunit,
+    text
