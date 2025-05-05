@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.38.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -31,6 +31,7 @@ library
       Lamagraph.Compiler.Eval
       Lamagraph.Compiler.Extension
       Lamagraph.Compiler.MonadFresh
+      Lamagraph.Compiler.Nets.Encodings.TokenPassingCBV
       Lamagraph.Compiler.Nets.Examples
       Lamagraph.Compiler.Nets.Processing
       Lamagraph.Compiler.Nets.Reduction
@@ -127,6 +128,7 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Parser.ParserRoundtrip
       Lamagraph.Compiler.Parser.PrettyAstGolden
       Lamagraph.Compiler.Parser.PrettyLmlGolden
+      Lamagraph.Compiler.TokenPassingCBVGolden
       Lamagraph.Compiler.Typechecker.PrettyTypedGolden
       Paths_lamagraph_compiler
   hs-source-dirs:
