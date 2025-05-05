@@ -1,0 +1,7 @@
+let zero = fun f -> fun x -> x
+let one = fun f -> fun x -> f x
+
+let pair = fun x -> fun y -> fun k -> k x y
+let fst = fun p -> p (fun x -> fun y -> x)
+
+let res = fst (pair one zero)
