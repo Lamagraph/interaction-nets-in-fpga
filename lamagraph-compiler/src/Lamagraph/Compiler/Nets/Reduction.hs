@@ -66,7 +66,7 @@ reduceStep rule conf@Configuration{stack, cycles, threadState} = case threadStat
   -- T.3
   Enlist [] -> pure $ conf{threadState = Delist}
   -- T.4
-  Cycle newCycle -> pure $ conf{cycles = uncurry Map.insert newCycle cycles}
+  Cycle newCycle -> pure $ conf{cycles = uncurry Map.insert newCycle cycles, threadState = Delist}
   -- Main processing
   Process pair -> process rule conf pair
 
