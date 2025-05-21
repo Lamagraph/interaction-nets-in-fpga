@@ -1,2 +1,3 @@
 Input net: Net {terms = [Var 8], equations = [(Agent DownArrow [Var 8],Agent A [Agent Lambda [Var 6,Agent A [Var 6,Agent Lambda [Var 7,Agent Lambda [Agent Epsilon [],Var 7]]]],Agent A [Agent A [Agent Lambda [Var 3,Agent Lambda [Var 4,Agent Lambda [Var 5,Agent A [Agent A [Var 5,Var 3],Var 4]]]],Agent Lambda [Var 1,Agent Lambda [Var 2,Agent A [Var 1,Var 2]]]],Agent Lambda [Agent Epsilon [],Agent Lambda [Var 0,Var 0]]]])]}
 Output net: Net {terms = [Agent UpArrow [Agent Lambda [Var 15,Agent Lambda [Var 2,Agent A [Var 15,Var 2]]]]], equations = []}
+Reduction count: 53

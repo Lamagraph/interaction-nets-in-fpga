@@ -28,9 +28,10 @@ module Lamagraph.Compiler.Nets.Types (
   INsMachine,
   runINsMachine,
   INsException (..),
+  HasReductionCounter (..),
 ) where
 
-import Relude hiding (newTVarIO)
+import Relude hiding (newTVarIO, readTVarIO)
 
 import UnliftIO
 
@@ -103,18 +104,26 @@ type Rule label =
   -- | List of pairs for a stack (I_S in a paper) and new involution pairs (Phi_S in the paper)
   INsMachine ([(AnnTerm label, AnnTerm label)], Map Var Var)
 
--- TODO: Make sure that all @freshCounter@ is strict if this type becomes a @data@ one.
-newtype INsEnv = INsEnv {freshCounter :: TVar Var}
+data INsEnv = INsEnv {freshCounter :: !(TVar Var), reductionCounter :: !(TVar Word64)}
 
 instance HasFreshCounter INsEnv where
   getFreshCounter = freshCounter
 
+class HasReductionCounter a where
+  getReductionCounter :: a -> TVar Word64
+
+instance HasReductionCounter INsEnv where
+  getReductionCounter = reductionCounter
+
 type INsMachine a = ReaderT INsEnv IO a
 
-runINsMachine :: INsMachine a -> IO a
+runINsMachine :: INsMachine a -> IO (a, Word64)
 runINsMachine f = do
   freshCounter <- newTVarIO 0
-  runReaderT f INsEnv{..}
+  reductionCounter <- newTVarIO 0
+  res <- runReaderT f INsEnv{..}
+  reductionCounterRes <- readTVarIO reductionCounter
+  pure (res, reductionCounterRes)
 
 data INsException label
   = CannotApplyAnyRuleException (Configuration label)

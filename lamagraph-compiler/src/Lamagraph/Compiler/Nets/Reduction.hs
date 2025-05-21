@@ -1,7 +1,7 @@
 -- | Module with main logic for abstract machine
 module Lamagraph.Compiler.Nets.Reduction (reduce, reduceStep) where
 
-import Relude
+import Relude hiding (atomically)
 
 import Control.Monad.Extra (loopM)
 
@@ -28,6 +28,9 @@ process ::
 process rule conf@Configuration{phi} = \case
   (AnnTerm _ (Agent leftLabel leftAux), AnnTerm _ (Agent rightLabel rightAux)) -> do
     -- I
+    env <- ask
+    let reductionCounterVar = getReductionCounter env
+    atomically $ modifyTVar' reductionCounterVar (+ 1)
     (newStackTop, newPhiTop) <- rule leftLabel leftAux rightLabel rightAux
     pure conf{phi = newPhiTop <> phi, threadState = Enlist newStackTop}
   (AnnTerm _ (Var x), AnnTerm _ (Var y)) ->
