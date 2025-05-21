@@ -153,13 +153,13 @@ coreBindsToTokenPassingCBV ::
   [Term] ->
   [(Term, Term)] ->
   [C.CoreBind] ->
-  N.INsMachine ([Term], [(Term, Term)])
+  N.INsMachine (N.Net TokenPassingCBV)
 coreBindsToTokenPassingCBV varToNet interface activePairs = \case
   [bind] -> case bind of
     C.NonRec _ body -> do
       (_, term) <- coreExprToTokenPassingCBV varToNet body
       v <- fresh
-      pure (N.Var v : interface, (downArrow (N.Var v), term) : activePairs)
+      pure N.Net{N.terms = N.Var v : interface, N.equations = (downArrow (N.Var v), term) : activePairs}
     C.Rec{} -> throwString "Let-rec's aren't supported"
   (bind : binds) -> case bind of
     C.NonRec var body -> helper var body binds
@@ -170,7 +170,7 @@ coreBindsToTokenPassingCBV varToNet interface activePairs = \case
           newBody = foldr C.Lam appliedInner lams
       helper var newBody binds
     C.Rec{} -> throwString "Mutual let-recs aren't supported"
-  [] -> pure (interface, activePairs)
+  [] -> pure N.Net{N.terms = interface, N.equations = activePairs}
  where
   helper var body binds = case countVarInCoreBinds var binds of
     0 -> do

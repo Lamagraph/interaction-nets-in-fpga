@@ -53,5 +53,14 @@ netsTest = do
   initialConfiguration <- initialConfigurationGolden
   reducedConfiguration <- reducedConfigurationGolden
   outNet <- outNetGolden
-  tokenPassingCBV <- tokenPassingCBVGolden
-  pure $ testGroup "Nets" [initialConfiguration, reducedConfiguration, outNet, tokenPassingCBV]
+  tokenPassingCBV <- tokenPassingCBVLmlGolden
+  pure $
+    testGroup
+      "Nets"
+      [ initialConfiguration
+      , reducedConfiguration
+      , outNet
+      , tokenPassingCBV
+      , tokenPassingCBVCoreGolden
+      , tokenPassingCBVParallelCoreGolden
+      ]

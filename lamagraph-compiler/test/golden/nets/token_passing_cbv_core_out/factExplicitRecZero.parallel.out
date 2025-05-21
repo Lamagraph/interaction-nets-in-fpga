@@ -1,0 +1,13 @@
+Input core:
+let true = fun x -> fun y -> x
+let false = fun x -> fun y -> y
+let if = fun b -> fun t -> fun f -> (b t) f
+let one = fun f -> fun x -> f x
+let pred = fun n -> fun f -> fun x -> ((n (fun g -> fun h -> h (g f))) (fun u -> x)) (fun u -> u)
+let mult = fun m -> fun n -> fun f -> fun x -> (m (n f)) x
+let isZero = fun n -> (n (fun x -> false)) true
+let zero = fun f -> fun x -> x
+let fact = fun n -> ((fun f -> (fun x -> f (fun v -> (x x) v)) (fun x -> f (fun v -> (x x) v))) (fun f -> fun n -> ((if (isZero n)) (fun z -> one)) (fun z -> (mult n) (f (pred n))))) n
+let res = fact zero
+Result net: <⇑(λ(ϵ, λ(510, λ(518, a(510, 518))))) | >
+Reduction count: 502
