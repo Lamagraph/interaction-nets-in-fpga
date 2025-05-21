@@ -12,6 +12,7 @@ import Data.Foldable.Extra
 import Data.HashMap.Strict qualified as HashMap
 import Data.List.NonEmpty.Extra qualified as NE
 import Data.Map.Strict qualified as Map
+import Prettyprinter
 import UnliftIO.Exception
 
 import Lamagraph.Compiler.Core qualified as C
@@ -483,3 +484,19 @@ tokenPassingCBVCommon leftLabel leftAux rightLabel rightAux = case (leftLabel, r
   -- Rule 10 (symmetric)
   (_, Delta) -> tokenPassingCBVCommon rightLabel rightAux leftLabel leftAux
   (l, r) -> throwString $ "Cant reduce " <> show l <> " and " <> show r
+
+------------
+-- Pretty --
+------------
+
+instance Pretty TokenPassingCBV where
+  pretty = \case
+    DownArrow -> "⇓"
+    UpArrow -> "⇑"
+    Lambda -> "λ"
+    A -> "a"
+    At -> "@"
+    At' -> "@'"
+    Epsilon -> "ϵ"
+    C -> "c"
+    Delta -> "δ"
