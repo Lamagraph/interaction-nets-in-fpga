@@ -47,11 +47,9 @@ tokenPassingCBVGolden = do
     parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
     typedTree <- fromEither $ inferDef parseTree
     let binds = runMonadDesugar $ desugarLmlModule typedTree
-    runINsMachine $ do
+    (res, counter) <- runINsMachine $ do
       (interface, activePairs) <- coreBindsToTokenPassingCBV HashMap.empty [] [] binds
       let net = Net{terms = interface, equations = activePairs}
-      -- output = ""
       output <- netToConfiguration net >>= reduce tokenPassingCBVRule >>= update >>= configurationToNet
       pure $ "Input net: " <> show net <> "\nOutput net: " <> show output
-
--- show <$> runINsMachine $ do (coreBindsToTokenPassingCBV HashMap.empty [] binds)
+    pure $ res <> "\nReduction count: " <> show counter
