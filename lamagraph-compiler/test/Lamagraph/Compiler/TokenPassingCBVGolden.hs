@@ -1,4 +1,9 @@
-module Lamagraph.Compiler.TokenPassingCBVGolden (tokenPassingCBVLmlGolden, tokenPassingCBVCoreGolden, tokenPassingCBVParallelCoreGolden) where
+module Lamagraph.Compiler.TokenPassingCBVGolden (
+  tokenPassingCBVLmlGolden,
+  tokenPassingCBVParallelLmlGolden,
+  tokenPassingCBVCoreGolden,
+  tokenPassingCBVParallelCoreGolden,
+) where
 
 import Relude
 
@@ -27,11 +32,11 @@ import Lamagraph.Compiler.Typechecker.Infer
 newExt :: String
 newExt = "out"
 
-inputDir :: FilePath
-inputDir = baseGoldenTestsDir </> "nets" </> "token_passing_cbv_in"
+lmlInputDir :: FilePath
+lmlInputDir = baseGoldenTestsDir </> "nets" </> "token_passing_cbv_lml_in"
 
-outputDir :: FilePath
-outputDir = ".." </> "token_passing_cbv_out"
+lmlOutputDir :: FilePath
+lmlOutputDir = ".." </> "token_passing_cbv_lml_out"
 
 coreOutputDir :: FilePath
 coreOutputDir = baseGoldenTestsDir </> "nets" </> "token_passing_cbv_core_out"
@@ -41,13 +46,13 @@ renderUnbounded x = encodeUtf8 $ renderLazy $ layoutPretty (LayoutOptions{layout
 
 tokenPassingCBVLmlGolden :: IO TestTree
 tokenPassingCBVLmlGolden = do
-  lmlFiles <- findByExtension [lmlExt] inputDir
+  lmlFiles <- findByExtension [lmlExt] lmlInputDir
   return $
     testGroup
       "TokenPassingCBV Lml Golden tests"
       [ goldenVsString (takeBaseName lmlFile) resLmlFile (helper lmlFile)
       | lmlFile <- lmlFiles
-      , let resLmlFile = addExtension (changeFileDir lmlFile outputDir) newExt
+      , let resLmlFile = addExtension (changeFileDir lmlFile lmlOutputDir) newExt
       ]
  where
   helper :: FilePath -> IO LByteString
@@ -57,11 +62,47 @@ tokenPassingCBVLmlGolden = do
     parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
     typedTree <- fromEither $ inferDef parseTree
     let binds = runMonadDesugar $ desugarLmlModule typedTree
-    (res, counter) <- runINsMachine $ do
+    ((net, output), counter) <- runINsMachine $ do
       net <- coreBindsToTokenPassingCBV HashMap.empty [] [] binds
       output <- netToConfiguration net >>= reduce tokenPassingCBVRule >>= update >>= configurationToNet
-      pure $ "Input net: " <> renderUnbounded net <> "\nOutput net: " <> renderUnbounded output
-    pure $ res <> "\nReduction count: " <> show counter
+      pure (net, output)
+    pure $
+      "Input net: "
+        <> renderUnbounded net
+        <> "\nOutput net: "
+        <> renderUnbounded output
+        <> "\nReduction count: "
+        <> show counter
+
+tokenPassingCBVParallelLmlGolden :: IO TestTree
+tokenPassingCBVParallelLmlGolden = do
+  lmlFiles <- findByExtension [lmlExt] lmlInputDir
+  return $
+    testGroup
+      "TokenPassingCBV Parallel Lml Golden tests"
+      [ goldenVsString (takeBaseName lmlFile) resLmlFile (helper lmlFile)
+      | lmlFile <- lmlFiles
+      , let resLmlFile = addExtension (changeFileDir lmlFile lmlOutputDir) ("parallel." <> newExt)
+      ]
+ where
+  helper :: FilePath -> IO LByteString
+  helper lmlFile = do
+    fileLBS <- readFileLBS lmlFile
+    let fileT = decodeUtf8 fileLBS
+    parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
+    typedTree <- fromEither $ inferDef parseTree
+    let binds = runMonadDesugar $ desugarLmlModule typedTree
+    ((net, output), counter) <- runINsMachine $ do
+      net <- coreBindsToTokenPassingCBV HashMap.empty [] [] binds
+      output <- netToConfiguration net >>= reduce tokenPassingCBVRuleParallel >>= update >>= configurationToNet
+      pure (net, output)
+    pure $
+      "Input net: "
+        <> renderUnbounded net
+        <> "\nOutput net: "
+        <> renderUnbounded output
+        <> "\nReduction count: "
+        <> show counter
 
 coreTests :: [(String, [CoreBind])]
 coreTests =
