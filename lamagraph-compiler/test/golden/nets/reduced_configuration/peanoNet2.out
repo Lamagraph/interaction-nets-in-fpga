@@ -1,1 +1,1 @@
-Configuration {heap = fromList [(2,AnnTerm [Just 4,Nothing] (Agent Succ [Var 4])),(5,AnnTerm [Nothing] (Agent Zero []))], stack = [], phi = fromList [(1,2),(2,1),(4,5),(5,4)], iface = [AnnTerm [] (Var 1)], cycles = fromList [], threadState = Delist}
+Configuration {heap = fromList [(2,AnnTerm [Just 4,Nothing] (Agent Succ [Var 4])),(6,AnnTerm [Nothing] (Agent Zero []))], stack = [Nothing], phi = fromList [(1,2),(2,1),(4,6),(6,4)], iface = [AnnTerm [] (Var 1)], cycles = fromList [], threadState = Delist}

@@ -1,3 +1,4 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {- | Module with types for encoding of  Interaction Nets and their abstract machine.
@@ -29,6 +30,9 @@ module Lamagraph.Compiler.Nets.Types (
   runINsMachine,
   INsException (..),
   HasReductionCounter (..),
+  HasPreviousReductionCounter (..),
+  HasReductionWidthHistory (..),
+  INsMachineStats (..),
 ) where
 
 import Relude hiding (newTVarIO, readTVarIO)
@@ -84,7 +88,8 @@ data ThreadState label where
 
 data Configuration label = Configuration
   { heap :: !(Map Var (AnnTerm label))
-  , stack :: ![(AnnTerm label, AnnTerm label)]
+  , stack :: ![Maybe (AnnTerm label, AnnTerm label)]
+  -- ^ Invariant: there must be Nothing at the end of the stack
   , phi :: !(Map Var Var)
   -- ^ Invariant on map: for any pair (x, y) there must be a pair (y, x)
   , iface :: ![AnnTerm label]
@@ -105,7 +110,12 @@ type Rule label =
   -- | List of pairs for a stack (I_S in a paper) and new involution pairs (Phi_S in the paper)
   INsMachine ([(AnnTerm label, AnnTerm label)], Map Var Var)
 
-data INsEnv = INsEnv {freshCounter :: !(TVar Var), reductionCounter :: !(TVar Word64)}
+data INsEnv = INsEnv
+  { freshCounter :: !(TVar Var)
+  , reductionCounter :: !(TVar Word64)
+  , previousReductionCounter :: !(TVar Word64)
+  , reductionWidthHistory :: !(TVar [Word64])
+  }
 
 instance HasFreshCounter INsEnv where
   getFreshCounter = freshCounter
@@ -114,17 +124,34 @@ class HasReductionCounter a where
   getReductionCounter :: a -> TVar Word64
 
 instance HasReductionCounter INsEnv where
-  getReductionCounter = reductionCounter
+  getReductionCounter INsEnv{reductionCounter} = reductionCounter
+
+class HasPreviousReductionCounter a where
+  getPreviousReductionCounter :: a -> TVar Word64
+
+instance HasPreviousReductionCounter INsEnv where
+  getPreviousReductionCounter = previousReductionCounter
+
+class HasReductionWidthHistory a where
+  getReductionWidthHistory :: a -> TVar [Word64]
+
+instance HasReductionWidthHistory INsEnv where
+  getReductionWidthHistory INsEnv{reductionWidthHistory} = reductionWidthHistory
 
 type INsMachine a = ReaderT INsEnv IO a
 
-runINsMachine :: INsMachine a -> IO (a, Word64)
+data INsMachineStats = INsMachineStats {reductionCounter :: Word64, reductionWidthHistory :: [Word64]} deriving (Show)
+
+runINsMachine :: INsMachine a -> IO (a, INsMachineStats)
 runINsMachine f = do
   freshCounter <- newTVarIO 0
   reductionCounter <- newTVarIO 0
+  previousReductionCounter <- newTVarIO 0
+  reductionWidthHistory <- newTVarIO []
   res <- runReaderT f INsEnv{..}
-  reductionCounterRes <- readTVarIO reductionCounter
-  pure (res, reductionCounterRes)
+  reductionCounterRes <- readTVarIO previousReductionCounter
+  reductionWidthHistoryRes <- readTVarIO reductionWidthHistory
+  pure (res, INsMachineStats reductionCounterRes reductionWidthHistoryRes)
 
 data INsException label
   = CannotApplyAnyRuleException (Configuration label)
