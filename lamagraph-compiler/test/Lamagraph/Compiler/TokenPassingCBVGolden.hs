@@ -4,6 +4,8 @@ import Relude
 
 import Data.Either.Extra (mapLeft)
 import Data.HashMap.Strict qualified as HashMap
+import Prettyprinter
+import Prettyprinter.Render.Text
 import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
@@ -29,6 +31,9 @@ inputDir = baseGoldenTestsDir </> "nets" </> "token_passing_cbv_in"
 outputDir :: FilePath
 outputDir = ".." </> "token_passing_cbv_out"
 
+renderUnbounded :: (Pretty a) => a -> LByteString
+renderUnbounded x = encodeUtf8 $ renderLazy $ layoutPretty (LayoutOptions{layoutPageWidth = Unbounded}) (pretty x)
+
 tokenPassingCBVGolden :: IO TestTree
 tokenPassingCBVGolden = do
   lmlFiles <- findByExtension [lmlExt] inputDir
@@ -51,5 +56,5 @@ tokenPassingCBVGolden = do
       (interface, activePairs) <- coreBindsToTokenPassingCBV HashMap.empty [] [] binds
       let net = Net{terms = interface, equations = activePairs}
       output <- netToConfiguration net >>= reduce tokenPassingCBVRule >>= update >>= configurationToNet
-      pure $ "Input net: " <> show net <> "\nOutput net: " <> show output
+      pure $ "Input net: " <> renderUnbounded net <> "\nOutput net: " <> renderUnbounded output
     pure $ res <> "\nReduction count: " <> show counter

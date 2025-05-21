@@ -33,6 +33,7 @@ module Lamagraph.Compiler.Nets.Types (
 
 import Relude hiding (newTVarIO, readTVarIO)
 
+import Prettyprinter
 import UnliftIO
 
 import Lamagraph.Compiler.MonadFresh
@@ -132,3 +133,13 @@ data INsException label
   | IncorrectNet (Net label) [(Var, Int)]
   deriving (Show, Typeable)
 instance (Show label, Typeable label) => Exception (INsException label)
+
+instance (Pretty label) => Pretty (Term label) where
+  pretty = \case
+    Var v -> pretty v
+    Agent label aux -> pretty label <> if null aux then "" else parens $ fillSep $ punctuate comma (map pretty aux)
+
+instance (Pretty label) => Pretty (Net label) where
+  pretty Net{terms, equations} = angles $ fillSep (punctuate comma (map pretty terms)) <+> "|" <+> prettyEqs
+   where
+    prettyEqs = fillSep $ punctuate comma $ map (\(l, r) -> pretty l <+> "⋈" <+> pretty r) equations
