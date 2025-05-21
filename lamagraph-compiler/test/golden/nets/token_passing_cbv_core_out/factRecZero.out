@@ -9,5 +9,7 @@ let isZero = fun n -> (n (fun x -> false)) true
 let zero = fun f -> fun x -> x
 let rec fact = fun n -> ((if (isZero n)) (fun z -> one)) (fun z -> (mult n) (fact (pred n)))
 let res = fact zero
-Result net: <⇑(λ(ϵ, λ(478, λ(486, a(478, 486))))) | >
-Reduction count: 476
+Result net: <⇑(λ(ϵ, λ(238, λ(294, a(238, 294))))) | >
+Reduction count: 472
+Parallel width: 18
+Parallel height: 103
