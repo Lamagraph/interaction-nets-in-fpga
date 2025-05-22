@@ -47,12 +47,41 @@ renderUnbounded x = encodeUtf8 $ renderLazy $ layoutPretty (LayoutOptions{layout
 
 analyzeStats ::
   INsMachineStats ->
-  -- | Reduction count, parallel width, parallel height
+  -- | Reduction count, reduction width history, parallel width, parallel height
   ( Word64
+  , [Word64]
   , Word64
   , Int
   )
-analyzeStats INsMachineStats{reductionCounter, reductionWidthHistory} = (reductionCounter, maximum reductionWidthHistory, length reductionWidthHistory)
+analyzeStats INsMachineStats{reductionCounter, reductionWidthHistory} = (reductionCounter, reverse reductionWidthHistory, maximum reductionWidthHistory, length reductionWidthHistory)
+
+mkOutput :: (Pretty a, Pretty label) => a -> Net label -> (Word64, [Word64], Word64, Int) -> LByteString
+mkOutput input output (counter, widthHistory, width, height) =
+  "Input: "
+    <> renderUnbounded input
+    <> "\nOutput: "
+    <> renderUnbounded output
+    <> "\nReduction count: "
+    <> show counter
+    <> "\nParallel width: "
+    <> show width
+    <> "\nParallel height: "
+    <> show height
+    <> "\nParallel width history: "
+    <> show widthHistory
+
+lmlHelper :: Rule TokenPassingCBV -> FilePath -> IO LByteString
+lmlHelper rule lmlFile = do
+  fileLBS <- readFileLBS lmlFile
+  let fileT = decodeUtf8 fileLBS
+  parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
+  typedTree <- fromEither $ inferDef parseTree
+  let binds = runMonadDesugar $ desugarLmlModule typedTree
+  ((net, output), stats) <- runINsMachine $ do
+    net <- coreBindsToTokenPassingCBV HashMap.empty [] [] binds
+    output <- netToConfiguration net >>= reduce rule >>= update >>= configurationToNet
+    pure (net, output)
+  pure $ mkOutput net output (analyzeStats stats)
 
 tokenPassingCBVLmlGolden :: IO TestTree
 tokenPassingCBVLmlGolden = do
@@ -60,34 +89,10 @@ tokenPassingCBVLmlGolden = do
   return $
     testGroup
       "TokenPassingCBV Lml Golden tests"
-      [ goldenVsString (takeBaseName lmlFile) resLmlFile (helper lmlFile)
+      [ goldenVsString (takeBaseName lmlFile) resLmlFile (lmlHelper tokenPassingCBVRule lmlFile)
       | lmlFile <- lmlFiles
       , let resLmlFile = addExtension (changeFileDir lmlFile lmlOutputDir) newExt
       ]
- where
-  helper :: FilePath -> IO LByteString
-  helper lmlFile = do
-    fileLBS <- readFileLBS lmlFile
-    let fileT = decodeUtf8 fileLBS
-    parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
-    typedTree <- fromEither $ inferDef parseTree
-    let binds = runMonadDesugar $ desugarLmlModule typedTree
-    ((net, output), stats) <- runINsMachine $ do
-      net <- coreBindsToTokenPassingCBV HashMap.empty [] [] binds
-      output <- netToConfiguration net >>= reduce tokenPassingCBVRule >>= update >>= configurationToNet
-      pure (net, output)
-    let (counter, width, height) = analyzeStats stats
-    pure $
-      "Input net: "
-        <> renderUnbounded net
-        <> "\nOutput net: "
-        <> renderUnbounded output
-        <> "\nReduction count: "
-        <> show counter
-        <> "\nParallel width: "
-        <> show width
-        <> "\nParallel height: "
-        <> show height
 
 tokenPassingCBVParallelLmlGolden :: IO TestTree
 tokenPassingCBVParallelLmlGolden = do
@@ -95,34 +100,10 @@ tokenPassingCBVParallelLmlGolden = do
   return $
     testGroup
       "TokenPassingCBV Parallel Lml Golden tests"
-      [ goldenVsString (takeBaseName lmlFile) resLmlFile (helper lmlFile)
+      [ goldenVsString (takeBaseName lmlFile) resLmlFile (lmlHelper tokenPassingCBVRuleParallel lmlFile)
       | lmlFile <- lmlFiles
       , let resLmlFile = addExtension (changeFileDir lmlFile lmlOutputDir) ("parallel." <> newExt)
       ]
- where
-  helper :: FilePath -> IO LByteString
-  helper lmlFile = do
-    fileLBS <- readFileLBS lmlFile
-    let fileT = decodeUtf8 fileLBS
-    parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
-    typedTree <- fromEither $ inferDef parseTree
-    let binds = runMonadDesugar $ desugarLmlModule typedTree
-    ((net, output), stats) <- runINsMachine $ do
-      net <- coreBindsToTokenPassingCBV HashMap.empty [] [] binds
-      output <- netToConfiguration net >>= reduce tokenPassingCBVRuleParallel >>= update >>= configurationToNet
-      pure (net, output)
-    let (counter, width, height) = analyzeStats stats
-    pure $
-      "Input net: "
-        <> renderUnbounded net
-        <> "\nOutput net: "
-        <> renderUnbounded output
-        <> "\nReduction count: "
-        <> show counter
-        <> "\nParallel width: "
-        <> show width
-        <> "\nParallel height: "
-        <> show height
 
 coreTests :: [(String, [CoreBind])]
 coreTests =
@@ -132,62 +113,31 @@ coreTests =
   , ("factRecTwo", resFactRecTwo)
   ]
 
+coreHelper :: Rule TokenPassingCBV -> [CoreBind] -> IO LByteString
+coreHelper rule binds = do
+  (resultNet, stats) <-
+    runINsMachine $
+      coreBindsToTokenPassingCBV HashMap.empty [] [] binds
+        >>= netToConfiguration
+        >>= reduce rule
+        >>= update
+        >>= configurationToNet
+  pure $ mkOutput binds resultNet (analyzeStats stats)
+
 tokenPassingCBVCoreGolden :: TestTree
 tokenPassingCBVCoreGolden =
   testGroup
     "TokenPassingCBV Core Golden tests"
-    [ goldenVsString name resultFilename (helper binds)
+    [ goldenVsString name resultFilename (coreHelper tokenPassingCBVRule binds)
     | (name, binds) <- coreTests
     , let resultFilename = coreOutputDir </> (name ++ ".out")
     ]
- where
-  helper binds = do
-    (resultNet, stats) <-
-      runINsMachine $
-        coreBindsToTokenPassingCBV HashMap.empty [] [] binds
-          >>= netToConfiguration
-          >>= reduce tokenPassingCBVRule
-          >>= update
-          >>= configurationToNet
-    let (counter, width, height) = analyzeStats stats
-    pure $
-      "Input core:\n"
-        <> renderUnbounded binds
-        <> "\nResult net: "
-        <> renderUnbounded resultNet
-        <> "\nReduction count: "
-        <> show counter
-        <> "\nParallel width: "
-        <> show width
-        <> "\nParallel height: "
-        <> show height
 
 tokenPassingCBVParallelCoreGolden :: TestTree
 tokenPassingCBVParallelCoreGolden =
   testGroup
     "TokenPassingCBV Parallel Core Golden tests"
-    [ goldenVsString name resultFilename (helper binds)
+    [ goldenVsString name resultFilename (coreHelper tokenPassingCBVRuleParallel binds)
     | (name, binds) <- coreTests
     , let resultFilename = coreOutputDir </> (name ++ ".parallel.out")
     ]
- where
-  helper binds = do
-    (resultNet, stats) <-
-      runINsMachine $
-        coreBindsToTokenPassingCBV HashMap.empty [] [] binds
-          >>= netToConfiguration
-          >>= reduce tokenPassingCBVRuleParallel
-          >>= update
-          >>= configurationToNet
-    let (counter, width, height) = analyzeStats stats
-    pure $
-      "Input core:\n"
-        <> renderUnbounded binds
-        <> "\nResult net: "
-        <> renderUnbounded resultNet
-        <> "\nReduction count: "
-        <> show counter
-        <> "\nParallel width: "
-        <> show width
-        <> "\nParallel height: "
-        <> show height

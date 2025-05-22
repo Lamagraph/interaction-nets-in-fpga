@@ -1,5 +1,4 @@
-Input core:
-let true = fun x -> fun y -> x
+Input: let true = fun x -> fun y -> x
 let false = fun x -> fun y -> y
 let if = fun b -> fun t -> fun f -> (b t) f
 let one = fun f -> fun x -> f x
@@ -9,7 +8,8 @@ let isZero = fun n -> (n (fun x -> false)) true
 let zero = fun f -> fun x -> x
 let fact = fun n -> ((fun f -> (fun x -> f (fun v -> (x x) v)) (fun x -> f (fun v -> (x x) v))) (fun f -> fun n -> ((if (isZero n)) (fun z -> one)) (fun z -> (mult n) (f (pred n))))) n
 let res = fact zero
-Result net: <⇑(λ(ϵ, λ(238, λ(294, a(238, 294))))) | >
+Output: <⇑(λ(ϵ, λ(238, λ(294, a(238, 294))))) | >
 Reduction count: 472
 Parallel width: 18
 Parallel height: 103
+Parallel width history: [1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,3,4,5,7,10,9,10,10,13,12,11,13,10,8,10,11,12,10,8,7,2,2,3,3,1,1,1,1,1,1,1,1,1,2,3,3,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,4,6,7,5,6,8,9,14,11,9,14,18,12,14,14,16,12,12,12,2,2,4]
