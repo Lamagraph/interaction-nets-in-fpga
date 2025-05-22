@@ -10,6 +10,7 @@ import Lamagraph.Compiler.Parser.LexerTest
 import Lamagraph.Compiler.Parser.ParserRoundtrip
 import Lamagraph.Compiler.Parser.PrettyAstGolden
 import Lamagraph.Compiler.Parser.PrettyLmlGolden
+import Lamagraph.Compiler.TokenPassingCBVGolden
 import Lamagraph.Compiler.Typechecker.PrettyTypedGolden
 
 main :: IO ()
@@ -52,4 +53,16 @@ netsTest = do
   initialConfiguration <- initialConfigurationGolden
   reducedConfiguration <- reducedConfigurationGolden
   outNet <- outNetGolden
-  pure $ testGroup "Nets" [initialConfiguration, reducedConfiguration, outNet]
+  tokenPassingCBV <- tokenPassingCBVLmlGolden
+  tokenPassingCBVParallel <- tokenPassingCBVParallelLmlGolden
+  pure $
+    testGroup
+      "Nets"
+      [ initialConfiguration
+      , reducedConfiguration
+      , outNet
+      , tokenPassingCBV
+      , tokenPassingCBVParallel
+      , tokenPassingCBVCoreGolden
+      , tokenPassingCBVParallelCoreGolden
+      ]

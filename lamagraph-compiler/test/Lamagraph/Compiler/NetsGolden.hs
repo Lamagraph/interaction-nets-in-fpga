@@ -37,7 +37,7 @@ initialConfigurationGolden = do
       , let resultFilename = initialConfigurationGoldenDir </> (name ++ ".out")
       ]
  where
-  helper net = show <$> runINsMachine (netToConfiguration net)
+  helper net = show . fst <$> runINsMachine (netToConfiguration net)
 
 reducedConfigurationGolden :: IO TestTree
 reducedConfigurationGolden = do
@@ -49,7 +49,7 @@ reducedConfigurationGolden = do
       , let resultFilename = reducedConfigurationGoldenDir </> (name ++ ".out")
       ]
  where
-  helper net rule = show <$> runINsMachine (netToConfiguration net >>= reduce rule)
+  helper net rule = show . fst <$> runINsMachine (netToConfiguration net >>= reduce rule)
 
 outNetGolden :: IO TestTree
 outNetGolden = do
@@ -61,4 +61,4 @@ outNetGolden = do
       , let resultFilename = outNetGoldenDir </> (name ++ ".out")
       ]
  where
-  helper net rule = show <$> runINsMachine (netToConfiguration net >>= reduce rule >>= update >>= configurationToNet)
+  helper net rule = show . fst <$> runINsMachine (netToConfiguration net >>= reduce rule >>= update >>= configurationToNet)

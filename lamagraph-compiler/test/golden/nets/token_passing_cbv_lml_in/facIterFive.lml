@@ -1,0 +1,16 @@
+let zero = fun f -> fun x -> x
+let one = fun f -> fun x -> f x
+let five = fun f -> fun x -> f (f (f (f (f x))))
+
+let succ = fun n -> fun f -> fun x -> f (n f x)
+let mult = fun m -> fun n -> fun f -> fun x -> m (n f) x
+
+let pair = fun x -> fun y -> fun k -> k x y
+let fst = fun p -> p (fun x -> fun y -> x)
+let snd = fun p -> p (fun x -> fun y -> y)
+
+let fact_aux = fun n -> n (fun p -> pair (succ (fst p)) (mult (succ (fst p)) (snd p))) (pair zero one)
+
+let fact = fun n -> snd (fact_aux n)
+
+let res = fact five

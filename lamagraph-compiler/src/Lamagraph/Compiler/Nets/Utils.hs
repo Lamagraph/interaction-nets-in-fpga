@@ -19,12 +19,14 @@ import Data.Map.Strict qualified as Map
 
 import Lamagraph.Compiler.Nets.Types
 
-mkConfigurationWithDefault :: [(AnnTerm label, AnnTerm label)] -> Map Var Var -> [AnnTerm label] -> Configuration label
+mkConfigurationWithDefault ::
+  [(AnnTerm label, AnnTerm label)] -> Map Var Var -> [AnnTerm label] -> Configuration label
 mkConfigurationWithDefault !stack !phi !iface =
   Configuration
     { heap = Map.empty
     , cycles = Map.empty
     , threadState = Delist
+    , stack = map Just stack <> [Nothing]
     , ..
     }
 

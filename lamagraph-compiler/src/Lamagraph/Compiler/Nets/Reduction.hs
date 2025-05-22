@@ -1,7 +1,7 @@
 -- | Module with main logic for abstract machine
 module Lamagraph.Compiler.Nets.Reduction (reduce, reduceStep) where
 
-import Relude
+import Relude hiding (atomically)
 
 import Control.Monad.Extra (loopM)
 
@@ -28,6 +28,9 @@ process ::
 process rule conf@Configuration{phi} = \case
   (AnnTerm _ (Agent leftLabel leftAux), AnnTerm _ (Agent rightLabel rightAux)) -> do
     -- I
+    env <- ask
+    let reductionCounterVar = getReductionCounter env
+    atomically $ modifyTVar' reductionCounterVar (+ 1)
     (newStackTop, newPhiTop) <- rule leftLabel leftAux rightLabel rightAux
     pure conf{phi = newPhiTop <> phi, threadState = Enlist newStackTop}
   (AnnTerm _ (Var x), AnnTerm _ (Var y)) ->
@@ -60,23 +63,31 @@ reduceStep rule conf@Configuration{stack, cycles, threadState} = case threadStat
   -- T.1
   Delist -> case stack of
     [] -> throwIO $ DelistFromEmptyStackException conf
-    hd : tl -> pure $ conf{stack = tl, threadState = Process hd}
-  -- T.2
-  Enlist (hd : tl) -> pure $ conf{stack = hd : stack, threadState = Enlist tl}
-  -- T.3
-  Enlist [] -> pure $ conf{threadState = Delist}
+    [Nothing] -> throwIO $ DelistFromEmptyStackException conf
+    hd : tl -> case hd of
+      Just pair -> pure $ conf{stack = tl, threadState = Process pair}
+      Nothing -> do
+        env <- ask
+        atomically $ do
+          currentReductionCounter <- readTVar $ getReductionCounter env
+          prevReductionCounter <- readTVar $ getPreviousReductionCounter env
+          modifyTVar' (getReductionWidthHistory env) ((currentReductionCounter - prevReductionCounter) :)
+          writeTVar (getPreviousReductionCounter env) currentReductionCounter
+        pure $ conf{stack = tl <> [Nothing]}
+  -- T.2 + T.3
+  Enlist pairs -> pure $ conf{stack = stack <> (Just <$> pairs), threadState = Delist}
   -- T.4
-  Cycle newCycle -> pure $ conf{cycles = uncurry Map.insert newCycle cycles}
+  Cycle newCycle -> pure $ conf{cycles = uncurry Map.insert newCycle cycles, threadState = Delist}
   -- Main processing
   Process pair -> process rule conf pair
 
--- | Looping version of 'reduceStep'. Works until 'stack' is empty and 'threadState' is 'Delist'.
+-- | Looping version of 'reduceStep'. Works until 'stack' is empty (actually contains only 'Nothing') and 'threadState' is 'Delist'.
 reduce ::
   (Show label, Typeable label) => Rule label -> Configuration label -> INsMachine (Configuration label)
 reduce rule = loopM helper
  where
   helper conf@Configuration{stack, threadState} = case (stack, threadState) of
-    ([], Delist) -> pure $ Right conf
+    ([Nothing], Delist) -> pure $ Right conf
     _ -> do
       newConf <- reduceStep rule conf
       pure $ Left newConf

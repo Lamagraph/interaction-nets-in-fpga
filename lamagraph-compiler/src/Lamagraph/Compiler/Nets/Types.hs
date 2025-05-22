@@ -1,3 +1,4 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {- | Module with types for encoding of  Interaction Nets and their abstract machine.
@@ -28,10 +29,15 @@ module Lamagraph.Compiler.Nets.Types (
   INsMachine,
   runINsMachine,
   INsException (..),
+  HasReductionCounter (..),
+  HasPreviousReductionCounter (..),
+  HasReductionWidthHistory (..),
+  INsMachineStats (..),
 ) where
 
-import Relude hiding (newTVarIO)
+import Relude hiding (newTVarIO, readTVarIO)
 
+import Prettyprinter
 import UnliftIO
 
 import Lamagraph.Compiler.MonadFresh
@@ -82,7 +88,8 @@ data ThreadState label where
 
 data Configuration label = Configuration
   { heap :: !(Map Var (AnnTerm label))
-  , stack :: ![(AnnTerm label, AnnTerm label)]
+  , stack :: ![Maybe (AnnTerm label, AnnTerm label)]
+  -- ^ Invariant: there must be Nothing at the end of the stack
   , phi :: !(Map Var Var)
   -- ^ Invariant on map: for any pair (x, y) there must be a pair (y, x)
   , iface :: ![AnnTerm label]
@@ -103,18 +110,48 @@ type Rule label =
   -- | List of pairs for a stack (I_S in a paper) and new involution pairs (Phi_S in the paper)
   INsMachine ([(AnnTerm label, AnnTerm label)], Map Var Var)
 
--- TODO: Make sure that all @freshCounter@ is strict if this type becomes a @data@ one.
-newtype INsEnv = INsEnv {freshCounter :: TVar Var}
+data INsEnv = INsEnv
+  { freshCounter :: !(TVar Var)
+  , reductionCounter :: !(TVar Word64)
+  , previousReductionCounter :: !(TVar Word64)
+  , reductionWidthHistory :: !(TVar [Word64])
+  }
 
 instance HasFreshCounter INsEnv where
   getFreshCounter = freshCounter
 
+class HasReductionCounter a where
+  getReductionCounter :: a -> TVar Word64
+
+instance HasReductionCounter INsEnv where
+  getReductionCounter INsEnv{reductionCounter} = reductionCounter
+
+class HasPreviousReductionCounter a where
+  getPreviousReductionCounter :: a -> TVar Word64
+
+instance HasPreviousReductionCounter INsEnv where
+  getPreviousReductionCounter = previousReductionCounter
+
+class HasReductionWidthHistory a where
+  getReductionWidthHistory :: a -> TVar [Word64]
+
+instance HasReductionWidthHistory INsEnv where
+  getReductionWidthHistory INsEnv{reductionWidthHistory} = reductionWidthHistory
+
 type INsMachine a = ReaderT INsEnv IO a
 
-runINsMachine :: INsMachine a -> IO a
+data INsMachineStats = INsMachineStats {reductionCounter :: Word64, reductionWidthHistory :: [Word64]} deriving (Show)
+
+runINsMachine :: INsMachine a -> IO (a, INsMachineStats)
 runINsMachine f = do
   freshCounter <- newTVarIO 0
-  runReaderT f INsEnv{..}
+  reductionCounter <- newTVarIO 0
+  previousReductionCounter <- newTVarIO 0
+  reductionWidthHistory <- newTVarIO []
+  res <- runReaderT f INsEnv{..}
+  reductionCounterRes <- readTVarIO previousReductionCounter
+  reductionWidthHistoryRes <- readTVarIO reductionWidthHistory
+  pure (res, INsMachineStats reductionCounterRes reductionWidthHistoryRes)
 
 data INsException label
   = CannotApplyAnyRuleException (Configuration label)
@@ -123,3 +160,13 @@ data INsException label
   | IncorrectNet (Net label) [(Var, Int)]
   deriving (Show, Typeable)
 instance (Show label, Typeable label) => Exception (INsException label)
+
+instance (Pretty label) => Pretty (Term label) where
+  pretty = \case
+    Var v -> pretty v
+    Agent label aux -> pretty label <> if null aux then "" else parens $ fillSep $ punctuate comma (map pretty aux)
+
+instance (Pretty label) => Pretty (Net label) where
+  pretty Net{terms, equations} = angles $ fillSep (punctuate comma (map pretty terms)) <+> "|" <+> prettyEqs
+   where
+    prettyEqs = fillSep $ punctuate comma $ map (\(l, r) -> pretty l <+> "⋈" <+> pretty r) equations
