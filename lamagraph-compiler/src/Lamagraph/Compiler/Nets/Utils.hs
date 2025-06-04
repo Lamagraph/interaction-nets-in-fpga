@@ -15,6 +15,7 @@ module Lamagraph.Compiler.Nets.Utils (
 import Relude
 
 import Data.List.Extra (delete)
+import Data.List.NonEmpty.Extra
 import Data.Map.Strict qualified as Map
 
 import Lamagraph.Compiler.Nets.Types
@@ -26,7 +27,7 @@ mkConfigurationWithDefault !stack !phi !iface =
     { heap = Map.empty
     , cycles = Map.empty
     , threadState = Delist
-    , stack = map Just stack <> [Nothing]
+    , stack = prependList (fmap Just stack) (pure Nothing)
     , ..
     }
 
@@ -56,12 +57,12 @@ deleteFirstNothing = delete Nothing
 substitute :: Var -> Term label -> Term label -> Term label
 substitute x u = \case
   Var var -> if var == x then u else Var var
-  Agent label terms -> Agent label $ map (substitute x u) terms
+  Agent label terms -> Agent label $ fmap (substitute x u) terms
 
 substituteAnnTerm :: Var -> AnnTerm label -> AnnTerm label -> AnnTerm label
 substituteAnnTerm x u@(AnnTerm uVars uTerm) t@(AnnTerm tVars tTerm) = case tTerm of
   Var var -> if var == x then u else t
   Agent{} ->
     if Just x `elem` tVars
-      then AnnTerm (deleteFirstNothing uVars ++ filter (/= Just x) tVars) (substitute x uTerm tTerm)
+      then AnnTerm (deleteFirstNothing uVars ++ Relude.filter (/= Just x) tVars) (substitute x uTerm tTerm)
       else t

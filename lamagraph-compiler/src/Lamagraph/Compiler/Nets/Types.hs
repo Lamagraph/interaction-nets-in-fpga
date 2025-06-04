@@ -88,8 +88,11 @@ data ThreadState label where
 
 data Configuration label = Configuration
   { heap :: !(Map Var (AnnTerm label))
-  , stack :: ![Maybe (AnnTerm label, AnnTerm label)]
-  -- ^ Invariant: there must be Nothing at the end of the stack
+  , stack :: !(NonEmpty (Maybe (AnnTerm label, AnnTerm label)))
+  {- ^ Invariant: there must be Nothing at the end of the stack.
+  This is required to properly track parallel execution statistics.
+  Consider using 'mkConfigurationWithDefault'.
+  -}
   , phi :: !(Map Var Var)
   -- ^ Invariant on map: for any pair (x, y) there must be a pair (y, x)
   , iface :: ![AnnTerm label]

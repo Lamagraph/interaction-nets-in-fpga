@@ -103,7 +103,7 @@ updateStep conf@Configuration{heap, stack, phi, iface, cycles, threadState} = ca
       pure
         conf
           { heap = Map.delete phiX heap
-          , stack = map (fmap $ bimapBoth $ substituteAnnTerm x phiXTerm) stack
+          , stack = fmap (fmap $ bimapBoth $ substituteAnnTerm x phiXTerm) stack
           , phi = Map.delete x $ Map.delete phiX phi
           , iface = map (substituteAnnTerm x phiXTerm) iface
           , cycles = Map.map (substituteAnnTerm x phiXTerm) cycles
@@ -137,7 +137,7 @@ configurationToNet conf@Configuration{heap, stack, iface, cycles, threadState} =
     then
       let strippedTerms = map unAnnotateTerm iface
           strippedEquations =
-            map (bimapBoth unAnnotateTerm) (catMaybes stack)
+            map (bimapBoth unAnnotateTerm) (catMaybes $ toList stack)
               <> map (bimap Var unAnnotateTerm) (Map.toList cycles)
               <> unThreadState threadState
        in pure Net{terms = map (collapseVar conf) strippedTerms, equations = map (bimapBoth (collapseVar conf)) strippedEquations}
