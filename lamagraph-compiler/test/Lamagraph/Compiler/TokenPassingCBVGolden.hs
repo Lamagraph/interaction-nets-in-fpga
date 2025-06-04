@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Lamagraph.Compiler.TokenPassingCBVGolden (
   tokenPassingCBVLmlGolden,
   tokenPassingCBVParallelLmlGolden,
@@ -45,30 +47,32 @@ coreOutputDir = baseGoldenTestsDir </> "nets" </> "token_passing_cbv_core_out"
 renderUnbounded :: (Pretty a) => a -> LByteString
 renderUnbounded x = encodeUtf8 $ renderLazy $ layoutPretty (LayoutOptions{layoutPageWidth = Unbounded}) (pretty x)
 
-analyzeStats ::
-  INsMachineStats ->
-  -- | Reduction count, reduction width history, parallel width, parallel height
-  ( Word64
-  , [Word64]
-  , Word64
-  , Int
-  )
-analyzeStats INsMachineStats{reductionCounter, reductionWidthHistory} = (reductionCounter, reverse reductionWidthHistory, maximum reductionWidthHistory, length reductionWidthHistory)
+data OutputStats = OutputStats
+  {reductionCount :: Word64, reductionWidthHistory :: [Word64], maxParallelWidth :: Word64, parallelHeight :: Int}
 
-mkOutput :: (Pretty a, Pretty label) => a -> Net label -> (Word64, [Word64], Word64, Int) -> LByteString
-mkOutput input output (counter, widthHistory, width, height) =
+analyzeStats :: INsMachineStats -> OutputStats
+analyzeStats INsMachineStats{reductionCounter, reductionWidthHistory} =
+  OutputStats
+    { reductionCount = reductionCounter
+    , reductionWidthHistory = reverse reductionWidthHistory
+    , maxParallelWidth = maximum reductionWidthHistory
+    , parallelHeight = length reductionWidthHistory
+    }
+
+mkOutput :: (Pretty a, Pretty label) => a -> Net label -> OutputStats -> LByteString
+mkOutput input output OutputStats{reductionCount, reductionWidthHistory, maxParallelWidth, parallelHeight} =
   "Input: "
     <> renderUnbounded input
     <> "\nOutput: "
     <> renderUnbounded output
     <> "\nReduction count: "
-    <> show counter
+    <> show reductionCount
     <> "\nParallel width: "
-    <> show width
+    <> show maxParallelWidth
     <> "\nParallel height: "
-    <> show height
+    <> show parallelHeight
     <> "\nParallel width history: "
-    <> show widthHistory
+    <> show reductionWidthHistory
 
 lmlHelper :: Rule TokenPassingCBV -> FilePath -> IO LByteString
 lmlHelper rule lmlFile = do
