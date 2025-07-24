@@ -70,7 +70,10 @@ If there is an active pair $a \bowtie b$ in network $\mathcal{n_0}$, where
 - $r = (l_1, l_2, \mathcal{m}) \in \mathcal{R}$
 
 then we can replace $a \bowtie b$ with $\mathcal{m}$ and get new network $\mathcal{n_1}$.
-Thus, computation is a sequence of steps of the form $\mathcal{n_i} \xrightarrow{r} \mathcal{n_{i+1}}$.
+Thus, computation is a sequence of steps of the form
+
+$$\mathcal{n_i} \xrightarrow{r} \mathcal{n_{i+1}}.$$
+
 Computation finishes when network in normal form.
 
 Active pair $a \bowtie b$ is **realizable** if there is a sequence
