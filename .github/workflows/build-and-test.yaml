@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Haskell with Stack
         uses: haskell-actions/setup@v2
@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Clone project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Haskell with Stack
         uses: haskell-actions/setup@v2
