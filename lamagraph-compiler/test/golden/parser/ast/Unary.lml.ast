@@ -1,0 +1,105 @@
+(Module
+ (Just
+ (L
+  { :1:8-13 }
+  ("Unary")))
+ [ (L
+    { :3:1-54 }
+    (ValD
+     (L
+      { :3:5-54 }
+      (NonRec
+       [ (L
+          { :3:5-54 }
+          (Bind
+           (L
+            { :3:5-28 }
+            (PatVar
+             (L
+              { :3:5-28 }
+              "parentheses_abomination")))
+           (L
+            { :3:31-54 }
+            (ExprApply
+             (L
+              { :3:33-34 }
+              (ExprIdent
+               "~-"))
+             [ (L
+                { :3:34-52 }
+                (ExprApply
+                 (L
+                  { :3:38-39 }
+                  (ExprIdent
+                   "~-"))
+                 [(L { :3:39-48 } (ExprConstant -40))])) ])))) ]))))
+ , (L
+    { :5:1-73 }
+    (ValD
+     (L
+      { :5:5-73 }
+      (NonRec
+       [ (L
+          { :5:5-73 }
+          (Bind
+           (L
+            { :5:5-37 }
+            (PatVar
+             (L
+              { :5:5-37 }
+              "function_parentheses_abomination")))
+           (L
+            { :5:38-73 }
+            (ExprFunction
+             (L
+              { :5:38-39 }
+              (PatVar
+               (L
+                { :5:38-39 }
+                "n")))
+             (L
+              { :5:42-73 }
+              (ExprApply
+               (L
+                { :5:45-46 }
+                (ExprIdent
+                 "~-"))
+               [ (L
+                  { :5:46-70 }
+                  (ExprApply
+                   (L
+                    { :5:47-48 }
+                    (ExprIdent
+                     "~-"))
+                   [ (L
+                      { :5:48-69 }
+                      (ExprApply
+                       (L
+                        { :5:53-54 }
+                        (ExprIdent
+                         "~-"))
+                       [ (L
+                          { :5:54-64 }
+                          (ExprApply
+                           (L
+                            { :5:55-56 }
+                            (ExprIdent
+                             "~-"))
+                           [ (L
+                              { :5:56-63 }
+                              (ExprApply
+                               (L
+                                { :5:57-58 }
+                                (ExprIdent
+                                 "~-"))
+                               [ (L
+                                  { :5:58-62 }
+                                  (ExprApply
+                                   (L
+                                    { :5:59-60 }
+                                    (ExprIdent
+                                     "~-"))
+                                   [ (L
+                                      { :5:60-61 }
+                                      (ExprIdent
+                                       "n")) ])) ])) ])) ])) ])) ])))))) ])))) ])
