@@ -49,8 +49,7 @@ import Lamagraph.Compiler.Parser.SrcLoc
 
 $digit = [0-9]
 $letter = [a-zA-Z]
-$alnum = [a-zA-Z0-9]
-$nalnum = [^a-zA-Z0-9]
+$nalnumsep = [^ a-z A-Z 0-9 \' \_ ]
 
 $capital_letter = [A-Z]
 $lowercase_letter = [a-z]
@@ -151,7 +150,7 @@ lamagraphml :-
 <0> @capitalized_ident { tokAnyIdent (TokIdent Capitalized) }
 <0> @lowercase_ident { tokAnyIdent (TokIdent Lowercase) }
 
-<0> [$nalnum $white] ^ \- @integer_literal { tokInt }
+<0> [$nalnumsep $white] ^ \- @integer_literal { tokInt }
 <0> @integer_literal { tokInt }
 
 <0> \' \\n \' { tokEscapedChar '\n' }
