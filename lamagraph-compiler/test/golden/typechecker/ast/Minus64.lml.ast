@@ -11,7 +11,9 @@
  f3: int -> int
  bad_number: int
  bad_number_spaced: int
+ _f: int -> int
  -: int -> int -> int
+ s: ()
  +: int -> int -> int
  >: int -> int -> bool
  f4: forall 's. (int -> 's) -> 's
@@ -323,4 +325,215 @@
                [ (L
                   { :14:14-34 }
                   (ExprConstant int int
-                   -9223372036854775808)) ])))))) ])))) ])
+                   -9223372036854775808)) ])))))) ]))))
+ , (L
+    { :16:1-15 }
+    (ValD
+     (L
+      { :16:5-15 }
+      (NonRec
+       [ (L
+          { :16:5-15 }
+          (Bind
+           _f: int -> int
+           (L
+            { :16:5-7 }
+            (PatVar
+             int -> int
+             (L
+              { :16:5-7 }
+              "_f")))
+           (L
+            { :16:10-15 }
+            (ExprApply
+             int -> int
+             (L
+              { :16:10-13 }
+              (ExprIdent
+               int -> int -> int
+               "+"))
+             [(L { :16:14-15 } (ExprConstant int int 1))])))) ]))))
+ , (L
+    { :18:1-25 }
+    (ValD
+     (L
+      { :18:5-25 }
+      (NonRec
+       [ (L
+          { :18:5-25 }
+          (Bind
+           s: ()
+           (L
+            { :18:5-6 }
+            (PatVar
+             ()
+             (L
+              { :18:5-6 }
+              "s")))
+           (L
+            { :18:9-25 }
+            (ExprApply
+             ()
+             (L
+              { :18:9-18 }
+              (ExprIdent
+               int -> ()
+               "print_int"))
+             [ (L
+                { :18:19-25 }
+                (ExprApply
+                 int
+                 (L
+                  { :18:20-22 }
+                  (ExprIdent
+                   int -> int
+                   "f0"))
+                 [(L { :18:23-24 } (ExprConstant int int 1))])) ])))) ]))))
+ , (L
+    { :19:1-25 }
+    (ValD
+     (L
+      { :19:5-25 }
+      (NonRec
+       [ (L
+          { :19:5-25 }
+          (Bind
+           s: ()
+           (L
+            { :19:5-6 }
+            (PatVar
+             ()
+             (L
+              { :19:5-6 }
+              "s")))
+           (L
+            { :19:9-25 }
+            (ExprApply
+             ()
+             (L
+              { :19:9-18 }
+              (ExprIdent
+               int -> ()
+               "print_int"))
+             [ (L
+                { :19:19-25 }
+                (ExprApply
+                 int
+                 (L
+                  { :19:20-22 }
+                  (ExprIdent
+                   int -> int
+                   "f1"))
+                 [(L { :19:23-24 } (ExprConstant int int 1))])) ])))) ]))))
+ , (L
+    { :20:1-25 }
+    (ValD
+     (L
+      { :20:5-25 }
+      (NonRec
+       [ (L
+          { :20:5-25 }
+          (Bind
+           s: ()
+           (L
+            { :20:5-6 }
+            (PatVar
+             ()
+             (L
+              { :20:5-6 }
+              "s")))
+           (L
+            { :20:9-25 }
+            (ExprApply
+             ()
+             (L
+              { :20:9-18 }
+              (ExprIdent
+               int -> ()
+               "print_int"))
+             [ (L
+                { :20:19-25 }
+                (ExprApply
+                 int
+                 (L
+                  { :20:20-22 }
+                  (ExprIdent
+                   int -> int
+                   "f2"))
+                 [(L { :20:23-24 } (ExprConstant int int 1))])) ])))) ]))))
+ , (L
+    { :21:1-25 }
+    (ValD
+     (L
+      { :21:5-25 }
+      (NonRec
+       [ (L
+          { :21:5-25 }
+          (Bind
+           s: ()
+           (L
+            { :21:5-6 }
+            (PatVar
+             ()
+             (L
+              { :21:5-6 }
+              "s")))
+           (L
+            { :21:9-25 }
+            (ExprApply
+             ()
+             (L
+              { :21:9-18 }
+              (ExprIdent
+               int -> ()
+               "print_int"))
+             [ (L
+                { :21:19-25 }
+                (ExprApply
+                 int
+                 (L
+                  { :21:20-22 }
+                  (ExprIdent
+                   int -> int
+                   "f3"))
+                 [(L { :21:23-24 } (ExprConstant int int 1))])) ])))) ]))))
+ , (L
+    { :22:1-26 }
+    (ValD
+     (L
+      { :22:5-26 }
+      (NonRec
+       [ (L
+          { :22:5-26 }
+          (Bind
+           s: ()
+           (L
+            { :22:5-6 }
+            (PatVar
+             ()
+             (L
+              { :22:5-6 }
+              "s")))
+           (L
+            { :22:9-26 }
+            (ExprApply
+             ()
+             (L
+              { :22:9-18 }
+              (ExprIdent
+               int -> ()
+               "print_int"))
+             [ (L
+                { :22:19-26 }
+                (ExprApply
+                 int
+                 (L
+                  { :22:20-22 }
+                  (ExprIdent
+                   (int -> int) -> int
+                   "f4"))
+                 [ (L
+                    { :22:23-25 }
+                    (ExprIdent
+                     int -> int
+                     "_f")) ])) ])))) ])))) ])
