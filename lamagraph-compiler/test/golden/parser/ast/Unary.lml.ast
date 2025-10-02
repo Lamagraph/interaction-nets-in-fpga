@@ -102,4 +102,57 @@
                                    [ (L
                                       { :5:60-61 }
                                       (ExprIdent
-                                       "n")) ])) ])) ])) ])) ])) ])))))) ])))) ])
+                                       "n")) ])) ])) ])) ])) ])) ])))))) ]))))
+ , (L
+    { :7:1-47 }
+    (ValD
+     (L
+      { :7:5-47 }
+      (NonRec
+       [ (L
+          { :7:5-47 }
+          (Bind
+           (L
+            { :7:5-9 }
+            (PatVar
+             (L
+              { :7:5-9 }
+              "out1")))
+           (L
+            { :7:12-47 }
+            (ExprApply
+             (L
+              { :7:12-21 }
+              (ExprIdent
+               "print_int"))
+             [(L { :7:22-47 } (ExprIdent "parentheses_abomination"))])))) ]))))
+ , (L
+    { :9:1-59 }
+    (ValD
+     (L
+      { :9:5-59 }
+      (NonRec
+       [ (L
+          { :9:5-59 }
+          (Bind
+           (L
+            { :9:5-9 }
+            (PatVar
+             (L
+              { :9:5-9 }
+              "out2")))
+           (L
+            { :9:12-59 }
+            (ExprApply
+             (L
+              { :9:12-21 }
+              (ExprIdent
+               "print_int"))
+             [ (L
+                { :9:22-59 }
+                (ExprApply
+                 (L
+                  { :9:23-55 }
+                  (ExprIdent
+                   "function_parentheses_abomination"))
+                 [(L { :9:56-58 } (ExprConstant 30))])) ])))) ])))) ])

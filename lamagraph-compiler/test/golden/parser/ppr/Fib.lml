@@ -6,3 +6,7 @@ let rec fib = fun n -> (match n with 0 -> 0
 
 let fib_tail = fun n -> let rec _f =
 fun n -> fun p1 -> fun p2 -> if ( < ) (n) (1) then p1 else _f (( - ) (n) (1)) (p2) (( + ) (p1) (p2)) in _f (n) (0) (1)
+
+let out1 = print_int (fib (6))
+
+let out2 = print_int (fib_tail (6))

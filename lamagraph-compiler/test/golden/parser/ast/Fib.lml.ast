@@ -255,4 +255,64 @@
                     (ExprConstant 0))
                  , (L
                     { :13:15-16 }
-                    (ExprConstant 1)) ])))))))) ])))) ])
+                    (ExprConstant 1)) ])))))))) ]))))
+ , (L
+    { :15:1-29 }
+    (ValD
+     (L
+      { :15:5-29 }
+      (NonRec
+       [ (L
+          { :15:5-29 }
+          (Bind
+           (L
+            { :15:5-9 }
+            (PatVar
+             (L
+              { :15:5-9 }
+              "out1")))
+           (L
+            { :15:12-29 }
+            (ExprApply
+             (L
+              { :15:12-21 }
+              (ExprIdent
+               "print_int"))
+             [ (L
+                { :15:22-29 }
+                (ExprApply
+                 (L
+                  { :15:23-26 }
+                  (ExprIdent
+                   "fib"))
+                 [(L { :15:27-28 } (ExprConstant 6))])) ])))) ]))))
+ , (L
+    { :16:1-34 }
+    (ValD
+     (L
+      { :16:5-34 }
+      (NonRec
+       [ (L
+          { :16:5-34 }
+          (Bind
+           (L
+            { :16:5-9 }
+            (PatVar
+             (L
+              { :16:5-9 }
+              "out2")))
+           (L
+            { :16:12-34 }
+            (ExprApply
+             (L
+              { :16:12-21 }
+              (ExprIdent
+               "print_int"))
+             [ (L
+                { :16:22-34 }
+                (ExprApply
+                 (L
+                  { :16:23-31 }
+                  (ExprIdent
+                   "fib_tail"))
+                 [(L { :16:32-33 } (ExprConstant 6))])) ])))) ])))) ])

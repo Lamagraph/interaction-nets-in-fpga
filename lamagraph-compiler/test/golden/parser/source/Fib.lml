@@ -1,13 +1,1 @@
-module Fibonacci
-
-let rec fib n =
-    match n with
-    | 0 -> 0
-    | 1 -> 1
-    | _ -> (fib (n - 1)) + (fib (n - 2))
-
-let fib_tail n =
-    let rec _f n p1 p2 =
-        if n < 1 then p1
-        else _f (n - 1) (p2) (p1 + p2)
-    in _f n 0 1
+../../eval/source/Fib.lml
