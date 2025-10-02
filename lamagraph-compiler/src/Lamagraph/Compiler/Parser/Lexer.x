@@ -49,6 +49,9 @@ import Lamagraph.Compiler.Parser.SrcLoc
 
 $digit = [0-9]
 $letter = [a-zA-Z]
+$alnum = [a-zA-Z0-9]
+$nalnum = [^a-zA-Z0-9]
+
 $capital_letter = [A-Z]
 $lowercase_letter = [a-z]
 
@@ -71,7 +74,7 @@ $operator_char = [\! \$ \% & \* \+ \. \/ \: \< \= \> \? \@ \^ \| \~]
 )
 
 -- Integer literals
-@integer_literal = \-? $digit ( $digit | \_ )*
+@integer_literal = $digit ( $digit | \_ )*
 
 -- Operators
 @infix_symbol = ( \= | \< | \> | \@ | \^ | \| | & | \+ | \- | \* | \/ | \$ | \% ) ( $operator_char )*
@@ -148,6 +151,7 @@ lamagraphml :-
 <0> @capitalized_ident { tokAnyIdent (TokIdent Capitalized) }
 <0> @lowercase_ident { tokAnyIdent (TokIdent Lowercase) }
 
+<0> [$nalnum $white] ^ \- @integer_literal { tokInt }
 <0> @integer_literal { tokInt }
 
 <0> \' \\n \' { tokEscapedChar '\n' }
