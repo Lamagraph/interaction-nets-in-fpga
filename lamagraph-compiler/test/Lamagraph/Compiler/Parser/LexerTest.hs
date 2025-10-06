@@ -55,7 +55,7 @@ lowercaseIdent =
 integerLiteral :: TestTree
 integerLiteral =
   testCase "Lex Int literal" $ do
-    getTokenTypesFromText "42" @?= Right [TokInt 42, TokEOF]
+    getTokenTypesFromText "42" @?= Right [TokInt "42", TokEOF]
 
 allLetterKeywords :: TestTree -- Yep, strange name
 allLetterKeywords =

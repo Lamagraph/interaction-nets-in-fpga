@@ -239,10 +239,15 @@ atomic_type :: { LLmlType LmlcPs }
 ---------------
 -- Constants --
 ---------------
+
 constant :: { XLocated LmlcPs (LmlLit LmlcPs) }
   : integer_literal { sL1 $1 $ LmlInt noExtField (getInt $1) }
   | char_literal { sL1 $1 $ LmlChar noExtField (getChar $1) }
   | string_literal { sL1 $1 $ LmlString noExtField (getString $1)}
+
+signed_constant :: { XLocated LmlcPs (LmlLit LmlcPs) }
+  : constant { $1 }
+  | '-' integer_literal { sLL $1 $2 $ LmlInt noExtField (getMinusInt $2) }
 
 --------------
 -- Patterns --
@@ -266,7 +271,7 @@ simple_pattern :: { LLmlPat LmlcPs }
   : delimited_pattern { $1 }
   | value_name { sL1 $1 $ LmlPatVar noExtField $1 }
   | '_' { sL1 $1 $ LmlPatAny noExtField }
-  | constant { sL1 $1 $ LmlPatConstant noExtField (unLoc $1) }
+  | signed_constant { sL1 $1 $ LmlPatConstant noExtField (unLoc $1) }
   | constr %prec below_DOT { sL1 $1 $ LmlPatConstruct noExtField $1 Nothing }
   | tuple_pattern '|' tuple_pattern { sLL $1 $3 $ LmlPatOr noExtField $1 $3 }
   | constr tuple_pattern %prec constr_appl { sLL $1 $2 $ LmlPatConstruct noExtField $1 (Just $2)}
@@ -315,8 +320,12 @@ compound_expr :: { LLmlExpr LmlcPs }
       sLL $1 $2 $ LmlExprApply noExtField prefixIdent (pure $2)
     }
   | '-' compound_expr %prec prec_unary_minus
-    { let prefixIdent = sL1 $1 $ LmlExprIdent noExtField (mkLongident $ pure "~-") in
-      sLL $1 $2 $ LmlExprApply noExtField prefixIdent (pure $2)
+    { case unLoc $2 of
+        LmlExprConstant _ (LmlInt _ n) ->
+          sLL $1 $2 $ LmlExprConstant noExtField (LmlInt noExtField (-n))
+        _ ->
+          let prefixIdent = sL1 $1 $ LmlExprIdent noExtField (mkLongident $ pure "~-")
+          in sLL $1 $2 $ LmlExprApply noExtField prefixIdent (pure $2)
     }
   | simple_expr infix_op compound_expr
     { let infixIdent = sL1 $2 $ LmlExprIdent noExtField ((mkLongident . pure . unLoc) $2) in
@@ -530,7 +539,10 @@ getLongident :: NonEmpty LToken -> Longident
 getLongident = mkLongident . fmap getIdent
 
 getInt :: LToken -> Int
-getInt (L _ (TokInt val)) = val
+getInt (L _ (TokInt val)) = Prelude.read $ toString val
+
+getMinusInt :: LToken -> Int
+getMinusInt (L _ (TokInt val)) = Prelude.read $ ("-" ++ (toString val))
 
 getChar :: LToken -> Char
 getChar (L _ (TokChar val)) = val

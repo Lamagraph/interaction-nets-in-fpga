@@ -8,15 +8,13 @@ let bad_number_plus = 9223372036854775807
 
 let f0 = fun x -> ( + ) (x) (-9223372036854775808)
 
-let f1 = fun x -> ( + ) (x) (( ~- ) (9223372036854775807))
+let f1 = fun x -> ( + ) (x) (-9223372036854775808)
 
 let f2 = fun x -> ( - ) (x) (9223372036854775807)
 
 let f3 = fun x -> ( - ) (x) (9223372036854775807)
 
-let f4 = fun x -> x (-9223372036854775808)
-
-let _f = ( + ) (1)
+let f4 = fun x -> ( - ) (x) (9223372036854775807)
 
 let s = print_int (f0 (1))
 
@@ -26,4 +24,4 @@ let s = print_int (f2 (1))
 
 let s = print_int (f3 (1))
 
-let s = print_int (f4 (_f))
+let s = print_int (f4 (1))

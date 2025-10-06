@@ -49,7 +49,6 @@ import Lamagraph.Compiler.Parser.SrcLoc
 
 $digit = [0-9]
 $letter = [a-zA-Z]
-$nalnumsep = [^ a-z A-Z 0-9 \' \_ ]
 
 $capital_letter = [A-Z]
 $lowercase_letter = [a-z]
@@ -150,7 +149,6 @@ lamagraphml :-
 <0> @capitalized_ident { tokAnyIdent (TokIdent Capitalized) }
 <0> @lowercase_ident { tokAnyIdent (TokIdent Lowercase) }
 
-<0> [$nalnumsep $white] ^ \- @integer_literal { tokInt }
 <0> @integer_literal { tokInt }
 
 <0> \' \\n \' { tokEscapedChar '\n' }
@@ -229,7 +227,7 @@ tokAnyIdent ctor input@(startPosn, _, _, str) len = do
 
 tokInt :: AlexAction LToken
 tokInt input@(startPosn, _, _, str) len = do
-  let num = read $ toString $ Text.take len str
+  let num = Text.take len str
   return $ L
     (alexPosnToSrcSpan startPosn $ getEndPos input len)
     (TokInt num)

@@ -41,7 +41,7 @@ data IdentType = Capitalized | Lowercase
 data Token
   = TokIdent IdentType Text
   | {- Integer literals -}
-    TokInt Int
+    TokInt Text
   | {- Character literals -}
     TokChar Char
   | {- String literals -}
