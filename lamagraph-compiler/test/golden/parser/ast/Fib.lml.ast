@@ -1,0 +1,318 @@
+(Module
+ (Just
+ (L
+  { :1:8-17 }
+  ("Fibonacci")))
+ [ (L
+    { :(3,1)-(7,41) }
+    (ValD
+     (L
+      { :(3,5)-(7,41) }
+      (Rec
+       [ (L
+          { :(3,9)-(7,41) }
+          (Bind
+           (L
+            { :3:9-12 }
+            (PatVar
+             (L
+              { :3:9-12 }
+              "fib")))
+           (L
+            { :(3,13)-(7,41) }
+            (ExprFunction
+             (L
+              { :3:13-14 }
+              (PatVar
+               (L
+                { :3:13-14 }
+                "n")))
+             (L
+              { :(4,5)-(7,41) }
+              (ExprMatch
+               (L
+                { :4:11-12 }
+                (ExprIdent
+                 "n"))
+               [ (L
+                  { :5:7-13 }
+                  (Case
+                   (L
+                    { :5:7-8 }
+                    (PatConstant
+                     0))
+                   (Nothing)
+                   (L
+                    { :5:12-13 }
+                    (ExprConstant 0))))
+               , (L
+                  { :6:7-13 }
+                  (Case
+                   (L
+                    { :6:7-8 }
+                    (PatConstant
+                     1))
+                   (Nothing)
+                   (L
+                    { :6:12-13 }
+                    (ExprConstant 1))))
+               , (L
+                  { :7:7-41 }
+                  (Case
+                   (L
+                    { :7:7-8 }
+                    (PatAny))
+                   (Nothing)
+                   (L
+                    { :7:12-41 }
+                    (ExprApply
+                     (L
+                      { :7:26-27 }
+                      (ExprIdent
+                       "+"))
+                     [ (L
+                        { :7:12-25 }
+                        (ExprApply
+                         (L
+                          { :7:13-16 }
+                          (ExprIdent
+                           "fib"))
+                         [ (L
+                            { :7:17-24 }
+                            (ExprApply
+                             (L
+                              { :7:20-21 }
+                              (ExprIdent
+                               "-"))
+                             [ (L
+                                { :7:18-19 }
+                                (ExprIdent
+                                 "n"))
+                             , (L
+                                { :7:22-23 }
+                                (ExprConstant 1)) ])) ]))
+                     , (L
+                        { :7:28-41 }
+                        (ExprApply
+                         (L
+                          { :7:29-32 }
+                          (ExprIdent
+                           "fib"))
+                         [ (L
+                            { :7:33-40 }
+                            (ExprApply
+                             (L
+                              { :7:36-37 }
+                              (ExprIdent
+                               "-"))
+                             [ (L
+                                { :7:34-35 }
+                                (ExprIdent
+                                 "n"))
+                             , (L
+                                { :7:38-39 }
+                                (ExprConstant 2)) ])) ])) ])))) ])))))) ]))))
+ , (L
+    { :(9,1)-(13,16) }
+    (ValD
+     (L
+      { :(9,5)-(13,16) }
+      (NonRec
+       [ (L
+          { :(9,5)-(13,16) }
+          (Bind
+           (L
+            { :9:5-13 }
+            (PatVar
+             (L
+              { :9:5-13 }
+              "fib_tail")))
+           (L
+            { :(9,14)-(13,16) }
+            (ExprFunction
+             (L
+              { :9:14-15 }
+              (PatVar
+               (L
+                { :9:14-15 }
+                "n")))
+             (L
+              { :(10,5)-(13,16) }
+              (ExprLet
+               (L
+                { :(10,9)-(12,39) }
+                (Rec
+                 [ (L
+                    { :(10,13)-(12,39) }
+                    (Bind
+                     (L
+                      { :10:13-15 }
+                      (PatVar
+                       (L
+                        { :10:13-15 }
+                        "_f")))
+                     (L
+                      { :(10,16)-(12,39) }
+                      (ExprFunction
+                       (L
+                        { :10:16-17 }
+                        (PatVar
+                         (L
+                          { :10:16-17 }
+                          "n")))
+                       (L
+                        { :(10,18)-(12,39) }
+                        (ExprFunction
+                         (L
+                          { :10:18-20 }
+                          (PatVar
+                           (L
+                            { :10:18-20 }
+                            "p1")))
+                         (L
+                          { :(10,21)-(12,39) }
+                          (ExprFunction
+                           (L
+                            { :10:21-23 }
+                            (PatVar
+                             (L
+                              { :10:21-23 }
+                              "p2")))
+                           (L
+                            { :(11,9)-(12,39) }
+                            (ExprITE
+                             (L
+                              { :11:12-17 }
+                              (ExprApply
+                               (L
+                                { :11:14-15 }
+                                (ExprIdent
+                                 "<"))
+                               [ (L
+                                  { :11:12-13 }
+                                  (ExprIdent
+                                   "n"))
+                               , (L
+                                  { :11:16-17 }
+                                  (ExprConstant 1)) ]))
+                             (L
+                              { :11:23-25 }
+                              (ExprIdent
+                               "p1"))
+                             (L
+                              { :12:14-39 }
+                              (ExprApply
+                               (L
+                                { :12:14-16 }
+                                (ExprIdent
+                                 "_f"))
+                               [ (L
+                                  { :12:17-24 }
+                                  (ExprApply
+                                   (L
+                                    { :12:20-21 }
+                                    (ExprIdent
+                                     "-"))
+                                   [ (L
+                                      { :12:18-19 }
+                                      (ExprIdent
+                                       "n"))
+                                   , (L
+                                      { :12:22-23 }
+                                      (ExprConstant 1)) ]))
+                               , (L
+                                  { :12:25-29 }
+                                  (ExprIdent
+                                   "p2"))
+                               , (L
+                                  { :12:30-39 }
+                                  (ExprApply
+                                   (L
+                                    { :12:34-35 }
+                                    (ExprIdent
+                                     "+"))
+                                   [ (L
+                                      { :12:31-33 }
+                                      (ExprIdent
+                                       "p1"))
+                                   , (L
+                                      { :12:36-38 }
+                                      (ExprIdent
+                                       "p2")) ])) ])))))))))))) ]))
+               (L
+                { :13:8-16 }
+                (ExprApply
+                 (L
+                  { :13:8-10 }
+                  (ExprIdent
+                   "_f"))
+                 [ (L
+                    { :13:11-12 }
+                    (ExprIdent
+                     "n"))
+                 , (L
+                    { :13:13-14 }
+                    (ExprConstant 0))
+                 , (L
+                    { :13:15-16 }
+                    (ExprConstant 1)) ])))))))) ]))))
+ , (L
+    { :15:1-29 }
+    (ValD
+     (L
+      { :15:5-29 }
+      (NonRec
+       [ (L
+          { :15:5-29 }
+          (Bind
+           (L
+            { :15:5-9 }
+            (PatVar
+             (L
+              { :15:5-9 }
+              "out1")))
+           (L
+            { :15:12-29 }
+            (ExprApply
+             (L
+              { :15:12-21 }
+              (ExprIdent
+               "print_int"))
+             [ (L
+                { :15:22-29 }
+                (ExprApply
+                 (L
+                  { :15:23-26 }
+                  (ExprIdent
+                   "fib"))
+                 [(L { :15:27-28 } (ExprConstant 6))])) ])))) ]))))
+ , (L
+    { :16:1-34 }
+    (ValD
+     (L
+      { :16:5-34 }
+      (NonRec
+       [ (L
+          { :16:5-34 }
+          (Bind
+           (L
+            { :16:5-9 }
+            (PatVar
+             (L
+              { :16:5-9 }
+              "out2")))
+           (L
+            { :16:12-34 }
+            (ExprApply
+             (L
+              { :16:12-21 }
+              (ExprIdent
+               "print_int"))
+             [ (L
+                { :16:22-34 }
+                (ExprApply
+                 (L
+                  { :16:23-31 }
+                  (ExprIdent
+                   "fib_tail"))
+                 [(L { :16:32-33 } (ExprConstant 6))])) ])))) ])))) ])

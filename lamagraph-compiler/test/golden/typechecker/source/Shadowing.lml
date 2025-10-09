@@ -1,0 +1,13 @@
+module Shadowing
+
+(*Reusable names at module scope*)
+
+let n = true
+let n = 5
+
+let x = n
+
+let f x = x * 2
+let f x = x > 5
+
+let res = f x

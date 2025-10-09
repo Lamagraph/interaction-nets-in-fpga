@@ -1,0 +1,212 @@
+(Module
+ ~-: int -> int
+ >=: int -> int -> bool
+ /: int -> int -> int
+ *: int -> int -> int
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ <: int -> int -> bool
+ []: forall 'a. 'a list
+ -: int -> int -> int
+ +: int -> int -> int
+ >: int -> int -> bool
+ <=: int -> int -> bool
+ x: int
+ res: bool
+ Some: forall 'a. 'a -> 'a option
+ None: forall 'a. 'a option
+ false: bool
+ true: bool
+ f: int -> bool
+ print_int: int -> ()
+ n: int
+ (Just
+ (L
+  { :1:8-17 }
+  ("Shadowing")))
+ [ (L
+    { :5:1-13 }
+    (ValD
+     (L
+      { :5:5-13 }
+      (NonRec
+       [ (L
+          { :5:5-13 }
+          (Bind
+           n: bool
+           (L
+            { :5:5-6 }
+            (PatVar
+             bool
+             (L
+              { :5:5-6 }
+              "n")))
+           (L
+            { :5:9-13 }
+            (ExprConstruct
+             bool
+             (L
+              { :5:9-13 }
+              ("true"))
+             (Nothing))))) ]))))
+ , (L
+    { :6:1-10 }
+    (ValD
+     (L
+      { :6:5-10 }
+      (NonRec
+       [ (L
+          { :6:5-10 }
+          (Bind
+           n: int
+           (L
+            { :6:5-6 }
+            (PatVar
+             int
+             (L
+              { :6:5-6 }
+              "n")))
+           (L
+            { :6:9-10 }
+            (ExprConstant int int
+             5)))) ]))))
+ , (L
+    { :8:1-10 }
+    (ValD
+     (L
+      { :8:5-10 }
+      (NonRec
+       [ (L
+          { :8:5-10 }
+          (Bind
+           x: int
+           (L
+            { :8:5-6 }
+            (PatVar
+             int
+             (L
+              { :8:5-6 }
+              "x")))
+           (L
+            { :8:9-10 }
+            (ExprIdent
+             int
+             "n")))) ]))))
+ , (L
+    { :10:1-16 }
+    (ValD
+     (L
+      { :10:5-16 }
+      (NonRec
+       [ (L
+          { :10:5-16 }
+          (Bind
+           f: int -> int
+           (L
+            { :10:5-6 }
+            (PatVar
+             int -> int
+             (L
+              { :10:5-6 }
+              "f")))
+           (L
+            { :10:7-16 }
+            (ExprFunction
+             int -> int
+             (L
+              { :10:7-8 }
+              (PatVar
+               int
+               (L
+                { :10:7-8 }
+                "x")))
+             (L
+              { :10:11-16 }
+              (ExprApply
+               int
+               (L
+                { :10:13-14 }
+                (ExprIdent
+                 int -> int -> int
+                 "*"))
+               [ (L
+                  { :10:11-12 }
+                  (ExprIdent
+                   int
+                   "x"))
+               , (L
+                  { :10:15-16 }
+                  (ExprConstant int int
+                   2)) ])))))) ]))))
+ , (L
+    { :11:1-16 }
+    (ValD
+     (L
+      { :11:5-16 }
+      (NonRec
+       [ (L
+          { :11:5-16 }
+          (Bind
+           f: int -> bool
+           (L
+            { :11:5-6 }
+            (PatVar
+             int -> bool
+             (L
+              { :11:5-6 }
+              "f")))
+           (L
+            { :11:7-16 }
+            (ExprFunction
+             int -> bool
+             (L
+              { :11:7-8 }
+              (PatVar
+               int
+               (L
+                { :11:7-8 }
+                "x")))
+             (L
+              { :11:11-16 }
+              (ExprApply
+               bool
+               (L
+                { :11:13-14 }
+                (ExprIdent
+                 int -> int -> bool
+                 ">"))
+               [ (L
+                  { :11:11-12 }
+                  (ExprIdent
+                   int
+                   "x"))
+               , (L
+                  { :11:15-16 }
+                  (ExprConstant int int
+                   5)) ])))))) ]))))
+ , (L
+    { :13:1-14 }
+    (ValD
+     (L
+      { :13:5-14 }
+      (NonRec
+       [ (L
+          { :13:5-14 }
+          (Bind
+           res: bool
+           (L
+            { :13:5-8 }
+            (PatVar
+             bool
+             (L
+              { :13:5-8 }
+              "res")))
+           (L
+            { :13:11-14 }
+            (ExprApply
+             bool
+             (L
+              { :13:11-12 }
+              (ExprIdent
+               int -> bool
+               "f"))
+             [(L { :13:13-14 } (ExprIdent int "x"))])))) ])))) ])

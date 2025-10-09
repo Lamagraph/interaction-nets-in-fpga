@@ -1,0 +1,9 @@
+module Unary
+
+let parentheses_abomination = ((-((((-(((-40)))))))))
+
+let function_parentheses_abomination n = (((-(-(((((-(-(-(-n))))))))))))
+
+let out1 = print_int (parentheses_abomination)
+
+let out2 = print_int (function_parentheses_abomination 30)
