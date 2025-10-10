@@ -49,6 +49,7 @@ import Lamagraph.Compiler.Parser.SrcLoc
 
 $digit = [0-9]
 $letter = [a-zA-Z]
+
 $capital_letter = [A-Z]
 $lowercase_letter = [a-z]
 
@@ -71,7 +72,7 @@ $operator_char = [\! \$ \% & \* \+ \. \/ \: \< \= \> \? \@ \^ \| \~]
 )
 
 -- Integer literals
-@integer_literal = \-? $digit ( $digit | \_ )*
+@integer_literal = $digit ( $digit | \_ )*
 
 -- Operators
 @infix_symbol = ( \= | \< | \> | \@ | \^ | \| | & | \+ | \- | \* | \/ | \$ | \% ) ( $operator_char )*
@@ -226,7 +227,7 @@ tokAnyIdent ctor input@(startPosn, _, _, str) len = do
 
 tokInt :: AlexAction LToken
 tokInt input@(startPosn, _, _, str) len = do
-  let num = read $ toString $ Text.take len str
+  let num = Text.take len str
   return $ L
     (alexPosnToSrcSpan startPosn $ getEndPos input len)
     (TokInt num)

@@ -1,0 +1,18 @@
+module Minus64
+
+let bad_number_spaced = -9223372036854775808
+let bad_number=-9223372036854775808
+let bad_number_plus=9223372036854775807
+
+(* val x: int *)
+let f0 x = x +  -9223372036854775808
+let f1 x = x + - 9223372036854775808
+let f2 x = x- 9223372036854775807
+let f3 x = x-9223372036854775807
+let f4 x = x -9223372036854775807
+
+let s = print_int (f0 1)
+let s = print_int (f1 1)
+let s = print_int (f2 1)
+let s = print_int (f3 1)
+let s = print_int (f4 1)
