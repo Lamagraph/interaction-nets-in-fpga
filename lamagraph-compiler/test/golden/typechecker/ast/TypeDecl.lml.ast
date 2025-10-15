@@ -1,0 +1,68 @@
+(Module
+ ~-: int -> int
+ >=: int -> int -> bool
+ /: int -> int -> int
+ *: int -> int -> int
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ <: int -> int -> bool
+ []: forall 'a. 'a list
+ -: int -> int -> int
+ +: int -> int -> int
+ >: int -> int -> bool
+ <=: int -> int -> bool
+ x: int
+ Some: forall 'a. 'a -> 'a option
+ None: forall 'a. 'a option
+ false: bool
+ true: bool
+ print_int: int -> ()
+ (Just
+ (L
+  { :1:8-24 }
+  ("TypeDeclarations")))
+ [ (L
+    { :4:1-32 }
+    (ValD
+     (L
+      { :4:5-32 }
+      (NonRec
+       [ (L
+          { :4:5-32 }
+          (Bind
+           x: int
+           (L
+            { :4:5-6 }
+            (PatVar
+             int
+             (L
+              { :4:5-6 }
+              "x")))
+           (L
+            { :4:9-32 }
+            (ExprITE
+             int
+             (L
+              { :4:12-17 }
+              (ExprApply
+               bool
+               (L
+                { :4:14-15 }
+                (ExprIdent
+                 int -> int -> bool
+                 "<"))
+               [ (L
+                  { :4:12-13 }
+                  (ExprConstant int int
+                   1))
+               , (L
+                  { :4:16-17 }
+                  (ExprConstant int int
+                   2)) ]))
+             (L
+              { :4:23-24 }
+              (ExprConstant int int
+               1))
+             (L
+              { :4:30-32 }
+              (ExprConstant int int
+               -1)))))) ])))) ])
