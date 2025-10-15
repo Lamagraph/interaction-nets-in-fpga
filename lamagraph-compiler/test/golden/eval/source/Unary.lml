@@ -4,6 +4,13 @@ let parentheses_abomination = ((-((((-(((-40)))))))))
 
 let function_parentheses_abomination n = (((-(-(((((-(-(-(-n))))))))))))
 
+(*false not supported*)
+let x = 1 < 0
+
+let v = - (if x then 5 else function_parentheses_abomination 6)
+
 let out1 = print_int (parentheses_abomination)
 
 let out2 = print_int (function_parentheses_abomination 30)
+
+let out3 = print_int (v)

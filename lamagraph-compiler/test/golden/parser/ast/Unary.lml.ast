@@ -20,19 +20,7 @@
               "parentheses_abomination")))
            (L
             { :3:31-54 }
-            (ExprApply
-             (L
-              { :3:33-34 }
-              (ExprIdent
-               "~-"))
-             [ (L
-                { :3:34-52 }
-                (ExprApply
-                 (L
-                  { :3:38-39 }
-                  (ExprIdent
-                   "~-"))
-                 [(L { :3:39-48 } (ExprConstant -40))])) ])))) ]))))
+            (ExprConstant -40)))) ]))))
  , (L
     { :5:1-73 }
     (ValD
@@ -104,55 +92,146 @@
                                       (ExprIdent
                                        "n")) ])) ])) ])) ])) ])) ])))))) ]))))
  , (L
-    { :7:1-47 }
+    { :8:1-14 }
     (ValD
      (L
-      { :7:5-47 }
+      { :8:5-14 }
       (NonRec
        [ (L
-          { :7:5-47 }
+          { :8:5-14 }
           (Bind
            (L
-            { :7:5-9 }
+            { :8:5-6 }
             (PatVar
              (L
-              { :7:5-9 }
+              { :8:5-6 }
+              "x")))
+           (L
+            { :8:9-14 }
+            (ExprApply
+             (L
+              { :8:11-12 }
+              (ExprIdent
+               "<"))
+             [ (L
+                { :8:9-10 }
+                (ExprConstant 1))
+             , (L
+                { :8:13-14 }
+                (ExprConstant 0)) ])))) ]))))
+ , (L
+    { :10:1-64 }
+    (ValD
+     (L
+      { :10:5-64 }
+      (NonRec
+       [ (L
+          { :10:5-64 }
+          (Bind
+           (L
+            { :10:5-6 }
+            (PatVar
+             (L
+              { :10:5-6 }
+              "v")))
+           (L
+            { :10:9-64 }
+            (ExprApply
+             (L
+              { :10:9-10 }
+              (ExprIdent
+               "~-"))
+             [ (L
+                { :10:11-64 }
+                (ExprITE
+                 (L
+                  { :10:15-16 }
+                  (ExprIdent
+                   "x"))
+                 (L
+                  { :10:22-23 }
+                  (ExprConstant 5))
+                 (L
+                  { :10:29-63 }
+                  (ExprApply
+                   (L
+                    { :10:29-61 }
+                    (ExprIdent
+                     "function_parentheses_abomination"))
+                   [(L { :10:62-63 } (ExprConstant 6))])))) ])))) ]))))
+ , (L
+    { :12:1-47 }
+    (ValD
+     (L
+      { :12:5-47 }
+      (NonRec
+       [ (L
+          { :12:5-47 }
+          (Bind
+           (L
+            { :12:5-9 }
+            (PatVar
+             (L
+              { :12:5-9 }
               "out1")))
            (L
-            { :7:12-47 }
+            { :12:12-47 }
             (ExprApply
              (L
-              { :7:12-21 }
+              { :12:12-21 }
               (ExprIdent
                "print_int"))
-             [(L { :7:22-47 } (ExprIdent "parentheses_abomination"))])))) ]))))
+             [(L { :12:22-47 } (ExprIdent "parentheses_abomination"))])))) ]))))
  , (L
-    { :9:1-59 }
+    { :14:1-59 }
     (ValD
      (L
-      { :9:5-59 }
+      { :14:5-59 }
       (NonRec
        [ (L
-          { :9:5-59 }
+          { :14:5-59 }
           (Bind
            (L
-            { :9:5-9 }
+            { :14:5-9 }
             (PatVar
              (L
-              { :9:5-9 }
+              { :14:5-9 }
               "out2")))
            (L
-            { :9:12-59 }
+            { :14:12-59 }
             (ExprApply
              (L
-              { :9:12-21 }
+              { :14:12-21 }
               (ExprIdent
                "print_int"))
              [ (L
-                { :9:22-59 }
+                { :14:22-59 }
                 (ExprApply
                  (L
-                  { :9:23-55 }
+                  { :14:23-55 }
                   (ExprIdent
                    "function_parentheses_abomination"))
-                 [(L { :9:56-58 } (ExprConstant 30))])) ])))) ])))) ])
+                 [(L { :14:56-58 } (ExprConstant 30))])) ])))) ]))))
+ , (L
+    { :16:1-25 }
+    (ValD
+     (L
+      { :16:5-25 }
+      (NonRec
+       [ (L
+          { :16:5-25 }
+          (Bind
+           (L
+            { :16:5-9 }
+            (PatVar
+             (L
+              { :16:5-9 }
+              "out3")))
+           (L
+            { :16:12-25 }
+            (ExprApply
+             (L
+              { :16:12-21 }
+              (ExprIdent
+               "print_int"))
+             [(L { :16:22-25 } (ExprIdent "v"))])))) ])))) ])
