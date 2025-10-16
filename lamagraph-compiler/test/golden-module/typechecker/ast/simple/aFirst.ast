@@ -14,32 +14,30 @@
  None: forall 'a. 'a option
  false: bool
  true: bool
- Second, y: int
  print_int: int -> ()
  First, x: int
  (Just
  (L
-  { :1:8-14 }
-  ("Second")))
+  { :1:8-13 }
+  ("First")))
  [ (L
-    { :3:1-16 }
+    { :3:1-10 }
     (ValD
      (L
-      { :3:5-16 }
+      { :3:5-10 }
       (NonRec
        [ (L
-          { :3:5-16 }
+          { :3:5-10 }
           (Bind
-           y: int
+           x: int
            (L
             { :3:5-6 }
             (PatVar
              int
              (L
               { :3:5-6 }
-              "y")))
+              "x")))
            (L
-            { :3:9-16 }
-            (ExprIdent
-             int
-             "First, x")))) ])))) ])
+            { :3:9-10 }
+            (ExprConstant int int
+             0)))) ])))) ])

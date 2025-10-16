@@ -5,7 +5,7 @@ module Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden (typechecke
 import Relude
 
 import Prettyprinter
-import System.Directory (doesDirectoryExist, listDirectory)
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, listDirectory)
 import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
@@ -29,16 +29,26 @@ typecheckerPrettyModuleGolden = do
   testGroups <- forM validDirs $ \dir -> do
     let fullDir = moduleSourceDir </> dir
     lmlFiles <- sort <$> findByExtension [lmlExt] fullDir
-    return $
-      goldenVsString dir (moduleAstDir </> dir <.> "ast") (helper lmlFiles)
+    let astSubdir = moduleAstDir </> dir
+    createDirectoryIfMissing True astSubdir
+    let goldenTests =
+          [ goldenVsString
+            (takeFileName file)
+            (astSubdir </> (takeBaseName file <.> "ast"))
+            (processFile file)
+          | file <- lmlFiles
+          ]
+    return $ testGroup dir goldenTests
   return $ testGroup "Pretty Typed Module Golden tests" testGroups
- where
-  helper :: [FilePath] -> IO LByteString
-  helper files = do
-    rawContents <- traverse readFileBS files
-    let contents = map decodeUtf8 rawContents
-        asts = map parseLamagraphML contents
-    pure $ case find isLeft asts of
-      Just (Left err) -> encodeUtf8 err
-      _ ->
-        encodeUtf8 $ (renderPretty . pretty . resolveModules) (rights asts)
+
+processFile :: FilePath -> IO LByteString
+processFile file = do
+  raw <- readFileBS file
+  let content = decodeUtf8 raw
+  pure $
+    case parseLmlProgram [content] of
+      Left err -> encodeUtf8 err
+      Right parsedProgram ->
+        case typecheckLmlProgram parsedProgram of
+          Left err -> encodeUtf8 (renderPretty $ pretty err)
+          Right (LmlProgram xs) -> encodeUtf8 $ renderPretty (pretty (viaNonEmpty last xs))
