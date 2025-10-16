@@ -3,6 +3,7 @@ module Lamagraph.Compiler.GoldenCommon (
   baseGoldenTestsDir,
   parserSourceGoldenTestsDir,
   typecheckerSourceGoldenTestsDir,
+  typecheckerSourceGoldenModuleTestsDir,
   coreSourceGoldenTestsDir,
   evalSourceGoldenTestsDir,
   lmlExt,
@@ -21,11 +22,17 @@ renderPretty = renderLazy . layoutPretty (defaultLayoutOptions{layoutPageWidth =
 baseGoldenTestsDir :: FilePath
 baseGoldenTestsDir = "test" </> "golden"
 
+baseGoldenModuleTestsDir :: FilePath
+baseGoldenModuleTestsDir = "test" </> "golden-module"
+
 parserSourceGoldenTestsDir :: FilePath
 parserSourceGoldenTestsDir = baseGoldenTestsDir </> "parser" </> "source"
 
 typecheckerSourceGoldenTestsDir :: FilePath
 typecheckerSourceGoldenTestsDir = baseGoldenTestsDir </> "typechecker" </> "source"
+
+typecheckerSourceGoldenModuleTestsDir :: FilePath
+typecheckerSourceGoldenModuleTestsDir = baseGoldenModuleTestsDir </> "typechecker" </> "source"
 
 coreSourceGoldenTestsDir :: FilePath
 coreSourceGoldenTestsDir = baseGoldenTestsDir </> "core" </> "source"

@@ -83,3 +83,4 @@ tests:
       - tasty-golden
       - tasty-hedgehog
       - hedgehog
+      - directory

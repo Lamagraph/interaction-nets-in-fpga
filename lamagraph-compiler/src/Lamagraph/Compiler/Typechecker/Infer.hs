@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.Typechecker.Infer (inferDef) where
+module Lamagraph.Compiler.Typechecker.Infer (inferDef, inferLmlModule) where
 
 import Relude
 
