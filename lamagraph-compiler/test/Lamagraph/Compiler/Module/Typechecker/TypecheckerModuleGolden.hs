@@ -1,5 +1,3 @@
-{-# LANGUAGE BlockArguments #-}
-
 module Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden (typecheckerPrettyModuleGolden) where
 
 import Relude
@@ -31,24 +29,28 @@ typecheckerPrettyModuleGolden = do
     lmlFiles <- sort <$> findByExtension [lmlExt] fullDir
     let astSubdir = moduleAstDir </> dir
     createDirectoryIfMissing True astSubdir
+    xs <- processFiles astSubdir lmlFiles
     let goldenTests =
           [ goldenVsString
             (takeFileName file)
-            (astSubdir </> (takeBaseName file <.> "ast"))
-            (processFile file)
-          | file <- lmlFiles
+            file
+            (pure result)
+          | (file, result) <- xs
           ]
     return $ testGroup dir goldenTests
   return $ testGroup "Pretty Typed Module Golden tests" testGroups
 
-processFile :: FilePath -> IO LByteString
-processFile file = do
-  raw <- readFileBS file
-  let content = decodeUtf8 raw
+processFiles :: FilePath -> [FilePath] -> IO [(FilePath, LByteString)]
+processFiles astSubdir files = do
+  raw <- mapM readFileBS files
+  let new_file_paths = map (\file -> astSubdir </> takeBaseName file <.> "ast") files
+  let err_path = astSubdir </> "err.out"
+  let content = map decodeUtf8 raw
+  let parsed = parseLmlProgram content
   pure $
-    case parseLmlProgram [content] of
-      Left err -> encodeUtf8 err
+    case parsed of
+      Left err -> [(err_path, encodeUtf8 err)]
       Right parsedProgram ->
         case typecheckLmlProgram parsedProgram of
-          Left err -> encodeUtf8 (renderPretty $ pretty err)
-          Right (LmlProgram xs) -> encodeUtf8 $ renderPretty (pretty (viaNonEmpty last xs))
+          Left err -> [(err_path, encodeUtf8 (renderPretty $ pretty err))]
+          Right (LmlProgram xs) -> zip new_file_paths (map (encodeUtf8 . renderPretty . pretty) xs)

@@ -1,1 +1,45 @@
-Error: variable First, x is unbound
+(Module
+ ~-: int -> int
+ >=: int -> int -> bool
+ /: int -> int -> int
+ *: int -> int -> int
+ ::: forall 'a. ('a * 'a list) -> 'a list
+ <: int -> int -> bool
+ []: forall 'a. 'a list
+ -: int -> int -> int
+ +: int -> int -> int
+ >: int -> int -> bool
+ <=: int -> int -> bool
+ Some: forall 'a. 'a -> 'a option
+ None: forall 'a. 'a option
+ false: bool
+ true: bool
+ Second, y: int
+ print_int: int -> ()
+ First, x: int
+ (Just
+ (L
+  { :1:8-14 }
+  ("Second")))
+ [ (L
+    { :3:1-16 }
+    (ValD
+     (L
+      { :3:5-16 }
+      (NonRec
+       [ (L
+          { :3:5-16 }
+          (Bind
+           y: int
+           (L
+            { :3:5-6 }
+            (PatVar
+             int
+             (L
+              { :3:5-6 }
+              "y")))
+           (L
+            { :3:9-16 }
+            (ExprIdent
+             int
+             "First, x")))) ])))) ])
