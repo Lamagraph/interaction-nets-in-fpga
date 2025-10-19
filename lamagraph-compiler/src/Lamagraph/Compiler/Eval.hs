@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.Eval (MonadEval, Eval, EvalMock, evalCoreBindsDefEnv) where
+module Lamagraph.Compiler.Eval (MonadEval, Eval, EvalEnv (..), EvalMock, evalCoreBinds, defEvalEnv, evalCoreBindsDefEnv) where
 
 import Relude hiding (modifyIORef', newIORef, readIORef)
 

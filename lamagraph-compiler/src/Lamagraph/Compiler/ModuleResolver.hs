@@ -2,9 +2,15 @@ module Lamagraph.Compiler.ModuleResolver (
   parseLmlProgram,
   typecheckLmlProgram,
   LmlProgram (..),
+  evalLmlProgramDefEnv,
+  desugarLmlProgram,
 ) where
 
 import Data.HashMap.Strict qualified as HashMap
+import Lamagraph.Compiler.Core
+import Lamagraph.Compiler.Core.LmlToCore
+import Lamagraph.Compiler.Core.MonadDesugar
+import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Parser.SrcLoc
@@ -45,3 +51,27 @@ inferLmlProgram env@(TyEnv envMap) (LmlProgram (x : xs)) = do
 
 typecheckLmlProgram :: LmlProgram LmlcPs -> Either TypecheckError (LmlProgram LmlcTc)
 typecheckLmlProgram = runMonadTypecheck . inferLmlProgram defaultEnv
+
+desugarLmlProgram :: LmlProgram LmlcTc -> MonadDesugar [(Name, [CoreBind])]
+desugarLmlProgram (LmlProgram []) = pure []
+desugarLmlProgram (LmlProgram (x@(LmlModule _ x_name _) : xs)) = do
+  let name = Name $ Longident $ getModuleName x_name
+  binds <- desugarLmlModule x
+  xs' <- desugarLmlProgram (LmlProgram xs)
+  pure ((name, binds) : xs')
+
+addNameVar :: Name -> Var -> Var
+addNameVar (Name (Longident x_name)) (Id (Name (Longident n1))) = Id $ Name $ Longident $ x_name <> n1
+
+evalLmlProgram :: (MonadEval m) => EvalEnv -> [(Name, [CoreBind])] -> m EvalEnv
+evalLmlProgram env@(EvalEnv envMap) (x@(x_name, binds) : xs) = do
+  outEnv@(EvalEnv outEnvMap) <- evalCoreBinds env binds
+  let specific = outEnvMap `HashMap.difference` envMap
+  let addedModuleNames = HashMap.mapKeys (addNameVar x_name) specific
+  let resEnv = EvalEnv $ HashMap.union addedModuleNames envMap
+  evalLmlProgram resEnv xs
+evalLmlProgram env [] = do
+  pure env
+
+evalLmlProgramDefEnv :: (MonadEval m) => [(Name, [CoreBind])] -> m EvalEnv
+evalLmlProgramDefEnv = evalLmlProgram defEvalEnv

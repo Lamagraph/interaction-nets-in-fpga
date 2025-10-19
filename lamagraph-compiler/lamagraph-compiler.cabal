@@ -125,6 +125,7 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Core.PrettyCoreGolden
       Lamagraph.Compiler.Eval.EvalGolden
       Lamagraph.Compiler.GoldenCommon
+      Lamagraph.Compiler.Module.Eval.EvalModuleGolden
       Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden
       Lamagraph.Compiler.NetsGolden
       Lamagraph.Compiler.Parser.LexerTest

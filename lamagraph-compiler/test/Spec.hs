@@ -5,6 +5,7 @@ import Test.Tasty.Hedgehog
 
 import Lamagraph.Compiler.Core.PrettyCoreGolden
 import Lamagraph.Compiler.Eval.EvalGolden
+import Lamagraph.Compiler.Module.Eval.EvalModuleGolden
 import Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden
 import Lamagraph.Compiler.NetsGolden
 import Lamagraph.Compiler.Parser.LexerTest
@@ -22,10 +23,19 @@ main = do
   evalTests' <- evalTests
   netsTests' <- netsTest
   moduleTypeCheckerTests' <- moduleTypeCheckerTests
+  evalModuleTests' <- evalModuleTests
   let tests =
         testGroup
           "Lamagraph Compiler"
-          [lexerTests, parserTests', typecheckerTests', moduleTypeCheckerTests', coreTests', evalTests', netsTests']
+          [ lexerTests
+          , parserTests'
+          , typecheckerTests'
+          , moduleTypeCheckerTests'
+          , coreTests'
+          , evalTests'
+          , netsTests'
+          , evalModuleTests'
+          ]
   defaultMain tests
 
 lexerTests :: TestTree
@@ -57,6 +67,11 @@ evalTests :: IO TestTree
 evalTests = do
   eval <- evalGolden
   pure $ testGroup "Eval" [eval]
+
+evalModuleTests :: IO TestTree
+evalModuleTests = do
+  evalModule <- evalModuleGolden
+  pure $ testGroup "Eval Module" [evalModule]
 
 netsTest :: IO TestTree
 netsTest = do
