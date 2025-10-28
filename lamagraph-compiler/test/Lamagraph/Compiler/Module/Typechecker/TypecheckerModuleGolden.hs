@@ -10,6 +10,8 @@ import Test.Tasty.Golden
 
 import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.ModuleResolver
+import Lamagraph.Compiler.ModuleResolver.Program
+import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.PrettyAst ()
 import Lamagraph.Compiler.Typechecker.Infer
@@ -51,6 +53,9 @@ processFiles astSubdir files = do
     case parsed of
       Left err -> [(err_path, encodeUtf8 err)]
       Right parsedProgram ->
-        case typecheckLmlProgram parsedProgram of
+        case resolveDef parsedProgram of
           Left err -> [(err_path, encodeUtf8 (renderPretty $ pretty err))]
-          Right (LmlProgram xs) -> zip new_file_paths (map (encodeUtf8 . renderPretty . pretty) xs)
+          Right resolvedProgram ->
+            case typecheckLmlProgram resolvedProgram of
+              Left err -> [(err_path, encodeUtf8 (renderPretty $ pretty err))]
+              Right (LmlProgram xs) -> zip new_file_paths (map (encodeUtf8 . renderPretty . pretty) xs)

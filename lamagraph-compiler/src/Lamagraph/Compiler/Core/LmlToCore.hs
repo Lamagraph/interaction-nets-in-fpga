@@ -8,6 +8,7 @@ import Data.Foldable.Extra hiding (elem)
 import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Extension
+import Lamagraph.Compiler.ModuleResolver.MrTypes
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv
@@ -92,7 +93,7 @@ desugarLLmlPat (L _ pat) = desugarLmlPat pat
 
 desugarLmlPat :: LmlPat LmlcTc -> MonadDesugar Var
 desugarLmlPat = \case
-  LmlPatVar _ (L _ ident) -> pure $ Id $ Name $ mkLongident $ pure ident
+  LmlPatVar (FullName n, _) _ -> pure $ Id $ Name n
   LmlPatConstraint _ lPat _ -> desugarLLmlPat lPat
   _ -> error "FIXME: Only Var and Constraint patterns are currently supported."
 

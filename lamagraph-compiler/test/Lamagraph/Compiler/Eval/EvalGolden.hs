@@ -13,6 +13,10 @@ import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
 import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.GoldenCommon
+import Lamagraph.Compiler.ModuleResolver
+import Lamagraph.Compiler.ModuleResolver.Program
+import Lamagraph.Compiler.ModuleResolver.Resolve.Module
+import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Typechecker.Infer
 
@@ -43,7 +47,8 @@ evalGolden = do
     fileLBS <- readFileLBS lmlFile
     let fileT = decodeUtf8 fileLBS
     parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
-    typedTree <- fromEither $ inferDef parseTree
+    resolvedTree <- fromEither $ resolveModuleDefEnv parseTree
+    typedTree <- fromEither $ inferDef resolvedTree
     let binds = runMonadDesugar $ desugarLmlModule typedTree
     _ <- evalCoreBindsDefEnv binds
     ref <- ask

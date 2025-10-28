@@ -29,11 +29,11 @@
        [ (L
           { :3:5-10 }
           (Bind
-           x: int
+           First, x: int
            (L
             { :3:5-6 }
             (PatVar
-             int
+             (First, x, int)
              (L
               { :3:5-6 }
               "x")))

@@ -11,6 +11,10 @@ import Lamagraph.Compiler.Core.LmlToCore
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
 import Lamagraph.Compiler.GoldenCommon
+import Lamagraph.Compiler.ModuleResolver
+import Lamagraph.Compiler.ModuleResolver.Program
+import Lamagraph.Compiler.ModuleResolver.Resolve.Module
+import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Typechecker.Infer
 
@@ -38,8 +42,12 @@ corePrettyGolden = do
         parseResult = parseLamagraphML fileT
     pure $ case parseResult of
       Left err -> encodeUtf8 err
-      Right tree -> case inferDef tree of
-        Left err -> show err
-        Right core ->
-          let binds = (runMonadDesugar . desugarLmlModule) core
-           in encodeUtf8 $ (renderPretty . pretty) binds
+      Right parsedTree ->
+        case resolveModuleDefEnv parsedTree of
+          Left err -> show err
+          Right resolvedTree ->
+            case inferDef resolvedTree of
+              Left err -> show err
+              Right core ->
+                let binds = (runMonadDesugar . desugarLmlModule) core
+                 in encodeUtf8 $ (renderPretty . pretty) binds

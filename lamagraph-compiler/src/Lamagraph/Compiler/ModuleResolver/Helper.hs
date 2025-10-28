@@ -21,7 +21,7 @@ lookupInModule (ModuleRegistry reg) path name =
 
 lookupUnqualified :: ModuleEnv -> Text -> Maybe FullName
 lookupUnqualified env name =
-  lookupLocal <|> lookupCurrent <|> lookupOpens
+  lookupLocal <|> lookupOpens <|> lookupCurrent
  where
   -- local and current module bindings get their current module name prepended
   lookupLocal = view localNames env & find (== name) <&> prependModuleName (coerce (env ^. currentModule))
