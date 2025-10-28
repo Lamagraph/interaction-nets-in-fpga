@@ -27,7 +27,7 @@ resolveLmlExpr env = \case
   LmlExprIdent _ longident ->
     case lookupName env longident of
       Nothing -> throwError NameNotFound
-      Just (FullName realName) -> pure (env, LmlExprIdent noExtField longident)
+      Just (FullName realName) -> pure (env, LmlExprIdent noExtField realName)
   LmlExprConstant _ lit -> pure (env, LmlExprConstant noExtField (resolveLmlLit lit))
   LmlExprLet _ lBindGroup lExpr -> do
     (lBindGroupEnv, lBindGroupResolved) <- resolveLLmlBindGroup env lBindGroup

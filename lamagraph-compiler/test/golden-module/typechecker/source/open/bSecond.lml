@@ -1,7 +1,7 @@
 module Second
 
-let y = 2
+let x = false
 
 open First
 
-let x = y
+let x = x

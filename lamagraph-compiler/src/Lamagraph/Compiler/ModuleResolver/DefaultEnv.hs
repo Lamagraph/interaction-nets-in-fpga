@@ -7,12 +7,15 @@ import Data.HashSet as HashSet
 import Lamagraph.Compiler.ModuleResolver.MrTypes
 import Lamagraph.Compiler.Syntax.Longident
 
+stdPrefix :: Text
+stdPrefix = "#std"
+
 defaultModuleRegistry :: ModuleRegistry
 defaultModuleRegistry =
   ModuleRegistry $
     HashMap.fromList
       [
-        ( ModulePath $ mkLongident $ pure "#std"
+        ( ModulePath $ mkLongident $ pure stdPrefix
         , HashSet.fromList
             [ "+"
             , "-"
@@ -35,7 +38,7 @@ defaultModuleRegistry =
 defaultModuleEnv :: ModuleEnv
 defaultModuleEnv =
   ModuleEnv
-    { _currentModule = ModulePath $ mkLongident $ pure "#std"
+    { _currentModule = ModulePath $ mkLongident $ pure stdPrefix
     , _moduleRegistry = defaultModuleRegistry
     , _currentNames = HashSet.empty
     , _localNames = HashSet.empty

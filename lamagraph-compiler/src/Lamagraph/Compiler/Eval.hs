@@ -7,6 +7,7 @@ import Data.Text qualified as T
 import UnliftIO
 
 import Lamagraph.Compiler.Core
+import Lamagraph.Compiler.ModuleResolver.DefaultEnv
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.TcTypes
 
@@ -178,16 +179,16 @@ defEvalEnv :: EvalEnv
 defEvalEnv =
   EvalEnv $
     HashMap.fromList
-      [ (Id $ Name $ mkLongident $ pure "~-", VUnaryPrim UPMinus)
-      , (Id $ Name $ mkLongident $ pure "+", VBinaryPrim1 BPPlus)
-      , (Id $ Name $ mkLongident $ pure "-", VBinaryPrim1 BPMinus)
-      , (Id $ Name $ mkLongident $ pure "*", VBinaryPrim1 BPTimes)
-      , (Id $ Name $ mkLongident $ pure "<", VBinaryPrim1 BPLess)
-      , (Id $ Name $ mkLongident $ pure "[]", VAdt (Name $ mkLongident $ pure "[]") [])
-      , (Id $ Name $ mkLongident $ pure "::", VAdt (Name $ mkLongident $ pure "::") [])
-      , (Id $ Name $ mkLongident $ pure "Some", VAdt (Name $ mkLongident $ pure "Some") [])
-      , (Id $ Name $ mkLongident $ pure "None", VAdt (Name $ mkLongident $ pure "None") [])
-      , (Id $ Name $ mkLongident $ pure "print_int", VUnaryPrim UPPrintInt)
+      [ (Id $ Name $ mkLongident $ stdPrefix :| ["~-"], VUnaryPrim UPMinus)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["+"], VBinaryPrim1 BPPlus)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["-"], VBinaryPrim1 BPMinus)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["*"], VBinaryPrim1 BPTimes)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["<"], VBinaryPrim1 BPLess)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["[]"], VAdt (Name $ mkLongident $ pure "[]") [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["::"], VAdt (Name $ mkLongident $ pure "::") [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["Some"], VAdt (Name $ mkLongident $ pure "Some") [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["None"], VAdt (Name $ mkLongident $ pure "None") [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["print_int"], VUnaryPrim UPPrintInt)
       ]
 
 evalCoreBindsDefEnv :: (MonadEval m) => [CoreBind] -> m EvalEnv

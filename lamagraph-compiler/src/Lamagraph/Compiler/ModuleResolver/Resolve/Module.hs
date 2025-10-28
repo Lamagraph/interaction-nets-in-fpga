@@ -30,7 +30,7 @@ resolveLmlModule env (LmlModule _ name@(Just (L _ longident)) decls) = do
           & set currentModule (ModulePath longident)
           & set currentNames HashSet.empty
           & set localNames HashSet.empty
-          & set opens [ModulePath (mkLongident ("#std" :| []))]
+          & set opens [ModulePath (mkLongident (stdPrefix :| []))]
   (declsEnv, declsResolved) <- resolveMany curEnv resolveLLmlDecl decls
   let finalEnv =
         declsEnv
