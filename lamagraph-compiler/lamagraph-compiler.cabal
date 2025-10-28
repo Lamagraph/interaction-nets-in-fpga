@@ -31,6 +31,7 @@ library
       Lamagraph.Compiler.Eval
       Lamagraph.Compiler.Extension
       Lamagraph.Compiler.ModuleResolver
+      Lamagraph.Compiler.ModuleResolver.Program
       Lamagraph.Compiler.MonadFresh
       Lamagraph.Compiler.Nets.Encodings.LambdaCalculusCore
       Lamagraph.Compiler.Nets.Encodings.TokenPassingCBV

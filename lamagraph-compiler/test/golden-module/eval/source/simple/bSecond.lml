@@ -1,3 +1,5 @@
 module Second
 
-let out1 = print_int (First.x)
+let x = First.x
+
+let out1 = print_int (x)
