@@ -1,29 +1,29 @@
 (Module
- ~-: int -> int
- >=: int -> int -> bool
- bad_number_plus: int
- /: int -> int -> int
- f0: int -> int
- *: int -> int -> int
- ::: forall 'a. ('a * 'a list) -> 'a list
- <: int -> int -> bool
- []: forall 'a. 'a list
- f3: int -> int
- bad_number: int
- bad_number_spaced: int
- -: int -> int -> int
- s: ()
- +: int -> int -> int
- >: int -> int -> bool
- f4: int -> int
- <=: int -> int -> bool
- Some: forall 'a. 'a -> 'a option
- None: forall 'a. 'a option
- false: bool
- f1: int -> int
- true: bool
- f2: int -> int
- print_int: int -> ()
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ Minus64, f4: int -> int
+ Minus64, f1: int -> int
+ Minus64, f3: int -> int
+ #std, ~-: int -> int
+ Minus64, f2: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ Minus64, bad_number: int
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ Minus64, bad_number_spaced: int
+ Minus64, bad_number_plus: int
+ Minus64, f0: int -> int
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
+ Minus64, s: ()
  (Just
  (L
   { :1:8-15 }
@@ -37,11 +37,11 @@
        [ (L
           { :3:5-45 }
           (Bind
-           bad_number_spaced: int
+           Minus64, bad_number_spaced: int
            (L
             { :3:5-22 }
             (PatVar
-             int
+             (Minus64, bad_number_spaced, int)
              (L
               { :3:5-22 }
               "bad_number_spaced")))
@@ -58,11 +58,11 @@
        [ (L
           { :4:5-36 }
           (Bind
-           bad_number: int
+           Minus64, bad_number: int
            (L
             { :4:5-15 }
             (PatVar
-             int
+             (Minus64, bad_number, int)
              (L
               { :4:5-15 }
               "bad_number")))
@@ -79,11 +79,11 @@
        [ (L
           { :5:5-40 }
           (Bind
-           bad_number_plus: int
+           Minus64, bad_number_plus: int
            (L
             { :5:5-20 }
             (PatVar
-             int
+             (Minus64, bad_number_plus, int)
              (L
               { :5:5-20 }
               "bad_number_plus")))
@@ -100,11 +100,11 @@
        [ (L
           { :8:5-37 }
           (Bind
-           f0: int -> int
+           Minus64, f0: int -> int
            (L
             { :8:5-7 }
             (PatVar
-             int -> int
+             (Minus64, f0, int -> int)
              (L
               { :8:5-7 }
               "f0")))
@@ -115,7 +115,7 @@
              (L
               { :8:8-9 }
               (PatVar
-               int
+               (Minus64, x, int)
                (L
                 { :8:8-9 }
                 "x")))
@@ -127,12 +127,12 @@
                 { :8:14-15 }
                 (ExprIdent
                  int -> int -> int
-                 "+"))
+                 "#std, +"))
                [ (L
                   { :8:12-13 }
                   (ExprIdent
                    int
-                   "x"))
+                   "Minus64, x"))
                , (L
                   { :8:17-37 }
                   (ExprConstant int int
@@ -146,11 +146,11 @@
        [ (L
           { :9:5-37 }
           (Bind
-           f1: int -> int
+           Minus64, f1: int -> int
            (L
             { :9:5-7 }
             (PatVar
-             int -> int
+             (Minus64, f1, int -> int)
              (L
               { :9:5-7 }
               "f1")))
@@ -161,7 +161,7 @@
              (L
               { :9:8-9 }
               (PatVar
-               int
+               (Minus64, x, int)
                (L
                 { :9:8-9 }
                 "x")))
@@ -173,12 +173,12 @@
                 { :9:14-15 }
                 (ExprIdent
                  int -> int -> int
-                 "+"))
+                 "#std, +"))
                [ (L
                   { :9:12-13 }
                   (ExprIdent
                    int
-                   "x"))
+                   "Minus64, x"))
                , (L
                   { :9:16-37 }
                   (ExprConstant int int
@@ -192,11 +192,11 @@
        [ (L
           { :10:5-34 }
           (Bind
-           f2: int -> int
+           Minus64, f2: int -> int
            (L
             { :10:5-7 }
             (PatVar
-             int -> int
+             (Minus64, f2, int -> int)
              (L
               { :10:5-7 }
               "f2")))
@@ -207,7 +207,7 @@
              (L
               { :10:8-9 }
               (PatVar
-               int
+               (Minus64, x, int)
                (L
                 { :10:8-9 }
                 "x")))
@@ -219,12 +219,12 @@
                 { :10:13-14 }
                 (ExprIdent
                  int -> int -> int
-                 "-"))
+                 "#std, -"))
                [ (L
                   { :10:12-13 }
                   (ExprIdent
                    int
-                   "x"))
+                   "Minus64, x"))
                , (L
                   { :10:15-34 }
                   (ExprConstant int int
@@ -238,11 +238,11 @@
        [ (L
           { :11:5-33 }
           (Bind
-           f3: int -> int
+           Minus64, f3: int -> int
            (L
             { :11:5-7 }
             (PatVar
-             int -> int
+             (Minus64, f3, int -> int)
              (L
               { :11:5-7 }
               "f3")))
@@ -253,7 +253,7 @@
              (L
               { :11:8-9 }
               (PatVar
-               int
+               (Minus64, x, int)
                (L
                 { :11:8-9 }
                 "x")))
@@ -265,12 +265,12 @@
                 { :11:13-14 }
                 (ExprIdent
                  int -> int -> int
-                 "-"))
+                 "#std, -"))
                [ (L
                   { :11:12-13 }
                   (ExprIdent
                    int
-                   "x"))
+                   "Minus64, x"))
                , (L
                   { :11:14-33 }
                   (ExprConstant int int
@@ -284,11 +284,11 @@
        [ (L
           { :12:5-34 }
           (Bind
-           f4: int -> int
+           Minus64, f4: int -> int
            (L
             { :12:5-7 }
             (PatVar
-             int -> int
+             (Minus64, f4, int -> int)
              (L
               { :12:5-7 }
               "f4")))
@@ -299,7 +299,7 @@
              (L
               { :12:8-9 }
               (PatVar
-               int
+               (Minus64, x, int)
                (L
                 { :12:8-9 }
                 "x")))
@@ -311,12 +311,12 @@
                 { :12:14-15 }
                 (ExprIdent
                  int -> int -> int
-                 "-"))
+                 "#std, -"))
                [ (L
                   { :12:12-13 }
                   (ExprIdent
                    int
-                   "x"))
+                   "Minus64, x"))
                , (L
                   { :12:15-34 }
                   (ExprConstant int int
@@ -330,11 +330,11 @@
        [ (L
           { :14:5-25 }
           (Bind
-           s: ()
+           Minus64, s: ()
            (L
             { :14:5-6 }
             (PatVar
-             ()
+             (Minus64, s, ())
              (L
               { :14:5-6 }
               "s")))
@@ -346,7 +346,7 @@
               { :14:9-18 }
               (ExprIdent
                int -> ()
-               "print_int"))
+               "#std, print_int"))
              [ (L
                 { :14:19-25 }
                 (ExprApply
@@ -355,7 +355,7 @@
                   { :14:20-22 }
                   (ExprIdent
                    int -> int
-                   "f0"))
+                   "Minus64, f0"))
                  [(L { :14:23-24 } (ExprConstant int int 1))])) ])))) ]))))
  , (L
     { :15:1-25 }
@@ -366,11 +366,11 @@
        [ (L
           { :15:5-25 }
           (Bind
-           s: ()
+           Minus64, s: ()
            (L
             { :15:5-6 }
             (PatVar
-             ()
+             (Minus64, s, ())
              (L
               { :15:5-6 }
               "s")))
@@ -382,7 +382,7 @@
               { :15:9-18 }
               (ExprIdent
                int -> ()
-               "print_int"))
+               "#std, print_int"))
              [ (L
                 { :15:19-25 }
                 (ExprApply
@@ -391,7 +391,7 @@
                   { :15:20-22 }
                   (ExprIdent
                    int -> int
-                   "f1"))
+                   "Minus64, f1"))
                  [(L { :15:23-24 } (ExprConstant int int 1))])) ])))) ]))))
  , (L
     { :16:1-25 }
@@ -402,11 +402,11 @@
        [ (L
           { :16:5-25 }
           (Bind
-           s: ()
+           Minus64, s: ()
            (L
             { :16:5-6 }
             (PatVar
-             ()
+             (Minus64, s, ())
              (L
               { :16:5-6 }
               "s")))
@@ -418,7 +418,7 @@
               { :16:9-18 }
               (ExprIdent
                int -> ()
-               "print_int"))
+               "#std, print_int"))
              [ (L
                 { :16:19-25 }
                 (ExprApply
@@ -427,7 +427,7 @@
                   { :16:20-22 }
                   (ExprIdent
                    int -> int
-                   "f2"))
+                   "Minus64, f2"))
                  [(L { :16:23-24 } (ExprConstant int int 1))])) ])))) ]))))
  , (L
     { :17:1-25 }
@@ -438,11 +438,11 @@
        [ (L
           { :17:5-25 }
           (Bind
-           s: ()
+           Minus64, s: ()
            (L
             { :17:5-6 }
             (PatVar
-             ()
+             (Minus64, s, ())
              (L
               { :17:5-6 }
               "s")))
@@ -454,7 +454,7 @@
               { :17:9-18 }
               (ExprIdent
                int -> ()
-               "print_int"))
+               "#std, print_int"))
              [ (L
                 { :17:19-25 }
                 (ExprApply
@@ -463,7 +463,7 @@
                   { :17:20-22 }
                   (ExprIdent
                    int -> int
-                   "f3"))
+                   "Minus64, f3"))
                  [(L { :17:23-24 } (ExprConstant int int 1))])) ])))) ]))))
  , (L
     { :18:1-25 }
@@ -474,11 +474,11 @@
        [ (L
           { :18:5-25 }
           (Bind
-           s: ()
+           Minus64, s: ()
            (L
             { :18:5-6 }
             (PatVar
-             ()
+             (Minus64, s, ())
              (L
               { :18:5-6 }
               "s")))
@@ -490,7 +490,7 @@
               { :18:9-18 }
               (ExprIdent
                int -> ()
-               "print_int"))
+               "#std, print_int"))
              [ (L
                 { :18:19-25 }
                 (ExprApply
@@ -499,5 +499,5 @@
                   { :18:20-22 }
                   (ExprIdent
                    int -> int
-                   "f4"))
+                   "Minus64, f4"))
                  [(L { :18:23-24 } (ExprConstant int int 1))])) ])))) ])))) ])

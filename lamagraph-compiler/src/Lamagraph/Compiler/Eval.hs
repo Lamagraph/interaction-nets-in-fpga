@@ -184,10 +184,10 @@ defEvalEnv =
       , (Id $ Name $ mkLongident $ stdPrefix :| ["-"], VBinaryPrim1 BPMinus)
       , (Id $ Name $ mkLongident $ stdPrefix :| ["*"], VBinaryPrim1 BPTimes)
       , (Id $ Name $ mkLongident $ stdPrefix :| ["<"], VBinaryPrim1 BPLess)
-      , (Id $ Name $ mkLongident $ stdPrefix :| ["[]"], VAdt (Name $ mkLongident $ pure "[]") [])
-      , (Id $ Name $ mkLongident $ stdPrefix :| ["::"], VAdt (Name $ mkLongident $ pure "::") [])
-      , (Id $ Name $ mkLongident $ stdPrefix :| ["Some"], VAdt (Name $ mkLongident $ pure "Some") [])
-      , (Id $ Name $ mkLongident $ stdPrefix :| ["None"], VAdt (Name $ mkLongident $ pure "None") [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["[]"], VAdt (Name $ mkLongident $ stdPrefix :| ["[]"]) [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["::"], VAdt (Name $ mkLongident $ stdPrefix :| ["::"]) [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["Some"], VAdt (Name $ mkLongident $ stdPrefix :| ["Some"]) [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["None"], VAdt (Name $ mkLongident $ stdPrefix :| ["None"]) [])
       , (Id $ Name $ mkLongident $ stdPrefix :| ["print_int"], VUnaryPrim UPPrintInt)
       ]
 

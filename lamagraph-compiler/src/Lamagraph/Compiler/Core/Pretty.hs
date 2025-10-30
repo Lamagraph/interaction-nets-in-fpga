@@ -14,7 +14,9 @@ import Prettyprinter
 
 instance Pretty Longident where
   pretty :: Longident -> Doc ann
-  pretty (Longident idents) = hsep $ punctuate comma (map pretty (toList idents))
+  pretty (Longident idents) =
+    let docs = map pretty (toList idents)
+     in mconcat (intersperse dot docs)
 
 instance Pretty Name where
   pretty :: Name -> Doc ann

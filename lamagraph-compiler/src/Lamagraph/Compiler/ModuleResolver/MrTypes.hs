@@ -40,9 +40,9 @@ data ModuleEnv
 makeLenses 'ModuleEnv
 
 data ModuleResolverError
-  = NameNotFound
-  | ModuleNotFound
-  | ConstructorNotFound
+  = NameNotFound Longident
+  | ModuleNotFound Longident
+  | ConstructorNotFound Longident
   deriving (Show, Typeable)
 instance Exception ModuleResolverError
 

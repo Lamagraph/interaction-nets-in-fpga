@@ -1,0 +1,11 @@
+let Unary.parentheses_abomination = -40
+let Unary.function_parentheses_abomination = fun Unary.n ->
+                                             #std.~- (#std.~- (#std.~- (#std.~- (#std.~- (#std.~- Unary.n)))))
+let Unary.x = (#std.< 1) 0
+let Unary.v = #std.~- (match Unary.x as t#a with (#std.true, [], 5)
+                       | ( #std.false
+                       , []
+                       , Unary.function_parentheses_abomination 6 ))
+let Unary.out1 = #std.print_int Unary.parentheses_abomination
+let Unary.out2 = #std.print_int (Unary.function_parentheses_abomination 30)
+let Unary.out3 = #std.print_int Unary.v

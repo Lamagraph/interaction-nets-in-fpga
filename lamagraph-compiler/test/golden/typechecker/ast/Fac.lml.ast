@@ -1,27 +1,27 @@
 (Module
- ~-: int -> int
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
  w: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
- >=: int -> int -> bool
- fac: int -> int
- fac'': (int -> int) -> int -> int
- /: int -> int -> int
- *: int -> int -> int
- ::: forall 'a. ('a * 'a list) -> 'a list
- <: int -> int -> bool
- []: forall 'a. 'a list
- fixCBV: (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
- -: int -> int -> int
- +: int -> int -> int
- fixCBN: ('aj -> 'aj) -> 'aj
- >: int -> int -> bool
- <=: int -> int -> bool
- Some: forall 'a. 'a -> 'a option
- fix: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
- None: forall 'a. 'a option
- fac': int -> int
- false: bool
- true: bool
- print_int: int -> ()
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ Fac, fix: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+ Fac, fac: int -> int
+ Fac, fac'': (int -> int) -> int -> int
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ Fac, fixCBV: (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
+ #std, print_int: int -> ()
+ Fac, fixCBN: ('aj -> 'aj) -> 'aj
+ #std, []: forall 'a. 'a list
+ Fac, fac': int -> int
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
  (Just
  (L
   { :1:8-11 }
@@ -35,11 +35,11 @@
        [ (L
           { :(3,5)-(7,13) }
           (Bind
-           fac: int -> int
+           Fac, fac: int -> int
            (L
             { :3:5-8 }
             (PatVar
-             int -> int
+             (Fac, fac, int -> int)
              (L
               { :3:5-8 }
               "fac")))
@@ -50,7 +50,7 @@
              (L
               { :3:9-10 }
               (PatVar
-               int
+               (Fac, n, int)
                (L
                 { :3:9-10 }
                 "n")))
@@ -64,11 +64,11 @@
                  [ (L
                     { :(4,11)-(6,34) }
                     (Bind
-                     helper: int -> int -> int
+                     Fac, helper: int -> int -> int
                      (L
                       { :4:11-17 }
                       (PatVar
-                       int -> int -> int
+                       (Fac, helper, int -> int -> int)
                        (L
                         { :4:11-17 }
                         "helper")))
@@ -79,7 +79,7 @@
                        (L
                         { :4:24-25 }
                         (PatVar
-                         int
+                         (Fac, m, int)
                          (L
                           { :4:24-25 }
                           "m")))
@@ -90,7 +90,7 @@
                          (L
                           { :4:26-29 }
                           (PatVar
-                           int
+                           (Fac, acc, int)
                            (L
                             { :4:26-29 }
                             "acc")))
@@ -106,22 +106,22 @@
                               { :5:10-11 }
                               (ExprIdent
                                int -> int -> bool
-                               ">"))
+                               "#std, >"))
                              [ (L
                                 { :5:8-9 }
                                 (ExprIdent
                                  int
-                                 "m"))
+                                 "Fac, m"))
                              , (L
                                 { :5:12-13 }
                                 (ExprIdent
                                  int
-                                 "n")) ]))
+                                 "Fac, n")) ]))
                            (L
                             { :5:19-22 }
                             (ExprIdent
                              int
-                             "acc"))
+                             "Fac, acc"))
                            (L
                             { :6:10-34 }
                             (ExprApply
@@ -130,7 +130,7 @@
                               { :6:10-16 }
                               (ExprIdent
                                int -> int -> int
-                               "helper"))
+                               "Fac, helper"))
                              [ (L
                                 { :6:17-24 }
                                 (ExprApply
@@ -139,12 +139,12 @@
                                   { :6:20-21 }
                                   (ExprIdent
                                    int -> int -> int
-                                   "+"))
+                                   "#std, +"))
                                  [ (L
                                     { :6:18-19 }
                                     (ExprIdent
                                      int
-                                     "m"))
+                                     "Fac, m"))
                                  , (L
                                     { :6:22-23 }
                                     (ExprConstant int int
@@ -157,17 +157,17 @@
                                   { :6:30-31 }
                                   (ExprIdent
                                    int -> int -> int
-                                   "*"))
+                                   "#std, *"))
                                  [ (L
                                     { :6:26-29 }
                                     (ExprIdent
                                      int
-                                     "acc"))
+                                     "Fac, acc"))
                                  , (L
                                     { :6:32-33 }
                                     (ExprIdent
                                      int
-                                     "m")) ])) ])))))))))) ]))
+                                     "Fac, m")) ])) ])))))))))) ]))
                (L
                 { :7:3-13 }
                 (ExprApply
@@ -176,7 +176,7 @@
                   { :7:3-9 }
                   (ExprIdent
                    int -> int -> int
-                   "helper"))
+                   "Fac, helper"))
                  [ (L
                     { :7:10-11 }
                     (ExprConstant int int
@@ -194,11 +194,11 @@
        [ (L
           { :(9,9)-(10,40) }
           (Bind
-           fac': int -> int
+           Fac, fac': int -> int
            (L
             { :9:9-13 }
             (PatVar
-             int -> int
+             (Fac, fac', int -> int)
              (L
               { :9:9-13 }
               "fac'")))
@@ -209,7 +209,7 @@
              (L
               { :9:14-15 }
               (PatVar
-               int
+               (Fac, n, int)
                (L
                 { :9:14-15 }
                 "n")))
@@ -225,12 +225,12 @@
                   { :10:8-9 }
                   (ExprIdent
                    int -> int -> bool
-                   "<"))
+                   "#std, <"))
                  [ (L
                     { :10:6-7 }
                     (ExprIdent
                      int
-                     "n"))
+                     "Fac, n"))
                  , (L
                     { :10:10-11 }
                     (ExprConstant int int
@@ -247,12 +247,12 @@
                   { :10:26-27 }
                   (ExprIdent
                    int -> int -> int
-                   "*"))
+                   "#std, *"))
                  [ (L
                     { :10:24-25 }
                     (ExprIdent
                      int
-                     "n"))
+                     "Fac, n"))
                  , (L
                     { :10:28-40 }
                     (ExprApply
@@ -261,7 +261,7 @@
                       { :10:28-32 }
                       (ExprIdent
                        int -> int
-                       "fac'"))
+                       "Fac, fac'"))
                      [ (L
                         { :10:33-40 }
                         (ExprApply
@@ -270,12 +270,12 @@
                           { :10:36-37 }
                           (ExprIdent
                            int -> int -> int
-                           "-"))
+                           "#std, -"))
                          [ (L
                             { :10:34-35 }
                             (ExprIdent
                              int
-                             "n"))
+                             "Fac, n"))
                          , (L
                             { :10:38-39 }
                             (ExprConstant int int
@@ -290,7 +290,7 @@
           { :12:9-78 }
           (Bind
            w: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
-           fix: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+           Fac, fix: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
            (L
             { :12:9-53 }
             (PatConstraint
@@ -298,7 +298,7 @@
              (L
               { :12:10-13 }
               (PatVar
-               'w
+               (Fac, fix, 'w)
                (L
                 { :12:10-13 }
                 "fix")))
@@ -371,7 +371,7 @@
              (L
               { :12:60-61 }
               (PatVar
-               ('u -> 'v) -> 'u -> 'v
+               (Fac, f, ('u -> 'v) -> 'u -> 'v)
                (L
                 { :12:60-61 }
                 "f")))
@@ -382,7 +382,7 @@
                (L
                 { :12:62-63 }
                 (PatVar
-                 'u
+                 (Fac, x, 'u)
                  (L
                   { :12:62-63 }
                   "x")))
@@ -394,7 +394,7 @@
                   { :12:67-68 }
                   (ExprIdent
                    ('u -> 'v) -> 'u -> 'v
-                   "f"))
+                   "Fac, f"))
                  [ (L
                     { :12:69-76 }
                     (ExprApply
@@ -403,17 +403,17 @@
                       { :12:70-73 }
                       (ExprIdent
                        (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
-                       "fix"))
+                       "Fac, fix"))
                      [ (L
                         { :12:74-75 }
                         (ExprIdent
                          ('u -> 'v) -> 'u -> 'v
-                         "f")) ]))
+                         "Fac, f")) ]))
                  , (L
                     { :12:77-78 }
                     (ExprIdent
                      'u
-                     "x")) ])))))))) ]))))
+                     "Fac, x")) ])))))))) ]))))
  , (L
     { :13:1-43 }
     (ValD
@@ -423,11 +423,11 @@
        [ (L
           { :13:9-43 }
           (Bind
-           fixCBV: (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
+           Fac, fixCBV: (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
            (L
             { :13:9-15 }
             (PatVar
-             (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
+             (Fac, fixCBV, (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae)
              (L
               { :13:9-15 }
               "fixCBV")))
@@ -438,7 +438,7 @@
              (L
               { :13:22-23 }
               (PatVar
-               ('ad -> 'ae) -> 'ad -> 'ae
+               (Fac, f, ('ad -> 'ae) -> 'ad -> 'ae)
                (L
                 { :13:22-23 }
                 "f")))
@@ -449,7 +449,7 @@
                (L
                 { :13:24-25 }
                 (PatVar
-                 'ad
+                 (Fac, x, 'ad)
                  (L
                   { :13:24-25 }
                   "x")))
@@ -461,7 +461,7 @@
                   { :13:29-30 }
                   (ExprIdent
                    ('ad -> 'ae) -> 'ad -> 'ae
-                   "f"))
+                   "Fac, f"))
                  [ (L
                     { :13:31-41 }
                     (ExprApply
@@ -470,17 +470,17 @@
                       { :13:32-38 }
                       (ExprIdent
                        (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
-                       "fixCBV"))
+                       "Fac, fixCBV"))
                      [ (L
                         { :13:39-40 }
                         (ExprIdent
                          ('ad -> 'ae) -> 'ad -> 'ae
-                         "f")) ]))
+                         "Fac, f")) ]))
                  , (L
                     { :13:42-43 }
                     (ExprIdent
                      'ad
-                     "x")) ])))))))) ]))))
+                     "Fac, x")) ])))))))) ]))))
  , (L
     { :14:1-39 }
     (ValD
@@ -490,11 +490,11 @@
        [ (L
           { :14:9-39 }
           (Bind
-           fixCBN: ('aj -> 'aj) -> 'aj
+           Fac, fixCBN: ('aj -> 'aj) -> 'aj
            (L
             { :14:9-15 }
             (PatVar
-             ('aj -> 'aj) -> 'aj
+             (Fac, fixCBN, ('aj -> 'aj) -> 'aj)
              (L
               { :14:9-15 }
               "fixCBN")))
@@ -505,7 +505,7 @@
              (L
               { :14:22-23 }
               (PatVar
-               'aj -> 'aj
+               (Fac, f, 'aj -> 'aj)
                (L
                 { :14:22-23 }
                 "f")))
@@ -517,7 +517,7 @@
                 { :14:27-28 }
                 (ExprIdent
                  'aj -> 'aj
-                 "f"))
+                 "Fac, f"))
                [ (L
                   { :14:29-39 }
                   (ExprApply
@@ -526,12 +526,12 @@
                     { :14:30-36 }
                     (ExprIdent
                      ('aj -> 'aj) -> 'aj
-                     "fixCBN"))
+                     "Fac, fixCBN"))
                    [ (L
                       { :14:37-38 }
                       (ExprIdent
                        'aj -> 'aj
-                       "f")) ])) ])))))) ]))))
+                       "Fac, f")) ])) ])))))) ]))))
  , (L
     { :17:1-56 }
     (ValD
@@ -541,11 +541,11 @@
        [ (L
           { :17:5-56 }
           (Bind
-           fac'': (int -> int) -> int -> int
+           Fac, fac'': (int -> int) -> int -> int
            (L
             { :17:5-10 }
             (PatVar
-             (int -> int) -> int -> int
+             (Fac, fac'', (int -> int) -> int -> int)
              (L
               { :17:5-10 }
               "fac''")))
@@ -556,7 +556,7 @@
              (L
               { :17:11-15 }
               (PatVar
-               int -> int
+               (Fac, self, int -> int)
                (L
                 { :17:11-15 }
                 "self")))
@@ -567,7 +567,7 @@
                (L
                 { :17:16-17 }
                 (PatVar
-                 int
+                 (Fac, n, int)
                  (L
                   { :17:16-17 }
                   "n")))
@@ -583,12 +583,12 @@
                     { :17:24-26 }
                     (ExprIdent
                      int -> int -> bool
-                     "<="))
+                     "#std, <="))
                    [ (L
                       { :17:23-24 }
                       (ExprIdent
                        int
-                       "n"))
+                       "Fac, n"))
                    , (L
                       { :17:26-27 }
                       (ExprConstant int int
@@ -605,12 +605,12 @@
                     { :17:42-43 }
                     (ExprIdent
                      int -> int -> int
-                     "*"))
+                     "#std, *"))
                    [ (L
                       { :17:40-41 }
                       (ExprIdent
                        int
-                       "n"))
+                       "Fac, n"))
                    , (L
                       { :17:44-56 }
                       (ExprApply
@@ -619,7 +619,7 @@
                         { :17:44-48 }
                         (ExprIdent
                          int -> int
-                         "self"))
+                         "Fac, self"))
                        [ (L
                           { :17:49-56 }
                           (ExprApply
@@ -628,12 +628,12 @@
                             { :17:52-53 }
                             (ExprIdent
                              int -> int -> int
-                             "-"))
+                             "#std, -"))
                            [ (L
                               { :17:50-51 }
                               (ExprIdent
                                int
-                               "n"))
+                               "Fac, n"))
                            , (L
                               { :17:54-55 }
                               (ExprConstant int int

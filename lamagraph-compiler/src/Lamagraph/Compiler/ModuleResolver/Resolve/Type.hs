@@ -25,9 +25,6 @@ resolveLmlType env = \case
     lTyResolved <- resolveLLmlType env lTy
     lTysResolved <- mapM (resolveLLmlType env) lTys
     pure $ LmlTyTuple noExtField lTyResolved lTysResolved
-  LmlTyConstr _ (L loc constrName) lTys ->
-    case lookupName env constrName of
-      Nothing -> throwError ConstructorNotFound
-      Just (FullName realConstrName) -> do
-        lTysResolved <- mapM (resolveLLmlType env) lTys
-        pure $ LmlTyConstr noExtField (L loc realConstrName) lTysResolved
+  LmlTyConstr _ lConstrName lTys -> do
+    lTysResolved <- mapM (resolveLLmlType env) lTys
+    pure $ LmlTyConstr noExtField lConstrName lTysResolved

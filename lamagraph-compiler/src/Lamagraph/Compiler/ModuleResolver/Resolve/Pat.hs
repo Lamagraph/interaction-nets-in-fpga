@@ -32,7 +32,7 @@ resolveLmlPat env = \case
     pure (finalEnv, LmlPatTuple noExtField lPatResolved lPatsResolved)
   LmlPatConstruct _ (L loc longident) maybeLPat ->
     case lookupName env longident of
-      Nothing -> throwError ConstructorNotFound
+      Nothing -> throwError (ConstructorNotFound longident)
       Just (FullName realLongident) ->
         case maybeLPat of
           Nothing -> pure (env, LmlPatConstruct noExtField (L loc realLongident) Nothing)

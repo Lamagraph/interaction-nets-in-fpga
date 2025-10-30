@@ -1,21 +1,21 @@
 (Module
- ~-: int -> int
- >=: int -> int -> bool
- /: int -> int -> int
- *: int -> int -> int
- ::: forall 'a. ('a * 'a list) -> 'a list
- <: int -> int -> bool
- []: forall 'a. 'a list
- -: int -> int -> int
- +: int -> int -> int
- >: int -> int -> bool
- <=: int -> int -> bool
- x: int
- Some: forall 'a. 'a -> 'a option
- None: forall 'a. 'a option
- false: bool
- true: bool
- print_int: int -> ()
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ TypeDeclarations, x: int
+ #std, *: int -> int -> int
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
  (Just
  (L
   { :1:8-24 }
@@ -29,11 +29,11 @@
        [ (L
           { :4:5-32 }
           (Bind
-           x: int
+           TypeDeclarations, x: int
            (L
             { :4:5-6 }
             (PatVar
-             int
+             (TypeDeclarations, x, int)
              (L
               { :4:5-6 }
               "x")))
@@ -49,7 +49,7 @@
                 { :4:14-15 }
                 (ExprIdent
                  int -> int -> bool
-                 "<"))
+                 "#std, <"))
                [ (L
                   { :4:12-13 }
                   (ExprConstant int int

@@ -1,13 +1,20 @@
-let fac = fun n -> let rec helper = fun m -> fun acc ->
-                                    match (> m) n as t#a with (true, [], acc)
-                                    | ( false
-                                    , []
-                                    , (helper ((+ m) 1)) ((* acc) m) )
-          in (helper 1) 1
-let rec fac' = fun n -> match (< n) 2 as t#b with (true, [], 1)
-                        | (false, [], (* n) (fac' ((- n) 1)))
-let rec fix = fun f -> fun x -> (f (fix f)) x
-let rec fixCBV = fun f -> fun x -> (f (fixCBV f)) x
-let rec fixCBN = fun f -> f (fixCBN f)
-let fac'' = fun self -> fun n -> match (<= n) 1 as t#c with (true, [], 1)
-                                 | (false, [], (* n) (self ((- n) 1)))
+let Fac.fac = fun Fac.n -> let rec Fac.helper = fun Fac.m -> fun Fac.acc ->
+                                                match (#std.> Fac.m) Fac.n as t#a with ( #std.true
+                                                , []
+                                                , Fac.acc )
+                                                | ( #std.false
+                                                , []
+                                                , (Fac.helper ((#std.+ Fac.m) 1)) ((#std.* Fac.acc) Fac.m) )
+              in (Fac.helper 1) 1
+let rec Fac.fac' = fun Fac.n -> match (#std.< Fac.n) 2 as t#b with ( #std.true
+                                , []
+                                , 1 )
+                                | ( #std.false
+                                , []
+                                , (#std.* Fac.n) (Fac.fac' ((#std.- Fac.n) 1)) )
+let rec Fac.fix = fun Fac.f -> fun Fac.x -> (Fac.f (Fac.fix Fac.f)) Fac.x
+let rec Fac.fixCBV = fun Fac.f -> fun Fac.x -> (Fac.f (Fac.fixCBV Fac.f)) Fac.x
+let rec Fac.fixCBN = fun Fac.f -> Fac.f (Fac.fixCBN Fac.f)
+let Fac.fac'' = fun Fac.self -> fun Fac.n ->
+                match (#std.<= Fac.n) 1 as t#c with (#std.true, [], 1)
+                | (#std.false, [], (#std.* Fac.n) (Fac.self ((#std.- Fac.n) 1)))

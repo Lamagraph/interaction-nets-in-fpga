@@ -206,9 +206,9 @@ instance Pretty TypecheckError where
 instance Pretty ModuleResolverError where
   pretty :: ModuleResolverError -> Doc ann
   pretty = \case
-    NameNotFound -> [i|Error: Name not found|]
-    ModuleNotFound -> [i|Error: Module not found|]
-    ConstructorNotFound -> [i|Error: Constructor not found|]
+    NameNotFound name -> [i|Error: Name #{pretty name} not found|]
+    ModuleNotFound name -> [i|Error: Module #{pretty name} not found|]
+    ConstructorNotFound name -> [i|Error: Constructor #{pretty name} not found|]
 
 instance Pretty TyEnv where
   pretty :: TyEnv -> Doc ann

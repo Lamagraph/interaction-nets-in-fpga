@@ -31,7 +31,7 @@ resolveLmlDecl env = \case
   OpenD _ (OpenDecl _ lIdent@(L _ ident)) -> do
     let (ModuleRegistry compiledModules) = env ^. moduleRegistry
     case HashMap.lookup (ModulePath ident) compiledModules of
-      Nothing -> throwError ModuleNotFound
+      Nothing -> throwError (ModuleNotFound ident)
       Just names -> do
         let localShadowed = HashSet.difference (env ^. localNames) names
         let newOpens = ModulePath ident : (env ^. opens)

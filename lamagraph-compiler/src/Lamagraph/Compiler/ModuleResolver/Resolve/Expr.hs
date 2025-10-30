@@ -26,7 +26,7 @@ resolveLmlExpr :: ModuleEnv -> LmlExpr LmlcPs -> MonadModuleResolver (ModuleEnv,
 resolveLmlExpr env = \case
   LmlExprIdent _ longident ->
     case lookupName env longident of
-      Nothing -> throwError NameNotFound
+      Nothing -> throwError (NameNotFound longident)
       Just (FullName realName) -> pure (env, LmlExprIdent noExtField realName)
   LmlExprConstant _ lit -> pure (env, LmlExprConstant noExtField (resolveLmlLit lit))
   LmlExprLet _ lBindGroup lExpr -> do
@@ -53,7 +53,7 @@ resolveLmlExpr env = \case
     let lExprsResolved = fromList lExprsResolvedList
     pure (env, LmlExprTuple noExtField lExprResolved lExprsResolved)
   LmlExprConstruct _ (L loc longident) maybeLExpr -> case lookupName env longident of
-    Nothing -> throwError ConstructorNotFound
+    Nothing -> throwError (ConstructorNotFound longident)
     Just (FullName realLongident) ->
       case maybeLExpr of
         Nothing ->
@@ -86,7 +86,8 @@ resolveLmlBindGroup env (LmlBindGroup _ NonRecursive binds) = do
         bindsResolved
     )
 resolveLmlBindGroup env (LmlBindGroup _ Recursive binds) = do
-  (newEnv, bindsResolvedList) <- resolveMany env resolveLLmlRecBind binds
+  (patsEnv, _) <- resolveMany env (\env' (L _ (LmlBind _ lPat _)) -> resolveLLmlPat env' lPat) binds
+  (newEnv, bindsResolvedList) <- resolveMany patsEnv resolveLLmlRecBind binds
   let bindsResolved = fromList bindsResolvedList
   pure
     ( newEnv
