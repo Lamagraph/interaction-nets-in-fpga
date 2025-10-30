@@ -105,7 +105,7 @@ evalBinaryPrim BPMinus (VInt arg1) (VInt arg2) = pure $ VInt $ arg1 - arg2
 evalBinaryPrim BPTimes (VInt arg1) (VInt arg2) = pure $ VInt $ arg1 * arg2
 evalBinaryPrim BPLess (VInt arg1) (VInt arg2) =
   let val = if arg1 < arg2 then "true" else "false"
-   in pure $ VAdt (Name $ mkLongident $ pure val) []
+   in pure $ VAdt (Name $ mkLongident $ stdPrefix :| [val]) []
 evalBinaryPrim prim arg1 arg2 = throwIO $ EInvalidBinaryApply prim arg1 arg2
 
 {- | I think this is a bad code, because it can force pattern-matching in weird places
