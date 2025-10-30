@@ -2,12 +2,12 @@ module Lamagraph.Compiler.Module.Eval.EvalModuleGolden (evalModuleGolden) where
 
 import Relude
 
+import Data.Either.Extra (mapLeft)
 import System.Directory
 import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
 import UnliftIO.Exception
-import Data.Either.Extra (mapLeft)
 
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()

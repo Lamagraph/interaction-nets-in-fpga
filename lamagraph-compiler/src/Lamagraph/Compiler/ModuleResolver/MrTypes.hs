@@ -1,18 +1,19 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Lamagraph.Compiler.ModuleResolver.MrTypes(
-  FullName(..),
-  ModulePath(..),
-  ModuleRegistry(..),
-  ModuleEnv(..),
-  ModuleResolverError(..),
+module Lamagraph.Compiler.ModuleResolver.MrTypes (
+  FullName (..),
+  ModulePath (..),
+  ModuleRegistry (..),
+  ModuleEnv (..),
+  ModuleResolverError (..),
   MonadModuleResolver,
   currentModule,
   moduleRegistry,
   currentNames,
   localNames,
   opens,
-  runMonadModuleResolver) where
+  runMonadModuleResolver,
+) where
 
 import Relude
 

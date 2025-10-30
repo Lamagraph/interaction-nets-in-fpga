@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.ModuleResolver.Resolve.Expr(resolveLLmlBindGroup) where
+module Lamagraph.Compiler.ModuleResolver.Resolve.Expr (resolveLLmlBindGroup) where
 
 import Relude
 

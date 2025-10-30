@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.ModuleResolver.Resolve.Decl(resolveLLmlDecl) where
+module Lamagraph.Compiler.ModuleResolver.Resolve.Decl (resolveLLmlDecl) where
 
 import Relude
 

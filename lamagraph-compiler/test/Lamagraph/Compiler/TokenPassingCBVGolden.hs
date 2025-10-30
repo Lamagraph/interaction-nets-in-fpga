@@ -24,6 +24,7 @@ import Lamagraph.Compiler.Core.LmlToCore
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
 import Lamagraph.Compiler.GoldenCommon
+import Lamagraph.Compiler.ModuleResolver.Resolve.Module
 import Lamagraph.Compiler.Nets.Encodings.LambdaCalculusCore
 import Lamagraph.Compiler.Nets.Encodings.TokenPassingCBV
 import Lamagraph.Compiler.Nets.Processing
@@ -31,7 +32,6 @@ import Lamagraph.Compiler.Nets.Reduction
 import Lamagraph.Compiler.Nets.Types
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Typechecker.Infer
-import Lamagraph.Compiler.ModuleResolver.Resolve.Module
 
 newExt :: String
 newExt = "out"

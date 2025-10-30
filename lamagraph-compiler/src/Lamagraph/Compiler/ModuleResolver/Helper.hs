@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.ModuleResolver.Helper(prependModuleName, lookupName, resolveMany) where
+module Lamagraph.Compiler.ModuleResolver.Helper (prependModuleName, lookupName, resolveMany) where
 
 import Relude
 

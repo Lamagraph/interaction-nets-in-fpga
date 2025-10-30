@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.ModuleResolver.Resolve.Pat(resolveLLmlPat) where
+module Lamagraph.Compiler.ModuleResolver.Resolve.Pat (resolveLLmlPat) where
 
 import Relude
 

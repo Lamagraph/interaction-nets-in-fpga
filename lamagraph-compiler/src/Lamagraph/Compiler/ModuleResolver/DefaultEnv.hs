@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.ModuleResolver.DefaultEnv(stdPrefix, defaultModuleEnv) where
+module Lamagraph.Compiler.ModuleResolver.DefaultEnv (stdPrefix, defaultModuleEnv) where
 
 import Relude
 

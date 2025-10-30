@@ -1,8 +1,9 @@
-module Lamagraph.Compiler.ModuleResolver(
+module Lamagraph.Compiler.ModuleResolver (
   parseLmlProgram,
   typecheckLmlProgram,
   desugarLmlProgram,
-  evalLmlProgramDefEnv) where
+  evalLmlProgramDefEnv,
+) where
 
 import Data.HashMap.Strict qualified as HashMap
 import Lamagraph.Compiler.Core
