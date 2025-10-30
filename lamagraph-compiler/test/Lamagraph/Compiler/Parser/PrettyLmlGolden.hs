@@ -17,7 +17,9 @@ parserPrettyLmlGolden = do
   return $
     testGroup
       "Pretty LML Golden tests"
-      [ goldenVsString (takeBaseName lmlFile) resLmlFile (helper lmlFile) | lmlFile <- lmlFiles, let resLmlFile = changeFileDir lmlFile "../ppr"
+      [ goldenVsString (takeBaseName lmlFile) resLmlFile (helper lmlFile)
+      | lmlFile <- lmlFiles
+      , let resLmlFile = changeFileDir lmlFile "../ppr"
       ]
  where
   helper :: FilePath -> IO LByteString

@@ -32,9 +32,9 @@ typecheckerPrettyModuleGolden = do
     xs <- processFiles astSubdir lmlFiles
     let goldenTests =
           [ goldenVsString
-            (takeFileName file)
-            file
-            (pure result)
+              (takeFileName file)
+              file
+              (pure result)
           | (file, result) <- xs
           ]
     return $ testGroup dir goldenTests
