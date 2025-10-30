@@ -12,9 +12,7 @@ import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.ModuleResolver
 import Lamagraph.Compiler.ModuleResolver.Program
 import Lamagraph.Compiler.ModuleResolver.Resolve.Program
-import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.PrettyAst ()
-import Lamagraph.Compiler.Typechecker.Infer
 
 moduleSourceDir :: FilePath
 moduleSourceDir = typecheckerSourceGoldenModuleTestsDir

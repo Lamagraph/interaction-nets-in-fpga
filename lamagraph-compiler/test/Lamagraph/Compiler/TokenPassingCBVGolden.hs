@@ -31,10 +31,7 @@ import Lamagraph.Compiler.Nets.Reduction
 import Lamagraph.Compiler.Nets.Types
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Typechecker.Infer
-import Lamagraph.Compiler.ModuleResolver
-import Lamagraph.Compiler.ModuleResolver.Program
 import Lamagraph.Compiler.ModuleResolver.Resolve.Module
-import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 
 newExt :: String
 newExt = "out"

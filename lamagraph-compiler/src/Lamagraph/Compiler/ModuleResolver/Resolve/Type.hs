@@ -1,12 +1,8 @@
-module Lamagraph.Compiler.ModuleResolver.Resolve.Type where
+module Lamagraph.Compiler.ModuleResolver.Resolve.Type(resolveLLmlType) where
 
 import Relude
 
-import Control.Lens
-import Control.Monad.Except
-import Data.List.NonEmpty.Extra qualified as NE
 import Lamagraph.Compiler.Extension
-import Lamagraph.Compiler.ModuleResolver.Helper
 import Lamagraph.Compiler.ModuleResolver.MrTypes
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax

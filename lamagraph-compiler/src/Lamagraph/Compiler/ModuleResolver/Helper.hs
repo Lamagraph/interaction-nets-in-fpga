@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.ModuleResolver.Helper where
+module Lamagraph.Compiler.ModuleResolver.Helper(prependModuleName, lookupName, resolveMany) where
 
 import Relude
 
@@ -16,8 +16,6 @@ prependModuleName path name = FullName $ Longident $ coerce path <> NonEmpty.sin
 lookupInModule :: ModuleRegistry -> ModulePath -> Text -> Maybe FullName
 lookupInModule (ModuleRegistry reg) path name =
   HashMap.lookup path reg >>= find (== name) <&> prependModuleName path
-
---                  OMG ---^
 
 lookupUnqualified :: ModuleEnv -> Text -> Maybe FullName
 lookupUnqualified env name =

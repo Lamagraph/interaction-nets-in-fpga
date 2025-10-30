@@ -2,26 +2,20 @@ module Lamagraph.Compiler.Module.Eval.EvalModuleGolden (evalModuleGolden) where
 
 import Relude
 
-import Prettyprinter
-import System.Directory (createDirectoryIfMissing, doesDirectoryExist, listDirectory)
+import System.Directory
 import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
 import UnliftIO.Exception
-
 import Data.Either.Extra (mapLeft)
-import Lamagraph.Compiler.Core.LmlToCore
+
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
 import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.ModuleResolver
-import Lamagraph.Compiler.ModuleResolver.Program
-import Lamagraph.Compiler.ModuleResolver.Resolve.Module
 import Lamagraph.Compiler.ModuleResolver.Resolve.Program
-import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.PrettyAst ()
-import Lamagraph.Compiler.Typechecker.Infer
 
 moduleSourceDir :: FilePath
 moduleSourceDir = evalSourceGoldenModuleTestsDir

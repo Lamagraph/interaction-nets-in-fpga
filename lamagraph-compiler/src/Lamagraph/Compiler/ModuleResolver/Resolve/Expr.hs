@@ -1,10 +1,9 @@
-module Lamagraph.Compiler.ModuleResolver.Resolve.Expr where
+module Lamagraph.Compiler.ModuleResolver.Resolve.Expr(resolveLLmlBindGroup) where
 
 import Relude
 
 import Control.Lens
 import Control.Monad.Except
-import Data.HashSet qualified as HashSet
 
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.ModuleResolver.Helper
@@ -15,13 +14,10 @@ import Lamagraph.Compiler.ModuleResolver.Resolve.Type
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax.Expr
 import Lamagraph.Compiler.Syntax.Extension
-import Lamagraph.Compiler.Syntax.Pat
 
--- doesn't change environment?
 resolveLLmlExpr :: ModuleEnv -> LLmlExpr LmlcPs -> MonadModuleResolver (ModuleEnv, LLmlExpr LmlcMr)
 resolveLLmlExpr env (L loc expr) = over _2 (L loc) <$> resolveLmlExpr env expr
 
--- doesn't change environment?
 resolveLmlExpr :: ModuleEnv -> LmlExpr LmlcPs -> MonadModuleResolver (ModuleEnv, LmlExpr LmlcMr)
 resolveLmlExpr env = \case
   LmlExprIdent _ longident ->
@@ -31,7 +27,7 @@ resolveLmlExpr env = \case
   LmlExprConstant _ lit -> pure (env, LmlExprConstant noExtField (resolveLmlLit lit))
   LmlExprLet _ lBindGroup lExpr -> do
     (lBindGroupEnv, lBindGroupResolved) <- resolveLLmlBindGroup env lBindGroup
-    (lExprEnv, lExprResolved) <- resolveLLmlExpr lBindGroupEnv lExpr
+    (_, lExprResolved) <- resolveLLmlExpr lBindGroupEnv lExpr
     pure (env, LmlExprLet noExtField lBindGroupResolved lExprResolved)
   LmlExprFunction _ lPat lExpr -> do
     (lPatEnv, lPatResolved) <- resolveLLmlPat env lPat
@@ -39,17 +35,17 @@ resolveLmlExpr env = \case
     pure (lExprEnv, LmlExprFunction noExtField lPatResolved lExprResolved)
   LmlExprApply _ apHead apArgs -> do
     (apHeadEnv, apHeadResolved) <- resolveLLmlExpr env apHead
-    (apArgsEnv, apArgsResolvedList) <- resolveMany apHeadEnv resolveLLmlExpr apArgs
+    (_, apArgsResolvedList) <- resolveMany apHeadEnv resolveLLmlExpr apArgs
     let apArgsResolved = fromList apArgsResolvedList
     pure (env, LmlExprApply noExtField apHeadResolved apArgsResolved)
   LmlExprMatch _ lExpr lCases -> do
     (lExprEnv, lExprResolved) <- resolveLLmlExpr env lExpr
-    (lCasesEnv, lCasesResolvedList) <- resolveMany lExprEnv resolveLLmlCase lCases
+    (_, lCasesResolvedList) <- resolveMany lExprEnv resolveLLmlCase lCases
     let lCasesResolved = fromList lCasesResolvedList
     pure (env, LmlExprMatch noExtField lExprResolved lCasesResolved)
   LmlExprTuple _ lExpr lExprs -> do
     (lExprEnv, lExprResolved) <- resolveLLmlExpr env lExpr
-    (lExprsEnv, lExprsResolvedList) <- resolveMany lExprEnv resolveLLmlExpr lExprs
+    (_, lExprsResolvedList) <- resolveMany lExprEnv resolveLLmlExpr lExprs
     let lExprsResolved = fromList lExprsResolvedList
     pure (env, LmlExprTuple noExtField lExprResolved lExprsResolved)
   LmlExprConstruct _ (L loc longident) maybeLExpr -> case lookupName env longident of
@@ -59,7 +55,7 @@ resolveLmlExpr env = \case
         Nothing ->
           pure (env, LmlExprConstruct noExtField (L loc realLongident) Nothing)
         Just lExpr -> do
-          (lExprEnv, lExprResolved) <- resolveLLmlExpr env lExpr
+          (_, lExprResolved) <- resolveLLmlExpr env lExpr
           pure (env, LmlExprConstruct noExtField (L loc realLongident) (Just lExprResolved))
   LmlExprIfThenElse _ lCond lTrue lFalse -> do
     (_, lCondResolved) <- resolveLLmlExpr env lCond
@@ -115,11 +111,9 @@ resolveLmlRecBind env (LmlBind _ lPat lExpr) = do
   (_, lExprResolved) <- resolveLLmlExpr lPatEnv lExpr
   pure (lPatEnv, LmlBind noExtField lPatResolved lExprResolved)
 
--- doesn't change environment
 resolveLLmlCase :: ModuleEnv -> LLmlCase LmlcPs -> MonadModuleResolver (ModuleEnv, LLmlCase LmlcMr)
 resolveLLmlCase env (L loc case') = over _2 (L loc) <$> resolveLmlCase env case'
 
--- doesn't change environment
 resolveLmlCase :: ModuleEnv -> LmlCase LmlcPs -> MonadModuleResolver (ModuleEnv, LmlCase LmlcMr)
 resolveLmlCase env (LmlCase _ lPat maybeLGuard lExpr) = do
   (lPatEnv, lPatResolved) <- resolveLLmlPat env lPat

@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.ModuleResolver.Resolve.Decl where
+module Lamagraph.Compiler.ModuleResolver.Resolve.Decl(resolveLLmlDecl) where
 
 import Relude
 
@@ -8,17 +8,10 @@ import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
 
 import Lamagraph.Compiler.Extension
-import Lamagraph.Compiler.ModuleResolver.Helper
 import Lamagraph.Compiler.ModuleResolver.MrTypes
 import Lamagraph.Compiler.ModuleResolver.Resolve.Expr
-import Lamagraph.Compiler.ModuleResolver.Resolve.Lit
-import Lamagraph.Compiler.ModuleResolver.Resolve.Pat
-import Lamagraph.Compiler.ModuleResolver.Resolve.Type
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
-import Lamagraph.Compiler.Syntax.Expr
-import Lamagraph.Compiler.Syntax.Extension
-import Lamagraph.Compiler.Syntax.Pat
 
 resolveLLmlDecl :: ModuleEnv -> LLmlDecl LmlcPs -> MonadModuleResolver (ModuleEnv, LLmlDecl LmlcMr)
 resolveLLmlDecl env (L loc decl) = over _2 (L loc) <$> resolveLmlDecl env decl

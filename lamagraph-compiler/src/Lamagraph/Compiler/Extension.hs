@@ -4,8 +4,6 @@
 -- | Lmlc (LamagraphML Compiler) specializations for LML AST
 module Lamagraph.Compiler.Extension (Pass (..), LmlcPass (..), LmlcPs, LmlcMr, LmlcTc) where
 
-import Relude
-
 import Lamagraph.Compiler.ModuleResolver.MrTypes
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax

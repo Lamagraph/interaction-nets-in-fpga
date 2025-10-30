@@ -1,0 +1,207 @@
+(Module
+ #std, None: forall 'a. 'a option
+ First, Recursive, odd: int -> bool
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ First, Recursive, even: int -> bool
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
+ (Just
+ (L
+  { :1:8-23 }
+  ("First, Recursive")))
+ [ (L
+    { :(3,1)-(10,24) }
+    (ValD
+     (L
+      { :(3,5)-(10,24) }
+      (Rec
+       [ (L
+          { :(3,9)-(6,23) }
+          (Bind
+           First, Recursive, even: int -> bool
+           (L
+            { :3:9-13 }
+            (PatVar
+             (First, Recursive, even, int -> bool)
+             (L
+              { :3:9-13 }
+              "even")))
+           (L
+            { :(3,14)-(6,23) }
+            (ExprFunction
+             int -> bool
+             (L
+              { :3:14-15 }
+              (PatVar
+               (First, Recursive, n, int)
+               (L
+                { :3:14-15 }
+                "n")))
+             (L
+              { :(4,3)-(6,23) }
+              (ExprMatch
+               bool
+               (L
+                { :4:9-10 }
+                (ExprIdent
+                 int
+                 "First, Recursive, n"))
+               [ (L
+                  { :5:7-16 }
+                  (Case
+                   int -> bool
+                   (L
+                    { :5:7-8 }
+                    (PatConstant
+                     int
+                     int
+                     0))
+                   (Nothing)
+                   (L
+                    { :5:12-16 }
+                    (ExprConstruct
+                     bool
+                     (L
+                      { :5:12-16 }
+                      ("#std, true"))
+                     (Nothing)))))
+               , (L
+                  { :6:7-23 }
+                  (Case
+                   int -> bool
+                   (L
+                    { :6:7-8 }
+                    (PatVar
+                     (First, Recursive, x, int)
+                     (L
+                      { :6:7-8 }
+                      "x")))
+                   (Nothing)
+                   (L
+                    { :6:12-23 }
+                    (ExprApply
+                     bool
+                     (L
+                      { :6:12-15 }
+                      (ExprIdent
+                       int -> bool
+                       "First, Recursive, odd"))
+                     [ (L
+                        { :6:16-23 }
+                        (ExprApply
+                         int
+                         (L
+                          { :6:19-20 }
+                          (ExprIdent
+                           int -> int -> int
+                           "#std, -"))
+                         [ (L
+                            { :6:17-18 }
+                            (ExprIdent
+                             int
+                             "First, Recursive, x"))
+                         , (L
+                            { :6:21-22 }
+                            (ExprConstant int int
+                             1)) ])) ])))) ]))))))
+       , (L
+          { :(7,5)-(10,24) }
+          (Bind
+           First, Recursive, odd: int -> bool
+           (L
+            { :7:5-8 }
+            (PatVar
+             (First, Recursive, odd, int -> bool)
+             (L
+              { :7:5-8 }
+              "odd")))
+           (L
+            { :(7,9)-(10,24) }
+            (ExprFunction
+             int -> bool
+             (L
+              { :7:9-10 }
+              (PatVar
+               (First, Recursive, n, int)
+               (L
+                { :7:9-10 }
+                "n")))
+             (L
+              { :(8,3)-(10,24) }
+              (ExprMatch
+               bool
+               (L
+                { :8:9-10 }
+                (ExprIdent
+                 int
+                 "First, Recursive, n"))
+               [ (L
+                  { :9:7-17 }
+                  (Case
+                   int -> bool
+                   (L
+                    { :9:7-8 }
+                    (PatConstant
+                     int
+                     int
+                     0))
+                   (Nothing)
+                   (L
+                    { :9:12-17 }
+                    (ExprConstruct
+                     bool
+                     (L
+                      { :9:12-17 }
+                      ("#std, false"))
+                     (Nothing)))))
+               , (L
+                  { :10:7-24 }
+                  (Case
+                   int -> bool
+                   (L
+                    { :10:7-8 }
+                    (PatVar
+                     (First, Recursive, x, int)
+                     (L
+                      { :10:7-8 }
+                      "x")))
+                   (Nothing)
+                   (L
+                    { :10:12-24 }
+                    (ExprApply
+                     bool
+                     (L
+                      { :10:12-16 }
+                      (ExprIdent
+                       int -> bool
+                       "First, Recursive, even"))
+                     [ (L
+                        { :10:17-24 }
+                        (ExprApply
+                         int
+                         (L
+                          { :10:20-21 }
+                          (ExprIdent
+                           int -> int -> int
+                           "#std, -"))
+                         [ (L
+                            { :10:18-19 }
+                            (ExprIdent
+                             int
+                             "First, Recursive, x"))
+                         , (L
+                            { :10:22-23 }
+                            (ExprConstant int int
+                             1)) ])) ])))) ])))))) ])))) ])

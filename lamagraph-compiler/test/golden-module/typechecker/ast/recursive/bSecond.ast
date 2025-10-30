@@ -1,0 +1,99 @@
+(Module
+ #std, None: forall 'a. 'a option
+ First, Recursive, odd: int -> bool
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ First, Recursive, even: int -> bool
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ Second, User, speaker: int -> string
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
+ (Just
+ (L
+  { :1:8-19 }
+  ("Second, User")))
+ [ (L
+    { :3:1-21 }
+    (OpenD
+     OpenDecl
+     (L
+      { :3:6-21 }
+      ("First, Recursive"))))
+ , (L
+    { :(5,1)-(8,17) }
+    (ValD
+     (L
+      { :(5,5)-(8,17) }
+      (NonRec
+       [ (L
+          { :(5,5)-(8,17) }
+          (Bind
+           Second, User, speaker: int -> string
+           (L
+            { :5:5-12 }
+            (PatVar
+             (Second, User, speaker, int -> string)
+             (L
+              { :5:5-12 }
+              "speaker")))
+           (L
+            { :(5,13)-(8,17) }
+            (ExprFunction
+             int -> string
+             (L
+              { :5:13-14 }
+              (PatVar
+               (Second, User, x, int)
+               (L
+                { :5:13-14 }
+                "x")))
+             (L
+              { :(6,5)-(8,17) }
+              (ExprITE
+               string
+               (L
+                { :6:8-14 }
+                (ExprApply
+                 bool
+                 (L
+                  { :6:8-12 }
+                  (ExprIdent
+                   int -> bool
+                   "First, Recursive, even"))
+                 [(L { :6:13-14 } (ExprIdent int "Second, User, x"))]))
+               (L
+                { :6:20-26 }
+                (ExprConstant string string
+                 "Even"))
+               (L
+                { :(7,10)-(8,17) }
+                (ExprITE
+                 string
+                 (L
+                  { :7:13-18 }
+                  (ExprApply
+                   bool
+                   (L
+                    { :7:13-16 }
+                    (ExprIdent
+                     int -> bool
+                     "First, Recursive, odd"))
+                   [(L { :7:17-18 } (ExprIdent int "Second, User, x"))]))
+                 (L
+                  { :7:24-29 }
+                  (ExprConstant string string
+                   "Odd"))
+                 (L
+                  { :8:10-17 }
+                  (ExprConstant string string
+                   "Error")))))))))) ])))) ])

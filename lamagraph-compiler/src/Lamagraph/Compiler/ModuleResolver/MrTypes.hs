@@ -1,26 +1,29 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Lamagraph.Compiler.ModuleResolver.MrTypes where
+module Lamagraph.Compiler.ModuleResolver.MrTypes(
+  FullName(..),
+  ModulePath(..),
+  ModuleRegistry(..),
+  ModuleEnv(..),
+  ModuleResolverError(..),
+  MonadModuleResolver,
+  currentModule,
+  moduleRegistry,
+  currentNames,
+  localNames,
+  opens,
+  runMonadModuleResolver) where
 
 import Relude
 
 import Control.Lens
-import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet ()
-import Data.List.NonEmpty as NonEmpty
 
 import Lamagraph.Compiler.Syntax.Longident
 
--- module X.Y.Z
 newtype ModulePath = ModulePath Longident deriving (Eq, Ord, Show, Hashable)
 
 newtype FullName = FullName Longident deriving (Eq, Ord, Show, Hashable)
-
-data QualifiedName
-  = QualifiedName
-  { qnModule :: ModulePath
-  , qnName :: Text
-  }
 
 newtype ModuleRegistry
   = ModuleRegistry
@@ -46,6 +49,7 @@ data ModuleResolverError
   deriving (Show, Typeable)
 instance Exception ModuleResolverError
 
+-- State?
 data MonadModuleResolverState = MonadModuleResolverState {}
 
 makeLenses 'MonadModuleResolverState

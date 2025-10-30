@@ -13,10 +13,7 @@ import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
 import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.GoldenCommon
-import Lamagraph.Compiler.ModuleResolver
-import Lamagraph.Compiler.ModuleResolver.Program
 import Lamagraph.Compiler.ModuleResolver.Resolve.Module
-import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Typechecker.Infer
 
