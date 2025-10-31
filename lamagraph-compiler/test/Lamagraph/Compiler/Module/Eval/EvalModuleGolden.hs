@@ -53,6 +53,6 @@ helper lmlFiles = do
   resolvedProgram <- fromEither $ resolveDef parsedProgram
   typedProgram <- fromEither $ typecheckLmlProgram resolvedProgram
   let binds = runMonadDesugar $ desugarLmlProgram typedProgram
-  _ <- evalLmlProgramDefEnv binds
+  _ <- evalCoreBindsDefEnv binds
   ref <- ask
   readIORef ref
