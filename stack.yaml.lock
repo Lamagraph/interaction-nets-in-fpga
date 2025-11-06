@@ -3,7 +3,46 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/topics/lock_files
 
-packages: []
+packages:
+- completed:
+    commit: a7a5b822535cb662cf987920c507a27c069efd97
+    git: https://github.com/Lamagraph/graph-rewriting.git
+    name: graph-rewriting
+    pantry-tree:
+      sha256: 286c01307f9dd876d6defc11fa1ab16276677cf48a6f50dcfccff9cc1f756bca
+      size: 1141
+    subdir: base
+    version: 0.8.0
+  original:
+    commit: a7a5b822535cb662cf987920c507a27c069efd97
+    git: https://github.com/Lamagraph/graph-rewriting.git
+    subdir: base
+- completed:
+    commit: a7a5b822535cb662cf987920c507a27c069efd97
+    git: https://github.com/Lamagraph/graph-rewriting.git
+    name: graph-rewriting-lib
+    pantry-tree:
+      sha256: 02ebd14f4e325d6d52fe523d8c7fcef59d9e5fbc96d607435fbe6b6e8c8dac43
+      size: 343
+    subdir: lib
+    version: 0.7.9
+  original:
+    commit: a7a5b822535cb662cf987920c507a27c069efd97
+    git: https://github.com/Lamagraph/graph-rewriting.git
+    subdir: lib
+- completed:
+    commit: a7a5b822535cb662cf987920c507a27c069efd97
+    git: https://github.com/Lamagraph/graph-rewriting.git
+    name: graph-rewriting-strategies
+    pantry-tree:
+      sha256: 0866e9e54e1ed72494b9ce30684fdf54cee4acc30b3672c2b1336fa2237bfb5a
+      size: 379
+    subdir: strategies
+    version: 0.2.9
+  original:
+    commit: a7a5b822535cb662cf987920c507a27c069efd97
+    git: https://github.com/Lamagraph/graph-rewriting.git
+    subdir: strategies
 snapshots:
 - completed:
     sha256: d133abe75e408a407cce3f032c96ac1bbadf474a93b5156ebf4135b53382d56b
