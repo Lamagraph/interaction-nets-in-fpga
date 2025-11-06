@@ -41,8 +41,13 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 
-# extra-deps:
-
+extra-deps:
+  - git: https://github.com/Lamagraph/graph-rewriting.git
+    commit: a7a5b822535cb662cf987920c507a27c069efd97
+    subdirs:
+      - base
+      - lib
+      - strategies
 # Override default flag values for local packages and extra-deps
 # flags: {}
 
