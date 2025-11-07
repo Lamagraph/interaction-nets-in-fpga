@@ -1,0 +1,181 @@
+name: lamagraph-core
+version: "0.1"
+license: BSD-2-Clause
+author: "Efim Kubyshkin <efimkub@mail.ru>"
+maintainer: "Efim Kubyshkin <efimkub@mail.ru>"
+extra-doc-files:
+- "docs/*.svg"
+
+
+dependencies:
+- base
+- Cabal
+- clash-prelude >= 1.8.1 && < 1.10
+- lens
+- ghc-typelits-natnormalise
+- ghc-typelits-extra
+- ghc-typelits-knownnat
+- template-haskell
+- mtl
+- graph-rewriting
+- graph-rewriting-lib
+
+default-extensions:
+- BangPatterns
+- BinaryLiterals
+- ConstraintKinds
+- DataKinds
+- DefaultSignatures
+- DeriveAnyClass
+- DeriveDataTypeable
+- DeriveFoldable
+- DeriveFunctor
+- DeriveGeneric
+- DeriveLift
+- DeriveTraversable
+- DerivingStrategies
+- FlexibleContexts
+- InstanceSigs
+- KindSignatures
+- LambdaCase
+- NamedFieldPuns
+- NoStarIsType
+- PolyKinds
+- RankNTypes
+- RecordWildCards
+- ScopedTypeVariables
+- StandaloneDeriving
+- TupleSections
+- TypeApplications
+- TypeFamilies
+- TypeOperators
+- ViewPatterns
+- TemplateHaskell
+- QuasiQuotes
+- NoImplicitPrelude
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -haddock
+- -fplugin=GHC.TypeLits.Extra.Solver
+- -fplugin=GHC.TypeLits.Normalise
+- -fplugin=GHC.TypeLits.KnownNat.Solver
+- -fexpose-all-unfoldings
+- -fno-worker-wrapper
+- -fno-unbox-small-strict-fields
+- -fno-unbox-strict-fields
+
+library:
+  source-dirs: src
+  exposed-modules:
+  - Core.Loader
+  - Core.Node
+  - Core.Reducer
+  - Core.MemoryManager.MemoryManager
+  - Core.MemoryManager.ChangesAccumulator
+  - Core.MemoryManager.NodeChanges
+  - Core.Map
+  - Core.Concrete.ReduceRulesLambda
+  - Core.Concrete.Initial
+  - INet.Net
+  - Core.Concrete.TypesTH
+  - Core.CPU
+  - Core.Core
+  - GRTranslator
+
+executables:
+  clash:
+    main: bin/Clash.hs
+    source-dirs: .
+    dependencies:
+    - base
+    - clash-ghc
+    - lamagraph-core
+    ghc-options:
+      -dynamic
+
+  clashi:
+    main: bin/Clashi.hs
+    source-dirs: .
+    dependencies:
+    - base
+    - clash-ghc
+    - lamagraph-core
+    ghc-options:
+      -dynamic
+
+tests:
+  doctests:
+    main: doctests.hs
+    source-dirs: tests
+    dependencies:
+    - base
+    - lamagraph-core
+    - doctest-parallel >= 0.2 && < 0.4
+    ghc-options:
+    - -Wall
+    - -Wcompat
+    - -threaded
+
+  test-library:
+    main: unittests.hs
+    source-dirs: tests
+    dependencies:
+    - lamagraph-core
+    - QuickCheck
+    - clash-prelude-hedgehog
+    - hedgehog
+    - tasty >= 1.2 && < 1.6
+    - tasty-hedgehog
+    - tasty-th
+    - tasty-hunit
+    - text
+    ghc-options:
+    - -Wall
+    - -Wcompat
+    - -threaded
+    - -haddock
+    - -fplugin=GHC.TypeLits.Extra.Solver
+    - -fplugin=GHC.TypeLits.Normalise
+    - -fplugin=GHC.TypeLits.KnownNat.Solver
+    - -fexpose-all-unfoldings
+    - -fno-worker-wrapper
+    - -fno-unbox-small-strict-fields
+    - -fno-unbox-strict-fields
+    default-extensions:
+    - BangPatterns
+    - BinaryLiterals
+    - ConstraintKinds
+    - DataKinds
+    - DefaultSignatures
+    - DeriveAnyClass
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveLift
+    - DeriveTraversable
+    - DerivingStrategies
+    - FlexibleContexts
+    - InstanceSigs
+    - KindSignatures
+    - LambdaCase
+    - NamedFieldPuns
+    - NoStarIsType
+    - PolyKinds
+    - RankNTypes
+    - RecordWildCards
+    - ScopedTypeVariables
+    - StandaloneDeriving
+    - TupleSections
+    - TypeApplications
+    - TypeFamilies
+    - TypeOperators
+    - ViewPatterns
+    - TemplateHaskell
+    - QuasiQuotes
+    - NoImplicitPrelude
+    other-modules:
+    - Tests.Core.Node
+    - NodeGenerate
