@@ -1,152 +1,370 @@
-cabal-version:       2.4
-name:                lamagraph-core
-version:             0.1
-license:             BSD-2-Clause
-author:              John Smith <john@example.com>
-maintainer:          John Smith <john@example.com>
-extra-doc-files: docs/*.svg
+cabal-version: 2.2
 
-common common-options
-  default-extensions:
-    BangPatterns
-    BinaryLiterals
-    ConstraintKinds
-    DataKinds
-    DefaultSignatures
-    DeriveAnyClass
-    DeriveDataTypeable
-    DeriveFoldable
-    DeriveFunctor
-    DeriveGeneric
-    DeriveLift
-    DeriveTraversable
-    DerivingStrategies
-    FlexibleContexts
-    InstanceSigs
-    KindSignatures
-    LambdaCase
-    NamedFieldPuns
-    NoStarIsType
-    PolyKinds
-    RankNTypes
-    RecordWildCards
-    ScopedTypeVariables
-    StandaloneDeriving
-    TupleSections
-    TypeApplications
-    TypeFamilies
-    TypeOperators
-    ViewPatterns
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
 
-    -- TemplateHaskell is used to support convenience functions such as
-    -- 'listToVecTH' and 'bLit'.
-    TemplateHaskell
-    QuasiQuotes
-
-    -- Prelude isn't imported by default as Clash offers Clash.Prelude
-    NoImplicitPrelude
-  ghc-options:
-    -Wall -Wcompat
-    -haddock
-
-    -- Plugins to support type-level constraint solving on naturals
-    -fplugin GHC.TypeLits.Extra.Solver
-    -fplugin GHC.TypeLits.Normalise
-    -fplugin GHC.TypeLits.KnownNat.Solver
-
-    -- Clash needs access to the source code in compiled modules
-    -fexpose-all-unfoldings
-
-    -- Worker wrappers introduce unstable names for functions that might have
-    -- blackboxes attached for them. You can disable this, but be sure to add
-    -- a no-specialize pragma to every function with a blackbox.
-    -fno-worker-wrapper
-
-    -- Strict annotations - while sometimes preventing space leaks - trigger
-    -- optimizations Clash can't deal with. See:
-    --
-    --    https://github.com/clash-lang/clash-compiler/issues/2361
-    --
-    -- These flags disables these optimizations. Note that the fields will
-    -- remain strict.
-    -fno-unbox-small-strict-fields
-    -fno-unbox-strict-fields
-  build-depends:
-    base,
-    Cabal,
-
-    -- clash-prelude will set suitable version bounds for the plugins
-    clash-prelude >= 1.8.1 && < 1.10,
-    lens,
-    ghc-typelits-natnormalise,
-    ghc-typelits-extra,
-    ghc-typelits-knownnat,
-    template-haskell,
-    mtl
+name:           lamagraph-core
+version:        0.1
+author:         Efim Kubyshkin <efimkub@mail.ru>
+maintainer:     Efim Kubyshkin <efimkub@mail.ru>
+license:        BSD-2-Clause
+build-type:     Simple
+extra-doc-files:
+    docs/absApplyEmptyInterface.svg
+    docs/absApplyNonEmpty.svg
+    docs/absApplyRecInterface.svg
+    docs/apply.svg
+    docs/apply_to_lambda_rule.svg
+    docs/eps_apply_rule.svg
+    docs/eraseEraseEmptyInterface.svg
+    docs/idToIdReduceRes.svg
+    docs/reduceLoopEdge.svg
 
 library
-  import: common-options
-  hs-source-dirs: src
   exposed-modules:
-    Core.Loader
-    Core.Node
-    Core.Reducer
-    Core.MemoryManager.MemoryManager
-    Core.MemoryManager.ChangesAccumulator
-    Core.MemoryManager.NodeChanges
-    Core.Map
-    Core.Concrete.ReduceRulesLambda
-    Core.Concrete.Initial
-    INet.Net
-    Core.Concrete.TypesTH
-    Core.CPU
-    Core.Core
+      Core.Loader
+      Core.Node
+      Core.Reducer
+      Core.MemoryManager.MemoryManager
+      Core.MemoryManager.ChangesAccumulator
+      Core.MemoryManager.NodeChanges
+      Core.Map
+      Core.Concrete.ReduceRulesLambda
+      Core.Concrete.Initial
+      INet.Net
+      Core.Concrete.TypesTH
+      Core.CPU
+      Core.Core
+      GRTranslator
+  other-modules:
+      Paths_lamagraph_core
+  autogen-modules:
+      Paths_lamagraph_core
+  hs-source-dirs:
+      src
+  default-extensions:
+      BangPatterns
+      BinaryLiterals
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      FlexibleContexts
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      NamedFieldPuns
+      NoStarIsType
+      PolyKinds
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      ViewPatterns
+      TemplateHaskell
+      QuasiQuotes
+      NoImplicitPrelude
+  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields
+  build-depends:
+      Cabal
+    , base
+    , clash-prelude >=1.8.1 && <1.10
+    , ghc-typelits-extra
+    , ghc-typelits-knownnat
+    , ghc-typelits-natnormalise
+    , graph-rewriting
+    , graph-rewriting-lib
+    , lens
+    , mtl
+    , template-haskell
   default-language: Haskell2010
 
--- Builds the executable 'clash', with lamagraph-core project in scope
 executable clash
   main-is: bin/Clash.hs
+  other-modules:
+      Paths_lamagraph_core
+  autogen-modules:
+      Paths_lamagraph_core
+  hs-source-dirs:
+      ./
+  default-extensions:
+      BangPatterns
+      BinaryLiterals
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      FlexibleContexts
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      NamedFieldPuns
+      NoStarIsType
+      PolyKinds
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      ViewPatterns
+      TemplateHaskell
+      QuasiQuotes
+      NoImplicitPrelude
+  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -dynamic
+  build-depends:
+      Cabal
+    , base
+    , clash-ghc
+    , clash-prelude >=1.8.1 && <1.10
+    , ghc-typelits-extra
+    , ghc-typelits-knownnat
+    , ghc-typelits-natnormalise
+    , graph-rewriting
+    , graph-rewriting-lib
+    , lamagraph-core
+    , lens
+    , mtl
+    , template-haskell
   default-language: Haskell2010
-  Build-Depends: base, clash-ghc, lamagraph-core
-  if !os(Windows)
-    ghc-options: -dynamic
 
--- Builds the executable 'clashi', with lamagraph-core project in scope
 executable clashi
   main-is: bin/Clashi.hs
+  other-modules:
+      Paths_lamagraph_core
+  autogen-modules:
+      Paths_lamagraph_core
+  hs-source-dirs:
+      ./
+  default-extensions:
+      BangPatterns
+      BinaryLiterals
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      FlexibleContexts
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      NamedFieldPuns
+      NoStarIsType
+      PolyKinds
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      ViewPatterns
+      TemplateHaskell
+      QuasiQuotes
+      NoImplicitPrelude
+  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -dynamic
+  build-depends:
+      Cabal
+    , base
+    , clash-ghc
+    , clash-prelude >=1.8.1 && <1.10
+    , ghc-typelits-extra
+    , ghc-typelits-knownnat
+    , ghc-typelits-natnormalise
+    , graph-rewriting
+    , graph-rewriting-lib
+    , lamagraph-core
+    , lens
+    , mtl
+    , template-haskell
   default-language: Haskell2010
-  if !os(Windows)
-    ghc-options: -dynamic
-  build-depends: base, clash-ghc, lamagraph-core
 
 test-suite doctests
-  type:             exitcode-stdio-1.0
-  default-language: Haskell2010
-  main-is:          doctests.hs
-  ghc-options:      -Wall -Wcompat -threaded
-  hs-source-dirs:   tests
+  type: exitcode-stdio-1.0
+  main-is: doctests.hs
+  other-modules:
+      NodeGenerate
+      Tests.Core.Node
+      Tests.Core.Unit.CPU
+      Tests.Core.Unit.Loader
+      Tests.Core.Unit.MemoryManager.MemoryManager
+      Tests.Core.Unit.Reducer
+      Paths_lamagraph_core
+  autogen-modules:
+      Paths_lamagraph_core
+  hs-source-dirs:
+      tests
+  default-extensions:
+      BangPatterns
+      BinaryLiterals
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      FlexibleContexts
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      NamedFieldPuns
+      NoStarIsType
+      PolyKinds
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      ViewPatterns
+      TemplateHaskell
+      QuasiQuotes
+      NoImplicitPrelude
+  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -Wall -Wcompat -threaded
   build-depends:
-    base,
-    lamagraph-core,
-    doctest-parallel >= 0.2 && < 0.4,
+      Cabal
+    , base
+    , clash-prelude >=1.8.1 && <1.10
+    , doctest-parallel >=0.2 && <0.4
+    , ghc-typelits-extra
+    , ghc-typelits-knownnat
+    , ghc-typelits-natnormalise
+    , graph-rewriting
+    , graph-rewriting-lib
+    , lamagraph-core
+    , lens
+    , mtl
+    , template-haskell
+  default-language: Haskell2010
 
 test-suite test-library
-  import: common-options
-  default-language: Haskell2010
-  hs-source-dirs: tests
   type: exitcode-stdio-1.0
-  ghc-options: -threaded
   main-is: unittests.hs
   other-modules:
-    Tests.Core.Node
-    NodeGenerate
+      Tests.Core.Node
+      NodeGenerate
+  hs-source-dirs:
+      tests
+  default-extensions:
+      BangPatterns
+      BinaryLiterals
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      FlexibleContexts
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      NamedFieldPuns
+      NoStarIsType
+      PolyKinds
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      ViewPatterns
+      TemplateHaskell
+      QuasiQuotes
+      NoImplicitPrelude
+      BangPatterns
+      BinaryLiterals
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      FlexibleContexts
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      NamedFieldPuns
+      NoStarIsType
+      PolyKinds
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      ViewPatterns
+      TemplateHaskell
+      QuasiQuotes
+      NoImplicitPrelude
+  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -Wall -Wcompat -threaded -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields
   build-depends:
-    lamagraph-core,
-    QuickCheck,
-    clash-prelude-hedgehog,
-    hedgehog,
-    tasty >= 1.2 && < 1.6,
-    tasty-hedgehog,
-    tasty-th,
-    tasty-hunit,
-    text
+      Cabal
+    , QuickCheck
+    , base
+    , clash-prelude >=1.8.1 && <1.10
+    , clash-prelude-hedgehog
+    , ghc-typelits-extra
+    , ghc-typelits-knownnat
+    , ghc-typelits-natnormalise
+    , graph-rewriting
+    , graph-rewriting-lib
+    , hedgehog
+    , lamagraph-core
+    , lens
+    , mtl
+    , tasty >=1.2 && <1.6
+    , tasty-hedgehog
+    , tasty-hunit
+    , tasty-th
+    , template-haskell
+    , text
+  default-language: Haskell2010
