@@ -18,6 +18,10 @@ dependencies:
   - mtl
   - graph-rewriting
   - graph-rewriting-lib
+  - containers
+  - graph-rewriting
+  - graph-rewriting-ski
+  - filepath
 
 default-extensions:
   - BangPatterns
