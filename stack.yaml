@@ -43,11 +43,15 @@ packages:
 
 extra-deps:
   - git: https://github.com/Lamagraph/graph-rewriting.git
-    commit: a7a5b822535cb662cf987920c507a27c069efd97
+    commit: 2b12cc9d8c80e2e47824605d487781db3264e4d8
     subdirs:
       - base
       - lib
       - strategies
+      - ski
+      - layout
+      - gl
+  - AC-Vector-2.4.0@sha256:e9b03da163208a948f47d294cfd9f496108d060a73c8a9d1f0ec9c9429d7f67d,1237
 # Override default flag values for local packages and extra-deps
 # flags: {}
 
