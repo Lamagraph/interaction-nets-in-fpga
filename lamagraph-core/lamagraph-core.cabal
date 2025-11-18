@@ -82,11 +82,14 @@ library
       Cabal
     , base
     , clash-prelude >=1.8.1 && <1.10
+    , containers
+    , filepath
     , ghc-typelits-extra
     , ghc-typelits-knownnat
     , ghc-typelits-natnormalise
     , graph-rewriting
     , graph-rewriting-lib
+    , graph-rewriting-ski
     , lens
     , mtl
     , template-haskell
@@ -139,11 +142,14 @@ executable clash
     , base
     , clash-ghc
     , clash-prelude >=1.8.1 && <1.10
+    , containers
+    , filepath
     , ghc-typelits-extra
     , ghc-typelits-knownnat
     , ghc-typelits-natnormalise
     , graph-rewriting
     , graph-rewriting-lib
+    , graph-rewriting-ski
     , lamagraph-core
     , lens
     , mtl
@@ -197,11 +203,14 @@ executable clashi
     , base
     , clash-ghc
     , clash-prelude >=1.8.1 && <1.10
+    , containers
+    , filepath
     , ghc-typelits-extra
     , ghc-typelits-knownnat
     , ghc-typelits-natnormalise
     , graph-rewriting
     , graph-rewriting-lib
+    , graph-rewriting-ski
     , lamagraph-core
     , lens
     , mtl
@@ -263,12 +272,15 @@ test-suite doctests
       Cabal
     , base
     , clash-prelude >=1.8.1 && <1.10
+    , containers
     , doctest-parallel >=0.2 && <0.4
+    , filepath
     , ghc-typelits-extra
     , ghc-typelits-knownnat
     , ghc-typelits-natnormalise
     , graph-rewriting
     , graph-rewriting-lib
+    , graph-rewriting-ski
     , lamagraph-core
     , lens
     , mtl
@@ -356,11 +368,14 @@ test-suite test-library
     , base
     , clash-prelude >=1.8.1 && <1.10
     , clash-prelude-hedgehog
+    , containers
+    , filepath
     , ghc-typelits-extra
     , ghc-typelits-knownnat
     , ghc-typelits-natnormalise
     , graph-rewriting
     , graph-rewriting-lib
+    , graph-rewriting-ski
     , hedgehog
     , lamagraph-core
     , lens
