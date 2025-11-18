@@ -40,10 +40,8 @@ corePrettyGolden = do
     pure $ case parseResult of
       Left err -> encodeUtf8 err
       Right parsedTree ->
-        case resolveModuleDefEnv parsedTree of
-          Left err -> show err
-          Right resolvedTree ->
-            case inferDef resolvedTree of
+        let resolvedTree = resolveModuleDefEnv parsedTree
+         in case inferDef resolvedTree of
               Left err -> show err
               Right core ->
                 let binds = (runMonadDesugar . desugarLmlModule) core

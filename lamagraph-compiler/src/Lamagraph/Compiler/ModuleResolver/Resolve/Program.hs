@@ -14,8 +14,8 @@ resolveLmlProgram env (LmlProgram program) = do
   (_, programResolved) <- resolveMany env resolveLmlModule program
   pure (LmlProgram programResolved)
 
-resolve :: ModuleEnv -> LmlProgram LmlcPs -> Either ModuleResolverError (LmlProgram LmlcMr)
+resolve :: ModuleEnv -> LmlProgram LmlcPs -> LmlProgram LmlcMr
 resolve env = runMonadModuleResolver . resolveLmlProgram env
 
-resolveDef :: LmlProgram LmlcPs -> Either ModuleResolverError (LmlProgram LmlcMr)
+resolveDef :: LmlProgram LmlcPs -> LmlProgram LmlcMr
 resolveDef = resolve defaultModuleEnv

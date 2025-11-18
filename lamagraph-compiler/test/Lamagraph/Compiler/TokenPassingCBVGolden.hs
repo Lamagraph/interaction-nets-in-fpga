@@ -80,7 +80,7 @@ lmlHelper rule lmlFile = do
   fileLBS <- readFileLBS lmlFile
   let fileT = decodeUtf8 fileLBS
   parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
-  resolvedTree <- fromEither $ resolveModuleDefEnv parseTree
+  let resolvedTree = resolveModuleDefEnv parseTree
   typedTree <- fromEither $ inferDef resolvedTree
   let binds = runMonadDesugar $ desugarLmlModule typedTree
   ((net, output), stats) <- runINsMachine $ do

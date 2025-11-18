@@ -51,9 +51,7 @@ processFiles astSubdir files = do
     case parsed of
       Left err -> [(err_path, encodeUtf8 err)]
       Right parsedProgram ->
-        case resolveDef parsedProgram of
-          Left err -> [(err_path, encodeUtf8 (renderPretty $ pretty err))]
-          Right resolvedProgram ->
-            case typecheckLmlProgram resolvedProgram of
+        let resolvedProgram = resolveDef parsedProgram
+         in case typecheckLmlProgram resolvedProgram of
               Left err -> [(err_path, encodeUtf8 (renderPretty $ pretty err))]
               Right (LmlProgram xs) -> zip new_file_paths (map (encodeUtf8 . renderPretty . pretty) xs)

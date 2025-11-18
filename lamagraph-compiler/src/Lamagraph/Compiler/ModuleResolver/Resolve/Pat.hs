@@ -3,9 +3,9 @@ module Lamagraph.Compiler.ModuleResolver.Resolve.Pat (resolveLLmlPat) where
 import Relude
 
 import Control.Lens
-import Control.Monad.Except
 import Data.HashSet qualified as HashSet
 
+import Control.Exception
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.ModuleResolver.Helper
 import Lamagraph.Compiler.ModuleResolver.Resolve.Lit
@@ -32,7 +32,7 @@ resolveLmlPat env = \case
     pure (finalEnv, LmlPatTuple noExtField lPatResolved lPatsResolved)
   LmlPatConstruct _ (L loc longident) maybeLPat ->
     case lookupName env longident of
-      Nothing -> throwError (ConstructorNotFound longident)
+      Nothing -> throw (ConstructorNotFound longident)
       Just (FullName realLongident) ->
         case maybeLPat of
           Nothing -> pure (env, LmlPatConstruct noExtField (L loc realLongident) Nothing)

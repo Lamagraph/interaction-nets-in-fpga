@@ -38,6 +38,5 @@ typecheckerPrettyAstGolden = do
     pure $ case parseResult of
       Left err -> encodeUtf8 err
       Right tree ->
-        case resolveModuleDefEnv tree of
-          Left err -> encodeUtf8 $ renderPretty $ pretty err
-          Right treeReal -> encodeUtf8 $ (renderPretty . pretty . inferDef) treeReal
+        let treeReal = resolveModuleDefEnv tree
+         in encodeUtf8 $ (renderPretty . pretty . inferDef) treeReal

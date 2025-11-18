@@ -58,7 +58,7 @@ makeLenses 'MonadModuleResolverState
 defaultMonadModuleResolverState :: MonadModuleResolverState
 defaultMonadModuleResolverState = MonadModuleResolverState{}
 
-type MonadModuleResolver a = ExceptT ModuleResolverError (State MonadModuleResolverState) a
+type MonadModuleResolver a = State MonadModuleResolverState a
 
-runMonadModuleResolver :: MonadModuleResolver a -> Either ModuleResolverError a
-runMonadModuleResolver f = evalState (runExceptT f) defaultMonadModuleResolverState
+runMonadModuleResolver :: MonadModuleResolver a -> a
+runMonadModuleResolver f = evalState f defaultMonadModuleResolverState

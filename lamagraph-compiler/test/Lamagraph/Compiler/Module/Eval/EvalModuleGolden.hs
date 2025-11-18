@@ -50,7 +50,7 @@ helper lmlFiles = do
   fileLBS <- mapM readFileLBS lmlFiles
   let contents = map decodeUtf8 fileLBS
   parsedProgram <- fromEither $ mapLeft stringException $ parseLmlProgram contents
-  resolvedProgram <- fromEither $ resolveDef parsedProgram
+  let resolvedProgram = resolveDef parsedProgram
   typedProgram <- fromEither $ typecheckLmlProgram resolvedProgram
   let binds = runMonadDesugar $ desugarLmlProgram typedProgram
   _ <- evalCoreBindsDefEnv binds

@@ -3,8 +3,8 @@ module Lamagraph.Compiler.ModuleResolver.Resolve.Expr (resolveLLmlBindGroup) whe
 import Relude
 
 import Control.Lens
-import Control.Monad.Except
 
+import Control.Exception (throw)
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.ModuleResolver.Helper
 import Lamagraph.Compiler.ModuleResolver.Resolve.Lit
@@ -22,7 +22,7 @@ resolveLmlExpr :: ModuleEnv -> LmlExpr LmlcPs -> MonadModuleResolver (LmlExpr Lm
 resolveLmlExpr env = \case
   LmlExprIdent _ longident ->
     case lookupName env longident of
-      Nothing -> throwError (NameNotFound longident)
+      Nothing -> throw (NameNotFound longident)
       Just (FullName realName) -> pure (LmlExprIdent noExtField realName)
   LmlExprConstant _ lit -> pure (LmlExprConstant noExtField (resolveLmlLit lit))
   LmlExprLet _ lBindGroup lExpr -> do
@@ -46,7 +46,7 @@ resolveLmlExpr env = \case
     lExprsResolved <- mapM (resolveLLmlExpr env) lExprs
     pure (LmlExprTuple noExtField lExprResolved lExprsResolved)
   LmlExprConstruct _ (L loc longident) maybeLExpr -> case lookupName env longident of
-    Nothing -> throwError (ConstructorNotFound longident)
+    Nothing -> throw (ConstructorNotFound longident)
     Just (FullName realLongident) ->
       case maybeLExpr of
         Nothing ->

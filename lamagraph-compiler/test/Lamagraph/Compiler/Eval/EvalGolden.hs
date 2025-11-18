@@ -44,7 +44,7 @@ evalGolden = do
     fileLBS <- readFileLBS lmlFile
     let fileT = decodeUtf8 fileLBS
     parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
-    resolvedTree <- fromEither $ resolveModuleDefEnv parseTree
+    let resolvedTree = resolveModuleDefEnv parseTree
     typedTree <- fromEither $ inferDef resolvedTree
     let binds = runMonadDesugar $ desugarLmlModule typedTree
     _ <- evalCoreBindsDefEnv binds

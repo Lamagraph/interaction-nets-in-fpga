@@ -31,5 +31,5 @@ resolveLmlModule env (LmlModule _ name@(Just (L _ longident)) decls) = do
   pure (finalEnv, LmlModule noExtField name declsResolved)
 resolveLmlModule _ (LmlModule _ Nothing _) = error "Error: nameless module"
 
-resolveModuleDefEnv :: LmlModule LmlcPs -> Either ModuleResolverError (LmlModule LmlcMr)
+resolveModuleDefEnv :: LmlModule LmlcPs -> LmlModule LmlcMr
 resolveModuleDefEnv lmod = lmod & resolveLmlModule defaultModuleEnv <&> snd & runMonadModuleResolver
