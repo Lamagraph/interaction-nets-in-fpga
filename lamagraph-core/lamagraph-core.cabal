@@ -36,7 +36,8 @@ library
       Core.Concrete.TypesTH
       Core.CPU
       Core.Core
-      GRTranslator
+      GraphRewriting.Translator
+      GraphRewriting.SKI
   other-modules:
       Paths_lamagraph_core
   autogen-modules:
