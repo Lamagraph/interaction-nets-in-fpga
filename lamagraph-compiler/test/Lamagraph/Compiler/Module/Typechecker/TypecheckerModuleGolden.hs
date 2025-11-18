@@ -9,7 +9,7 @@ import Test.Tasty
 import Test.Tasty.Golden
 
 import Lamagraph.Compiler.GoldenCommon
-import Lamagraph.Compiler.ModuleResolver
+import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.ModuleResolver.Program
 import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 import Lamagraph.Compiler.PrettyAst ()
@@ -38,7 +38,7 @@ typecheckerPrettyModuleGolden = do
           | (file, result) <- xs
           ]
     return $ testGroup dir goldenTests
-  return $ testGroup "Pretty Typed Module Golden tests" testGroups
+  return $ testGroup "Pretty Typed Golden Module tests" testGroups
 
 processFiles :: FilePath -> [FilePath] -> IO [(FilePath, LByteString)]
 processFiles astSubdir files = do

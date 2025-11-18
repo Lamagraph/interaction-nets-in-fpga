@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.ModuleResolver (
+module Lamagraph.Compiler.Driver (
   parseLmlProgram,
   typecheckLmlProgram,
   desugarLmlProgram,

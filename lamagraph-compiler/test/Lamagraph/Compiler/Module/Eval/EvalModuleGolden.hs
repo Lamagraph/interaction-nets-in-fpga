@@ -13,7 +13,7 @@ import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
 import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.GoldenCommon
-import Lamagraph.Compiler.ModuleResolver
+import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 import Lamagraph.Compiler.PrettyAst ()
 
@@ -38,7 +38,7 @@ evalModuleGolden = do
               (helper' lmlFiles)
           ]
     return $ testGroup dir goldenTests
-  return $ testGroup "Eval Module Golden tests" testGroups
+  return $ testGroup "Eval Golden Module tests" testGroups
 
 helper' :: [FilePath] -> IO LByteString
 helper' lmlFiles = do

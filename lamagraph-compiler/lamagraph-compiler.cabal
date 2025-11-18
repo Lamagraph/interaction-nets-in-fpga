@@ -28,9 +28,9 @@ library
       Lamagraph.Compiler.Core.LmlToCore
       Lamagraph.Compiler.Core.MonadDesugar
       Lamagraph.Compiler.Core.Pretty
+      Lamagraph.Compiler.Driver
       Lamagraph.Compiler.Eval
       Lamagraph.Compiler.Extension
-      Lamagraph.Compiler.ModuleResolver
       Lamagraph.Compiler.ModuleResolver.DefaultEnv
       Lamagraph.Compiler.ModuleResolver.Helper
       Lamagraph.Compiler.ModuleResolver.MrTypes

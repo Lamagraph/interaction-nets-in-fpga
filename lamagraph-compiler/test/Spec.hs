@@ -33,8 +33,8 @@ main = do
           , moduleTypeCheckerTests'
           , coreTests'
           , evalTests'
-          , netsTests'
           , evalModuleTests'
+          , netsTests'
           ]
   defaultMain tests
 
@@ -56,7 +56,7 @@ typeCheckerTests = do
 moduleTypeCheckerTests :: IO TestTree
 moduleTypeCheckerTests = do
   tc <- typecheckerPrettyModuleGolden
-  pure $ testGroup "Module Typechecker" [tc]
+  pure $ testGroup "Typechecker Module" [tc]
 
 coreTests :: IO TestTree
 coreTests = do
