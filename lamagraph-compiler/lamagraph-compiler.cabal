@@ -34,7 +34,6 @@ library
       Lamagraph.Compiler.ModuleResolver.DefaultEnv
       Lamagraph.Compiler.ModuleResolver.Helper
       Lamagraph.Compiler.ModuleResolver.MrTypes
-      Lamagraph.Compiler.ModuleResolver.Program
       Lamagraph.Compiler.ModuleResolver.Resolve.Decl
       Lamagraph.Compiler.ModuleResolver.Resolve.Expr
       Lamagraph.Compiler.ModuleResolver.Resolve.Lit

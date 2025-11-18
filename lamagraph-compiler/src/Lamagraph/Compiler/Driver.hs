@@ -10,7 +10,6 @@ import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.Core.LmlToCore
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Extension
-import Lamagraph.Compiler.ModuleResolver.Program
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv

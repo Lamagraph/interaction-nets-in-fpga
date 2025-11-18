@@ -11,9 +11,9 @@ import UnliftIO.Exception
 
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
+import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.GoldenCommon
-import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 import Lamagraph.Compiler.PrettyAst ()
 
