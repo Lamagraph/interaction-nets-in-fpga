@@ -4,7 +4,7 @@ import Relude
 
 import Control.Lens
 import Data.HashMap.Strict qualified as HashMap
-import Data.HashSet ()
+import Data.HashSet
 import Data.List.NonEmpty as NonEmpty
 
 import Lamagraph.Compiler.ModuleResolver.MrTypes
@@ -14,8 +14,11 @@ prependModuleName :: ModulePath -> Text -> FullName
 prependModuleName path name = FullName $ Longident $ coerce path <> NonEmpty.singleton name
 
 lookupInModule :: ModuleRegistry -> ModulePath -> Text -> Maybe FullName
-lookupInModule (ModuleRegistry reg) path name =
-  HashMap.lookup path reg >>= find (== name) <&> prependModuleName path
+lookupInModule (ModuleRegistry reg) path name = do
+  moduleNames <- HashMap.lookup path reg
+  if member name moduleNames
+    then Just $ prependModuleName path name
+    else Nothing
 
 lookupUnqualified :: ModuleEnv -> Text -> Maybe FullName
 lookupUnqualified env name =
