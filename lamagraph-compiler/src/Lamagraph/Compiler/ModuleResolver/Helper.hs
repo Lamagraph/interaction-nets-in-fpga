@@ -11,7 +11,7 @@ import Lamagraph.Compiler.ModuleResolver.MrTypes
 import Lamagraph.Compiler.Syntax.Longident
 
 prependModuleName :: ModulePath -> Text -> FullName
-prependModuleName path name = FullName $ Longident $ coerce path <> NonEmpty.singleton name
+prependModuleName path name = FullName $ Longident $ coerce path <> pure name
 
 lookupInModule :: ModuleRegistry -> ModulePath -> Text -> Maybe FullName
 lookupInModule (ModuleRegistry reg) path name = do
@@ -22,14 +22,9 @@ lookupInModule (ModuleRegistry reg) path name = do
 
 lookupUnqualified :: ModuleEnv -> Text -> Maybe FullName
 lookupUnqualified env name =
-  lookupLocal <|> lookupOpens <|> lookupCurrent
+  lookupLocal <|> lookupOpens
  where
-  -- local and current module bindings get their current module name prepended
   lookupLocal = view localNames env & find (== name) <&> prependModuleName (coerce (env ^. currentModule))
-  lookupCurrent =
-    view currentNames env
-      & find (== name)
-      <&> prependModuleName (coerce (env ^. currentModule))
   lookupOpens = join $ find isJust [lookupInModule (env ^. moduleRegistry) open name | open <- env ^. opens]
 
 lookupQualified :: ModuleEnv -> Longident -> Maybe FullName
