@@ -8,8 +8,8 @@ import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
 
-import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.Driver
+import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 import Lamagraph.Compiler.PrettyAst ()
 import Lamagraph.Compiler.Syntax

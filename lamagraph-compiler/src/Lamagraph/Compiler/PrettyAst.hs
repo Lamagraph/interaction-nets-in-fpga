@@ -17,7 +17,7 @@ import Prettyprinter
 import Prettyprinter.Internal
 
 import Lamagraph.Compiler.Extension
-import Lamagraph.Compiler.ModuleResolver.MrTypes
+import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.TcTypes

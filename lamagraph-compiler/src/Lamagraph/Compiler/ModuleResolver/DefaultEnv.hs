@@ -4,7 +4,7 @@ import Relude
 
 import Data.HashMap.Strict as HashMap
 import Data.HashSet as HashSet
-import Lamagraph.Compiler.ModuleResolver.MrTypes
+import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Syntax.Longident
 
 stdPrefix :: Text

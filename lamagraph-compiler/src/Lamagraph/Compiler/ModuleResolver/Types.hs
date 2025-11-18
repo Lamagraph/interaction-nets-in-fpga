@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Lamagraph.Compiler.ModuleResolver.MrTypes (
+module Lamagraph.Compiler.ModuleResolver.Types (
   FullName (..),
   ModulePath (..),
   ModuleRegistry (..),

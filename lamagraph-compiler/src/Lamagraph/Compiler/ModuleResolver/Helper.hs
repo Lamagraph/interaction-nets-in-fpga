@@ -7,7 +7,7 @@ import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet
 import Data.List.NonEmpty as NonEmpty
 
-import Lamagraph.Compiler.ModuleResolver.MrTypes
+import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Syntax.Longident
 
 prependModuleName :: ModulePath -> Text -> FullName

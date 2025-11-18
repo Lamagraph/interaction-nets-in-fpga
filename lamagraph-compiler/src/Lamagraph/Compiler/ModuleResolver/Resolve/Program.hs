@@ -5,8 +5,8 @@ import Relude
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.ModuleResolver.DefaultEnv
 import Lamagraph.Compiler.ModuleResolver.Helper
-import Lamagraph.Compiler.ModuleResolver.MrTypes
 import Lamagraph.Compiler.ModuleResolver.Resolve.Module
+import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Syntax
 
 resolveLmlProgram :: ModuleEnv -> LmlProgram LmlcPs -> MonadModuleResolver (LmlProgram LmlcMr)

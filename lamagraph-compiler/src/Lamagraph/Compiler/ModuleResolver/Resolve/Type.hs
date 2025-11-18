@@ -3,7 +3,7 @@ module Lamagraph.Compiler.ModuleResolver.Resolve.Type (resolveLLmlType) where
 import Relude
 
 import Lamagraph.Compiler.Extension
-import Lamagraph.Compiler.ModuleResolver.MrTypes
+import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 

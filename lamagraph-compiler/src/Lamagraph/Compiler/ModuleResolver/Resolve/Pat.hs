@@ -8,9 +8,9 @@ import Data.HashSet qualified as HashSet
 
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.ModuleResolver.Helper
-import Lamagraph.Compiler.ModuleResolver.MrTypes
 import Lamagraph.Compiler.ModuleResolver.Resolve.Lit
 import Lamagraph.Compiler.ModuleResolver.Resolve.Type
+import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax.Extension
 import Lamagraph.Compiler.Syntax.Pat

@@ -8,7 +8,7 @@ import Data.Foldable.Extra hiding (elem)
 import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Extension
-import Lamagraph.Compiler.ModuleResolver.MrTypes
+import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv

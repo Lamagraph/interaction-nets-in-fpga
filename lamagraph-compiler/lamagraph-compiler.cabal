@@ -33,7 +33,6 @@ library
       Lamagraph.Compiler.Extension
       Lamagraph.Compiler.ModuleResolver.DefaultEnv
       Lamagraph.Compiler.ModuleResolver.Helper
-      Lamagraph.Compiler.ModuleResolver.MrTypes
       Lamagraph.Compiler.ModuleResolver.Resolve.Decl
       Lamagraph.Compiler.ModuleResolver.Resolve.Expr
       Lamagraph.Compiler.ModuleResolver.Resolve.Lit
@@ -41,6 +40,7 @@ library
       Lamagraph.Compiler.ModuleResolver.Resolve.Pat
       Lamagraph.Compiler.ModuleResolver.Resolve.Program
       Lamagraph.Compiler.ModuleResolver.Resolve.Type
+      Lamagraph.Compiler.ModuleResolver.Types
       Lamagraph.Compiler.MonadFresh
       Lamagraph.Compiler.Nets.Encodings.LambdaCalculusCore
       Lamagraph.Compiler.Nets.Encodings.TokenPassingCBV
