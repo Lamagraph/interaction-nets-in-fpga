@@ -175,5 +175,6 @@ tests:
       - QuasiQuotes
       - NoImplicitPrelude
     other-modules:
-    - Tests.Core.Node
-    - NodeGenerate
+      - Tests.Core.Node
+      - NodeGenerate
+      - Tests.GraphRewriting.SKIExpectedNets
