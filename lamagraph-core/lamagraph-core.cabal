@@ -218,6 +218,8 @@ test-suite doctests
       Tests.Core.Unit.Loader
       Tests.Core.Unit.MemoryManager.MemoryManager
       Tests.Core.Unit.Reducer
+      Tests.GraphRewriting.SKI
+      Tests.GraphRewriting.SKIExpectedNets
       Paths_lamagraph_core
   autogen-modules:
       Paths_lamagraph_core
@@ -279,6 +281,7 @@ test-suite test-library
   other-modules:
       Tests.Core.Node
       NodeGenerate
+      Tests.GraphRewriting.SKIExpectedNets
   hs-source-dirs:
       tests
   default-extensions:
