@@ -1,0 +1,3 @@
+module DataConstructorNamesDuplicate
+
+type foo = A of int | A of string

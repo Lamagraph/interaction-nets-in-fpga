@@ -1,0 +1,3 @@
+module DataTypeParamUndefined
+
+type 'a foo = Bar of 'b

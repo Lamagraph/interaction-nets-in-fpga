@@ -1,0 +1,120 @@
+(Module
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
+ Either, Left: forall 'a 'b. 'a -> ('a, 'b) Either, either
+ #std, -: int -> int -> int
+ Either, right_str: forall 'h. ('h, string) Either, either
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ Either, Right: forall 'a 'b. 'b -> ('a, 'b) Either, either
+ Either, left_int: forall 'e. (int, 'e) Either, either
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
+ (Just
+ (L
+  { :1:8-14 }
+  ("Either")))
+ [ (L
+    { :3:1-48 }
+    (TyD
+     [ (L
+        { :3:7-48 }
+        (DataDecl
+         (L
+          { :3:15-21 }
+          "either")
+         [ (L
+            { :3:7-9 }
+            (TyVar
+             'a
+             (L
+              { :3:8-9 }
+              "a")))
+         , (L
+            { :3:11-13 }
+            (TyVar
+             'b
+             (L
+              { :3:12-13 }
+              "b"))) ]
+         [ (L
+            { :3:24-34 }
+            (ConDecl
+             (L
+              { :3:24-28 }
+              "Left")
+             [(L { :3:32-34 } (TyVar 'a (L { :3:33-34 } "a")))]))
+         , (L
+            { :3:37-48 }
+            (ConDecl
+             (L
+              { :3:37-42 }
+              "Right")
+             [(L { :3:46-48 } (TyVar 'b (L { :3:47-48 } "b")))])) ])) ]))
+ , (L
+    { :5:1-23 }
+    (ValD
+     (L
+      { :5:5-23 }
+      (NonRec
+       [ (L
+          { :5:5-23 }
+          (Bind
+           Either, left_int: forall 'e. (int, 'e) Either, either
+           (L
+            { :5:5-13 }
+            (PatVar
+             (Either, left_int, (int, 'e) Either, either)
+             (L
+              { :5:5-13 }
+              "left_int")))
+           (L
+            { :5:16-23 }
+            (ExprConstruct
+             (int, 'e) Either, either
+             (L
+              { :5:16-20 }
+              ("Either, Left"))
+             (Just
+             (L
+              { :5:21-23 }
+              (ExprConstant int int
+               42))))))) ]))))
+ , (L
+    { :6:1-35 }
+    (ValD
+     (L
+      { :6:5-35 }
+      (NonRec
+       [ (L
+          { :6:5-35 }
+          (Bind
+           Either, right_str: forall 'h. ('h, string) Either, either
+           (L
+            { :6:5-14 }
+            (PatVar
+             (Either, right_str, ('h, string) Either, either)
+             (L
+              { :6:5-14 }
+              "right_str")))
+           (L
+            { :6:17-35 }
+            (ExprConstruct
+             ('h, string) Either, either
+             (L
+              { :6:17-22 }
+              ("Either, Right"))
+             (Just
+             (L
+              { :6:23-35 }
+              (ExprConstant string string
+               "fourty-two"))))))) ])))) ])

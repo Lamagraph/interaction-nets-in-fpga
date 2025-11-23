@@ -6,7 +6,7 @@
  #std, ~-: int -> int
  #std, <=: int -> int -> bool
  #std, /: int -> int -> int
- List, reverse: forall 't. 't list -> 't list
+ List, reverse: forall 'x. 'x list -> 'x list
  #std, ::: forall 'a. ('a * 'a list) -> 'a list
  #std, *: int -> int -> int
  List, l1: int list
@@ -16,7 +16,7 @@
  List, t1: ()
  #std, []: forall 'a. 'a list
  #std, >=: int -> int -> bool
- List, head: forall 'x. 'x list -> 'x
+ List, head: forall 'ab. 'ab list -> 'ab
  #std, true: bool
  #std, <: int -> int -> bool
  List, t2: ()
@@ -83,82 +83,82 @@
        [ (L
           { :(5,5)-(9,17) }
           (Bind
-           List, reverse: forall 't. 't list -> 't list
+           List, reverse: forall 'x. 'x list -> 'x list
            (L
             { :5:5-12 }
             (PatVar
-             (List, reverse, 't list -> 't list)
+             (List, reverse, 'x list -> 'x list)
              (L
               { :5:5-12 }
               "reverse")))
            (L
             { :(5,13)-(9,17) }
             (ExprFunction
-             't list -> 't list
+             'x list -> 'x list
              (L
               { :5:13-14 }
               (PatVar
-               (List, l, 't list)
+               (List, l, 'x list)
                (L
                 { :5:13-14 }
                 "l")))
              (L
               { :(6,3)-(9,17) }
               (ExprLet
-               't list
+               'x list
                (L
                 { :(6,7)-(8,41) }
                 (Rec
                  [ (L
                     { :(6,11)-(8,41) }
                     (Bind
-                     List, helper: 't list -> 't list -> 't list
+                     List, helper: forall 'n. 'n list -> 'n list -> 'n list
                      (L
                       { :6:11-17 }
                       (PatVar
-                       (List, helper, 't list -> 't list -> 't list)
+                       (List, helper, 'n list -> 'n list -> 'n list)
                        (L
                         { :6:11-17 }
                         "helper")))
                      (L
                       { :(6,18)-(8,41) }
                       (ExprFunction
-                       't list -> 't list -> 't list
+                       'n list -> 'n list -> 'n list
                        (L
                         { :6:18-19 }
                         (PatVar
-                         (List, l, 't list)
+                         (List, l, 'n list)
                          (L
                           { :6:18-19 }
                           "l")))
                        (L
                         { :(6,20)-(8,41) }
                         (ExprFunction
-                         't list -> 't list
+                         'n list -> 'n list
                          (L
                           { :6:20-23 }
                           (PatVar
-                           (List, acc, 't list)
+                           (List, acc, 'n list)
                            (L
                             { :6:20-23 }
                             "acc")))
                          (L
                           { :(6,26)-(8,41) }
                           (ExprMatch
-                           't list
+                           'n list
                            (L
                             { :6:32-33 }
                             (ExprIdent
-                             't list
+                             'n list
                              "List, l"))
                            [ (L
                               { :7:7-16 }
                               (Case
-                               't list -> 't list
+                               'n list -> 'n list
                                (L
                                 { :7:7-9 }
                                 (PatConstruct
-                                 't list
+                                 'n list
                                  (L
                                   { :7:7-9 }
                                   ("#std, []"))
@@ -167,16 +167,16 @@
                                (L
                                 { :7:13-16 }
                                 (ExprIdent
-                                 't list
+                                 'n list
                                  "List, acc"))))
                            , (L
                               { :8:7-41 }
                               (Case
-                               't list -> 't list
+                               'n list -> 'n list
                                (L
                                 { :8:7-15 }
                                 (PatConstruct
-                                 't list
+                                 'n list
                                  (L
                                   { :8:10-12 }
                                   ("#std, ::"))
@@ -184,18 +184,18 @@
                                  (L
                                   { :8:7-15 }
                                   (PatTuple
-                                   ('t * 'm)
+                                   ('n * 'p)
                                    [ (L
                                       { :8:7-9 }
                                       (PatVar
-                                       (List, hd, 't)
+                                       (List, hd, 'n)
                                        (L
                                         { :8:7-9 }
                                         "hd")))
                                    , (L
                                       { :8:13-15 }
                                       (PatVar
-                                       (List, tl, 'm)
+                                       (List, tl, 'p)
                                        (L
                                         { :8:13-15 }
                                         "tl"))) ])))))
@@ -203,21 +203,21 @@
                                (L
                                 { :8:20-41 }
                                 (ExprApply
-                                 't list
+                                 'n list
                                  (L
                                   { :8:20-26 }
                                   (ExprIdent
-                                   't list -> 't list -> 't list
+                                   'n list -> 'n list -> 'n list
                                    "List, helper"))
                                  [ (L
                                     { :8:27-29 }
                                     (ExprIdent
-                                     't list
+                                     'n list
                                      "List, tl"))
                                  , (L
                                     { :8:30-41 }
                                     (ExprConstruct
-                                     't list
+                                     'n list
                                      (L
                                       { :8:34-36 }
                                       ("#std, ::"))
@@ -225,35 +225,35 @@
                                      (L
                                       { :8:31-40 }
                                       (ExprTuple
-                                       ('t * 't list)
+                                       ('n * 'n list)
                                        [ (L
                                           { :8:31-33 }
                                           (ExprIdent
-                                           't
+                                           'n
                                            "List, hd"))
                                        , (L
                                           { :8:37-40 }
                                           (ExprIdent
-                                           't list
+                                           'n list
                                            "List, acc")) ]))))) ])))) ])))))))) ]))
                (L
                 { :9:6-17 }
                 (ExprApply
-                 't list
+                 'x list
                  (L
                   { :9:6-12 }
                   (ExprIdent
-                   't list -> 't list -> 't list
+                   'x list -> 'x list -> 'x list
                    "List, helper"))
                  [ (L
                     { :9:13-14 }
                     (ExprIdent
-                     't list
+                     'x list
                      "List, l"))
                  , (L
                     { :9:15-17 }
                     (ExprConstruct
-                     't list
+                     'x list
                      (L
                       { :9:15-17 }
                       ("#std, []"))
@@ -267,42 +267,42 @@
        [ (L
           { :11:5-41 }
           (Bind
-           List, head: forall 'x. 'x list -> 'x
+           List, head: forall 'ab. 'ab list -> 'ab
            (L
             { :11:5-9 }
             (PatVar
-             (List, head, 'x list -> 'x)
+             (List, head, 'ab list -> 'ab)
              (L
               { :11:5-9 }
               "head")))
            (L
             { :11:10-41 }
             (ExprFunction
-             'x list -> 'x
+             'ab list -> 'ab
              (L
               { :11:10-11 }
               (PatVar
-               (List, l, 'x list)
+               (List, l, 'ab list)
                (L
                 { :11:10-11 }
                 "l")))
              (L
               { :11:14-41 }
               (ExprMatch
-               'x
+               'ab
                (L
                 { :11:20-21 }
                 (ExprIdent
-                 'x list
+                 'ab list
                  "List, l"))
                [ (L
                   { :11:27-41 }
                   (Case
-                   'x list -> 'x
+                   'ab list -> 'ab
                    (L
                     { :11:27-35 }
                     (PatConstruct
-                     'x list
+                     'ab list
                      (L
                       { :11:30-32 }
                       ("#std, ::"))
@@ -310,18 +310,18 @@
                      (L
                       { :11:27-35 }
                       (PatTuple
-                       ('x * 'y)
+                       ('ab * 'ac)
                        [ (L
                           { :11:27-29 }
                           (PatVar
-                           (List, hd, 'x)
+                           (List, hd, 'ab)
                            (L
                             { :11:27-29 }
                             "hd")))
                        , (L
                           { :11:33-35 }
                           (PatVar
-                           (List, tl, 'y)
+                           (List, tl, 'ac)
                            (L
                             { :11:33-35 }
                             "tl"))) ])))))
@@ -329,7 +329,7 @@
                    (L
                     { :11:39-41 }
                     (ExprIdent
-                     'x
+                     'ab
                      "List, hd")))) ])))))) ]))))
  , (L
     { :13:1-19 }
@@ -391,7 +391,7 @@
                          (L
                           { :13:17-19 }
                           (ExprTuple
-                           (int * 'af list)
+                           (int * 'aj list)
                            [ (L
                               { :13:17-18 }
                               (ExprConstant int int
@@ -399,7 +399,7 @@
                            , (L
                               { :13:18-19 }
                               (ExprConstruct
-                               'af list
+                               'aj list
                                (L
                                 { <compiler-generated code> }
                                 ("#std, []"))

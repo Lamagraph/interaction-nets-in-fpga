@@ -197,11 +197,22 @@ instance Pretty TypecheckError where
   pretty = \case
     UnboundVariable name -> [i|Error: variable #{pretty name} is unbound|]
     ConstructorDoesntExist name -> [i|Error: constructor #{pretty name} isn't declared|]
-    OccursCheck name ty -> [i|Error: variable #{pretty name} already present in type #{pretty ty}|]
+    OccursCheck name ty -> [i|Error: variable #{prettyTyVar name} already present in type #{pretty ty}|]
     CantUnify lTy rTy -> [i|Error: cannot unify #{pretty lTy} and #{pretty rTy}|]
     NonVariableInLetRec -> [i|Error: non variable pattern in let rec|]
     VariableClashInPattern name -> [i|Error: variable #{pretty name} is already bound in this pattern|]
     VarMustOccurOnBothSidesOfOrPattern name -> [i|Error: variable #{pretty name} must occur on both sides of the or-pattern|]
+    UndefinedTypeVariable varName -> [i|Error: the type variable #{prettyTyVar varName} is unbound in this type declaration|]
+    DuplicateConstructor name -> [i|Error: duplicate constructor #{pretty name}|]
+    DuplicateTypeParameter name -> [i|Error: duplicate type parameter #{prettyTyVar name}|]
+    UnboundTypeConstructor name -> [i|Error: unbound type constructor #{pretty name}|]
+    ArityMismatch name expected actual ->
+      [i|Error: The type constructor #{pretty name} expects #{expected} argument(s),
+       but is here applied to #{actual} argument(s)|]
+    InvalidTypeParameter -> [i|Error: type parameters must be simple type variables|]
+   where
+    prettyTyVar :: Name -> Doc ann
+    prettyTyVar name = "'" <> pretty name
 
 instance Pretty ModuleResolverError where
   pretty :: ModuleResolverError -> Doc ann

@@ -11,6 +11,8 @@ module Lamagraph.Compiler.Typechecker.TcTypes (
   Subst (..),
   nullSubst,
   TyEnv (..),
+  TyConstrEnv (..),
+  TyConstrInfo (..),
   Tys (..),
   TypecheckError (..),
   MonadTypecheckState (..),
@@ -56,6 +58,13 @@ nullSubst :: Subst
 nullSubst = Subst HashMap.empty
 
 newtype TyEnv = TyEnv (HashMap Name TyScheme) deriving (Show)
+
+data TyConstrInfo
+  = DataConstr Int
+  | TypeAlias [Name] Ty
+  deriving (Show)
+
+newtype TyConstrEnv = TyConstrEnv (HashMap Name TyConstrInfo) deriving (Show)
 
 -- | Type class with operations on type-related stuff
 class Tys t where
@@ -111,6 +120,12 @@ data TypecheckError
   | NonVariableInLetRec
   | VariableClashInPattern Name
   | VarMustOccurOnBothSidesOfOrPattern Name
+  | UndefinedTypeVariable Name
+  | DuplicateConstructor Name
+  | DuplicateTypeParameter Name
+  | UnboundTypeConstructor Name
+  | ArityMismatch Name Int Int
+  | InvalidTypeParameter
   deriving (Show, Typeable)
 instance Exception TypecheckError
 

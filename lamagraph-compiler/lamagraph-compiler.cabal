@@ -39,6 +39,7 @@ library
       Lamagraph.Compiler.ModuleResolver.Resolve.Module
       Lamagraph.Compiler.ModuleResolver.Resolve.Pat
       Lamagraph.Compiler.ModuleResolver.Resolve.Program
+      Lamagraph.Compiler.ModuleResolver.Resolve.TyDecl
       Lamagraph.Compiler.ModuleResolver.Resolve.Type
       Lamagraph.Compiler.ModuleResolver.Types
       Lamagraph.Compiler.MonadFresh
@@ -71,6 +72,7 @@ library
       Lamagraph.Compiler.Typechecker.Infer.Expr
       Lamagraph.Compiler.Typechecker.Infer.Lit
       Lamagraph.Compiler.Typechecker.Infer.Pat
+      Lamagraph.Compiler.Typechecker.Infer.TyDecl
       Lamagraph.Compiler.Typechecker.Infer.Type
       Lamagraph.Compiler.Typechecker.Instances
       Lamagraph.Compiler.Typechecker.TcTypes

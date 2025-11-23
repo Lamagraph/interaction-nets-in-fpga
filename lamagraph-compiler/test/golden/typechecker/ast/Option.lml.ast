@@ -1,0 +1,737 @@
+(Module
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ d: int Option, option
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ Option, maybe42: int Option, option
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ Option, map: forall 'p 'q. ('p -> 'q) -> 'p Option, option -> 'q Option, option
+ #std, *: int -> int -> int
+ Option, None: forall 'a. 'a Option, option
+ Option, is_none: forall 'y. 'y Option, option -> bool
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ Option, none: forall 't. 't Option, option
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ Option, <<: forall 'ae 'af 'ag. ('ag -> 'af) -> ('ae -> 'ag) -> 'ae -> 'af
+ #std, >=: int -> int -> bool
+ Option, Some: forall 'a. 'a -> 'a Option, option
+ #std, true: bool
+ Option, to_list: forall 'az. 'az Option, option -> 'az list
+ Option, join: forall 'bl. 'bl Option, option Option, option -> 'bl Option, option
+ #std, <: int -> int -> bool
+ Option, some: forall 'v. 'v -> 'v Option, option
+ #std, false: bool
+ Option, is_some: forall 'ap. 'ap Option, option -> bool
+ (Just
+ (L
+  { :1:8-14 }
+  ("Option")))
+ [ (L
+    { :(3,1)-(5,15) }
+    (TyD
+     [ (L
+        { :(3,6)-(5,15) }
+        (DataDecl
+         (L
+          { :3:9-15 }
+          "option")
+         [(L { :3:6-8 } (TyVar 'a (L { :3:7-8 } "a")))]
+         [ (L
+            { :4:5-9 }
+            (ConDecl
+             (L
+              { :4:5-9 }
+              "None")
+             []))
+         , (L
+            { :5:5-15 }
+            (ConDecl
+             (L
+              { :5:5-9 }
+              "Some")
+             [(L { :5:13-15 } (TyVar 'a (L { :5:14-15 } "a")))])) ])) ]))
+ , (L
+    { :7:1-26 }
+    (TyD
+     [ (L
+        { :7:6-26 }
+        (AliasDecl
+         (L
+          { :7:9-14 }
+          "maybe")
+         [(L { :7:6-8 } (TyVar 'c (L { :7:7-8 } "a")))]
+         (L
+          { :7:17-26 }
+          (TyConstr
+           'b Option, option
+           (L
+            { :7:20-26 }
+            ("Option, option"))
+           [(L { :7:17-19 } (TyVar 'b (L { :7:18-19 } "a")))])))) ]))
+ , (L
+    { :8:1-34 }
+    (ValD
+     (L
+      { :8:5-34 }
+      (NonRec
+       [ (L
+          { :8:5-34 }
+          (Bind
+           d: int Option, option
+           Option, maybe42: int Option, option
+           (L
+            { :8:5-24 }
+            (PatConstraint
+             int Option, option
+             (L
+              { :8:5-12 }
+              (PatVar
+               (Option, maybe42, 'd)
+               (L
+                { :8:5-12 }
+                "maybe42")))
+             (L
+              { :8:15-24 }
+              (TyConstr
+               int Option, option
+               (L
+                { :8:19-24 }
+                ("Option, maybe"))
+               [(L { :8:15-18 } (TyConstr int (L { :8:15-18 } ("int")) []))]))))
+           (L
+            { :8:27-34 }
+            (ExprConstruct
+             int Option, option
+             (L
+              { :8:27-31 }
+              ("Option, Some"))
+             (Just
+             (L
+              { :8:32-34 }
+              (ExprConstant int int
+               42))))))) ]))))
+ , (L
+    { :(11,1)-(14,17) }
+    (ValD
+     (L
+      { :(11,5)-(14,17) }
+      (NonRec
+       [ (L
+          { :(11,5)-(14,17) }
+          (Bind
+           Option, map: forall 'p 'q. ('p -> 'q) -> 'p Option, option -> 'q Option, option
+           (L
+            { :11:5-8 }
+            (PatVar
+             (Option, map, ('p -> 'q) -> 'p Option, option -> 'q Option, option)
+             (L
+              { :11:5-8 }
+              "map")))
+           (L
+            { :(11,9)-(14,17) }
+            (ExprFunction
+             ('p -> 'q) -> 'p Option, option -> 'q Option, option
+             (L
+              { :11:9-10 }
+              (PatVar
+               (Option, f, 'p -> 'q)
+               (L
+                { :11:9-10 }
+                "f")))
+             (L
+              { :(11,11)-(14,17) }
+              (ExprFunction
+               'p Option, option -> 'q Option, option
+               (L
+                { :11:11-14 }
+                (PatVar
+                 (Option, opt, 'p Option, option)
+                 (L
+                  { :11:11-14 }
+                  "opt")))
+               (L
+                { :(12,3)-(14,17) }
+                (ExprMatch
+                 'q Option, option
+                 (L
+                  { :12:9-12 }
+                  (ExprIdent
+                   'p Option, option
+                   "Option, opt"))
+                 [ (L
+                    { :13:5-25 }
+                    (Case
+                     'p Option, option -> 'q Option, option
+                     (L
+                      { :13:5-11 }
+                      (PatConstruct
+                       'p Option, option
+                       (L
+                        { :13:5-9 }
+                        ("Option, Some"))
+                       (Just
+                       (L
+                        { :13:10-11 }
+                        (PatVar
+                         (Option, x, 'p)
+                         (L
+                          { :13:10-11 }
+                          "x"))))))
+                     (Nothing)
+                     (L
+                      { :13:15-25 }
+                      (ExprConstruct
+                       'q Option, option
+                       (L
+                        { :13:15-19 }
+                        ("Option, Some"))
+                       (Just
+                       (L
+                        { :13:20-25 }
+                        (ExprApply
+                         'q
+                         (L
+                          { :13:21-22 }
+                          (ExprIdent
+                           'p -> 'q
+                           "Option, f"))
+                         [(L { :13:23-24 } (ExprIdent 'p "Option, x"))])))))))
+                 , (L
+                    { :14:5-17 }
+                    (Case
+                     'p Option, option -> 'q Option, option
+                     (L
+                      { :14:5-9 }
+                      (PatConstruct
+                       'p Option, option
+                       (L
+                        { :14:5-9 }
+                        ("Option, None"))
+                       (Nothing)))
+                     (Nothing)
+                     (L
+                      { :14:13-17 }
+                      (ExprConstruct
+                       'q Option, option
+                       (L
+                        { :14:13-17 }
+                        ("Option, None"))
+                       (Nothing))))) ])))))))) ]))))
+ , (L
+    { :16:1-16 }
+    (ValD
+     (L
+      { :16:5-16 }
+      (NonRec
+       [ (L
+          { :16:5-16 }
+          (Bind
+           Option, none: forall 't. 't Option, option
+           (L
+            { :16:5-9 }
+            (PatVar
+             (Option, none, 't Option, option)
+             (L
+              { :16:5-9 }
+              "none")))
+           (L
+            { :16:12-16 }
+            (ExprConstruct
+             't Option, option
+             (L
+              { :16:12-16 }
+              ("Option, None"))
+             (Nothing))))) ]))))
+ , (L
+    { :17:1-16 }
+    (ValD
+     (L
+      { :17:5-16 }
+      (NonRec
+       [ (L
+          { :17:5-16 }
+          (Bind
+           Option, some: forall 'v. 'v -> 'v Option, option
+           (L
+            { :17:5-9 }
+            (PatVar
+             (Option, some, 'v -> 'v Option, option)
+             (L
+              { :17:5-9 }
+              "some")))
+           (L
+            { :17:12-16 }
+            (ExprConstruct
+             'v -> 'v Option, option
+             (L
+              { :17:12-16 }
+              ("Option, Some"))
+             (Nothing))))) ]))))
+ , (L
+    { :(19,1)-(22,15) }
+    (ValD
+     (L
+      { :(19,5)-(22,15) }
+      (NonRec
+       [ (L
+          { :(19,5)-(22,15) }
+          (Bind
+           Option, is_none: forall 'y. 'y Option, option -> bool
+           (L
+            { :19:5-12 }
+            (PatVar
+             (Option, is_none, 'y Option, option -> bool)
+             (L
+              { :19:5-12 }
+              "is_none")))
+           (L
+            { :(19,13)-(22,15) }
+            (ExprFunction
+             'y Option, option -> bool
+             (L
+              { :19:13-16 }
+              (PatVar
+               (Option, opt, 'y Option, option)
+               (L
+                { :19:13-16 }
+                "opt")))
+             (L
+              { :(20,3)-(22,15) }
+              (ExprMatch
+               bool
+               (L
+                { :20:9-12 }
+                (ExprIdent
+                 'y Option, option
+                 "Option, opt"))
+               [ (L
+                  { :21:5-17 }
+                  (Case
+                   'y Option, option -> bool
+                   (L
+                    { :21:5-9 }
+                    (PatConstruct
+                     'y Option, option
+                     (L
+                      { :21:5-9 }
+                      ("Option, None"))
+                     (Nothing)))
+                   (Nothing)
+                   (L
+                    { :21:13-17 }
+                    (ExprConstruct
+                     bool
+                     (L
+                      { :21:13-17 }
+                      ("#std, true"))
+                     (Nothing)))))
+               , (L
+                  { :22:5-15 }
+                  (Case
+                   'y Option, option -> bool
+                   (L
+                    { :22:5-6 }
+                    (PatAny
+                     'y Option, option))
+                   (Nothing)
+                   (L
+                    { :22:10-15 }
+                    (ExprConstruct
+                     bool
+                     (L
+                      { :22:10-15 }
+                      ("#std, false"))
+                     (Nothing))))) ])))))) ]))))
+ , (L
+    { :24:1-25 }
+    (ValD
+     (L
+      { :24:5-25 }
+      (NonRec
+       [ (L
+          { :24:5-25 }
+          (Bind
+           Option, <<: forall 'ae 'af 'ag. ('ag -> 'af) -> ('ae -> 'ag) -> 'ae -> 'af
+           (L
+            { :24:5-9 }
+            (PatVar
+             (Option, <<, ('ag -> 'af) -> ('ae -> 'ag) -> 'ae -> 'af)
+             (L
+              { :24:5-9 }
+              "<<")))
+           (L
+            { :24:10-25 }
+            (ExprFunction
+             ('ag -> 'af) -> ('ae -> 'ag) -> 'ae -> 'af
+             (L
+              { :24:10-11 }
+              (PatVar
+               (Option, f, 'ag -> 'af)
+               (L
+                { :24:10-11 }
+                "f")))
+             (L
+              { :24:12-25 }
+              (ExprFunction
+               ('ae -> 'ag) -> 'ae -> 'af
+               (L
+                { :24:12-13 }
+                (PatVar
+                 (Option, g, 'ae -> 'ag)
+                 (L
+                  { :24:12-13 }
+                  "g")))
+               (L
+                { :24:14-25 }
+                (ExprFunction
+                 'ae -> 'af
+                 (L
+                  { :24:14-15 }
+                  (PatVar
+                   (Option, x, 'ae)
+                   (L
+                    { :24:14-15 }
+                    "x")))
+                 (L
+                  { :24:18-25 }
+                  (ExprApply
+                   'af
+                   (L
+                    { :24:18-19 }
+                    (ExprIdent
+                     'ag -> 'af
+                     "Option, f"))
+                   [ (L
+                      { :24:20-25 }
+                      (ExprApply
+                       'ag
+                       (L
+                        { :24:21-22 }
+                        (ExprIdent
+                         'ae -> 'ag
+                         "Option, g"))
+                       [ (L
+                          { :24:23-24 }
+                          (ExprIdent
+                           'ae
+                           "Option, x")) ])) ])))))))))) ]))))
+ , (L
+    { :(25,1)-(30,20) }
+    (ValD
+     (L
+      { :(25,5)-(30,20) }
+      (NonRec
+       [ (L
+          { :(25,5)-(30,20) }
+          (Bind
+           Option, is_some: forall 'ap. 'ap Option, option -> bool
+           (L
+            { :25:5-12 }
+            (PatVar
+             (Option, is_some, 'ap Option, option -> bool)
+             (L
+              { :25:5-12 }
+              "is_some")))
+           (L
+            { :(26,3)-(30,20) }
+            (ExprLet
+             'ap Option, option -> bool
+             (L
+              { :(26,7)-(29,20) }
+              (NonRec
+               [ (L
+                  { :(26,7)-(29,20) }
+                  (Bind
+                   Option, not: bool -> bool
+                   (L
+                    { :26:7-10 }
+                    (PatVar
+                     (Option, not, bool -> bool)
+                     (L
+                      { :26:7-10 }
+                      "not")))
+                   (L
+                    { :(26,11)-(29,20) }
+                    (ExprFunction
+                     bool -> bool
+                     (L
+                      { :26:11-12 }
+                      (PatVar
+                       (Option, x, bool)
+                       (L
+                        { :26:11-12 }
+                        "x")))
+                     (L
+                      { :(27,5)-(29,20) }
+                      (ExprMatch
+                       bool
+                       (L
+                        { :27:11-12 }
+                        (ExprIdent
+                         bool
+                         "Option, x"))
+                       [ (L
+                          { :28:7-20 }
+                          (Case
+                           bool -> bool
+                           (L
+                            { :28:7-11 }
+                            (PatConstruct
+                             bool
+                             (L
+                              { :28:7-11 }
+                              ("#std, true"))
+                             (Nothing)))
+                           (Nothing)
+                           (L
+                            { :28:15-20 }
+                            (ExprConstruct
+                             bool
+                             (L
+                              { :28:15-20 }
+                              ("#std, false"))
+                             (Nothing)))))
+                       , (L
+                          { :29:7-20 }
+                          (Case
+                           bool -> bool
+                           (L
+                            { :29:7-12 }
+                            (PatConstruct
+                             bool
+                             (L
+                              { :29:7-12 }
+                              ("#std, false"))
+                             (Nothing)))
+                           (Nothing)
+                           (L
+                            { :29:16-20 }
+                            (ExprConstruct
+                             bool
+                             (L
+                              { :29:16-20 }
+                              ("#std, true"))
+                             (Nothing))))) ])))))) ]))
+             (L
+              { :30:6-20 }
+              (ExprApply
+               'ap Option, option -> bool
+               (L
+                { :30:10-12 }
+                (ExprIdent
+                 (bool -> bool) -> ('ap Option, option -> bool) -> 'ap Option, option -> bool
+                 "Option, <<"))
+               [ (L
+                  { :30:6-9 }
+                  (ExprIdent
+                   bool -> bool
+                   "Option, not"))
+               , (L
+                  { :30:13-20 }
+                  (ExprIdent
+                   'ap Option, option -> bool
+                   "Option, is_none")) ])))))) ]))))
+ , (L
+    { :(32,1)-(35,15) }
+    (ValD
+     (L
+      { :(32,5)-(35,15) }
+      (NonRec
+       [ (L
+          { :(32,5)-(35,15) }
+          (Bind
+           Option, to_list: forall 'az. 'az Option, option -> 'az list
+           (L
+            { :32:5-12 }
+            (PatVar
+             (Option, to_list, 'az Option, option -> 'az list)
+             (L
+              { :32:5-12 }
+              "to_list")))
+           (L
+            { :(32,13)-(35,15) }
+            (ExprFunction
+             'az Option, option -> 'az list
+             (L
+              { :32:13-16 }
+              (PatVar
+               (Option, opt, 'az Option, option)
+               (L
+                { :32:13-16 }
+                "opt")))
+             (L
+              { :(33,3)-(35,15) }
+              (ExprMatch
+               'az list
+               (L
+                { :33:9-12 }
+                (ExprIdent
+                 'az Option, option
+                 "Option, opt"))
+               [ (L
+                  { :34:5-18 }
+                  (Case
+                   'az Option, option -> 'az list
+                   (L
+                    { :34:5-11 }
+                    (PatConstruct
+                     'az Option, option
+                     (L
+                      { :34:5-9 }
+                      ("Option, Some"))
+                     (Just
+                     (L
+                      { :34:10-11 }
+                      (PatVar
+                       (Option, x, 'az)
+                       (L
+                        { :34:10-11 }
+                        "x"))))))
+                   (Nothing)
+                   (L
+                    { :34:16-18 }
+                    (ExprConstruct
+                     'az list
+                     (L
+                      { <compiler-generated code> }
+                      ("#std, ::"))
+                     (Just
+                     (L
+                      { :34:16-18 }
+                      (ExprTuple
+                       ('az * 'aw list)
+                       [ (L
+                          { :34:16-17 }
+                          (ExprIdent
+                           'az
+                           "Option, x"))
+                       , (L
+                          { :34:17-18 }
+                          (ExprConstruct
+                           'aw list
+                           (L
+                            { <compiler-generated code> }
+                            ("#std, []"))
+                           (Nothing))) ])))))))
+               , (L
+                  { :35:5-15 }
+                  (Case
+                   'az Option, option -> 'az list
+                   (L
+                    { :35:5-9 }
+                    (PatConstruct
+                     'az Option, option
+                     (L
+                      { :35:5-9 }
+                      ("Option, None"))
+                     (Nothing)))
+                   (Nothing)
+                   (L
+                    { :35:13-15 }
+                    (ExprConstruct
+                     'az list
+                     (L
+                      { :35:13-15 }
+                      ("#std, []"))
+                     (Nothing))))) ])))))) ]))))
+ , (L
+    { :(37,1)-(40,14) }
+    (ValD
+     (L
+      { :(37,5)-(40,14) }
+      (NonRec
+       [ (L
+          { :(37,5)-(40,14) }
+          (Bind
+           Option, join: forall 'bl. 'bl Option, option Option, option -> 'bl Option, option
+           (L
+            { :37:5-9 }
+            (PatVar
+             ( Option, join
+             , 'bl Option, option Option, option -> 'bl Option, option )
+             (L
+              { :37:5-9 }
+              "join")))
+           (L
+            { :(37,10)-(40,14) }
+            (ExprFunction
+             'bl Option, option Option, option -> 'bl Option, option
+             (L
+              { :37:10-13 }
+              (PatVar
+               (Option, opt, 'bl Option, option Option, option)
+               (L
+                { :37:10-13 }
+                "opt")))
+             (L
+              { :(38,3)-(40,14) }
+              (ExprMatch
+               'bl Option, option
+               (L
+                { :38:9-12 }
+                (ExprIdent
+                 'bl Option, option Option, option
+                 "Option, opt"))
+               [ (L
+                  { :39:5-28 }
+                  (Case
+                   'bl Option, option Option, option -> 'bl Option, option
+                   (L
+                    { :39:5-18 }
+                    (PatConstruct
+                     'bl Option, option Option, option
+                     (L
+                      { :39:5-9 }
+                      ("Option, Some"))
+                     (Just
+                     (L
+                      { :39:10-18 }
+                      (PatConstruct
+                       'bl Option, option
+                       (L
+                        { :39:11-15 }
+                        ("Option, Some"))
+                       (Just
+                       (L
+                        { :39:16-17 }
+                        (PatVar
+                         (Option, x, 'bl)
+                         (L
+                          { :39:16-17 }
+                          "x")))))))))
+                   (Nothing)
+                   (L
+                    { :39:22-28 }
+                    (ExprConstruct
+                     'bl Option, option
+                     (L
+                      { :39:22-26 }
+                      ("Option, Some"))
+                     (Just
+                     (L
+                      { :39:27-28 }
+                      (ExprIdent
+                       'bl
+                       "Option, x")))))))
+               , (L
+                  { :40:5-14 }
+                  (Case
+                   'bl Option, option Option, option -> 'bl Option, option
+                   (L
+                    { :40:5-6 }
+                    (PatAny
+                     'bl Option, option Option, option))
+                   (Nothing)
+                   (L
+                    { :40:10-14 }
+                    (ExprConstruct
+                     'bl Option, option
+                     (L
+                      { :40:10-14 }
+                      ("Option, None"))
+                     (Nothing))))) ])))))) ])))) ])

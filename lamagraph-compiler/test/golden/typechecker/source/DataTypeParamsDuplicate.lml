@@ -1,0 +1,3 @@
+module DataTypeParamsDuplicate
+
+type ('a, 'a) pair = Pair of 'a

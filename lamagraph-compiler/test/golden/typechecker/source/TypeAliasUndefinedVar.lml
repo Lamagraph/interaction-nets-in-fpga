@@ -1,0 +1,5 @@
+module TypeAliasUndefinedVar
+
+type 'a wrong = 'b
+
+let x : int wrong = 42
