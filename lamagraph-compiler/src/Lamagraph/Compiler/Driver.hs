@@ -27,7 +27,7 @@ parseLmlProgram ts = fmap LmlProgram (mapM parseLamagraphML ts)
 inferLmlProgram :: TyEnv -> LmlProgram LmlcMr -> MonadTypecheck (LmlProgram LmlcTc)
 inferLmlProgram _ (LmlProgram []) = pure $ LmlProgram []
 inferLmlProgram env (LmlProgram (x : xs)) = do
-  lMod <- inferLmlModule env x
+  lMod <- inferLmlModule env defaultTyConstrEnv x
   let (LmlModule outEnv _ _) = lMod
   (LmlProgram xs') <- inferLmlProgram outEnv (LmlProgram xs)
   pure $ LmlProgram $ lMod : xs'

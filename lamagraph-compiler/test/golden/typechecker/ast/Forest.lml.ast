@@ -1,0 +1,827 @@
+(Module
+ Forest, Nil: forall 'a. 'a Forest, forest
+ Forest, Cons: forall 'a. ('a Forest, tree * 'a Forest, forest) -> 'a Forest, forest
+ #std, None: forall 'a. 'a option
+ Forest, Leaf: forall 'a. 'a -> 'a Forest, tree
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ Forest, tree_map: forall 'bc 'au. ('bc -> 'au) -> 'bc Forest, tree -> 'au Forest, tree
+ #std, ~-: int -> int
+ Forest, forest_map: forall 'bc 'au. ('bc -> 'au) -> 'bc Forest, forest -> 'au Forest, forest
+ Forest, single_tree: int Forest, tree
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ Forest, Node: forall 'a. 'a Forest, forest -> 'a Forest, tree
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ Forest, complex_tree: int Forest, tree
+ Forest, simple_forest: int Forest, forest
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ #std, print_int: int -> ()
+ Forest, tree_size: forall 't. 't Forest, tree -> int
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ Forest, forest_size: forall 't. 't Forest, forest -> int
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
+ (Just
+ (L
+  { :1:8-14 }
+  ("Forest")))
+ [ (L
+    { :(3,1)-(4,50) }
+    (TyD
+     [ (L
+        { :3:6-46 }
+        (DataDecl
+         (L
+          { :3:9-13 }
+          "tree")
+         [(L { :3:6-8 } (TyVar 'a (L { :3:7-8 } "a")))]
+         [ (L
+            { :3:16-26 }
+            (ConDecl
+             (L
+              { :3:16-20 }
+              "Leaf")
+             [(L { :3:24-26 } (TyVar 'a (L { :3:25-26 } "a")))]))
+         , (L
+            { :3:29-46 }
+            (ConDecl
+             (L
+              { :3:29-33 }
+              "Node")
+             [ (L
+                { :3:37-46 }
+                (TyConstr
+                 'a Forest, forest
+                 (L
+                  { :3:40-46 }
+                  ("Forest, forest"))
+                 [(L { :3:37-39 } (TyVar 'a (L { :3:38-39 } "a")))])) ])) ]))
+     , (L
+        { :4:5-50 }
+        (DataDecl
+         (L
+          { :4:8-14 }
+          "forest")
+         [(L { :4:5-7 } (TyVar 'b (L { :4:6-7 } "a")))]
+         [ (L
+            { :4:17-20 }
+            (ConDecl
+             (L
+              { :4:17-20 }
+              "Nil")
+             []))
+         , (L
+            { :4:23-50 }
+            (ConDecl
+             (L
+              { :4:23-27 }
+              "Cons")
+             [ (L
+                { :4:31-38 }
+                (TyConstr
+                 'a Forest, tree
+                 (L
+                  { :4:34-38 }
+                  ("Forest, tree"))
+                 [(L { :4:31-33 } (TyVar 'a (L { :4:32-33 } "a")))]))
+             , (L
+                { :4:41-50 }
+                (TyConstr
+                 'a Forest, forest
+                 (L
+                  { :4:44-50 }
+                  ("Forest, forest"))
+                 [ (L
+                    { :4:41-43 }
+                    (TyVar
+                     'a
+                     (L
+                      { :4:42-43 }
+                      "a"))) ])) ])) ])) ]))
+ , (L
+    { :(6,1)-(11,57) }
+    (ValD
+     (L
+      { :(6,5)-(11,57) }
+      (Rec
+       [ (L
+          { :(6,9)-(8,28) }
+          (Bind
+           Forest, tree_size: forall 't. 't Forest, tree -> int
+           (L
+            { :6:9-18 }
+            (PatVar
+             (Forest, tree_size, 't Forest, tree -> int)
+             (L
+              { :6:9-18 }
+              "tree_size")))
+           (L
+            { :(6,19)-(8,28) }
+            (ExprFunction
+             't Forest, tree -> int
+             (L
+              { :6:19-20 }
+              (PatVar
+               (Forest, t, 't Forest, tree)
+               (L
+                { :6:19-20 }
+                "t")))
+             (L
+              { :(6,23)-(8,28) }
+              (ExprMatch
+               int
+               (L
+                { :6:29-30 }
+                (ExprIdent
+                 't Forest, tree
+                 "Forest, t"))
+               [ (L
+                  { :7:5-16 }
+                  (Case
+                   't Forest, tree -> int
+                   (L
+                    { :7:5-11 }
+                    (PatConstruct
+                     't Forest, tree
+                     (L
+                      { :7:5-9 }
+                      ("Forest, Leaf"))
+                     (Just
+                     (L
+                      { :7:10-11 }
+                      (PatAny
+                       't)))))
+                   (Nothing)
+                   (L
+                    { :7:15-16 }
+                    (ExprConstant int int
+                     1))))
+               , (L
+                  { :8:5-28 }
+                  (Case
+                   't Forest, tree -> int
+                   (L
+                    { :8:5-11 }
+                    (PatConstruct
+                     't Forest, tree
+                     (L
+                      { :8:5-9 }
+                      ("Forest, Node"))
+                     (Just
+                     (L
+                      { :8:10-11 }
+                      (PatVar
+                       (Forest, f, 'n)
+                       (L
+                        { :8:10-11 }
+                        "f"))))))
+                   (Nothing)
+                   (L
+                    { :8:15-28 }
+                    (ExprApply
+                     int
+                     (L
+                      { :8:15-26 }
+                      (ExprIdent
+                       't Forest, forest -> int
+                       "Forest, forest_size"))
+                     [ (L
+                        { :8:27-28 }
+                        (ExprIdent
+                         't Forest, forest
+                         "Forest, f")) ])))) ]))))))
+       , (L
+          { :(9,5)-(11,57) }
+          (Bind
+           Forest, forest_size: forall 't. 't Forest, forest -> int
+           (L
+            { :9:5-16 }
+            (PatVar
+             (Forest, forest_size, 't Forest, forest -> int)
+             (L
+              { :9:5-16 }
+              "forest_size")))
+           (L
+            { :(9,17)-(11,57) }
+            (ExprFunction
+             't Forest, forest -> int
+             (L
+              { :9:17-18 }
+              (PatVar
+               (Forest, f, 't Forest, forest)
+               (L
+                { :9:17-18 }
+                "f")))
+             (L
+              { :(9,21)-(11,57) }
+              (ExprMatch
+               int
+               (L
+                { :9:27-28 }
+                (ExprIdent
+                 't Forest, forest
+                 "Forest, f"))
+               [ (L
+                  { :10:5-13 }
+                  (Case
+                   't Forest, forest -> int
+                   (L
+                    { :10:5-8 }
+                    (PatConstruct
+                     't Forest, forest
+                     (L
+                      { :10:5-8 }
+                      ("Forest, Nil"))
+                     (Nothing)))
+                   (Nothing)
+                   (L
+                    { :10:12-13 }
+                    (ExprConstant int int
+                     0))))
+               , (L
+                  { :11:5-57 }
+                  (Case
+                   't Forest, forest -> int
+                   (L
+                    { :11:5-19 }
+                    (PatConstruct
+                     't Forest, forest
+                     (L
+                      { :11:5-9 }
+                      ("Forest, Cons"))
+                     (Just
+                     (L
+                      { :11:10-19 }
+                      (PatTuple
+                       ('u * 'v)
+                       [ (L
+                          { :11:11-12 }
+                          (PatVar
+                           (Forest, t, 'u)
+                           (L
+                            { :11:11-12 }
+                            "t")))
+                       , (L
+                          { :11:14-18 }
+                          (PatVar
+                           (Forest, rest, 'v)
+                           (L
+                            { :11:14-18 }
+                            "rest"))) ])))))
+                   (Nothing)
+                   (L
+                    { :11:23-57 }
+                    (ExprApply
+                     int
+                     (L
+                      { :11:37-38 }
+                      (ExprIdent
+                       int -> int -> int
+                       "#std, +"))
+                     [ (L
+                        { :11:23-36 }
+                        (ExprApply
+                         int
+                         (L
+                          { :11:24-33 }
+                          (ExprIdent
+                           't Forest, tree -> int
+                           "Forest, tree_size"))
+                         [ (L
+                            { :11:34-35 }
+                            (ExprIdent
+                             't Forest, tree
+                             "Forest, t")) ]))
+                     , (L
+                        { :11:39-57 }
+                        (ExprApply
+                         int
+                         (L
+                          { :11:40-51 }
+                          (ExprIdent
+                           't Forest, forest -> int
+                           "Forest, forest_size"))
+                         [ (L
+                            { :11:52-56 }
+                            (ExprIdent
+                             't Forest, forest
+                             "Forest, rest")) ])) ])))) ])))))) ]))))
+ , (L
+    { :(13,1)-(18,65) }
+    (ValD
+     (L
+      { :(13,5)-(18,65) }
+      (Rec
+       [ (L
+          { :(13,9)-(15,46) }
+          (Bind
+           Forest, tree_map: forall 'bc 'au. ('bc -> 'au) -> 'bc Forest, tree -> 'au Forest, tree
+           (L
+            { :13:9-17 }
+            (PatVar
+             ( Forest, tree_map
+             , ('bc -> 'au) -> 'bc Forest, tree -> 'au Forest, tree )
+             (L
+              { :13:9-17 }
+              "tree_map")))
+           (L
+            { :(13,18)-(15,46) }
+            (ExprFunction
+             ('bc -> 'au) -> 'bc Forest, tree -> 'au Forest, tree
+             (L
+              { :13:18-19 }
+              (PatVar
+               (Forest, f, 'bc -> 'au)
+               (L
+                { :13:18-19 }
+                "f")))
+             (L
+              { :(13,20)-(15,46) }
+              (ExprFunction
+               'bc Forest, tree -> 'au Forest, tree
+               (L
+                { :13:20-21 }
+                (PatVar
+                 (Forest, t, 'bc Forest, tree)
+                 (L
+                  { :13:20-21 }
+                  "t")))
+               (L
+                { :(13,24)-(15,46) }
+                (ExprMatch
+                 'au Forest, tree
+                 (L
+                  { :13:30-31 }
+                  (ExprIdent
+                   'bc Forest, tree
+                   "Forest, t"))
+                 [ (L
+                    { :14:5-25 }
+                    (Case
+                     'bc Forest, tree -> 'au Forest, tree
+                     (L
+                      { :14:5-11 }
+                      (PatConstruct
+                       'bc Forest, tree
+                       (L
+                        { :14:5-9 }
+                        ("Forest, Leaf"))
+                       (Just
+                       (L
+                        { :14:10-11 }
+                        (PatVar
+                         (Forest, x, 'bc)
+                         (L
+                          { :14:10-11 }
+                          "x"))))))
+                     (Nothing)
+                     (L
+                      { :14:15-25 }
+                      (ExprConstruct
+                       'au Forest, tree
+                       (L
+                        { :14:15-19 }
+                        ("Forest, Leaf"))
+                       (Just
+                       (L
+                        { :14:20-25 }
+                        (ExprApply
+                         'au
+                         (L
+                          { :14:21-22 }
+                          (ExprIdent
+                           'bc -> 'au
+                           "Forest, f"))
+                         [(L { :14:23-24 } (ExprIdent 'bc "Forest, x"))])))))))
+                 , (L
+                    { :15:5-46 }
+                    (Case
+                     'bc Forest, tree -> 'au Forest, tree
+                     (L
+                      { :15:5-16 }
+                      (PatConstruct
+                       'bc Forest, tree
+                       (L
+                        { :15:5-9 }
+                        ("Forest, Node"))
+                       (Just
+                       (L
+                        { :15:10-16 }
+                        (PatVar
+                         (Forest, forest, 'as)
+                         (L
+                          { :15:10-16 }
+                          "forest"))))))
+                     (Nothing)
+                     (L
+                      { :15:20-46 }
+                      (ExprConstruct
+                       'au Forest, tree
+                       (L
+                        { :15:20-24 }
+                        ("Forest, Node"))
+                       (Just
+                       (L
+                        { :15:25-46 }
+                        (ExprApply
+                         'au Forest, forest
+                         (L
+                          { :15:26-36 }
+                          (ExprIdent
+                           ('bc -> 'au) -> 'bc Forest, forest -> 'au Forest, forest
+                           "Forest, forest_map"))
+                         [ (L
+                            { :15:37-38 }
+                            (ExprIdent
+                             'bc -> 'au
+                             "Forest, f"))
+                         , (L
+                            { :15:39-45 }
+                            (ExprIdent
+                             'bc Forest, forest
+                             "Forest, forest")) ]))))))) ]))))))))
+       , (L
+          { :(16,5)-(18,65) }
+          (Bind
+           Forest, forest_map: forall 'bc 'au. ('bc -> 'au) -> 'bc Forest, forest -> 'au Forest, forest
+           (L
+            { :16:5-15 }
+            (PatVar
+             ( Forest, forest_map
+             , ('bc -> 'au) -> 'bc Forest, forest -> 'au Forest, forest )
+             (L
+              { :16:5-15 }
+              "forest_map")))
+           (L
+            { :(16,16)-(18,65) }
+            (ExprFunction
+             ('bc -> 'au) -> 'bc Forest, forest -> 'au Forest, forest
+             (L
+              { :16:16-17 }
+              (PatVar
+               (Forest, f, 'bc -> 'au)
+               (L
+                { :16:16-17 }
+                "f")))
+             (L
+              { :(16,18)-(18,65) }
+              (ExprFunction
+               'bc Forest, forest -> 'au Forest, forest
+               (L
+                { :16:18-24 }
+                (PatVar
+                 (Forest, forest, 'bc Forest, forest)
+                 (L
+                  { :16:18-24 }
+                  "forest")))
+               (L
+                { :(16,27)-(18,65) }
+                (ExprMatch
+                 'au Forest, forest
+                 (L
+                  { :16:33-39 }
+                  (ExprIdent
+                   'bc Forest, forest
+                   "Forest, forest"))
+                 [ (L
+                    { :17:5-15 }
+                    (Case
+                     'bc Forest, forest -> 'au Forest, forest
+                     (L
+                      { :17:5-8 }
+                      (PatConstruct
+                       'bc Forest, forest
+                       (L
+                        { :17:5-8 }
+                        ("Forest, Nil"))
+                       (Nothing)))
+                     (Nothing)
+                     (L
+                      { :17:12-15 }
+                      (ExprConstruct
+                       'au Forest, forest
+                       (L
+                        { :17:12-15 }
+                        ("Forest, Nil"))
+                       (Nothing)))))
+                 , (L
+                    { :18:5-65 }
+                    (Case
+                     'bc Forest, forest -> 'au Forest, forest
+                     (L
+                      { :18:5-19 }
+                      (PatConstruct
+                       'bc Forest, forest
+                       (L
+                        { :18:5-9 }
+                        ("Forest, Cons"))
+                       (Just
+                       (L
+                        { :18:10-19 }
+                        (PatTuple
+                         ('bd * 'be)
+                         [ (L
+                            { :18:11-12 }
+                            (PatVar
+                             (Forest, t, 'bd)
+                             (L
+                              { :18:11-12 }
+                              "t")))
+                         , (L
+                            { :18:14-18 }
+                            (PatVar
+                             (Forest, rest, 'be)
+                             (L
+                              { :18:14-18 }
+                              "rest"))) ])))))
+                     (Nothing)
+                     (L
+                      { :18:23-65 }
+                      (ExprConstruct
+                       'au Forest, forest
+                       (L
+                        { :18:23-27 }
+                        ("Forest, Cons"))
+                       (Just
+                       (L
+                        { :18:28-65 }
+                        (ExprTuple
+                         ('au Forest, tree * 'au Forest, forest)
+                         [ (L
+                            { :18:29-43 }
+                            (ExprApply
+                             'au Forest, tree
+                             (L
+                              { :18:30-38 }
+                              (ExprIdent
+                               ('bc -> 'au) -> 'bc Forest, tree -> 'au Forest, tree
+                               "Forest, tree_map"))
+                             [ (L
+                                { :18:39-40 }
+                                (ExprIdent
+                                 'bc -> 'au
+                                 "Forest, f"))
+                             , (L
+                                { :18:41-42 }
+                                (ExprIdent
+                                 'bc Forest, tree
+                                 "Forest, t")) ]))
+                         , (L
+                            { :18:45-64 }
+                            (ExprApply
+                             'au Forest, forest
+                             (L
+                              { :18:46-56 }
+                              (ExprIdent
+                               ('bc -> 'au) -> 'bc Forest, forest -> 'au Forest, forest
+                               "Forest, forest_map"))
+                             [ (L
+                                { :18:57-58 }
+                                (ExprIdent
+                                 'bc -> 'au
+                                 "Forest, f"))
+                             , (L
+                                { :18:59-63 }
+                                (ExprIdent
+                                 'bc Forest, forest
+                                 "Forest, rest")) ])) ]))))))) ])))))))) ]))))
+ , (L
+    { :20:1-26 }
+    (ValD
+     (L
+      { :20:5-26 }
+      (NonRec
+       [ (L
+          { :20:5-26 }
+          (Bind
+           Forest, single_tree: int Forest, tree
+           (L
+            { :20:5-16 }
+            (PatVar
+             (Forest, single_tree, int Forest, tree)
+             (L
+              { :20:5-16 }
+              "single_tree")))
+           (L
+            { :20:19-26 }
+            (ExprConstruct
+             int Forest, tree
+             (L
+              { :20:19-23 }
+              ("Forest, Leaf"))
+             (Just
+             (L
+              { :20:24-26 }
+              (ExprConstant int int
+               42))))))) ]))))
+ , (L
+    { :21:1-79 }
+    (ValD
+     (L
+      { :21:5-79 }
+      (NonRec
+       [ (L
+          { :21:5-79 }
+          (Bind
+           Forest, simple_forest: int Forest, forest
+           (L
+            { :21:5-18 }
+            (PatVar
+             (Forest, simple_forest, int Forest, forest)
+             (L
+              { :21:5-18 }
+              "simple_forest")))
+           (L
+            { :21:21-79 }
+            (ExprConstruct
+             int Forest, forest
+             (L
+              { :21:21-25 }
+              ("Forest, Cons"))
+             (Just
+             (L
+              { :21:26-79 }
+              (ExprTuple
+               (int Forest, tree * int Forest, forest)
+               [ (L
+                  { :21:27-35 }
+                  (ExprConstruct
+                   int Forest, tree
+                   (L
+                    { :21:28-32 }
+                    ("Forest, Leaf"))
+                   (Just
+                   (L
+                    { :21:33-34 }
+                    (ExprConstant int int
+                     1)))))
+               , (L
+                  { :21:37-78 }
+                  (ExprConstruct
+                   int Forest, forest
+                   (L
+                    { :21:38-42 }
+                    ("Forest, Cons"))
+                   (Just
+                   (L
+                    { :21:43-77 }
+                    (ExprTuple
+                     (int Forest, tree * int Forest, forest)
+                     [ (L
+                        { :21:44-52 }
+                        (ExprConstruct
+                         int Forest, tree
+                         (L
+                          { :21:45-49 }
+                          ("Forest, Leaf"))
+                         (Just
+                         (L
+                          { :21:50-51 }
+                          (ExprConstant int int
+                           2)))))
+                     , (L
+                        { :21:54-76 }
+                        (ExprConstruct
+                         int Forest, forest
+                         (L
+                          { :21:55-59 }
+                          ("Forest, Cons"))
+                         (Just
+                         (L
+                          { :21:60-75 }
+                          (ExprTuple
+                           (int Forest, tree * 'by Forest, forest)
+                           [ (L
+                              { :21:61-69 }
+                              (ExprConstruct
+                               int Forest, tree
+                               (L
+                                { :21:62-66 }
+                                ("Forest, Leaf"))
+                               (Just
+                               (L
+                                { :21:67-68 }
+                                (ExprConstant int int
+                                 3)))))
+                           , (L
+                              { :21:71-74 }
+                              (ExprConstruct
+                               'by Forest, forest
+                               (L
+                                { :21:71-74 }
+                                ("Forest, Nil"))
+                               (Nothing))) ]))))) ]))))) ]))))))) ]))))
+ , (L
+    { :22:1-89 }
+    (ValD
+     (L
+      { :22:5-89 }
+      (NonRec
+       [ (L
+          { :22:5-89 }
+          (Bind
+           Forest, complex_tree: int Forest, tree
+           (L
+            { :22:5-17 }
+            (PatVar
+             (Forest, complex_tree, int Forest, tree)
+             (L
+              { :22:5-17 }
+              "complex_tree")))
+           (L
+            { :22:20-89 }
+            (ExprConstruct
+             int Forest, tree
+             (L
+              { :22:20-24 }
+              ("Forest, Node"))
+             (Just
+             (L
+              { :22:25-89 }
+              (ExprConstruct
+               int Forest, forest
+               (L
+                { :22:26-30 }
+                ("Forest, Cons"))
+               (Just
+               (L
+                { :22:31-88 }
+                (ExprTuple
+                 (int Forest, tree * int Forest, forest)
+                 [ (L
+                    { :22:32-41 }
+                    (ExprConstruct
+                     int Forest, tree
+                     (L
+                      { :22:33-37 }
+                      ("Forest, Leaf"))
+                     (Just
+                     (L
+                      { :22:38-40 }
+                      (ExprConstant int int
+                       10)))))
+                 , (L
+                    { :22:43-87 }
+                    (ExprConstruct
+                     int Forest, forest
+                     (L
+                      { :22:44-48 }
+                      ("Forest, Cons"))
+                     (Just
+                     (L
+                      { :22:49-86 }
+                      (ExprTuple
+                       (int Forest, tree * 'cp Forest, forest)
+                       [ (L
+                          { :22:50-80 }
+                          (ExprConstruct
+                           int Forest, tree
+                           (L
+                            { :22:51-55 }
+                            ("Forest, Node"))
+                           (Just
+                           (L
+                            { :22:56-79 }
+                            (ExprConstruct
+                             int Forest, forest
+                             (L
+                              { :22:57-61 }
+                              ("Forest, Cons"))
+                             (Just
+                             (L
+                              { :22:62-78 }
+                              (ExprTuple
+                               (int Forest, tree * 'cm Forest, forest)
+                               [ (L
+                                  { :22:63-72 }
+                                  (ExprConstruct
+                                   int Forest, tree
+                                   (L
+                                    { :22:64-68 }
+                                    ("Forest, Leaf"))
+                                   (Just
+                                   (L
+                                    { :22:69-71 }
+                                    (ExprConstant int int
+                                     20)))))
+                               , (L
+                                  { :22:74-77 }
+                                  (ExprConstruct
+                                   'cm Forest, forest
+                                   (L
+                                    { :22:74-77 }
+                                    ("Forest, Nil"))
+                                   (Nothing))) ]))))))))
+                       , (L
+                          { :22:82-85 }
+                          (ExprConstruct
+                           'cp Forest, forest
+                           (L
+                            { :22:82-85 }
+                            ("Forest, Nil"))
+                           (Nothing))) ]))))) ])))))))))) ])))) ])

@@ -4,7 +4,7 @@
  #std, >: int -> int -> bool
  w: int
  #std, -: int -> int -> int
- Concrete, g: 'ac -> int
+ Concrete, g: forall 'aa. 'aa -> int
  #std, ~-: int -> int
  #std, <=: int -> int -> bool
  #std, /: int -> int -> int
@@ -411,22 +411,22 @@
        , (L
           { :17:5-14 }
           (Bind
-           Concrete, g: 'ac -> int
+           Concrete, g: forall 'aa. 'aa -> int
            (L
             { :17:5-6 }
             (PatVar
-             (Concrete, g, 'ac -> int)
+             (Concrete, g, 'aa -> int)
              (L
               { :17:5-6 }
               "g")))
            (L
             { :17:7-14 }
             (ExprFunction
-             'ac -> int
+             'aa -> int
              (L
               { :17:7-8 }
               (PatVar
-               (Concrete, x, 'ac)
+               (Concrete, x, 'aa)
                (L
                 { :17:7-8 }
                 "x")))

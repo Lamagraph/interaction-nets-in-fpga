@@ -3,6 +3,7 @@ module Lamagraph.Compiler.ModuleResolver.Resolve.Type (resolveLLmlType) where
 import Relude
 
 import Lamagraph.Compiler.Extension
+import Lamagraph.Compiler.ModuleResolver.Helper (lookupName)
 import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
@@ -21,6 +22,9 @@ resolveLmlType env = \case
     lTyResolved <- resolveLLmlType env lTy
     lTysResolved <- mapM (resolveLLmlType env) lTys
     pure $ LmlTyTuple noExtField lTyResolved lTysResolved
-  LmlTyConstr _ lConstrName lTys -> do
+  LmlTyConstr _ (L loc (Longident nameNE)) lTys -> do
     lTysResolved <- mapM (resolveLLmlType env) lTys
-    pure $ LmlTyConstr noExtField lConstrName lTysResolved
+    let resolvedName = case lookupName env (Longident nameNE) of
+          Just (FullName name) -> name
+          Nothing -> Longident nameNE
+    pure $ LmlTyConstr noExtField (L loc resolvedName) lTysResolved

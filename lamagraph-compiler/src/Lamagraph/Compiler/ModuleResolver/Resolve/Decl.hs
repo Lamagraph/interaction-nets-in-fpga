@@ -9,6 +9,7 @@ import Data.HashSet qualified as HashSet
 import Control.Exception (throw)
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.ModuleResolver.Resolve.Expr
+import Lamagraph.Compiler.ModuleResolver.Resolve.TyDecl
 import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
@@ -29,4 +30,14 @@ resolveLmlDecl env = \case
         let localShadowed = HashSet.difference (env ^. localNames) names
         let newOpens = ModulePath ident : (env ^. opens)
         pure (env & set opens newOpens & set localNames localShadowed, OpenD noExtField (OpenDecl noExtField lIdent))
-  TyD _ _ -> error "Failed to resolve type declaration: unsupported!"
+  TyD _ lTyDecls -> do
+    let typeConstructorNames = extractTypeConstructorNames lTyDecls
+        constructorNames = extractConstructorNames lTyDecls
+        allNewNames = typeConstructorNames <> constructorNames
+        envWithTypeConstrs = env & over localNames (HashSet.union typeConstructorNames)
+    lTyDeclsResolved <- traverse (resolveLTyDecl envWithTypeConstrs) lTyDecls
+    let newEnv =
+          env
+            & over currentNames (HashSet.union allNewNames)
+            & over localNames (HashSet.union allNewNames)
+    pure (newEnv, TyD noExtField lTyDeclsResolved)

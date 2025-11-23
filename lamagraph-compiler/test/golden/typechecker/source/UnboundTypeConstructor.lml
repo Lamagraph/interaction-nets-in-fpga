@@ -1,0 +1,3 @@
+module UnboundTypeConstructor
+
+type 'a foo = Bar of b

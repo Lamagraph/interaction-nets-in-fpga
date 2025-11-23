@@ -274,7 +274,7 @@ simple_pattern :: { LLmlPat LmlcPs }
   | signed_constant { sL1 $1 $ LmlPatConstant noExtField (unLoc $1) }
   | constr %prec below_DOT { sL1 $1 $ LmlPatConstruct noExtField $1 Nothing }
   | tuple_pattern '|' tuple_pattern { sLL $1 $3 $ LmlPatOr noExtField $1 $3 }
-  | constr tuple_pattern %prec constr_appl { sLL $1 $2 $ LmlPatConstruct noExtField $1 (Just $2)}
+  | constr simple_pattern %prec constr_appl { sLL $1 $2 $ LmlPatConstruct noExtField $1 (Just $2)}
   | '[' sepBy1Terminated(tuple_pattern, ';') ']' { mkListPat $1 $2 $3 }
   | tuple_pattern '::' tuple_pattern
     { let consIdent = sL1 $2 consConstruct in
@@ -361,6 +361,10 @@ pattern_matchingNE :: { NonEmpty (LLmlCase LmlcPs) }
 
 let_binding :: { LLmlBind LmlcPs }
   : pattern '=' expr { sLL $1 $3 $ LmlBind noExtField $1 $3 }
+  | value_name type_constraint '=' expr
+    { sLL $1 $4 $ LmlBind noExtField
+        (sLL $1 $2 $ LmlPatConstraint noExtField (sL1 $1 $ LmlPatVar noExtField $1) $2) $4
+    }
   | value_name expr_parameter_NE optional(type_constraint) '=' expr
     { let patIdent = sL1 $1 $ LmlPatVar noExtField $1 in
       sLL $1 $5 $ LmlBind noExtField patIdent (mkFunExpr $2 $3 $5)

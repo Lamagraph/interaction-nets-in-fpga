@@ -1,0 +1,979 @@
+(Module
+ QTree, map2: forall 'bh 'bz 'bq. ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+ QTree, map: forall 'u 'x. ('u -> 'x) -> 'u QTree, qtree -> 'x QTree, qtree
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ QTree, Leaf: forall 'v. 'v -> 'v QTree, qtree
+ #std, /: int -> int -> int
+ QTree, Node: forall 'v. ('v QTree, qtree * 'v QTree, qtree * 'v QTree, qtree * 'v QTree, qtree) -> 'v QTree, qtree
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
+ (Just
+ (L
+  { :1:8-13 }
+  ("QTree")))
+ [ (L
+    { :(3,1)-(5,54) }
+    (TyD
+     [ (L
+        { :(3,6)-(5,54) }
+        (DataDecl
+         (L
+          { :3:9-14 }
+          "qtree")
+         [(L { :3:6-8 } (TyVar 'a (L { :3:7-8 } "v")))]
+         [ (L
+            { :4:5-15 }
+            (ConDecl
+             (L
+              { :4:5-9 }
+              "Leaf")
+             [(L { :4:13-15 } (TyVar 'v (L { :4:14-15 } "v")))]))
+         , (L
+            { :5:5-54 }
+            (ConDecl
+             (L
+              { :5:5-9 }
+              "Node")
+             [ (L
+                { :5:13-21 }
+                (TyConstr
+                 'v QTree, qtree
+                 (L
+                  { :5:16-21 }
+                  ("QTree, qtree"))
+                 [(L { :5:13-15 } (TyVar 'v (L { :5:14-15 } "v")))]))
+             , (L
+                { :5:24-32 }
+                (TyConstr
+                 'v QTree, qtree
+                 (L
+                  { :5:27-32 }
+                  ("QTree, qtree"))
+                 [(L { :5:24-26 } (TyVar 'v (L { :5:25-26 } "v")))]))
+             , (L
+                { :5:35-43 }
+                (TyConstr
+                 'v QTree, qtree
+                 (L
+                  { :5:38-43 }
+                  ("QTree, qtree"))
+                 [(L { :5:35-37 } (TyVar 'v (L { :5:36-37 } "v")))]))
+             , (L
+                { :5:46-54 }
+                (TyConstr
+                 'v QTree, qtree
+                 (L
+                  { :5:49-54 }
+                  ("QTree, qtree"))
+                 [ (L
+                    { :5:46-48 }
+                    (TyVar
+                     'v
+                     (L
+                      { :5:47-48 }
+                      "v"))) ])) ])) ])) ]))
+ , (L
+    { :(7,1)-(9,25) }
+    (ValD
+     (L
+      { :(7,5)-(9,25) }
+      (Rec
+       [ (L
+          { :(7,9)-(9,25) }
+          (Bind
+           QTree, map: forall 'u 'x. ('u -> 'x) -> 'u QTree, qtree -> 'x QTree, qtree
+           (L
+            { :7:9-12 }
+            (PatVar
+             (QTree, map, ('u -> 'x) -> 'u QTree, qtree -> 'x QTree, qtree)
+             (L
+              { :7:9-12 }
+              "map")))
+           (L
+            { :(7,13)-(9,25) }
+            (ExprFunction
+             ('u -> 'x) -> 'u QTree, qtree -> 'x QTree, qtree
+             (L
+              { :7:13-14 }
+              (PatVar
+               (QTree, f, 'u -> 'x)
+               (L
+                { :7:13-14 }
+                "f")))
+             (L
+              { :(7,15)-(9,25) }
+              (ExprFunction
+               'u QTree, qtree -> 'x QTree, qtree
+               (L
+                { :7:15-16 }
+                (PatVar
+                 (QTree, t, 'u QTree, qtree)
+                 (L
+                  { :7:15-16 }
+                  "t")))
+               (L
+                { :(7,19)-(9,25) }
+                (ExprMatch
+                 'x QTree, qtree
+                 (L
+                  { :7:25-26 }
+                  (ExprIdent
+                   'u QTree, qtree
+                   "QTree, t"))
+                 [ (L
+                    { :8:5-83 }
+                    (Case
+                     'u QTree, qtree -> 'x QTree, qtree
+                     (L
+                      { :8:5-26 }
+                      (PatConstruct
+                       'u QTree, qtree
+                       (L
+                        { :8:5-9 }
+                        ("QTree, Node"))
+                       (Just
+                       (L
+                        { :8:10-26 }
+                        (PatTuple
+                         ('i * 'j * 'k * 'l)
+                         [ (L
+                            { :8:11-13 }
+                            (PatVar
+                             (QTree, n1, 'i)
+                             (L
+                              { :8:11-13 }
+                              "n1")))
+                         , (L
+                            { :8:15-17 }
+                            (PatVar
+                             (QTree, n2, 'j)
+                             (L
+                              { :8:15-17 }
+                              "n2")))
+                         , (L
+                            { :8:19-21 }
+                            (PatVar
+                             (QTree, n3, 'k)
+                             (L
+                              { :8:19-21 }
+                              "n3")))
+                         , (L
+                            { :8:23-25 }
+                            (PatVar
+                             (QTree, n4, 'l)
+                             (L
+                              { :8:23-25 }
+                              "n4"))) ])))))
+                     (Nothing)
+                     (L
+                      { :8:30-83 }
+                      (ExprConstruct
+                       'x QTree, qtree
+                       (L
+                        { :8:30-34 }
+                        ("QTree, Node"))
+                       (Just
+                       (L
+                        { :8:35-83 }
+                        (ExprTuple
+                         ('x QTree, qtree * 'x QTree, qtree * 'x QTree, qtree * 'x QTree, qtree)
+                         [ (L
+                            { :8:36-46 }
+                            (ExprApply
+                             'x QTree, qtree
+                             (L
+                              { :8:37-40 }
+                              (ExprIdent
+                               ('u -> 'x) -> 'u QTree, qtree -> 'x QTree, qtree
+                               "QTree, map"))
+                             [ (L
+                                { :8:41-42 }
+                                (ExprIdent
+                                 'u -> 'x
+                                 "QTree, f"))
+                             , (L
+                                { :8:43-45 }
+                                (ExprIdent
+                                 'u QTree, qtree
+                                 "QTree, n1")) ]))
+                         , (L
+                            { :8:48-58 }
+                            (ExprApply
+                             'x QTree, qtree
+                             (L
+                              { :8:49-52 }
+                              (ExprIdent
+                               ('u -> 'x) -> 'u QTree, qtree -> 'x QTree, qtree
+                               "QTree, map"))
+                             [ (L
+                                { :8:53-54 }
+                                (ExprIdent
+                                 'u -> 'x
+                                 "QTree, f"))
+                             , (L
+                                { :8:55-57 }
+                                (ExprIdent
+                                 'u QTree, qtree
+                                 "QTree, n2")) ]))
+                         , (L
+                            { :8:60-70 }
+                            (ExprApply
+                             'x QTree, qtree
+                             (L
+                              { :8:61-64 }
+                              (ExprIdent
+                               ('u -> 'x) -> 'u QTree, qtree -> 'x QTree, qtree
+                               "QTree, map"))
+                             [ (L
+                                { :8:65-66 }
+                                (ExprIdent
+                                 'u -> 'x
+                                 "QTree, f"))
+                             , (L
+                                { :8:67-69 }
+                                (ExprIdent
+                                 'u QTree, qtree
+                                 "QTree, n3")) ]))
+                         , (L
+                            { :8:72-82 }
+                            (ExprApply
+                             'x QTree, qtree
+                             (L
+                              { :8:73-76 }
+                              (ExprIdent
+                               ('u -> 'x) -> 'u QTree, qtree -> 'x QTree, qtree
+                               "QTree, map"))
+                             [ (L
+                                { :8:77-78 }
+                                (ExprIdent
+                                 'u -> 'x
+                                 "QTree, f"))
+                             , (L
+                                { :8:79-81 }
+                                (ExprIdent
+                                 'u QTree, qtree
+                                 "QTree, n4")) ])) ])))))))
+                 , (L
+                    { :9:5-25 }
+                    (Case
+                     'u QTree, qtree -> 'x QTree, qtree
+                     (L
+                      { :9:5-11 }
+                      (PatConstruct
+                       'u QTree, qtree
+                       (L
+                        { :9:5-9 }
+                        ("QTree, Leaf"))
+                       (Just
+                       (L
+                        { :9:10-11 }
+                        (PatVar
+                         (QTree, v, 'u)
+                         (L
+                          { :9:10-11 }
+                          "v"))))))
+                     (Nothing)
+                     (L
+                      { :9:15-25 }
+                      (ExprConstruct
+                       'x QTree, qtree
+                       (L
+                        { :9:15-19 }
+                        ("QTree, Leaf"))
+                       (Just
+                       (L
+                        { :9:20-25 }
+                        (ExprApply
+                         'x
+                         (L
+                          { :9:21-22 }
+                          (ExprIdent
+                           'u -> 'x
+                           "QTree, f"))
+                         [ (L
+                            { :9:23-24 }
+                            (ExprIdent
+                             'u
+                             "QTree, v")) ]))))))) ])))))))) ]))))
+ , (L
+    { :(11,1)-(15,107) }
+    (ValD
+     (L
+      { :(11,5)-(15,107) }
+      (Rec
+       [ (L
+          { :(11,9)-(15,107) }
+          (Bind
+           QTree, map2: forall 'bh 'bz 'bq. ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+           (L
+            { :11:9-13 }
+            (PatVar
+             ( QTree, map2
+             , ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree )
+             (L
+              { :11:9-13 }
+              "map2")))
+           (L
+            { :(11,14)-(15,107) }
+            (ExprFunction
+             ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+             (L
+              { :11:14-15 }
+              (PatVar
+               (QTree, f, 'bz -> 'bq -> 'bh)
+               (L
+                { :11:14-15 }
+                "f")))
+             (L
+              { :(11,16)-(15,107) }
+              (ExprFunction
+               'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+               (L
+                { :11:16-18 }
+                (PatVar
+                 (QTree, t1, 'bz QTree, qtree)
+                 (L
+                  { :11:16-18 }
+                  "t1")))
+               (L
+                { :(11,19)-(15,107) }
+                (ExprFunction
+                 'bq QTree, qtree -> 'bh QTree, qtree
+                 (L
+                  { :11:19-21 }
+                  (PatVar
+                   (QTree, t2, 'bq QTree, qtree)
+                   (L
+                    { :11:19-21 }
+                    "t2")))
+                 (L
+                  { :(11,24)-(15,107) }
+                  (ExprMatch
+                   'bh QTree, qtree
+                   (L
+                    { :11:30-38 }
+                    (ExprTuple
+                     ('bz QTree, qtree * 'bq QTree, qtree)
+                     [ (L
+                        { :11:31-33 }
+                        (ExprIdent
+                         'bz QTree, qtree
+                         "QTree, t1"))
+                     , (L
+                        { :11:35-37 }
+                        (ExprIdent
+                         'bq QTree, qtree
+                         "QTree, t2")) ]))
+                   [ (L
+                      { :12:5-122 }
+                      (Case
+                       ('bz QTree, qtree * 'bq QTree, qtree) -> 'bh QTree, qtree
+                       (L
+                        { :12:5-49 }
+                        (PatTuple
+                         ('bz QTree, qtree * 'bq QTree, qtree)
+                         [ (L
+                            { :12:5-26 }
+                            (PatConstruct
+                             'bz QTree, qtree
+                             (L
+                              { :12:5-9 }
+                              ("QTree, Node"))
+                             (Just
+                             (L
+                              { :12:10-26 }
+                              (PatTuple
+                               ('aj * 'ak * 'al * 'am)
+                               [ (L
+                                  { :12:11-13 }
+                                  (PatVar
+                                   (QTree, n1, 'aj)
+                                   (L
+                                    { :12:11-13 }
+                                    "n1")))
+                               , (L
+                                  { :12:15-17 }
+                                  (PatVar
+                                   (QTree, n2, 'ak)
+                                   (L
+                                    { :12:15-17 }
+                                    "n2")))
+                               , (L
+                                  { :12:19-21 }
+                                  (PatVar
+                                   (QTree, n3, 'al)
+                                   (L
+                                    { :12:19-21 }
+                                    "n3")))
+                               , (L
+                                  { :12:23-25 }
+                                  (PatVar
+                                   (QTree, n4, 'am)
+                                   (L
+                                    { :12:23-25 }
+                                    "n4"))) ])))))
+                         , (L
+                            { :12:28-49 }
+                            (PatConstruct
+                             'bq QTree, qtree
+                             (L
+                              { :12:28-32 }
+                              ("QTree, Node"))
+                             (Just
+                             (L
+                              { :12:33-49 }
+                              (PatTuple
+                               ('ap * 'aq * 'ar * 'as)
+                               [ (L
+                                  { :12:34-36 }
+                                  (PatVar
+                                   (QTree, m1, 'ap)
+                                   (L
+                                    { :12:34-36 }
+                                    "m1")))
+                               , (L
+                                  { :12:38-40 }
+                                  (PatVar
+                                   (QTree, m2, 'aq)
+                                   (L
+                                    { :12:38-40 }
+                                    "m2")))
+                               , (L
+                                  { :12:42-44 }
+                                  (PatVar
+                                   (QTree, m3, 'ar)
+                                   (L
+                                    { :12:42-44 }
+                                    "m3")))
+                               , (L
+                                  { :12:46-48 }
+                                  (PatVar
+                                   (QTree, m4, 'as)
+                                   (L
+                                    { :12:46-48 }
+                                    "m4"))) ]))))) ]))
+                       (Nothing)
+                       (L
+                        { :12:53-122 }
+                        (ExprConstruct
+                         'bh QTree, qtree
+                         (L
+                          { :12:53-57 }
+                          ("QTree, Node"))
+                         (Just
+                         (L
+                          { :12:58-122 }
+                          (ExprTuple
+                           ('bh QTree, qtree * 'bh QTree, qtree * 'bh QTree, qtree * 'bh QTree, qtree)
+                           [ (L
+                              { :12:59-73 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :12:60-64 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :12:65-66 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :12:67-69 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, n1"))
+                               , (L
+                                  { :12:70-72 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, m1")) ]))
+                           , (L
+                              { :12:75-89 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :12:76-80 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :12:81-82 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :12:83-85 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, n2"))
+                               , (L
+                                  { :12:86-88 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, m2")) ]))
+                           , (L
+                              { :12:91-105 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :12:92-96 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :12:97-98 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :12:99-101 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, n3"))
+                               , (L
+                                  { :12:102-104 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, m3")) ]))
+                           , (L
+                              { :12:107-121 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :12:108-112 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :12:113-114 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :12:115-117 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, n4"))
+                               , (L
+                                  { :12:118-120 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, m4")) ])) ])))))))
+                   , (L
+                      { :13:5-39 }
+                      (Case
+                       ('bz QTree, qtree * 'bq QTree, qtree) -> 'bh QTree, qtree
+                       (L
+                        { :13:5-21 }
+                        (PatTuple
+                         ('bz QTree, qtree * 'bq QTree, qtree)
+                         [ (L
+                            { :13:5-12 }
+                            (PatConstruct
+                             'bz QTree, qtree
+                             (L
+                              { :13:5-9 }
+                              ("QTree, Leaf"))
+                             (Just
+                             (L
+                              { :13:10-12 }
+                              (PatVar
+                               (QTree, v1, 'bz)
+                               (L
+                                { :13:10-12 }
+                                "v1"))))))
+                         , (L
+                            { :13:14-21 }
+                            (PatConstruct
+                             'bq QTree, qtree
+                             (L
+                              { :13:14-18 }
+                              ("QTree, Leaf"))
+                             (Just
+                             (L
+                              { :13:19-21 }
+                              (PatVar
+                               (QTree, v2, 'bq)
+                               (L
+                                { :13:19-21 }
+                                "v2")))))) ]))
+                       (Nothing)
+                       (L
+                        { :13:25-39 }
+                        (ExprConstruct
+                         'bh QTree, qtree
+                         (L
+                          { :13:25-29 }
+                          ("QTree, Leaf"))
+                         (Just
+                         (L
+                          { :13:30-39 }
+                          (ExprApply
+                           'bh
+                           (L
+                            { :13:31-32 }
+                            (ExprIdent
+                             'bz -> 'bq -> 'bh
+                             "QTree, f"))
+                           [ (L
+                              { :13:33-35 }
+                              (ExprIdent
+                               'bz
+                               "QTree, v1"))
+                           , (L
+                              { :13:36-38 }
+                              (ExprIdent
+                               'bq
+                               "QTree, v2")) ])))))))
+                   , (L
+                      { :14:5-107 }
+                      (Case
+                       ('bz QTree, qtree * 'bq QTree, qtree) -> 'bh QTree, qtree
+                       (L
+                        { :14:5-34 }
+                        (PatTuple
+                         ('bz QTree, qtree * 'bq QTree, qtree)
+                         [ (L
+                            { :14:5-26 }
+                            (PatConstruct
+                             'bz QTree, qtree
+                             (L
+                              { :14:5-9 }
+                              ("QTree, Node"))
+                             (Just
+                             (L
+                              { :14:10-26 }
+                              (PatTuple
+                               ('bk * 'bl * 'bm * 'bn)
+                               [ (L
+                                  { :14:11-13 }
+                                  (PatVar
+                                   (QTree, n1, 'bk)
+                                   (L
+                                    { :14:11-13 }
+                                    "n1")))
+                               , (L
+                                  { :14:15-17 }
+                                  (PatVar
+                                   (QTree, n2, 'bl)
+                                   (L
+                                    { :14:15-17 }
+                                    "n2")))
+                               , (L
+                                  { :14:19-21 }
+                                  (PatVar
+                                   (QTree, n3, 'bm)
+                                   (L
+                                    { :14:19-21 }
+                                    "n3")))
+                               , (L
+                                  { :14:23-25 }
+                                  (PatVar
+                                   (QTree, n4, 'bn)
+                                   (L
+                                    { :14:23-25 }
+                                    "n4"))) ])))))
+                         , (L
+                            { :14:28-34 }
+                            (PatConstruct
+                             'bq QTree, qtree
+                             (L
+                              { :14:28-32 }
+                              ("QTree, Leaf"))
+                             (Just
+                             (L
+                              { :14:33-34 }
+                              (PatAny
+                               'bq))))) ]))
+                       (Nothing)
+                       (L
+                        { :14:38-107 }
+                        (ExprConstruct
+                         'bh QTree, qtree
+                         (L
+                          { :14:38-42 }
+                          ("QTree, Node"))
+                         (Just
+                         (L
+                          { :14:43-107 }
+                          (ExprTuple
+                           ('bh QTree, qtree * 'bh QTree, qtree * 'bh QTree, qtree * 'bh QTree, qtree)
+                           [ (L
+                              { :14:44-58 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :14:45-49 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :14:50-51 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :14:52-54 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, n1"))
+                               , (L
+                                  { :14:55-57 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, t2")) ]))
+                           , (L
+                              { :14:60-74 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :14:61-65 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :14:66-67 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :14:68-70 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, n2"))
+                               , (L
+                                  { :14:71-73 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, t2")) ]))
+                           , (L
+                              { :14:76-90 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :14:77-81 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :14:82-83 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :14:84-86 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, n3"))
+                               , (L
+                                  { :14:87-89 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, t2")) ]))
+                           , (L
+                              { :14:92-106 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :14:93-97 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :14:98-99 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :14:100-102 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, n4"))
+                               , (L
+                                  { :14:103-105 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, t2")) ])) ])))))))
+                   , (L
+                      { :15:5-107 }
+                      (Case
+                       ('bz QTree, qtree * 'bq QTree, qtree) -> 'bh QTree, qtree
+                       (L
+                        { :15:5-34 }
+                        (PatTuple
+                         ('bz QTree, qtree * 'bq QTree, qtree)
+                         [ (L
+                            { :15:5-11 }
+                            (PatConstruct
+                             'bz QTree, qtree
+                             (L
+                              { :15:5-9 }
+                              ("QTree, Leaf"))
+                             (Just
+                             (L
+                              { :15:10-11 }
+                              (PatAny
+                               'bz)))))
+                         , (L
+                            { :15:13-34 }
+                            (PatConstruct
+                             'bq QTree, qtree
+                             (L
+                              { :15:13-17 }
+                              ("QTree, Node"))
+                             (Just
+                             (L
+                              { :15:18-34 }
+                              (PatTuple
+                               ('cc * 'cd * 'ce * 'cf)
+                               [ (L
+                                  { :15:19-21 }
+                                  (PatVar
+                                   (QTree, n1, 'cc)
+                                   (L
+                                    { :15:19-21 }
+                                    "n1")))
+                               , (L
+                                  { :15:23-25 }
+                                  (PatVar
+                                   (QTree, n2, 'cd)
+                                   (L
+                                    { :15:23-25 }
+                                    "n2")))
+                               , (L
+                                  { :15:27-29 }
+                                  (PatVar
+                                   (QTree, n3, 'ce)
+                                   (L
+                                    { :15:27-29 }
+                                    "n3")))
+                               , (L
+                                  { :15:31-33 }
+                                  (PatVar
+                                   (QTree, n4, 'cf)
+                                   (L
+                                    { :15:31-33 }
+                                    "n4"))) ]))))) ]))
+                       (Nothing)
+                       (L
+                        { :15:38-107 }
+                        (ExprConstruct
+                         'bh QTree, qtree
+                         (L
+                          { :15:38-42 }
+                          ("QTree, Node"))
+                         (Just
+                         (L
+                          { :15:43-107 }
+                          (ExprTuple
+                           ('bh QTree, qtree * 'bh QTree, qtree * 'bh QTree, qtree * 'bh QTree, qtree)
+                           [ (L
+                              { :15:44-58 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :15:45-49 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :15:50-51 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :15:52-54 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, t1"))
+                               , (L
+                                  { :15:55-57 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, n1")) ]))
+                           , (L
+                              { :15:60-74 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :15:61-65 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :15:66-67 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :15:68-70 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, t1"))
+                               , (L
+                                  { :15:71-73 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, n2")) ]))
+                           , (L
+                              { :15:76-90 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :15:77-81 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :15:82-83 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :15:84-86 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, t1"))
+                               , (L
+                                  { :15:87-89 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, n3")) ]))
+                           , (L
+                              { :15:92-106 }
+                              (ExprApply
+                               'bh QTree, qtree
+                               (L
+                                { :15:93-97 }
+                                (ExprIdent
+                                 ('bz -> 'bq -> 'bh) -> 'bz QTree, qtree -> 'bq QTree, qtree -> 'bh QTree, qtree
+                                 "QTree, map2"))
+                               [ (L
+                                  { :15:98-99 }
+                                  (ExprIdent
+                                   'bz -> 'bq -> 'bh
+                                   "QTree, f"))
+                               , (L
+                                  { :15:100-102 }
+                                  (ExprIdent
+                                   'bz QTree, qtree
+                                   "QTree, t1"))
+                               , (L
+                                  { :15:103-105 }
+                                  (ExprIdent
+                                   'bq QTree, qtree
+                                   "QTree, n4")) ])) ]))))))) ])))))))))) ])))) ])
