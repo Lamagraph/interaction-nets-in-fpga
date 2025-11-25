@@ -50,15 +50,7 @@ data ModuleResolverError
   deriving (Show, Typeable)
 instance Exception ModuleResolverError
 
--- State?
-data MonadModuleResolverState = MonadModuleResolverState {}
-
-makeLenses 'MonadModuleResolverState
-
-defaultMonadModuleResolverState :: MonadModuleResolverState
-defaultMonadModuleResolverState = MonadModuleResolverState{}
-
-type MonadModuleResolver a = State MonadModuleResolverState a
+type MonadModuleResolver a = Identity a
 
 runMonadModuleResolver :: MonadModuleResolver a -> a
-runMonadModuleResolver f = evalState f defaultMonadModuleResolverState
+runMonadModuleResolver = runIdentity
