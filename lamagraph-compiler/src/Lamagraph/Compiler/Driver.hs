@@ -2,6 +2,8 @@ module Lamagraph.Compiler.Driver (
   parseLmlProgram,
   typecheckLmlProgram,
   desugarLmlProgram,
+  resolveLmlProgram,
+  resolveModuleDefEnv,
 ) where
 
 import Relude
@@ -10,6 +12,8 @@ import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.Core.LmlToCore
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Extension
+import Lamagraph.Compiler.ModuleResolver.Resolve.Module
+import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv
@@ -30,6 +34,9 @@ inferLmlProgram env (LmlProgram (x : xs)) = do
 
 typecheckLmlProgram :: LmlProgram LmlcMr -> Either TypecheckError (LmlProgram LmlcTc)
 typecheckLmlProgram = runMonadTypecheck . inferLmlProgram defaultEnv
+
+resolveLmlProgram :: LmlProgram LmlcPs -> LmlProgram LmlcMr
+resolveLmlProgram = resolveDef
 
 desugarLmlProgram :: LmlProgram LmlcTc -> MonadDesugar [CoreBind]
 desugarLmlProgram (LmlProgram []) = pure []

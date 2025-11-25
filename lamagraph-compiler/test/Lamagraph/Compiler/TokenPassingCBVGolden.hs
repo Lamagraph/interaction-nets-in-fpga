@@ -23,8 +23,8 @@ import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.Core.LmlToCore
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
+import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.GoldenCommon
-import Lamagraph.Compiler.ModuleResolver.Resolve.Module
 import Lamagraph.Compiler.Nets.Encodings.LambdaCalculusCore
 import Lamagraph.Compiler.Nets.Encodings.TokenPassingCBV
 import Lamagraph.Compiler.Nets.Processing

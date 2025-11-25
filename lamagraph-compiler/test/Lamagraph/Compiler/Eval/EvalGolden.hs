@@ -11,9 +11,9 @@ import Data.Either.Extra (mapLeft)
 import Lamagraph.Compiler.Core.LmlToCore
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
+import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.GoldenCommon
-import Lamagraph.Compiler.ModuleResolver.Resolve.Module
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.Typechecker.Infer
 

@@ -7,8 +7,8 @@ import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
 
+import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.GoldenCommon
-import Lamagraph.Compiler.ModuleResolver.Resolve.Module
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.PrettyAst ()
 import Lamagraph.Compiler.Typechecker.Infer

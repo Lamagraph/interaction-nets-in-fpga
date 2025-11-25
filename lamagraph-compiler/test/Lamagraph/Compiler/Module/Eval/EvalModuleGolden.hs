@@ -14,7 +14,6 @@ import Lamagraph.Compiler.Core.Pretty ()
 import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.GoldenCommon
-import Lamagraph.Compiler.ModuleResolver.Resolve.Program
 import Lamagraph.Compiler.PrettyAst ()
 
 moduleSourceDir :: FilePath
@@ -50,7 +49,7 @@ helper lmlFiles = do
   fileLBS <- mapM readFileLBS lmlFiles
   let contents = map decodeUtf8 fileLBS
   parsedProgram <- fromEither $ mapLeft stringException $ parseLmlProgram contents
-  let resolvedProgram = resolveDef parsedProgram
+  let resolvedProgram = resolveLmlProgram parsedProgram
   typedProgram <- fromEither $ typecheckLmlProgram resolvedProgram
   let binds = runMonadDesugar $ desugarLmlProgram typedProgram
   _ <- evalCoreBindsDefEnv binds
