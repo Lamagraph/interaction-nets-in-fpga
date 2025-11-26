@@ -1,22 +1,22 @@
 (Module
- ~-: int -> int
- >=: int -> int -> bool
- /: int -> int -> int
- *: int -> int -> int
- ::: forall 'a. ('a * 'a list) -> 'a list
- <: int -> int -> bool
- []: forall 'a. 'a list
- -: int -> int -> int
- y: int
- +: int -> int -> int
- >: int -> int -> bool
- <=: int -> int -> bool
- x: int -> int -> bool
- Some: forall 'a. 'a -> 'a option
- None: forall 'a. 'a option
- false: bool
- true: bool
- print_int: int -> ()
+ #std, None: forall 'a. 'a option
+ DefaultEnv, x: int -> int -> bool
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ DefaultEnv, y: int
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
  (Just
  (L
   { :1:8-18 }
@@ -30,11 +30,11 @@
        [ (L
           { :3:5-18 }
           (Bind
-           x: int -> int -> bool
+           DefaultEnv, x: int -> int -> bool
            (L
             { :3:5-6 }
             (PatVar
-             int -> int -> bool
+             (DefaultEnv, x, int -> int -> bool)
              (L
               { :3:5-6 }
               "x")))
@@ -45,7 +45,7 @@
              (L
               { :3:7-8 }
               (PatVar
-               int
+               (DefaultEnv, m, int)
                (L
                 { :3:7-8 }
                 "m")))
@@ -56,7 +56,7 @@
                (L
                 { :3:9-10 }
                 (PatVar
-                 int
+                 (DefaultEnv, n, int)
                  (L
                   { :3:9-10 }
                   "n")))
@@ -68,17 +68,17 @@
                   { :3:15-16 }
                   (ExprIdent
                    int -> int -> bool
-                   ">"))
+                   "#std, >"))
                  [ (L
                     { :3:13-14 }
                     (ExprIdent
                      int
-                     "m"))
+                     "DefaultEnv, m"))
                  , (L
                     { :3:17-18 }
                     (ExprIdent
                      int
-                     "n")) ])))))))) ]))))
+                     "DefaultEnv, n")) ])))))))) ]))))
  , (L
     { :5:1-12 }
     (ValD
@@ -88,11 +88,11 @@
        [ (L
           { :5:5-12 }
           (Bind
-           y: int
+           DefaultEnv, y: int
            (L
             { :5:5-6 }
             (PatVar
-             int
+             (DefaultEnv, y, int)
              (L
               { :5:5-6 }
               "y")))
@@ -104,7 +104,7 @@
               { :5:10-11 }
               (ExprIdent
                int -> int -> int
-               "+"))
+               "#std, +"))
              [ (L
                 { :5:9-10 }
                 (ExprConstant int int

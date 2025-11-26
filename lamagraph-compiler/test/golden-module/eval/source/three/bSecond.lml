@@ -1,0 +1,5 @@
+module Second
+
+let x = First.x * (-1)
+
+let x a = a * 2

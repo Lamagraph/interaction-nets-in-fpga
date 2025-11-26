@@ -23,6 +23,7 @@ import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.Core.LmlToCore
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
+import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.Nets.Encodings.LambdaCalculusCore
 import Lamagraph.Compiler.Nets.Encodings.TokenPassingCBV
@@ -79,7 +80,8 @@ lmlHelper rule lmlFile = do
   fileLBS <- readFileLBS lmlFile
   let fileT = decodeUtf8 fileLBS
   parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
-  typedTree <- fromEither $ inferDef parseTree
+  let resolvedTree = resolveModuleDefEnv parseTree
+  typedTree <- fromEither $ inferDef resolvedTree
   let binds = runMonadDesugar $ desugarLmlModule typedTree
   ((net, output), stats) <- runINsMachine $ do
     net <- coreBindsToTokenPassingCBV HashMap.empty [] [] binds

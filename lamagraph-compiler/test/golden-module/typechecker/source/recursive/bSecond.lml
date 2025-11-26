@@ -1,0 +1,8 @@
+module Second.User
+
+open First.Recursive
+
+let speaker x =
+    if even x then "Even"
+    else if odd x then "Odd"
+    else "Error"

@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -28,8 +28,19 @@ library
       Lamagraph.Compiler.Core.LmlToCore
       Lamagraph.Compiler.Core.MonadDesugar
       Lamagraph.Compiler.Core.Pretty
+      Lamagraph.Compiler.Driver
       Lamagraph.Compiler.Eval
       Lamagraph.Compiler.Extension
+      Lamagraph.Compiler.ModuleResolver.DefaultEnv
+      Lamagraph.Compiler.ModuleResolver.Helper
+      Lamagraph.Compiler.ModuleResolver.Resolve.Decl
+      Lamagraph.Compiler.ModuleResolver.Resolve.Expr
+      Lamagraph.Compiler.ModuleResolver.Resolve.Lit
+      Lamagraph.Compiler.ModuleResolver.Resolve.Module
+      Lamagraph.Compiler.ModuleResolver.Resolve.Pat
+      Lamagraph.Compiler.ModuleResolver.Resolve.Program
+      Lamagraph.Compiler.ModuleResolver.Resolve.Type
+      Lamagraph.Compiler.ModuleResolver.Types
       Lamagraph.Compiler.MonadFresh
       Lamagraph.Compiler.Nets.Encodings.LambdaCalculusCore
       Lamagraph.Compiler.Nets.Encodings.TokenPassingCBV
@@ -124,6 +135,8 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Core.PrettyCoreGolden
       Lamagraph.Compiler.Eval.EvalGolden
       Lamagraph.Compiler.GoldenCommon
+      Lamagraph.Compiler.Module.Eval.EvalModuleGolden
+      Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden
       Lamagraph.Compiler.NetsGolden
       Lamagraph.Compiler.Parser.LexerTest
       Lamagraph.Compiler.Parser.ParserRoundtrip
@@ -143,6 +156,7 @@ test-suite lamagraph-compiler-test
   build-depends:
       array
     , base >=4.7 && <5
+    , directory
     , extra
     , filepath
     , hedgehog

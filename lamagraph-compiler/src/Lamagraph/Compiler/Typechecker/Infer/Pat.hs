@@ -10,6 +10,7 @@ import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
 
 import Lamagraph.Compiler.Extension
+import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.Helper
@@ -19,18 +20,18 @@ import Lamagraph.Compiler.Typechecker.TcTypes
 import Lamagraph.Compiler.Typechecker.Unification
 
 -- | Returns total 'Ty' of the 'LmlPat' and substitution over all captured variables
-inferLLmlPat :: TyEnv -> RecFlag -> LLmlPat LmlcPs -> MonadTypecheck (Ty, Subst, LLmlPat LmlcTc)
+inferLLmlPat :: TyEnv -> RecFlag -> LLmlPat LmlcMr -> MonadTypecheck (Ty, Subst, LLmlPat LmlcTc)
 inferLLmlPat env recFlag (L loc pat) = over _3 (L loc) <$> inferLmlPat env recFlag pat
 
-inferLmlPat :: TyEnv -> RecFlag -> LmlPat LmlcPs -> MonadTypecheck (Ty, Subst, LmlPat LmlcTc)
+inferLmlPat :: TyEnv -> RecFlag -> LmlPat LmlcMr -> MonadTypecheck (Ty, Subst, LmlPat LmlcTc)
 inferLmlPat env@(TyEnv tyEnv) NonRecursive = \case
   LmlPatAny _ -> do
     tVar <- freshTVar
     pure (tVar, nullSubst, LmlPatAny tVar)
-  LmlPatVar _ lIdent@(L _ ident) -> do
+  LmlPatVar fname@(FullName n) lIdent -> do
     tVar <- freshTVar
-    let name = Name $ mkLongident $ pure ident
-    pure (tVar, Subst $ HashMap.singleton name tVar, LmlPatVar tVar lIdent)
+    let name = Name n
+    pure (tVar, Subst $ HashMap.singleton name tVar, LmlPatVar (fname, tVar) lIdent)
   LmlPatConstant _ lit -> do
     (ty, lLitTyped) <- inferLmlLit lit
     pure (ty, nullSubst, LmlPatConstant ty lLitTyped)
@@ -77,10 +78,10 @@ inferLmlPat env@(TyEnv tyEnv) NonRecursive = \case
     let outTy = apply unifierSubst ty
     pure (outTy, unifierSubst @@ patSubst, LmlPatConstraint outTy lPatTyped lTyTyped)
 inferLmlPat env Recursive = \case
-  LmlPatVar _ lIdent@(L _ ident) -> do
+  LmlPatVar fname@(FullName n) lIdent -> do
     tVar <- freshTVar
-    let name = Name $ mkLongident $ pure ident
-    pure (tVar, Subst $ HashMap.singleton name tVar, LmlPatVar tVar lIdent)
+    let name = Name n
+    pure (tVar, Subst $ HashMap.singleton name tVar, LmlPatVar (fname, tVar) lIdent)
   LmlPatConstraint _ lPat lTy -> do
     (ty, lTyTyped) <- lLmlTypeToTy lTy
     (patTy, patSubst, lPatTyped) <- inferLLmlPat env Recursive lPat

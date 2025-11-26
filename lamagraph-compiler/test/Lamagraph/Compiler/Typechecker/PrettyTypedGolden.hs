@@ -7,6 +7,7 @@ import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
 
+import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.PrettyAst ()
@@ -36,4 +37,6 @@ typecheckerPrettyAstGolden = do
         parseResult = parseLamagraphML fileT
     pure $ case parseResult of
       Left err -> encodeUtf8 err
-      Right tree -> encodeUtf8 $ (renderPretty . pretty . inferDef) tree
+      Right tree ->
+        let treeReal = resolveModuleDefEnv tree
+         in encodeUtf8 $ (renderPretty . pretty . inferDef) treeReal

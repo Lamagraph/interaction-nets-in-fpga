@@ -1,0 +1,9 @@
+module Third
+
+open Second
+
+let out = print_int (x First.x)
+
+open First
+
+let out = print_int x

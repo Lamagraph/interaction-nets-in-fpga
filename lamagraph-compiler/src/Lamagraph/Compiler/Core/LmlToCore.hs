@@ -8,6 +8,7 @@ import Data.Foldable.Extra hiding (elem)
 import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Extension
+import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv
@@ -58,11 +59,11 @@ desugarLmlCase scrutineeVar (LmlCase _ (L _ pat) Nothing lExpr) = do
   expr <- desugarLLmlExpr lExpr
   case pat of
     LmlPatAny _ -> pure (DEFAULT, [], expr)
-    LmlPatVar _ (L _ ident) ->
+    LmlPatVar (FullName n, _) _ ->
       pure
         ( DEFAULT
         , []
-        , replaceVar (Id $ Name $ mkLongident $ pure ident) scrutineeVar expr
+        , replaceVar (Id $ Name n) scrutineeVar expr
         )
     LmlPatConstant _ lit -> pure (LitAlt $ desugarLmlLit lit, [], expr)
     LmlPatTuple _ lPat lPats ->
@@ -74,7 +75,7 @@ desugarLmlCase scrutineeVar (LmlCase _ (L _ pat) Nothing lExpr) = do
             Nothing -> pure (DataAlt constuctorName, [], expr)
             Just (L _ args) ->
               case args of
-                LmlPatVar _ (L _ ident) -> pure (DataAlt constuctorName, [Id $ Name $ mkLongident $ pure ident], expr)
+                LmlPatVar (FullName n, _) _ -> pure (DataAlt constuctorName, [Id $ Name n], expr)
                 LmlPatTuple _ lPat lPats ->
                   let vars = map helper (lPat : toList lPats)
                    in pure (DataAlt constuctorName, vars, expr)
@@ -83,7 +84,7 @@ desugarLmlCase scrutineeVar (LmlCase _ (L _ pat) Nothing lExpr) = do
     LmlPatConstraint{} -> error "FIXME: Constraints in pattern-matching are currently unsupported."
  where
   helper lPat = case unLoc lPat of
-    LmlPatVar _ (L _ ident) -> Id $ Name $ mkLongident $ pure ident
+    LmlPatVar (FullName n, _) _ -> Id $ Name n
     _ -> error "FIXME: Nested patterns are currently unsupported."
 desugarLmlCase _ (LmlCase _ _ (Just _) _) = error "FIXME: Guards in pattern-matching are currently unsupported."
 
@@ -92,7 +93,7 @@ desugarLLmlPat (L _ pat) = desugarLmlPat pat
 
 desugarLmlPat :: LmlPat LmlcTc -> MonadDesugar Var
 desugarLmlPat = \case
-  LmlPatVar _ (L _ ident) -> pure $ Id $ Name $ mkLongident $ pure ident
+  LmlPatVar (FullName n, _) _ -> pure $ Id $ Name n
   LmlPatConstraint _ lPat _ -> desugarLLmlPat lPat
   _ -> error "FIXME: Only Var and Constraint patterns are currently supported."
 

@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.Eval (MonadEval, Eval, EvalMock, evalCoreBindsDefEnv) where
+module Lamagraph.Compiler.Eval (MonadEval, Eval, EvalEnv (..), EvalMock, evalCoreBinds, defEvalEnv, evalCoreBindsDefEnv) where
 
 import Relude hiding (modifyIORef', newIORef, readIORef)
 
@@ -7,6 +7,7 @@ import Data.Text qualified as T
 import UnliftIO
 
 import Lamagraph.Compiler.Core
+import Lamagraph.Compiler.ModuleResolver.DefaultEnv
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.TcTypes
 
@@ -104,7 +105,7 @@ evalBinaryPrim BPMinus (VInt arg1) (VInt arg2) = pure $ VInt $ arg1 - arg2
 evalBinaryPrim BPTimes (VInt arg1) (VInt arg2) = pure $ VInt $ arg1 * arg2
 evalBinaryPrim BPLess (VInt arg1) (VInt arg2) =
   let val = if arg1 < arg2 then "true" else "false"
-   in pure $ VAdt (Name $ mkLongident $ pure val) []
+   in pure $ VAdt (Name $ mkLongident $ stdPrefix :| [val]) []
 evalBinaryPrim prim arg1 arg2 = throwIO $ EInvalidBinaryApply prim arg1 arg2
 
 {- | I think this is a bad code, because it can force pattern-matching in weird places
@@ -178,16 +179,16 @@ defEvalEnv :: EvalEnv
 defEvalEnv =
   EvalEnv $
     HashMap.fromList
-      [ (Id $ Name $ mkLongident $ pure "~-", VUnaryPrim UPMinus)
-      , (Id $ Name $ mkLongident $ pure "+", VBinaryPrim1 BPPlus)
-      , (Id $ Name $ mkLongident $ pure "-", VBinaryPrim1 BPMinus)
-      , (Id $ Name $ mkLongident $ pure "*", VBinaryPrim1 BPTimes)
-      , (Id $ Name $ mkLongident $ pure "<", VBinaryPrim1 BPLess)
-      , (Id $ Name $ mkLongident $ pure "[]", VAdt (Name $ mkLongident $ pure "[]") [])
-      , (Id $ Name $ mkLongident $ pure "::", VAdt (Name $ mkLongident $ pure "::") [])
-      , (Id $ Name $ mkLongident $ pure "Some", VAdt (Name $ mkLongident $ pure "Some") [])
-      , (Id $ Name $ mkLongident $ pure "None", VAdt (Name $ mkLongident $ pure "None") [])
-      , (Id $ Name $ mkLongident $ pure "print_int", VUnaryPrim UPPrintInt)
+      [ (Id $ Name $ mkLongident $ stdPrefix :| ["~-"], VUnaryPrim UPMinus)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["+"], VBinaryPrim1 BPPlus)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["-"], VBinaryPrim1 BPMinus)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["*"], VBinaryPrim1 BPTimes)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["<"], VBinaryPrim1 BPLess)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["[]"], VAdt (Name $ mkLongident $ stdPrefix :| ["[]"]) [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["::"], VAdt (Name $ mkLongident $ stdPrefix :| ["::"]) [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["Some"], VAdt (Name $ mkLongident $ stdPrefix :| ["Some"]) [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["None"], VAdt (Name $ mkLongident $ stdPrefix :| ["None"]) [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["print_int"], VUnaryPrim UPPrintInt)
       ]
 
 evalCoreBindsDefEnv :: (MonadEval m) => [CoreBind] -> m EvalEnv

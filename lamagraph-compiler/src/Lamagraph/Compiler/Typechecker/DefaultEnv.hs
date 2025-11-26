@@ -12,6 +12,7 @@ import Relude
 
 import Data.HashMap.Strict qualified as HashMap
 
+import Lamagraph.Compiler.ModuleResolver.DefaultEnv
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.TcTypes
 
@@ -42,10 +43,10 @@ tyBool :: Ty
 tyBool = mkTConstr "bool" []
 
 trueConstrName :: Name
-trueConstrName = Name $ mkLongident $ pure "true"
+trueConstrName = Name $ mkLongident $ stdPrefix :| ["true"]
 
 falseConstrName :: Name
-falseConstrName = Name $ mkLongident $ pure "false"
+falseConstrName = Name $ mkLongident $ stdPrefix :| ["false"]
 
 tyList :: Ty
 tyList = mkTConstr "list" [TVar $ Name $ mkLongident $ pure "a"]
@@ -62,26 +63,26 @@ defaultEnv = TyEnv env
  where
   env =
     HashMap.fromList
-      [ (Name $ mkLongident $ pure "+", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyInt)
-      , (Name $ mkLongident $ pure "-", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyInt)
-      , (Name $ mkLongident $ pure "*", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyInt)
-      , (Name $ mkLongident $ pure "/", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyInt)
-      , (Name $ mkLongident $ pure ">", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
-      , (Name $ mkLongident $ pure ">=", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
-      , (Name $ mkLongident $ pure "<", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
-      , (Name $ mkLongident $ pure "<=", Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
-      , (Name $ mkLongident $ pure "[]", Forall [Name $ mkLongident $ pure "a"] tyList)
+      [ (Name $ mkLongident $ stdPrefix :| ["+"], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyInt)
+      , (Name $ mkLongident $ stdPrefix :| ["-"], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyInt)
+      , (Name $ mkLongident $ stdPrefix :| ["*"], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyInt)
+      , (Name $ mkLongident $ stdPrefix :| ["/"], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyInt)
+      , (Name $ mkLongident $ stdPrefix :| [">"], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
+      , (Name $ mkLongident $ stdPrefix :| [">="], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
+      , (Name $ mkLongident $ stdPrefix :| ["<"], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
+      , (Name $ mkLongident $ stdPrefix :| ["<="], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
+      , (Name $ mkLongident $ stdPrefix :| ["[]"], Forall [Name $ mkLongident $ pure "a"] tyList)
       ,
-        ( Name $ mkLongident $ pure "::"
+        ( Name $ mkLongident $ stdPrefix :| ["::"]
         , Forall [Name $ mkLongident $ pure "a"] (TTuple (TVar (Name $ mkLongident $ pure "a")) (pure tyList) `TArrow` tyList)
         )
-      , (Name $ mkLongident $ pure "None", Forall [Name $ mkLongident $ pure "a"] tyOption)
+      , (Name $ mkLongident $ stdPrefix :| ["None"], Forall [Name $ mkLongident $ pure "a"] tyOption)
       ,
-        ( Name $ mkLongident $ pure "Some"
+        ( Name $ mkLongident $ stdPrefix :| ["Some"]
         , Forall [Name $ mkLongident $ pure "a"] (TVar (Name $ mkLongident $ pure "a") `TArrow` tyOption)
         )
       , (trueConstrName, Forall [] tyBool)
       , (falseConstrName, Forall [] tyBool)
-      , (Name $ mkLongident $ pure "~-", Forall [] $ tyInt `TArrow` tyInt)
-      , (Name $ mkLongident $ pure "print_int", Forall [] $ tyInt `TArrow` tyUnit)
+      , (Name $ mkLongident $ stdPrefix :| ["~-"], Forall [] $ tyInt `TArrow` tyInt)
+      , (Name $ mkLongident $ stdPrefix :| ["print_int"], Forall [] $ tyInt `TArrow` tyUnit)
       ]

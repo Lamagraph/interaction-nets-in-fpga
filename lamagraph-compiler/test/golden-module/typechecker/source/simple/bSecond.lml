@@ -1,0 +1,3 @@
+module Second
+
+let y = First.x

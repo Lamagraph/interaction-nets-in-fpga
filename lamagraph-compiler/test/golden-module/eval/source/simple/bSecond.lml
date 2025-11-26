@@ -1,0 +1,5 @@
+module Second
+
+let x = First.x
+
+let out1 = print_int (x)

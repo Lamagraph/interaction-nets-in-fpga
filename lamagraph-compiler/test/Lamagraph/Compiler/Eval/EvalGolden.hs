@@ -11,6 +11,7 @@ import Data.Either.Extra (mapLeft)
 import Lamagraph.Compiler.Core.LmlToCore
 import Lamagraph.Compiler.Core.MonadDesugar
 import Lamagraph.Compiler.Core.Pretty ()
+import Lamagraph.Compiler.Driver
 import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.GoldenCommon
 import Lamagraph.Compiler.Parser
@@ -43,7 +44,8 @@ evalGolden = do
     fileLBS <- readFileLBS lmlFile
     let fileT = decodeUtf8 fileLBS
     parseTree <- fromEither $ mapLeft stringException $ parseLamagraphML fileT
-    typedTree <- fromEither $ inferDef parseTree
+    let resolvedTree = resolveModuleDefEnv parseTree
+    typedTree <- fromEither $ inferDef resolvedTree
     let binds = runMonadDesugar $ desugarLmlModule typedTree
     _ <- evalCoreBindsDefEnv binds
     ref <- ask

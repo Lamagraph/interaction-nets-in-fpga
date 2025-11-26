@@ -1,0 +1,7 @@
+module Second
+
+let x = false
+
+open First
+
+let x = x

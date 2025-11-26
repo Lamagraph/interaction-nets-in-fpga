@@ -11,10 +11,10 @@ import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.Helper
 import Lamagraph.Compiler.Typechecker.TcTypes
 
-lLmlTypeToTy :: LLmlType LmlcPs -> MonadTypecheck (Ty, LLmlType LmlcTc)
+lLmlTypeToTy :: LLmlType LmlcMr -> MonadTypecheck (Ty, LLmlType LmlcTc)
 lLmlTypeToTy (L loc lmlType) = over _2 (L loc) <$> lmlTypeToTy lmlType
 
-lmlTypeToTy :: LmlType LmlcPs -> MonadTypecheck (Ty, LmlType LmlcTc)
+lmlTypeToTy :: LmlType LmlcMr -> MonadTypecheck (Ty, LmlType LmlcTc)
 lmlTypeToTy = \case
   LmlTyVar _ ident -> do
     tVar <- freshTVar

@@ -17,6 +17,7 @@ import Prettyprinter
 import Prettyprinter.Internal
 
 import Lamagraph.Compiler.Extension
+import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.TcTypes
@@ -202,6 +203,13 @@ instance Pretty TypecheckError where
     VariableClashInPattern name -> [i|Error: variable #{pretty name} is already bound in this pattern|]
     VarMustOccurOnBothSidesOfOrPattern name -> [i|Error: variable #{pretty name} must occur on both sides of the or-pattern|]
 
+instance Pretty ModuleResolverError where
+  pretty :: ModuleResolverError -> Doc ann
+  pretty = \case
+    NameNotFound name -> [i|Error: Name #{pretty name} not found|]
+    ModuleNotFound name -> [i|Error: Module #{pretty name} not found|]
+    ConstructorNotFound name -> [i|Error: Constructor #{pretty name} not found|]
+
 instance Pretty TyEnv where
   pretty :: TyEnv -> Doc ann
   pretty (TyEnv tyEnv) = vsep $ fmap pretty (HashMap.toList tyEnv)
@@ -214,6 +222,10 @@ instance Pretty TyScheme where
   pretty :: TyScheme -> Doc ann
   pretty (Forall [] ty) = pretty ty
   pretty (Forall names ty) = "forall" <+> hsep (fmap (\name -> "'" <> pretty name) names) <> "." <+> pretty ty
+
+instance Pretty FullName where
+  pretty :: FullName -> Doc ann
+  pretty (FullName (Longident idents)) = hsep $ punctuate comma (map pretty (toList idents))
 
 instance Pretty Name where
   pretty :: Name -> Doc ann

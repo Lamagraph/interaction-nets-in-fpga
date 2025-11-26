@@ -1,24 +1,24 @@
 (Module
- _I: forall 'b. 'b -> 'b
- ~-: int -> int
- >=: int -> int -> bool
- _B: forall 'o 'w 't 'u 's 'v 'r 'n. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
- /: int -> int -> int
- *: int -> int -> int
- ::: forall 'a. ('a * 'a list) -> 'a list
- <: int -> int -> bool
- []: forall 'a. 'a list
- -: int -> int -> int
- +: int -> int -> int
- >: int -> int -> bool
- <=: int -> int -> bool
- Some: forall 'a. 'a -> 'a option
- _K: forall 'd 'e. 'd -> 'e -> 'd
- None: forall 'a. 'a option
- false: bool
- true: bool
- _S: forall 'k 'i 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
- print_int: int -> ()
+ SKI, _I: forall 'b. 'b -> 'b
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ SKI, _B: forall 'o 'w 't 'u 's 'v 'r 'n. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ SKI, _S: forall 'k 'i 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ #std, +: int -> int -> int
+ SKI, _K: forall 'd 'e. 'd -> 'e -> 'd
+ #std, Some: forall 'a. 'a -> 'a option
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
  (Just
  (L
   { :1:8-11 }
@@ -32,11 +32,11 @@
        [ (L
           { :3:5-13 }
           (Bind
-           _I: forall 'b. 'b -> 'b
+           SKI, _I: forall 'b. 'b -> 'b
            (L
             { :3:5-7 }
             (PatVar
-             'b -> 'b
+             (SKI, _I, 'b -> 'b)
              (L
               { :3:5-7 }
               "_I")))
@@ -47,7 +47,7 @@
              (L
               { :3:8-9 }
               (PatVar
-               'b
+               (SKI, x, 'b)
                (L
                 { :3:8-9 }
                 "x")))
@@ -55,7 +55,7 @@
               { :3:12-13 }
               (ExprIdent
                'b
-               "x")))))) ]))))
+               "SKI, x")))))) ]))))
  , (L
     { :4:1-15 }
     (ValD
@@ -65,11 +65,11 @@
        [ (L
           { :4:5-15 }
           (Bind
-           _K: forall 'd 'e. 'd -> 'e -> 'd
+           SKI, _K: forall 'd 'e. 'd -> 'e -> 'd
            (L
             { :4:5-7 }
             (PatVar
-             'd -> 'e -> 'd
+             (SKI, _K, 'd -> 'e -> 'd)
              (L
               { :4:5-7 }
               "_K")))
@@ -80,7 +80,7 @@
              (L
               { :4:8-9 }
               (PatVar
-               'd
+               (SKI, x, 'd)
                (L
                 { :4:8-9 }
                 "x")))
@@ -91,7 +91,7 @@
                (L
                 { :4:10-11 }
                 (PatVar
-                 'e
+                 (SKI, y, 'e)
                  (L
                   { :4:10-11 }
                   "y")))
@@ -99,7 +99,7 @@
                 { :4:14-15 }
                 (ExprIdent
                  'd
-                 "x")))))))) ]))))
+                 "SKI, x")))))))) ]))))
  , (L
     { :5:1-25 }
     (ValD
@@ -109,11 +109,11 @@
        [ (L
           { :5:5-25 }
           (Bind
-           _S: forall 'k 'i 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
+           SKI, _S: forall 'k 'i 'j. ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
            (L
             { :5:5-7 }
             (PatVar
-             ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j
+             (SKI, _S, ('i -> 'k -> 'j) -> ('i -> 'k) -> 'i -> 'j)
              (L
               { :5:5-7 }
               "_S")))
@@ -124,7 +124,7 @@
              (L
               { :5:8-9 }
               (PatVar
-               'i -> 'k -> 'j
+               (SKI, f, 'i -> 'k -> 'j)
                (L
                 { :5:8-9 }
                 "f")))
@@ -135,7 +135,7 @@
                (L
                 { :5:10-11 }
                 (PatVar
-                 'i -> 'k
+                 (SKI, g, 'i -> 'k)
                  (L
                   { :5:10-11 }
                   "g")))
@@ -146,7 +146,7 @@
                  (L
                   { :5:12-13 }
                   (PatVar
-                   'i
+                   (SKI, x, 'i)
                    (L
                     { :5:12-13 }
                     "x")))
@@ -158,12 +158,12 @@
                     { :5:16-17 }
                     (ExprIdent
                      'i -> 'k -> 'j
-                     "f"))
+                     "SKI, f"))
                    [ (L
                       { :5:18-19 }
                       (ExprIdent
                        'i
-                       "x"))
+                       "SKI, x"))
                    , (L
                       { :5:20-25 }
                       (ExprApply
@@ -172,8 +172,12 @@
                         { :5:21-22 }
                         (ExprIdent
                          'i -> 'k
-                         "g"))
-                       [(L { :5:23-24 } (ExprIdent 'i "x"))])) ])))))))))) ]))))
+                         "SKI, g"))
+                       [ (L
+                          { :5:23-24 }
+                          (ExprIdent
+                           'i
+                           "SKI, x")) ])) ])))))))))) ]))))
  , (L
     { :7:1-64 }
     (ValD
@@ -183,11 +187,12 @@
        [ (L
           { :7:5-64 }
           (Bind
-           _B: forall 'o 'w 't 'u 's 'v 'r 'n. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+           SKI, _B: forall 'o 'w 't 'u 's 'v 'r 'n. ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
            (L
             { :7:5-7 }
             (PatVar
-             ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+             ( SKI, _B
+             , ('o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w) -> 'n -> 'o -> ('r -> 's -> 't) -> 'u -> 'v -> 'w )
              (L
               { :7:5-7 }
               "_B")))
@@ -198,7 +203,7 @@
              (L
               { :7:8-9 }
               (PatVar
-               'o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
+               (SKI, f, 'o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w)
                (L
                 { :7:8-9 }
                 "f")))
@@ -209,7 +214,7 @@
                (L
                 { :7:10-11 }
                 (PatVar
-                 'n
+                 (SKI, g, 'n)
                  (L
                   { :7:10-11 }
                   "g")))
@@ -220,7 +225,7 @@
                  (L
                   { :7:12-13 }
                   (PatVar
-                   'o
+                   (SKI, x, 'o)
                    (L
                     { :7:12-13 }
                     "x")))
@@ -240,9 +245,9 @@
                         { :7:19-20 }
                         (ExprIdent
                          'o -> 'n -> ('r -> 's -> 't) -> 'u -> 'v -> 'w
-                         "f"))
-                       [(L { :7:21-22 } (ExprIdent 'o "x"))]))
-                     [(L { :7:24-25 } (ExprIdent 'n "g"))]))
+                         "SKI, f"))
+                       [(L { :7:21-22 } (ExprIdent 'o "SKI, x"))]))
+                     [(L { :7:24-25 } (ExprIdent 'n "SKI, g"))]))
                    (L
                     { :7:29-63 }
                     (TyArrow

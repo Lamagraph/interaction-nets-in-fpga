@@ -1,0 +1,77 @@
+(Module
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ Second, x: int
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
+ First, x: int
+ (Just
+ (L
+  { :1:8-14 }
+  ("Second")))
+ [ (L
+    { :3:1-14 }
+    (ValD
+     (L
+      { :3:5-14 }
+      (NonRec
+       [ (L
+          { :3:5-14 }
+          (Bind
+           Second, x: bool
+           (L
+            { :3:5-6 }
+            (PatVar
+             (Second, x, bool)
+             (L
+              { :3:5-6 }
+              "x")))
+           (L
+            { :3:9-14 }
+            (ExprConstruct
+             bool
+             (L
+              { :3:9-14 }
+              ("#std, false"))
+             (Nothing))))) ]))))
+ , (L
+    { :5:1-11 }
+    (OpenD
+     OpenDecl
+     (L
+      { :5:6-11 }
+      ("First"))))
+ , (L
+    { :7:1-10 }
+    (ValD
+     (L
+      { :7:5-10 }
+      (NonRec
+       [ (L
+          { :7:5-10 }
+          (Bind
+           Second, x: int
+           (L
+            { :7:5-6 }
+            (PatVar
+             (Second, x, int)
+             (L
+              { :7:5-6 }
+              "x")))
+           (L
+            { :7:9-10 }
+            (ExprIdent
+             int
+             "First, x")))) ])))) ])

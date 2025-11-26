@@ -68,6 +68,9 @@ module Lamagraph.Compiler.Syntax (
   LmlModule (..),
   ForallLmlModule,
 
+  -- ** LmlProgram type
+  LmlProgram (..),
+
   -- ** Reexports
   module Lamagraph.Compiler.Syntax.Decl,
   module Lamagraph.Compiler.Syntax.Expr,
@@ -353,3 +356,5 @@ type ForallLmlModule (tc :: Type -> Constraint) pass =
 
 deriving instance (ForallLmlModule Show pass) => Show (LmlModule pass)
 deriving instance (ForallLmlModule Eq pass) => Eq (LmlModule pass)
+
+newtype LmlProgram pass = LmlProgram [LmlModule pass]

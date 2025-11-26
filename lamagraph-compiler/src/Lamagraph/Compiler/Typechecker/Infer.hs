@@ -1,4 +1,4 @@
-module Lamagraph.Compiler.Typechecker.Infer (inferDef) where
+module Lamagraph.Compiler.Typechecker.Infer (inferDef, inferLmlModule) where
 
 import Relude
 
@@ -10,7 +10,7 @@ import Lamagraph.Compiler.Typechecker.DefaultEnv
 import Lamagraph.Compiler.Typechecker.Infer.Decl
 import Lamagraph.Compiler.Typechecker.TcTypes
 
-inferLmlModule :: TyEnv -> LmlModule LmlcPs -> MonadTypecheck (LmlModule LmlcTc)
+inferLmlModule :: TyEnv -> LmlModule LmlcMr -> MonadTypecheck (LmlModule LmlcTc)
 inferLmlModule tyEnv (LmlModule _ lLongident decls) = do
   (outEnv, declsTyped) <- inferSeq tyEnv decls
   pure $ LmlModule outEnv lLongident declsTyped
@@ -22,8 +22,8 @@ inferLmlModule tyEnv (LmlModule _ lLongident decls) = do
       (TyEnv tyEnv'', lDeclsTyped) <- inferSeq (TyEnv $ tyEnv' `HashMap.union` tyEnvInner) xs
       pure (TyEnv (tyEnv'' `HashMap.union` tyEnv'), lDeclTyped : lDeclsTyped)
 
-infer :: TyEnv -> LmlModule LmlcPs -> Either TypecheckError (LmlModule LmlcTc)
+infer :: TyEnv -> LmlModule LmlcMr -> Either TypecheckError (LmlModule LmlcTc)
 infer env = runMonadTypecheck . inferLmlModule env
 
-inferDef :: LmlModule LmlcPs -> Either TypecheckError (LmlModule LmlcTc)
+inferDef :: LmlModule LmlcMr -> Either TypecheckError (LmlModule LmlcTc)
 inferDef = infer defaultEnv

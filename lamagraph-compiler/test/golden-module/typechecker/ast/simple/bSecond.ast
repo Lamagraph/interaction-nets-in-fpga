@@ -1,0 +1,45 @@
+(Module
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ Second, y: int
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
+ First, x: int
+ (Just
+ (L
+  { :1:8-14 }
+  ("Second")))
+ [ (L
+    { :3:1-16 }
+    (ValD
+     (L
+      { :3:5-16 }
+      (NonRec
+       [ (L
+          { :3:5-16 }
+          (Bind
+           Second, y: int
+           (L
+            { :3:5-6 }
+            (PatVar
+             (Second, y, int)
+             (L
+              { :3:5-6 }
+              "y")))
+           (L
+            { :3:9-16 }
+            (ExprIdent
+             int
+             "First, x")))) ])))) ])

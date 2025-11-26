@@ -21,10 +21,10 @@ import Lamagraph.Compiler.Typechecker.Instances ()
 import Lamagraph.Compiler.Typechecker.TcTypes
 import Lamagraph.Compiler.Typechecker.Unification
 
-inferLLmlExpr :: TyEnv -> LLmlExpr LmlcPs -> MonadTypecheck (Ty, LLmlExpr LmlcTc)
+inferLLmlExpr :: TyEnv -> LLmlExpr LmlcMr -> MonadTypecheck (Ty, LLmlExpr LmlcTc)
 inferLLmlExpr tyEnv (L loc expr) = over _2 (L loc) <$> inferLmlExpr tyEnv expr
 
-inferLmlExpr :: TyEnv -> LmlExpr LmlcPs -> MonadTypecheck (Ty, LmlExpr LmlcTc)
+inferLmlExpr :: TyEnv -> LmlExpr LmlcMr -> MonadTypecheck (Ty, LmlExpr LmlcTc)
 inferLmlExpr env@(TyEnv tyEnv) = \case
   LmlExprIdent _ longident -> case HashMap.lookup (Name longident) tyEnv of
     Nothing -> throwError $ UnboundVariable (coerce longident)
@@ -88,10 +88,10 @@ inferLmlExpr env@(TyEnv tyEnv) = \case
     unify exprTy expectedTy
     pure (expectedTy, LmlExprConstraint expectedTy lExprTyped lTypeTyped)
 
-inferLLmlBindGroup :: TyEnv -> LLmlBindGroup LmlcPs -> MonadTypecheck (TyEnv, LLmlBindGroup LmlcTc)
+inferLLmlBindGroup :: TyEnv -> LLmlBindGroup LmlcMr -> MonadTypecheck (TyEnv, LLmlBindGroup LmlcTc)
 inferLLmlBindGroup env (L loc bg) = over _2 (L loc) <$> inferLmlBindGroup env bg
 
-inferLmlBindGroup :: TyEnv -> LmlBindGroup LmlcPs -> MonadTypecheck (TyEnv, LmlBindGroup LmlcTc)
+inferLmlBindGroup :: TyEnv -> LmlBindGroup LmlcMr -> MonadTypecheck (TyEnv, LmlBindGroup LmlcTc)
 inferLmlBindGroup env (LmlBindGroup _ NonRecursive binds) = do
   (newEnvs, lBinds) <- NE.unzip <$> mapM (inferLLmlNonRecBind env) binds
   bgEnv <- foldlM1 tyEnvUnionDisj newEnvs
@@ -108,10 +108,10 @@ inferLmlBindGroup env (LmlBindGroup _ Recursive binds) = do
   bgEnv <- foldlM1 tyEnvUnionDisj (NE.cons env newEnvs)
   pure (bgEnv, LmlBindGroup noExtField Recursive lBinds)
 
-inferLLmlRecBind :: TyEnv -> (Ty, Subst, LLmlPat LmlcTc) -> LLmlBind LmlcPs -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
+inferLLmlRecBind :: TyEnv -> (Ty, Subst, LLmlPat LmlcTc) -> LLmlBind LmlcMr -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
 inferLLmlRecBind env patInfo (L loc bind) = over _2 (L loc) <$> inferLmlRecBind env patInfo bind
 
-inferLmlRecBind :: TyEnv -> (Ty, Subst, LLmlPat LmlcTc) -> LmlBind LmlcPs -> MonadTypecheck (TyEnv, LmlBind LmlcTc)
+inferLmlRecBind :: TyEnv -> (Ty, Subst, LLmlPat LmlcTc) -> LmlBind LmlcMr -> MonadTypecheck (TyEnv, LmlBind LmlcTc)
 inferLmlRecBind env (patTy, Subst patSubst, lPatTyped) (LmlBind _ _ lExpr) = do
   (exprTy, lExprTyped) <- inferLLmlExpr env lExpr
   unify exprTy patTy
@@ -119,10 +119,10 @@ inferLmlRecBind env (patTy, Subst patSubst, lPatTyped) (LmlBind _ _ lExpr) = do
   let outEnv = TyEnv $ fmap (generalize (apply subst env)) (apply subst patSubst)
   pure (outEnv, LmlBind outEnv (apply subst lPatTyped) (apply subst lExprTyped))
 
-inferLLmlNonRecBind :: TyEnv -> LLmlBind LmlcPs -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
+inferLLmlNonRecBind :: TyEnv -> LLmlBind LmlcMr -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
 inferLLmlNonRecBind env (L loc bind) = over _2 (L loc) <$> inferLmlNonRecBind env bind
 
-inferLmlNonRecBind :: TyEnv -> LmlBind LmlcPs -> MonadTypecheck (TyEnv, LmlBind LmlcTc)
+inferLmlNonRecBind :: TyEnv -> LmlBind LmlcMr -> MonadTypecheck (TyEnv, LmlBind LmlcTc)
 inferLmlNonRecBind env (LmlBind _ lPat lExpr) = do
   (patTy, Subst patSubst, lPatTyped) <- inferLLmlPat env NonRecursive lPat
   (exprTy, lExprTyped) <- inferLLmlExpr env lExpr
@@ -131,10 +131,10 @@ inferLmlNonRecBind env (LmlBind _ lPat lExpr) = do
   let outEnv = TyEnv $ fmap (generalize (apply subst env)) (apply subst patSubst)
   pure (outEnv, LmlBind outEnv (apply subst lPatTyped) (apply subst lExprTyped))
 
-inferLLmlCase :: TyEnv -> LLmlCase LmlcPs -> MonadTypecheck (Ty, LLmlCase LmlcTc)
+inferLLmlCase :: TyEnv -> LLmlCase LmlcMr -> MonadTypecheck (Ty, LLmlCase LmlcTc)
 inferLLmlCase env (L loc case') = over _2 (L loc) <$> inferLmlCase env case'
 
-inferLmlCase :: TyEnv -> LmlCase LmlcPs -> MonadTypecheck (Ty, LmlCase LmlcTc)
+inferLmlCase :: TyEnv -> LmlCase LmlcMr -> MonadTypecheck (Ty, LmlCase LmlcTc)
 inferLmlCase env@(TyEnv tyEnv) (LmlCase _ lPat maybeLGuard lExpr) = do
   (patTy, Subst substMap, lPatTyped) <- inferLLmlPat env NonRecursive lPat
   -- Forall [] here is allowed, since variables inferred from pattern will always be fresh
