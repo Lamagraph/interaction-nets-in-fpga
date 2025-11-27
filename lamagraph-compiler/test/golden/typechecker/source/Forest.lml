@@ -1,0 +1,22 @@
+module Forest
+
+type 'a tree = Leaf of 'a | Node of 'a forest
+and 'a forest = Nil | Cons of 'a tree * 'a forest
+
+let rec tree_size t = match t with
+  | Leaf _ -> 1
+  | Node f -> forest_size f
+and forest_size f = match f with
+  | Nil -> 0
+  | Cons (t, rest) -> (tree_size t) + (forest_size rest)
+
+let rec tree_map f t = match t with
+  | Leaf x -> Leaf (f x)
+  | Node forest -> Node (forest_map f forest)
+and forest_map f forest = match forest with
+  | Nil -> Nil
+  | Cons (t, rest) -> Cons ((tree_map f t), (forest_map f rest))
+
+let single_tree = Leaf 42
+let simple_forest = Cons ((Leaf 1), (Cons ((Leaf 2), (Cons ((Leaf 3), Nil)))))
+let complex_tree = Node (Cons ((Leaf 10), (Cons ((Node (Cons ((Leaf 20), Nil))), Nil))))

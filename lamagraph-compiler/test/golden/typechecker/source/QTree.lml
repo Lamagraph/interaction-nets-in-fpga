@@ -1,0 +1,15 @@
+module QTree
+
+type 'v qtree
+  = Leaf of 'v
+  | Node of 'v qtree * 'v qtree * 'v qtree * 'v qtree
+
+let rec map f t = match t with
+  | Node (n1, n2, n3, n4) -> Node ((map f n1), (map f n2), (map f n3), (map f n4))
+  | Leaf v -> Leaf (f v)
+
+let rec map2 f t1 t2 = match (t1, t2) with
+  | Node (n1, n2, n3, n4), Node (m1, m2, m3, m4) -> Node ((map2 f n1 m1), (map2 f n2 m2), (map2 f n3 m3), (map2 f n4 m4))
+  | Leaf v1, Leaf v2 -> Leaf (f v1 v2)
+  | Node (n1, n2, n3, n4), Leaf _ -> Node ((map2 f n1 t2), (map2 f n2 t2), (map2 f n3 t2), (map2 f n4 t2))
+  | Leaf _, Node (n1, n2, n3, n4) -> Node ((map2 f t1 n1), (map2 f t1 n2), (map2 f t1 n3), (map2 f t1 n4))

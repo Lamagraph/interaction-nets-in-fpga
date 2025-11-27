@@ -10,20 +10,24 @@ import Lamagraph.Compiler.Typechecker.DefaultEnv
 import Lamagraph.Compiler.Typechecker.Infer.Decl
 import Lamagraph.Compiler.Typechecker.TcTypes
 
-inferLmlModule :: TyEnv -> LmlModule LmlcMr -> MonadTypecheck (LmlModule LmlcTc)
-inferLmlModule tyEnv (LmlModule _ lLongident decls) = do
-  (outEnv, declsTyped) <- inferSeq tyEnv decls
+inferLmlModule :: TyEnv -> TyConstrEnv -> LmlModule LmlcMr -> MonadTypecheck (LmlModule LmlcTc)
+inferLmlModule tyEnv tyConstrEnv (LmlModule _ lLongident decls) = do
+  (outEnv, _, declsTyped) <- inferSeq lLongident tyEnv tyConstrEnv decls
   pure $ LmlModule outEnv lLongident declsTyped
  where
-  inferSeq env@(TyEnv tyEnvInner) = \case
-    [] -> pure (TyEnv HashMap.empty, [])
+  inferSeq moduleName env@(TyEnv tyEnvInner) tyConstrEnvCurrent = \case
+    [] -> pure (TyEnv HashMap.empty, tyConstrEnvCurrent, [])
     (x : xs) -> do
-      (TyEnv tyEnv', lDeclTyped) <- inferLLmlDecl env x
-      (TyEnv tyEnv'', lDeclsTyped) <- inferSeq (TyEnv $ tyEnv' `HashMap.union` tyEnvInner) xs
-      pure (TyEnv (tyEnv'' `HashMap.union` tyEnv'), lDeclTyped : lDeclsTyped)
+      (TyEnv tyEnv', tyConstrEnv', lDeclTyped) <- inferLLmlDecl moduleName env tyConstrEnvCurrent x
+      let newTyEnv = TyEnv $ tyEnv' `HashMap.union` tyEnvInner
+          TyConstrEnv tyConstrEnvOld = tyConstrEnvCurrent
+          TyConstrEnv tyConstrEnvNew = tyConstrEnv'
+          combinedTyConstrEnv = TyConstrEnv $ tyConstrEnvNew `HashMap.union` tyConstrEnvOld
+      (TyEnv tyEnv'', tyConstrEnv'', lDeclsTyped) <- inferSeq moduleName newTyEnv combinedTyConstrEnv xs
+      pure (TyEnv (tyEnv'' `HashMap.union` tyEnv'), tyConstrEnv'', lDeclTyped : lDeclsTyped)
 
-infer :: TyEnv -> LmlModule LmlcMr -> Either TypecheckError (LmlModule LmlcTc)
-infer env = runMonadTypecheck . inferLmlModule env
+infer :: TyEnv -> TyConstrEnv -> LmlModule LmlcMr -> Either TypecheckError (LmlModule LmlcTc)
+infer env tyConstrEnv = runMonadTypecheck . inferLmlModule env tyConstrEnv
 
 inferDef :: LmlModule LmlcMr -> Either TypecheckError (LmlModule LmlcTc)
-inferDef = infer defaultEnv
+inferDef = infer defaultEnv defaultTyConstrEnv

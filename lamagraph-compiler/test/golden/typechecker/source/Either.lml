@@ -1,0 +1,6 @@
+module Either
+
+type ('a, 'b) either = Left of 'a | Right of 'b
+
+let left_int = Left 42
+let right_str = Right "fourty-two"

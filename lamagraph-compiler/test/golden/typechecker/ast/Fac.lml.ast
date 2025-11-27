@@ -1,21 +1,20 @@
 (Module
  #std, None: forall 'a. 'a option
  #std, >: int -> int -> bool
- w: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
  #std, -: int -> int -> int
  #std, ~-: int -> int
  #std, <=: int -> int -> bool
  #std, /: int -> int -> int
- Fac, fix: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+ Fac, fix: forall 'w 'x. (('w -> 'x) -> 'w -> 'x) -> 'w -> 'x
  Fac, fac: int -> int
  Fac, fac'': (int -> int) -> int -> int
  #std, ::: forall 'a. ('a * 'a list) -> 'a list
  #std, *: int -> int -> int
  #std, +: int -> int -> int
  #std, Some: forall 'a. 'a -> 'a option
- Fac, fixCBV: (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
+ Fac, fixCBV: forall 'al 'ak. (('ak -> 'al) -> 'ak -> 'al) -> 'ak -> 'al
  #std, print_int: int -> ()
- Fac, fixCBN: ('aj -> 'aj) -> 'aj
+ Fac, fixCBN: forall 'aw. ('aw -> 'aw) -> 'aw
  #std, []: forall 'a. 'a list
  Fac, fac': int -> int
  #std, >=: int -> int -> bool
@@ -289,130 +288,129 @@
        [ (L
           { :12:9-78 }
           (Bind
-           w: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
-           Fac, fix: (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+           Fac, fix: forall 'w 'x. (('w -> 'x) -> 'w -> 'x) -> 'w -> 'x
            (L
             { :12:9-53 }
             (PatConstraint
-             (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+             (('w -> 'x) -> 'w -> 'x) -> 'w -> 'x
              (L
               { :12:10-13 }
               (PatVar
-               (Fac, fix, 'w)
+               (Fac, fix, 'ae)
                (L
                 { :12:10-13 }
                 "fix")))
              (L
               { :12:16-52 }
               (TyArrow
-               (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+               (('w -> 'x) -> 'w -> 'x) -> 'w -> 'x
                (L
                 { :12:16-40 }
                 (TyArrow
-                 ('u -> 'v) -> 'u -> 'v
+                 ('w -> 'x) -> 'w -> 'x
                  (L
                   { :12:17-27 }
                   (TyArrow
-                   'u -> 'v
+                   'w -> 'x
                    (L
                     { :12:18-20 }
                     (TyVar
-                     'u
+                     'w
                      (L
                       { :12:19-20 }
                       "a")))
                    (L
                     { :12:24-26 }
                     (TyVar
-                     'v
+                     'x
                      (L
                       { :12:25-26 }
                       "b")))))
                  (L
                   { :12:31-39 }
                   (TyArrow
-                   'u -> 'v
+                   'w -> 'x
                    (L
                     { :12:31-33 }
                     (TyVar
-                     'u
+                     'w
                      (L
                       { :12:32-33 }
                       "a")))
                    (L
                     { :12:37-39 }
                     (TyVar
-                     'v
+                     'x
                      (L
                       { :12:38-39 }
                       "b")))))))
                (L
                 { :12:44-52 }
                 (TyArrow
-                 'u -> 'v
+                 'w -> 'x
                  (L
                   { :12:44-46 }
                   (TyVar
-                   'u
+                   'w
                    (L
                     { :12:45-46 }
                     "a")))
                  (L
                   { :12:50-52 }
                   (TyVar
-                   'v
+                   'x
                    (L
                     { :12:51-52 }
                     "b")))))))))
            (L
             { :12:60-78 }
             (ExprFunction
-             (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+             (('w -> 'x) -> 'w -> 'x) -> 'w -> 'x
              (L
               { :12:60-61 }
               (PatVar
-               (Fac, f, ('u -> 'v) -> 'u -> 'v)
+               (Fac, f, ('w -> 'x) -> 'w -> 'x)
                (L
                 { :12:60-61 }
                 "f")))
              (L
               { :12:62-78 }
               (ExprFunction
-               'u -> 'v
+               'w -> 'x
                (L
                 { :12:62-63 }
                 (PatVar
-                 (Fac, x, 'u)
+                 (Fac, x, 'w)
                  (L
                   { :12:62-63 }
                   "x")))
                (L
                 { :12:67-78 }
                 (ExprApply
-                 'v
+                 'x
                  (L
                   { :12:67-68 }
                   (ExprIdent
-                   ('u -> 'v) -> 'u -> 'v
+                   ('w -> 'x) -> 'w -> 'x
                    "Fac, f"))
                  [ (L
                     { :12:69-76 }
                     (ExprApply
-                     'u -> 'v
+                     'w -> 'x
                      (L
                       { :12:70-73 }
                       (ExprIdent
-                       (('u -> 'v) -> 'u -> 'v) -> 'u -> 'v
+                       (('w -> 'x) -> 'w -> 'x) -> 'w -> 'x
                        "Fac, fix"))
                      [ (L
                         { :12:74-75 }
                         (ExprIdent
-                         ('u -> 'v) -> 'u -> 'v
+                         ('w -> 'x) -> 'w -> 'x
                          "Fac, f")) ]))
                  , (L
                     { :12:77-78 }
                     (ExprIdent
-                     'u
+                     'w
                      "Fac, x")) ])))))))) ]))))
  , (L
     { :13:1-43 }
@@ -423,63 +421,63 @@
        [ (L
           { :13:9-43 }
           (Bind
-           Fac, fixCBV: (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
+           Fac, fixCBV: forall 'al 'ak. (('ak -> 'al) -> 'ak -> 'al) -> 'ak -> 'al
            (L
             { :13:9-15 }
             (PatVar
-             (Fac, fixCBV, (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae)
+             (Fac, fixCBV, (('ak -> 'al) -> 'ak -> 'al) -> 'ak -> 'al)
              (L
               { :13:9-15 }
               "fixCBV")))
            (L
             { :13:22-43 }
             (ExprFunction
-             (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
+             (('ak -> 'al) -> 'ak -> 'al) -> 'ak -> 'al
              (L
               { :13:22-23 }
               (PatVar
-               (Fac, f, ('ad -> 'ae) -> 'ad -> 'ae)
+               (Fac, f, ('ak -> 'al) -> 'ak -> 'al)
                (L
                 { :13:22-23 }
                 "f")))
              (L
               { :13:24-43 }
               (ExprFunction
-               'ad -> 'ae
+               'ak -> 'al
                (L
                 { :13:24-25 }
                 (PatVar
-                 (Fac, x, 'ad)
+                 (Fac, x, 'ak)
                  (L
                   { :13:24-25 }
                   "x")))
                (L
                 { :13:29-43 }
                 (ExprApply
-                 'ae
+                 'al
                  (L
                   { :13:29-30 }
                   (ExprIdent
-                   ('ad -> 'ae) -> 'ad -> 'ae
+                   ('ak -> 'al) -> 'ak -> 'al
                    "Fac, f"))
                  [ (L
                     { :13:31-41 }
                     (ExprApply
-                     'ad -> 'ae
+                     'ak -> 'al
                      (L
                       { :13:32-38 }
                       (ExprIdent
-                       (('ad -> 'ae) -> 'ad -> 'ae) -> 'ad -> 'ae
+                       (('ak -> 'al) -> 'ak -> 'al) -> 'ak -> 'al
                        "Fac, fixCBV"))
                      [ (L
                         { :13:39-40 }
                         (ExprIdent
-                         ('ad -> 'ae) -> 'ad -> 'ae
+                         ('ak -> 'al) -> 'ak -> 'al
                          "Fac, f")) ]))
                  , (L
                     { :13:42-43 }
                     (ExprIdent
-                     'ad
+                     'ak
                      "Fac, x")) ])))))))) ]))))
  , (L
     { :14:1-39 }
@@ -490,47 +488,47 @@
        [ (L
           { :14:9-39 }
           (Bind
-           Fac, fixCBN: ('aj -> 'aj) -> 'aj
+           Fac, fixCBN: forall 'aw. ('aw -> 'aw) -> 'aw
            (L
             { :14:9-15 }
             (PatVar
-             (Fac, fixCBN, ('aj -> 'aj) -> 'aj)
+             (Fac, fixCBN, ('aw -> 'aw) -> 'aw)
              (L
               { :14:9-15 }
               "fixCBN")))
            (L
             { :14:22-39 }
             (ExprFunction
-             ('aj -> 'aj) -> 'aj
+             ('aw -> 'aw) -> 'aw
              (L
               { :14:22-23 }
               (PatVar
-               (Fac, f, 'aj -> 'aj)
+               (Fac, f, 'aw -> 'aw)
                (L
                 { :14:22-23 }
                 "f")))
              (L
               { :14:27-39 }
               (ExprApply
-               'aj
+               'aw
                (L
                 { :14:27-28 }
                 (ExprIdent
-                 'aj -> 'aj
+                 'aw -> 'aw
                  "Fac, f"))
                [ (L
                   { :14:29-39 }
                   (ExprApply
-                   'aj
+                   'aw
                    (L
                     { :14:30-36 }
                     (ExprIdent
-                     ('aj -> 'aj) -> 'aj
+                     ('aw -> 'aw) -> 'aw
                      "Fac, fixCBN"))
                    [ (L
                       { :14:37-38 }
                       (ExprIdent
-                       'aj -> 'aj
+                       'aw -> 'aw
                        "Fac, f")) ])) ])))))) ]))))
  , (L
     { :17:1-56 }

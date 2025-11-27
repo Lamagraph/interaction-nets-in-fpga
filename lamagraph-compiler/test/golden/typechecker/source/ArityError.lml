@@ -1,0 +1,4 @@
+module ArityError
+
+type 'a pair = Pair of 'a * 'a
+let x : int list int = []

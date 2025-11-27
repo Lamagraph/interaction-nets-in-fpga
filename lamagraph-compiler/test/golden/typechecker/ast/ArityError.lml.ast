@@ -1,0 +1,2 @@
+Error: The type constructor int expects 0 argument(s),
+       but is here applied to 1 argument(s)
