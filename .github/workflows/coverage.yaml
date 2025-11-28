@@ -1,5 +1,3 @@
-name: Code Coverage
-
 on:
   workflow_call:
   push:
@@ -15,6 +13,7 @@ jobs:
 
       - name: Setup Haskell with Stack
         uses: haskell-actions/setup@v2
+        id: setup
         with:
           enable-stack: true
           stack-version: "latest"
