@@ -1,0 +1,53 @@
+name: Code Coverage
+
+on:
+  workflow_call:
+  push:
+
+jobs:
+  coverage:
+    name: Generate HPC Coverage Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v6
+
+      - name: Setup Haskell with Stack
+        uses: haskell-actions/setup@v2
+        with:
+          enable-stack: true
+          stack-version: "latest"
+          ghc-version: "9.8.4"
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.setup.outputs.stack-root }}
+          key: coverage-${{ hashFiles('stack.yaml') }}
+          restore-keys: |
+            coverage-
+
+      - name: Build with coverage enabled
+        run: stack build --coverage
+
+      - name: Run tests with coverage
+        run: stack test --coverage
+
+      - name: Generate HPC coverage report
+        run: |
+          stack hpc report --all --destdir=coverage-report
+
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpc-coverage-report
+          path: coverage-report/
+          retention-days: 30
+
+      - name: Display coverage summary
+        run: |
+          echo "Coverage report generated successfully!"
+          if [ -f coverage-report/hpc_index.html ]; then
+            echo "Report available in the uploaded artifacts."
+          fi

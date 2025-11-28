@@ -27,3 +27,7 @@ jobs:
   build-and-test:
     needs: hlint
     uses: ./.github/workflows/build-and-test.yaml
+
+  coverage:
+    needs: build-and-test
+    uses: ./.github/workflows/coverage.yaml
