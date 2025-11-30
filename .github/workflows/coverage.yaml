@@ -43,10 +43,3 @@ jobs:
           name: hpc-coverage-report
           path: coverage-report/
           retention-days: 30
-
-      - name: Display coverage summary
-        run: |
-          echo "Coverage report generated successfully!"
-          if [ -f coverage-report/hpc_index.html ]; then
-            echo "Report available in the uploaded artifacts."
-          fi
