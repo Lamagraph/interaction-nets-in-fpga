@@ -35,7 +35,8 @@ jobs:
 
       - name: Generate HPC coverage report
         run: |
-          stack hpc report --all --destdir=coverage-report
+          stack hpc report lamagraph-compiler --destdir=coverage-report/compiler
+          stack hpc report lamagraph-core --destdir=coverage-report/core
 
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@v4
