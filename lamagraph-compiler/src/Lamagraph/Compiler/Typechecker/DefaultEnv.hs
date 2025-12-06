@@ -15,14 +15,7 @@ import Data.HashMap.Strict qualified as HashMap
 
 import Lamagraph.Compiler.ModuleResolver.DefaultEnv
 import Lamagraph.Compiler.Syntax
-import Lamagraph.Compiler.Typechecker.TcTypes (
-  Name (..),
-  Ty (..),
-  TyConstrEnv (..),
-  TyConstrInfo (..),
-  TyEnv (..),
-  TyScheme (..),
- )
+import Lamagraph.Compiler.Typechecker.TcTypes
 
 mkTConstr :: Text -> [Ty] -> Ty
 mkTConstr name = TConstr (Name $ mkLongident $ pure name)

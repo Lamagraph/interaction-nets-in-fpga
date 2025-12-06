@@ -9,7 +9,7 @@ import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
 
 import Lamagraph.Compiler.PrettyAst ()
-import Lamagraph.Compiler.Typechecker.Helper
+import Lamagraph.Compiler.Typechecker.Helper ((@@))
 import Lamagraph.Compiler.Typechecker.TcTypes
 
 occursCheck :: (Tys a) => Name -> a -> Bool

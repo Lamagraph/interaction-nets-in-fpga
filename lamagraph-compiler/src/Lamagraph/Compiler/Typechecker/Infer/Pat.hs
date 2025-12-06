@@ -13,7 +13,7 @@ import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.ModuleResolver.Types
 import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.Syntax
-import Lamagraph.Compiler.Typechecker.Helper
+import Lamagraph.Compiler.Typechecker.Helper ((@@), (!@@), freshTVar, instantiate, unzip3F)
 import Lamagraph.Compiler.Typechecker.Infer.Lit
 import Lamagraph.Compiler.Typechecker.Infer.Type
 import Lamagraph.Compiler.Typechecker.TcTypes

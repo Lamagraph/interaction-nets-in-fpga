@@ -19,7 +19,7 @@ import Data.Tuple.Extra
 
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.TcTypes
-import Lamagraph.Compiler.Utils
+import Lamagraph.Compiler.Utils (letters)
 
 freshTVar :: MonadTypecheck Ty
 freshTVar = do

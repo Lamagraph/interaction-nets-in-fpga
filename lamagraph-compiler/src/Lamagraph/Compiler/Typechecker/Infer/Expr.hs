@@ -14,7 +14,7 @@ import Lamagraph.Compiler.Parser.SrcLoc
 import Lamagraph.Compiler.PrettyAst ()
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Typechecker.DefaultEnv
-import Lamagraph.Compiler.Typechecker.Helper
+import Lamagraph.Compiler.Typechecker.Helper (freshTVar, generalize, instantiate, tyEnvUnionDisj)
 import Lamagraph.Compiler.Typechecker.Infer.Lit
 import Lamagraph.Compiler.Typechecker.Infer.Pat
 import Lamagraph.Compiler.Typechecker.Infer.Type
