@@ -31,10 +31,10 @@ lLmlTypeToTy :: TyConstrEnv -> LLmlType LmlcMr -> MonadTypecheck (Ty, LLmlType L
 lLmlTypeToTy = lLmlTypeToTyWithEnv HashMap.empty
 
 lLmlTypeToTyWithEnv :: HashMap Name Ty -> TyConstrEnv -> LLmlType LmlcMr -> MonadTypecheck (Ty, LLmlType LmlcTc)
-lLmlTypeToTyWithEnv env tyConstrEnv (L loc lmlType) = over _2 (L loc) <$> lmlTypeToTyWithEnv' env tyConstrEnv lmlType
+lLmlTypeToTyWithEnv env tyConstrEnv (L loc lmlType) = over _2 (L loc) <$> lmlTypeToTyWithEnv env tyConstrEnv lmlType
 
-lmlTypeToTyWithEnv' :: HashMap Name Ty -> TyConstrEnv -> LmlType LmlcMr -> MonadTypecheck (Ty, LmlType LmlcTc)
-lmlTypeToTyWithEnv' env tyConstrEnv = \case
+lmlTypeToTyWithEnv :: HashMap Name Ty -> TyConstrEnv -> LmlType LmlcMr -> MonadTypecheck (Ty, LmlType LmlcTc)
+lmlTypeToTyWithEnv env tyConstrEnv = \case
   LmlTyVar _ ident@(L _ identText) -> do
     let varName = Name (Longident (identText :| []))
     case HashMap.lookup varName env of

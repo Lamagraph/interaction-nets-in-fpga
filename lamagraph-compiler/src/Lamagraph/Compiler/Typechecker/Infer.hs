@@ -20,9 +20,7 @@ inferLmlModule tyEnv tyConstrEnv (LmlModule _ lLongident decls) = do
     (x : xs) -> do
       (TyEnv tyEnv', tyConstrEnv', lDeclTyped) <- inferLLmlDecl moduleName env tyConstrEnvCurrent x
       let newTyEnv = TyEnv $ tyEnv' `HashMap.union` tyEnvInner
-          TyConstrEnv tyConstrEnvOld = tyConstrEnvCurrent
-          TyConstrEnv tyConstrEnvNew = tyConstrEnv'
-          combinedTyConstrEnv = TyConstrEnv $ tyConstrEnvNew `HashMap.union` tyConstrEnvOld
+          combinedTyConstrEnv = TyConstrEnv $ coerce tyConstrEnv' `HashMap.union` coerce tyConstrEnvCurrent
       (TyEnv tyEnv'', tyConstrEnv'', lDeclsTyped) <- inferSeq moduleName newTyEnv combinedTyConstrEnv xs
       pure (TyEnv (tyEnv'' `HashMap.union` tyEnv'), tyConstrEnv'', lDeclTyped : lDeclsTyped)
 
