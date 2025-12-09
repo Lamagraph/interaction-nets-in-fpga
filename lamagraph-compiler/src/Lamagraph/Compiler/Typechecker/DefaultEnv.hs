@@ -6,6 +6,7 @@ module Lamagraph.Compiler.Typechecker.DefaultEnv (
   trueConstrName,
   falseConstrName,
   defaultEnv,
+  defaultTyConstrEnv,
 ) where
 
 import Relude
@@ -85,4 +86,18 @@ defaultEnv = TyEnv env
       , (falseConstrName, Forall [] tyBool)
       , (Name $ mkLongident $ stdPrefix :| ["~-"], Forall [] $ tyInt `TArrow` tyInt)
       , (Name $ mkLongident $ stdPrefix :| ["print_int"], Forall [] $ tyInt `TArrow` tyUnit)
+      ]
+
+defaultTyConstrEnv :: TyConstrEnv
+defaultTyConstrEnv = TyConstrEnv tyConstrMap
+ where
+  tyConstrMap =
+    HashMap.fromList
+      [ (Name $ mkLongident $ pure "int", DataConstr 0)
+      , (Name $ mkLongident $ pure "char", DataConstr 0)
+      , (Name $ mkLongident $ pure "string", DataConstr 0)
+      , (Name $ mkLongident $ pure "()", DataConstr 0)
+      , (Name $ mkLongident $ pure "bool", DataConstr 0)
+      , (Name $ mkLongident $ pure "list", DataConstr 1)
+      , (Name $ mkLongident $ pure "option", DataConstr 1)
       ]

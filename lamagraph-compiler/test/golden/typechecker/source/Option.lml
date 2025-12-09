@@ -1,0 +1,40 @@
+module Option
+
+type 'a option =
+  | None
+  | Some of 'a
+
+type 'a maybe = 'a option
+let maybe42 : int maybe = Some 42
+
+
+let map f opt =
+  match opt with
+  | Some x -> Some (f x)
+  | None -> None
+
+let none = None
+let some = Some
+
+let is_none opt =
+  match opt with
+  | None -> true
+  | _ -> false
+
+let (<<) f g x = f (g x)
+let is_some =
+  let not x =
+    match x with
+    | true -> false
+    | false -> true
+  in not << is_none
+
+let to_list opt =
+  match opt with
+  | Some x -> [x]
+  | None -> []
+
+let join opt =
+  match opt with
+  | Some (Some x) -> Some x
+  | _ -> None
