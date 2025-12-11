@@ -1,5 +1,6 @@
 on:
   workflow_call:
+  push:
 
 jobs:
   coverage:
@@ -43,3 +44,13 @@ jobs:
           name: hpc-coverage-report
           path: coverage-report/
           retention-days: 30
+
+      - name: Generate codecov coverage report
+        uses: 8c6794b6/hpc-codecov-action@v4
+        with:
+          target: stack:all
+
+      - name: Send coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
