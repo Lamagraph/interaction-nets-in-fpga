@@ -18,7 +18,7 @@ jobs:
           ghc-version: "9.8.4"
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.setup.outputs.stack-root }}
           key: pedantic-${{ hashFiles('stack.yaml') }}
@@ -57,7 +57,7 @@ jobs:
           ghc-version: "9.8.4"
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.setup.outputs.stack-root }}
           key: ${{ runner.os }}-${{ hashFiles('stack.yaml') }}
