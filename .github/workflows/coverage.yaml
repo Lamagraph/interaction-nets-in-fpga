@@ -1,5 +1,8 @@
 on:
   workflow_call:
+    secrets:
+      codecov_token:
+        required: true
 
 jobs:
   coverage:
@@ -52,4 +55,5 @@ jobs:
       - name: Send coverage report
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.codecov_token }}
+          verbose: true
