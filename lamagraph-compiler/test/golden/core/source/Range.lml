@@ -1,0 +1,44 @@
+module Range
+
+let rec range n =
+  if n < 1 then []
+  else
+    let tl = range (n - 1) in
+    n :: tl
+
+let rec sum_list l = match l with
+  | [] -> 0
+  | hd :: tl -> hd + (sum_list tl)
+
+let rec length l = match l with
+  | [] -> 0
+  | _ :: tl -> 1 + (length tl)
+
+let rec map f l = match l with
+  | hd :: tl -> (f hd) :: (map f tl)
+  | [] -> []
+
+let increment x = x + 1
+
+let head_of_head ll = match ll with
+  | [] -> 0
+  | l :: _ ->
+      match l with
+        | [] -> 1
+        | hd :: _ -> hd
+
+let r = range 100
+
+let l = 1 :: (2 :: (3 :: []))
+let l' = let list_increment = map increment in list_increment l
+
+let ll = (42 :: 43 :: []) :: (44 :: []) :: []
+let empty_ll = [] :: []
+
+let _ = print_int (sum_list r)
+let _ = print_int (length r)
+let _ = print_int (length l)
+let _ = print_int (sum_list l')
+
+let _ = print_int (head_of_head ll)
+let _ = print_int (head_of_head empty_ll)

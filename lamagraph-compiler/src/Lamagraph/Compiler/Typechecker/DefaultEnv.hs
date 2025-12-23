@@ -69,8 +69,8 @@ defaultEnv = TyEnv env
       , (Name $ mkLongident $ stdPrefix :| ["*"], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyInt)
       , (Name $ mkLongident $ stdPrefix :| ["/"], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyInt)
       , (Name $ mkLongident $ stdPrefix :| [">"], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
-      , (Name $ mkLongident $ stdPrefix :| [">="], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
       , (Name $ mkLongident $ stdPrefix :| ["<"], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
+      , (Name $ mkLongident $ stdPrefix :| [">="], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
       , (Name $ mkLongident $ stdPrefix :| ["<="], Forall [] $ tyInt `TArrow` tyInt `TArrow` tyBool)
       , (Name $ mkLongident $ stdPrefix :| ["[]"], Forall [Name $ mkLongident $ pure "a"] tyList)
       ,
