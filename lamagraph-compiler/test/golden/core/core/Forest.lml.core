@@ -1,0 +1,21 @@
+let Forest.Leaf = Forest.Leaf
+let Forest.Node = Forest.Node
+let Forest.Nil = Forest.Nil
+let Forest.Cons = Forest.Cons
+let rec Forest.tree_sum = fun Forest.t ->
+                          match Forest.t as t#a with ( Forest.Leaf
+                          , [Forest.v]
+                          , Forest.v )
+                          | ( Forest.Node
+                          , [Forest.f]
+                          , Forest.forest_sum Forest.f )
+and
+Forest.forest_sum = fun Forest.f -> match Forest.f as t#b with ( Forest.Nil
+                                    , []
+                                    , 0 )
+                                    | ( Forest.Cons
+                                    , [Forest.t, Forest.rest]
+                                    , (#std.+ (Forest.tree_sum Forest.t)) (Forest.forest_sum Forest.rest) )
+let t#c = #std.print_int (Forest.forest_sum (Forest.Cons ((Forest.Leaf 10),
+          (Forest.Cons ((Forest.Node (Forest.Cons ((Forest.Leaf 20),
+          (Forest.Nil)))), (Forest.Nil))))))

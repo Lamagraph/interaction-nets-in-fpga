@@ -1,0 +1,31 @@
+module Tuples
+
+type ('a, 'b) pair = Pair of 'a * 'b
+type ('a, 'b, 'c) triple = Triple of 'a * 'b * 'c
+
+let fst p = match p with
+  | Pair (x, _) -> x
+
+let snd p = match p with
+  | Pair (_, y) -> y
+
+let first_of_int_triple t = match t with
+  | Triple (x, _, _) -> x
+
+let second_of_int_triple t = match t with
+  | Triple (_, y, _) -> y
+
+let sum_of_first_and_third_of_int_triple t = match t with
+  | Triple (x, _, z) -> x + z
+
+let swap p = match p with
+  | Pair (x, y) -> Pair (y, x)
+
+let t = Triple (1, 2, 3)
+
+let _ = print_int (fst (swap (Pair (1, 2))))
+let _ = print_int (fst (Pair (42, true)))
+let _ = print_int (snd (Pair (false, 100)))
+
+let _ = print_int (sum_of_first_and_third_of_int_triple t)
+let _ = print_int (second_of_int_triple t)

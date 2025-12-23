@@ -1,0 +1,90 @@
+let Counter.Zero = Counter.Zero
+let Counter.One = Counter.One
+let Counter.Two = Counter.Two
+let Counter.Three = Counter.Three
+let Counter.Four = Counter.Four
+let Counter.Five = Counter.Five
+let Counter.Positive = Counter.Positive
+let Counter.Zegative = Counter.Zegative
+let Counter.Negative = Counter.Negative
+let Counter.Error = Counter.Error
+let Counter.sum_multi = fun Counter.x ->
+                        match Counter.x as t#a with (Counter.Zero, [], 0)
+                        | (Counter.One, [Counter.a], Counter.a)
+                        | ( Counter.Two
+                        , [Counter.a, Counter.b]
+                        , (#std.+ Counter.a) Counter.b )
+                        | ( Counter.Three
+                        , [Counter.a, Counter.b, Counter.c]
+                        , (#std.+ Counter.a) ((#std.+ Counter.b) Counter.c) )
+                        | ( Counter.Four
+                        , [Counter.a, Counter.b, Counter.c, Counter.d]
+                        , (#std.+ Counter.a) ((#std.+ Counter.b) ((#std.+ Counter.c) Counter.d)) )
+                        | ( Counter.Five
+                        , [ Counter.a
+                          , Counter.b
+                          , Counter.c
+                          , Counter.d
+                          , Counter.e ]
+                        , (#std.+ Counter.a) ((#std.+ Counter.b) ((#std.+ Counter.c) ((#std.+ Counter.d) Counter.e))) )
+let Counter.one_sign = fun Counter.x ->
+                       match Counter.x as t#b with ( Counter.One
+                       , [Counter.x]
+                       , match (#std.> Counter.x) 0 as t#e with ( #std.true
+                         , []
+                         , Counter.Positive )
+                         | ( #std.false
+                         , []
+                         , match t#b as t#b with ( Counter.One
+                           , [Counter.x]
+                           , match (#std.< Counter.x) 0 as t#d with ( #std.true
+                             , []
+                             , Counter.Negative )
+                             | ( #std.false
+                             , []
+                             , match t#b as t#b with ( Counter.One
+                               , [t#c]
+                               , Counter.Zegative )
+                               | (DEFAULT, [], Counter.Error) ) )
+                           | (Counter.One, [t#c], Counter.Zegative)
+                           | (DEFAULT, [], Counter.Error) ) )
+                       | ( Counter.One
+                       , [Counter.x]
+                       , match (#std.< Counter.x) 0 as t#d with ( #std.true
+                         , []
+                         , Counter.Negative )
+                         | ( #std.false
+                         , []
+                         , match t#b as t#b with ( Counter.One
+                           , [t#c]
+                           , Counter.Zegative )
+                           | (DEFAULT, [], Counter.Error) ) )
+                       | (Counter.One, [t#c], Counter.Zegative)
+                       | (DEFAULT, [], Counter.Error)
+let Counter.signum = fun Counter.x ->
+                     match Counter.x as t#f with (Counter.Positive, [], 1)
+                     | (Counter.Negative, [], -1)
+                     | (DEFAULT, [], 0)
+let Counter.signed = fun Counter.x ->
+                     match Counter.x as t#g with (Counter.Positive, [], 1)
+                     | (Counter.Negative, [], 1)
+                     | (Counter.Zegative, [], 0)
+                     | (Counter.Error, [], 0)
+let Counter.zero = Counter.Zero
+let Counter.one = Counter.One 1
+let Counter.minus_one = Counter.One -10
+let Counter.two = Counter.Two ((1), (2))
+let Counter.three = Counter.Three ((2), (1), (3))
+let Counter.four = Counter.Four ((1), (4), (3), (2))
+let Counter.five = Counter.Five ((5), (1), (2), (4), (3))
+let t#h = #std.print_int (Counter.sum_multi Counter.zero)
+let t#i = #std.print_int (Counter.sum_multi Counter.one)
+let t#j = #std.print_int (Counter.sum_multi Counter.two)
+let t#k = #std.print_int (Counter.sum_multi Counter.three)
+let t#l = #std.print_int (Counter.sum_multi Counter.four)
+let t#m = #std.print_int (Counter.sum_multi Counter.five)
+let t#n = #std.print_int (Counter.signum (Counter.one_sign Counter.one))
+let t#o = #std.print_int (Counter.signum (Counter.one_sign Counter.minus_one))
+let t#p = #std.print_int (Counter.signum (Counter.one_sign Counter.three))
+let t#q = #std.print_int (Counter.signed (Counter.one_sign Counter.zero))
+let t#r = #std.print_int ((#std.+ (Counter.signed (Counter.one_sign Counter.one))) (Counter.signed (Counter.one_sign Counter.minus_one)))
