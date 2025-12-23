@@ -1,0 +1,54 @@
+module Insanity
+
+type 'a first = F of 'a * 'a second
+and 'a second = S of 'a * 'a third
+and 'a third = T of 'a * 'a first | Tempty
+
+let rec first_sum a = match a with
+  | F (x, b) -> x + (second_sum b)
+and second_sum b = match b with
+  | S (x, c) -> x + (third_sum c)
+and third_sum c = match c with
+  | Tempty -> 0
+  | T (x, a) -> x + (first_sum a)
+
+let result = print_int (first_sum (F (1, (S (2, (T (3, (F (4, (S (5, Tempty)))))))))))
+
+let classify_num n = match n with
+  | 0 -> 100
+  | 1 -> 101
+  | 2 -> 102
+  | 5 -> 105
+  | _ -> 999
+
+let negate b = match b with
+  | true -> false
+  | false -> true
+
+let to_int b = match b with
+  | true -> 1
+  | false -> 0
+
+let bool_and a b = match a with
+  | true -> (match b with
+    | true -> true
+    | false -> false)
+  | false -> false
+
+let sign n = match n with
+  | 0 -> 0
+  | n -> match n > 0 with
+    | true -> 1
+    | false -> -1
+
+let _ = print_int (classify_num 0)
+let _ = print_int (classify_num 1)
+let _ = print_int (classify_num 5)
+let _ = print_int (classify_num 42)
+let _ = print_int (to_int (negate true))
+let _ = print_int (to_int (negate false))
+let _ = print_int (to_int (bool_and true true))
+let _ = print_int (to_int (bool_and true false))
+let _ = print_int (sign 0)
+let _ = print_int (sign 42)
+let _ = print_int (sign (-10))

@@ -1,0 +1,47 @@
+let Option.None = Option.None
+let Option.Some = Option.Some
+let Option.map = fun Option.f -> fun Option.opt ->
+                 match Option.opt as t#a with ( Option.Some
+                 , [Option.x]
+                 , Option.Some (Option.f Option.x) )
+                 | (Option.None, [], Option.None)
+let Option.mapOrDefault = fun Option.f -> fun Option.default ->
+                          fun Option.opt ->
+                          match Option.opt as t#b with ( Option.Some
+                          , [Option.x]
+                          , Option.f Option.x )
+                          | (Option.None, [], Option.default)
+let Option.increment = fun Option.x -> (#std.+ Option.x) 1
+let Option.double = fun Option.x -> (#std.* Option.x) 2
+let Option.f = fun Option.opt ->
+               (Option.map Option.double) ((Option.map Option.increment) Option.opt)
+let rec Option.count_somes = fun Option.l ->
+                             match Option.l as t#c with (#std.[], [], 0)
+                             | ( #std.::
+                             , [Option.hd, Option.tl]
+                             , let Option.count_tl = Option.count_somes Option.tl
+                             in match Option.hd as t#d with ( Option.None
+                                , []
+                                , Option.count_tl )
+                                | ( Option.Some
+                                , [t#e]
+                                , (#std.+ 1) Option.count_tl ) )
+let rec Option.sum_list_of_options = fun Option.l ->
+                                     match Option.l as t#f with (#std.[], [], 0)
+                                     | ( #std.::
+                                     , [Option.hd, Option.tl]
+                                     , let Option.sum_tl = Option.sum_list_of_options Option.tl
+                                     in match Option.hd as t#g with ( Option.None
+                                        , []
+                                        , Option.sum_tl )
+                                        | ( Option.Some
+                                        , [Option.v]
+                                        , (#std.+ Option.v) Option.sum_tl ) )
+let Option.l_of_opts = #std.:: ((Option.Some 1), (#std.:: ((Option.None),
+                       (#std.:: ((Option.Some 3), (#std.:: ((Option.Some 5),
+                       (#std.[]))))))))
+let t#h = #std.print_int (((Option.mapOrDefault Option.increment) 0) (Option.f (Option.Some 5)))
+let t#i = #std.print_int (((Option.mapOrDefault Option.double) 0) (Option.Some 42))
+let t#j = #std.print_int (((Option.mapOrDefault Option.double) 0) Option.None)
+let Option.result1 = #std.print_int (Option.count_somes Option.l_of_opts)
+let Option.result2 = #std.print_int (Option.sum_list_of_options Option.l_of_opts)
