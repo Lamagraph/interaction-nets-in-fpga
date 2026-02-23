@@ -22,6 +22,7 @@ dependencies:
   - graph-rewriting
   - graph-rewriting-ski
   - filepath
+  - string-interpolate
 
 default-extensions:
   - BangPatterns
@@ -87,6 +88,8 @@ library:
     - Core.Core
     - GraphRewriting.Translator
     - GraphRewriting.SKI
+    - Protocols.Uart.GowinMaster
+    - Protocols.Uart.Helper
 
 executables:
   clash:
