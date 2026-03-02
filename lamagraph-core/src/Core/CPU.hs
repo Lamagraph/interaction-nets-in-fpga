@@ -110,8 +110,8 @@ step i@(CPUIn processedLoadedNode) =
             pure CPUOut{_ramForm = ramForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
           else do
             put s{_phase = Done}
-            pure
-              $ CPUOut{_ramForm = def, _nextRootNodeAddress = _rootNodeAddress, _done = True}
+            pure $
+              CPUOut{_ramForm = def, _nextRootNodeAddress = _rootNodeAddress, _done = True}
        where
         activeAddress = giveActiveAddressNumber _memoryManager
         ramForm = (\address -> (address, Just (address, Nothing))) <$> activeAddress
