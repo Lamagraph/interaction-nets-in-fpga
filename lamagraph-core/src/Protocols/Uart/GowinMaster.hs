@@ -6,6 +6,8 @@ module Protocols.Uart.GowinMaster where
 import Clash.Annotations.Primitive
 import Clash.Prelude
 import Control.Monad.State.Strict
+import Core.Node
+import Data.Maybe (fromJust, isJust)
 import Data.String.Interpolate (__i)
 import Protocols.Uart.Helper
 
@@ -43,7 +45,7 @@ gowinMasterUARTIp !_ !_ !_ !_ !_ !_ !_ !_ = def
       [__i|
           BlackBox:
             kind: Declaration
-            name : Example.UARTHelper.gowinMasterUARTIp
+            name : Protocols.Uart.GowinMaster.gowinMasterUARTIp
             type: |-
               gowinMasterUARTIp ::
                 (KnownDomain dom) =>
@@ -149,20 +151,13 @@ transmitByUARTState (d, rdata) = do
 
 transmitByteByUART ::
   forall dom.
-  (KnownDomain dom) =>
-  Clock dom ->
-  Reset dom ->
-  Enable dom ->
+  (KnownDomain dom, HiddenClockResetEnable dom) =>
   Signal dom Byte ->
   (Signal dom Bit, Enable dom)
-transmitByteByUART clk rstn en d = (sout, toEnable enBool)
+transmitByteByUART d = (sout, toEnable enBool)
  where
   transmitter =
-    exposeClockResetEnable
-      mealyS
-      clk
-      rstn
-      en
+    mealyS
       transmitByUARTState
       (ConfigLCR 0, RBR (RBRTable 0))
   (uartReg, tx_en_bool, rx_en_bool, enBool) =
@@ -173,31 +168,18 @@ transmitByteByUART clk rstn en d = (sout, toEnable enBool)
   tx_en = toEnable tx_en_bool
   (waddr, wdata) = unbundle (encodeUARTRegister <$> uartReg)
   raddr = fst . encodeUARTRegister <$> uartReg
-  (rdata, sout, _, _) = gowinMasterUARTIp clk rstn tx_en waddr rx_en raddr def wdata
+  (rdata, sout, _, _) = (hideReset $ hideClock gowinMasterUARTIp) tx_en waddr rx_en raddr def wdata
 
-transmitFromBRam ::
-  (KnownDomain dom, KnownNat n, BitPack a) =>
-  Clock dom ->
-  Reset dom ->
-  Enable dom ->
-  ( Signal dom (Unsigned n) ->
-    Signal dom (Maybe (Unsigned n, a)) ->
-    Signal dom a
-  ) ->
-  Signal dom Bit
-transmitFromBRam clk rstn en ram = sout
+transmitNodeByUart ::
+  ( KnownDomain dom
+  , HiddenClockResetEnable dom
+  , KnownNat portsNumber
+  , 1 <= portsNumber
+  , BitPack agentType
+  ) =>
+  Signal dom (Maybe (Node portsNumber agentType)) ->
+  (Signal dom Bit, Enable dom)
+transmitNodeByUart maybeNode = (sout, toEnable isMax)
  where
-  (byte, isMax) =
-    exposeClockResetEnable
-      iterateOverDataBool
-      clk
-      rstn
-      (toEnable $ fromEnable rdyToRx .&&. fromEnable en)
-      (toBytes <$> receivedData)
-  (receivedData, isEnd) =
-    exposeClockResetEnable
-      (iterateOverRamBool ram)
-      clk
-      rstn
-      (toEnable $ isMax .&&. fromEnable rdyToRx .&&. fromEnable en)
-  (sout, rdyToRx) = transmitByteByUART clk rstn (toEnable $ not <$> isEnd) byte
+  (byte, isMax) = exposeEnable (iterateOverDataBool (toBytes . fromJust <$> maybeNode)) rdyToRx
+  (sout, rdyToRx) = (isJust <$> maybeNode) `andEnable` transmitByteByUART byte

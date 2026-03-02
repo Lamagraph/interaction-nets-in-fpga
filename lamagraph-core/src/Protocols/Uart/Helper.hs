@@ -1,3 +1,4 @@
+{- HLINT ignore "Use newtype instead of data" -}
 module Protocols.Uart.Helper where
 
 import Clash.Prelude
@@ -133,6 +134,11 @@ toBytes x = bytes
   bits = pack x
   bytes = map v2bv (unconcat d8 (bv2v $ resize bits))
 
+fromBytes :: (BitPack a) => Vec ((BitSize a + 7) `Div` 8) Byte -> a
+fromBytes bytes = unpack (resize bits)
+ where
+  bits = v2bv (concatMap bv2v bytes)
+
 iterateOverDataBool ::
   forall dom n d.
   (HiddenClockResetEnable dom, KnownNat n) =>
@@ -143,18 +149,3 @@ iterateOverDataBool bytes = ((!!) <$> bytes <*> idx, isMax)
   idx = register 0 nextIdx
   isMax = idx .==. pure (maxBound :: Index n)
   nextIdx = mux isMax def ((+ 1) <$> idx)
-
-iterateOverRamBool ::
-  forall ramSize dom d.
-  (KnownDomain dom, HiddenClockResetEnable dom, Enum ramSize, Bounded ramSize) =>
-  ( Signal dom ramSize ->
-    Signal dom (Maybe (ramSize, d)) ->
-    Signal dom d
-  ) ->
-  (Signal dom d, Signal dom Bool)
-iterateOverRamBool ram = (val, isMax)
- where
-  idx = register 0 nextIdx :: Signal dom Int
-  isMax = ((\x -> x - 1) <$> idx) .>. pure (fromEnum (maxBound :: ramSize))
-  nextIdx = (+ 1) <$> idx
-  val = ram (toEnum <$> idx) def
