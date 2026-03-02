@@ -2,6 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Core.Node where
 
@@ -28,6 +29,8 @@ type CellsNumber = 2 ^ AddressBitSize
 data IdOfPort (portsNumber :: Nat) = Id (Index portsNumber) | Primary
   deriving (Generic, Show, Eq, NFDataX, ShowX)
 
+deriving instance (KnownNat portsNumber, 1 <= portsNumber) => BitPack (IdOfPort portsNumber)
+
 data Port (portsNumber :: Nat) = Port
   { _nodeAddress :: AddressNumber
   , _portConnectedToId :: IdOfPort portsNumber
@@ -35,6 +38,8 @@ data Port (portsNumber :: Nat) = Port
   deriving (NFDataX, Generic, Show, Eq, ShowX)
 
 $(makeLenses ''Port)
+
+deriving instance (KnownNat portsNumber, 1 <= portsNumber) => BitPack (Port portsNumber)
 
 -- | Node in the RAM.
 data Node portsNumber agentType = Node
@@ -45,6 +50,8 @@ data Node portsNumber agentType = Node
   deriving (NFDataX, Generic, Show, Eq, ShowX)
 
 $(makeLenses ''Node)
+
+deriving instance (KnownNat portsNumber, 1 <= portsNumber, BitPack agentType) => BitPack (Node portsNumber agentType)
 
 {- | `Node` with info about his`Address`.
 Original address can be useful when reducer working.
