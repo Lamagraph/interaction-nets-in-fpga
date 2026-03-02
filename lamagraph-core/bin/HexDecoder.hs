@@ -19,7 +19,7 @@ main = do
           map (C.fromInteger . fst . head . readHex) $
             words contents ::
           [Byte]
-      chunksSize = C.natToNum @(ByteNodeSize)
+      chunksSize = C.natToNum @ByteNodeSize
       result = map (fromBytes . Vec.unsafeFromList) $ chunksOf chunksSize bytes :: [Maybe (Node PortsNumber AgentType)]
 
   writeFile (head args ++ "_clash") $ C.show result
