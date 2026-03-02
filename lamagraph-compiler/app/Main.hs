@@ -10,7 +10,7 @@ import GraphRewriting
 import GraphRewriting.Lib.Lib
 import GraphRewriting.Pattern.InteractionNet
 
-import Term qualified as Term
+import Term qualified
 
 -- The signature of the graph is determined by the node type we provide. For each node constructor we define as record fields a fixed collection of ports. Here we name ports attached at the top of the nodes input ports and nodes at the bottom output ports.
 data SKI
