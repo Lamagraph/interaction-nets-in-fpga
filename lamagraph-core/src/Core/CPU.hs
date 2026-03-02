@@ -27,11 +27,9 @@ newtype CPUIn portsNumber agentType = CPUIn (Maybe (LoadedNode portsNumber agent
 data CPUOut portsNumber agentType = CPUOut
   { _ramForm :: Maybe (RamForm portsNumber agentType)
   , _nextRootNodeAddress :: AddressNumber
+  , _done :: Bool
   }
   deriving (Generic, ShowX, Eq, Show, NFDataX)
-
-defaultOut :: AddressNumber -> CPUOut portsNumber agentType
-defaultOut root = CPUOut{_ramForm = def, _nextRootNodeAddress = root}
 
 data Phase (externalNodesNumber :: Nat) (newNodesNumber :: Nat)
   = Init
@@ -45,7 +43,7 @@ data Phase (externalNodesNumber :: Nat) (newNodesNumber :: Nat)
   | DelayReduce
   | DelayFetch
   | DelayWrite (Index externalNodesNumber)
-  deriving (Generic, NFDataX, Show)
+  deriving (Generic, NFDataX, Show, Eq)
 
 data CPUState portsNumber nodesNumber edgesNumber agentType = CPUState
   { _phase :: Phase ((*) 2 portsNumber) nodesNumber
@@ -104,21 +102,22 @@ step i@(CPUIn processedLoadedNode) =
     case _phase of
       Init -> do
         put s{_phase = FetchLeftActiveAddress}
-        pure $ defaultOut _rootNodeAddress
+        pure $ CPUOut{_ramForm = def, _nextRootNodeAddress = _rootNodeAddress, _done = False}
       FetchLeftActiveAddress ->
         if isJust ramForm
           then do
             put s{_phase = DelayFetch, _previousRamForm = ramForm}
-            pure CPUOut{_ramForm = ramForm, _nextRootNodeAddress = _rootNodeAddress}
+            pure CPUOut{_ramForm = ramForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
           else do
             put s{_phase = Done}
-            pure $ defaultOut _rootNodeAddress
+            pure
+              $ CPUOut{_ramForm = def, _nextRootNodeAddress = _rootNodeAddress, _done = True}
        where
         activeAddress = giveActiveAddressNumber _memoryManager
         ramForm = (\address -> (address, Just (address, Nothing))) <$> activeAddress
       FetchRightActiveAddress -> do
         put s{_phase = DelayReduce, _previousLoadedNode = processedLoadedNode, _previousRamForm = ramForm}
-        pure CPUOut{_ramForm = ramForm, _nextRootNodeAddress = _rootNodeAddress}
+        pure CPUOut{_ramForm = ramForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
        where
         activeAddress =
           (view nodeAddress . (fromMaybe (errorX "Wrong definition of active pair") <$> view primaryPort))
@@ -137,7 +136,7 @@ step i@(CPUIn processedLoadedNode) =
               , _rootNodeAddress = newRootAddress
               }
           )
-        pure CPUOut{_ramForm = def, _nextRootNodeAddress = newRootAddress}
+        pure CPUOut{_ramForm = def, _nextRootNodeAddress = newRootAddress, _done = True}
        where
         acPair = fromMaybe (errorX $ "cpu: 1. i = \n" P.++ show i) (ActivePair <$> _previousLoadedNode <*> processedLoadedNode)
         removedActivePairMemoryManager = removeActivePair acPair _memoryManager
@@ -155,6 +154,7 @@ step i@(CPUIn processedLoadedNode) =
           | _ramForm == def && counter == (maxBound :: Index ((*) 2 portsNumber)) || _interface == def = WriteNewNodes 0
           | _ramForm == def = ReadExternal $ counter + 1
           | otherwise = DelayWrite counter
+        _done = nextPhase == Done
       WriteChange counter -> do
         put s{_phase = nextPhase, _previousRamForm = _ramForm}
         pure CPUOut{..}
@@ -169,6 +169,7 @@ step i@(CPUIn processedLoadedNode) =
           if counter == (maxBound :: Index ((*) 2 portsNumber))
             then WriteNewNodes 0
             else ReadExternal $ counter + 1
+        _done = nextPhase == Done
       WriteNewNodes counter -> do
         put s{_phase = nextPhase, _previousRamForm = _ramForm}
         pure CPUOut{..}
@@ -178,16 +179,17 @@ step i@(CPUIn processedLoadedNode) =
         nextPhase
           | counter == (maxBound :: Index nodesNumber) || (_nodesToWrite == def) = FetchLeftActiveAddress
           | otherwise = WriteNewNodes $ counter + 1
-      Done -> pure $ defaultOut _rootNodeAddress
+        _done = nextPhase == Done
+      Done -> pure $ CPUOut{_ramForm = def, _nextRootNodeAddress = _rootNodeAddress, _done = True}
       DelayFetch -> do
         put s{_phase = FetchRightActiveAddress}
-        pure CPUOut{_ramForm = _previousRamForm, _nextRootNodeAddress = _rootNodeAddress}
+        pure CPUOut{_ramForm = _previousRamForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
       DelayReduce -> do
         put s{_phase = Reduce}
-        pure CPUOut{_ramForm = _previousRamForm, _nextRootNodeAddress = _rootNodeAddress}
+        pure CPUOut{_ramForm = _previousRamForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
       DelayWrite counter -> do
         put s{_phase = WriteChange counter}
-        pure CPUOut{_ramForm = _previousRamForm, _nextRootNodeAddress = _rootNodeAddress}
+        pure CPUOut{_ramForm = _previousRamForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
 
 mealyCore ::
   forall portsNumber nodesNumber edgesNumber agentType dom.
