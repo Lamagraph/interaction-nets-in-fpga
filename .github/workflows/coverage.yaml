@@ -41,7 +41,7 @@ jobs:
           stack hpc report lamagraph-core --destdir=coverage-report/core
 
       - name: Upload coverage report as artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: hpc-coverage-report
           path: coverage-report/
