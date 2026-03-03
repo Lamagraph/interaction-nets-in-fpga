@@ -131,6 +131,14 @@ tests:
       - base
       - lamagraph-core
       - doctest-parallel >= 0.2 && < 0.4
+      - QuickCheck
+      - clash-prelude-hedgehog
+      - hedgehog
+      - tasty
+      - tasty-hedgehog
+      - tasty-th
+      - tasty-hunit
+      - text
     ghc-options:
       - -Wall
       - -Wcompat
@@ -144,7 +152,7 @@ tests:
       - QuickCheck
       - clash-prelude-hedgehog
       - hedgehog
-      - tasty >= 1.2 && < 1.6
+      - tasty
       - tasty-hedgehog
       - tasty-th
       - tasty-hunit
@@ -195,6 +203,9 @@ tests:
       - QuasiQuotes
       - NoImplicitPrelude
     other-modules:
-      - Tests.Core.Node
-      - NodeGenerate
       - Tests.GraphRewriting.SKIExpectedNets
+      - Tests.Core.Unit.CPU
+      - Tests.Core.Unit.Loader
+      - Tests.Core.Unit.MemoryManager.MemoryManager
+      - Tests.Core.Unit.Reducer
+      - Tests.GraphRewriting.SKI

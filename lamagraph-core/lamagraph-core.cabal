@@ -285,8 +285,6 @@ test-suite doctests
   type: exitcode-stdio-1.0
   main-is: doctests.hs
   other-modules:
-      NodeGenerate
-      Tests.Core.Node
       Tests.Core.Unit.CPU
       Tests.Core.Unit.Loader
       Tests.Core.Unit.MemoryManager.MemoryManager
@@ -332,8 +330,10 @@ test-suite doctests
   ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -fconstraint-solver-iterations=20 -Wall -Wcompat -threaded
   build-depends:
       Cabal
+    , QuickCheck
     , base
     , clash-prelude >=1.8.1 && <1.10
+    , clash-prelude-hedgehog
     , containers
     , doctest-parallel >=0.2 && <0.4
     , filepath
@@ -343,21 +343,30 @@ test-suite doctests
     , graph-rewriting
     , graph-rewriting-lib
     , graph-rewriting-ski
+    , hedgehog
     , lamagraph-core
     , lens
     , mtl
     , split
     , string-interpolate
+    , tasty
+    , tasty-hedgehog
+    , tasty-hunit
+    , tasty-th
     , template-haskell
+    , text
   default-language: Haskell2010
 
 test-suite test-library
   type: exitcode-stdio-1.0
   main-is: unittests.hs
   other-modules:
-      Tests.Core.Node
-      NodeGenerate
       Tests.GraphRewriting.SKIExpectedNets
+      Tests.Core.Unit.CPU
+      Tests.Core.Unit.Loader
+      Tests.Core.Unit.MemoryManager.MemoryManager
+      Tests.Core.Unit.Reducer
+      Tests.GraphRewriting.SKI
   hs-source-dirs:
       tests
   default-extensions:
@@ -446,7 +455,7 @@ test-suite test-library
     , mtl
     , split
     , string-interpolate
-    , tasty >=1.2 && <1.6
+    , tasty
     , tasty-hedgehog
     , tasty-hunit
     , tasty-th
