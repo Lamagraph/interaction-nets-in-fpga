@@ -26,3 +26,5 @@ class INet agentType nodesNumber edgesNumber portsNumber where
     LoadedNode portsNumber agentType ->
     LoadedNode portsNumber agentType ->
     ReduceRuleResult nodesNumber edgesNumber portsNumber agentType
+
+type Net (portsNumber :: Nat) agentType = Vec CellsNumber (Maybe (Node portsNumber agentType))
