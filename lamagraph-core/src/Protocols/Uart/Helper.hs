@@ -11,6 +11,7 @@ type Byte = BitVector 8
 data RBRTable = RBRTable {rbr :: BitVector 8} deriving (Generic, BitPack, Default, NFDataX)
 
 data THRTable = THRTable {thr :: BitVector 8} deriving (Generic, BitPack, Default, NFDataX)
+
 data IERTable = IERTable
   { rbri :: Bit
   , thri :: Bit
@@ -25,6 +26,7 @@ data IIRTable = IIRTable
   , int2 :: Bit
   }
   deriving (Generic, BitPack, Default, NFDataX)
+
 data LCRTable = LCRTable
   { wls :: BitVector 2
   , stb :: Bit
@@ -34,11 +36,13 @@ data LCRTable = LCRTable
   , sb :: Bit
   }
   deriving (Generic, BitPack, Default, NFDataX)
+
 data MCRTable = MCRTable
   { dtr :: Bit
   , rts :: Bit
   }
   deriving (Generic, BitPack, Default, NFDataX)
+
 data LSRTable = LSRTable
   { rxrdy :: Bit
   , oe :: Bit
