@@ -16,7 +16,7 @@ mode="all"
 getOut="false"
 
 OPTIONS=$(getopt -o hm:g -l help,mode:,get_uart_out -n "$0" -- "$@")
-if [ $? != 0 ]; then
+if ! OPTIONS=$(getopt -o hm:g -l help,mode:,get_uart_out -n "$0" -- "$@"); then
     usage
 fi
 
@@ -59,24 +59,24 @@ clashModule="$1"
 device="$2"
 gprjName="$3"
 
-stack run -- clash $clashModule --systemverilog -fclash-clear -fclash-hdldir hdl/systemverilog
+stack run -- clash "$clashModule" --systemverilog -fclash-clear -fclash-hdldir hdl/systemverilog
 
 
 case $mode in
     all)
-        gw_sh hdl/make-project.tcl -name $gprjName -board $device
-        gw_sh hdl/run-pnr.tcl $gprjName
-        openFPGALoader  $gprjName/impl/pnr/$gprjName.fs
+        gw_sh hdl/make-project.tcl -name "$gprjName" -board "$device"
+        gw_sh hdl/run-pnr.tcl "$gprjName"
+        openFPGALoader  "$gprjName"/impl/pnr/"$gprjName".fs
         ;;
     create)
-        gw_sh hdl/make-project.tcl -name $gprjName -board $device
+        gw_sh hdl/make-project.tcl -name "$gprjName" -board "$device"
         ;;
     pnr)
-        gw_sh hdl/run-pnr.tcl $gprjName
-        openFPGALoader  $gprjName/impl/pnr/$gprjName.fs
+        gw_sh hdl/run-pnr.tcl "$gprjName"
+        openFPGALoader  "$gprjName"/impl/pnr/"$gprjName".fs
         ;;
 esac
 
 if [ "$getOut" = "true" ]; then
-    timeout 10 minicom -D /dev/ttyUSB0-H --baud 9600 -C uart_data_$(date +%Y-%m-%d_%H:%M)
+    timeout 10 minicom -D /dev/ttyUSB0-H --baud 9600 -C uart_data_"$(date +%Y-%m-%d_%H:%M)"
 fi
