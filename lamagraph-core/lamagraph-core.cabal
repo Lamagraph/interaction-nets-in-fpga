@@ -1,4 +1,4 @@
-cabal-version: 2.2
+cabal-version: 1.18
 
 -- This file has been generated from package.yaml by hpack version 0.37.0.
 --
@@ -8,7 +8,8 @@ name:           lamagraph-core
 version:        0.1
 author:         Efim Kubyshkin <efimkub@mail.ru>
 maintainer:     Efim Kubyshkin <efimkub@mail.ru>
-license:        BSD-2-Clause
+copyright:      2024 Lamagraph
+license:        MIT
 build-type:     Simple
 extra-doc-files:
     docs/absApplyEmptyInterface.svg

@@ -1,8 +1,9 @@
 name: lamagraph-core
 version: "0.1"
-license: BSD-2-Clause
+license: MIT
 author: "Efim Kubyshkin <efimkub@mail.ru>"
 maintainer: "Efim Kubyshkin <efimkub@mail.ru>"
+copyright: "2024 Lamagraph"
 extra-doc-files:
   - "docs/*.svg"
 
