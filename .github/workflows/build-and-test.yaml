@@ -68,6 +68,10 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('stack.yaml') }}
           restore-keys: |
             ${{ runner.os }}
+      - name: Install GL
+        run: |
+          sudo apt-get update
+          sudo apt-get install libgl-dev libglu1-mesa-dev libopengl-dev
 
       - name: Install dependencies
         run: |
