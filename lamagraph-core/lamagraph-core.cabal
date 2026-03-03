@@ -43,8 +43,6 @@ library
       Protocols.Uart.Helper
   other-modules:
       Paths_lamagraph_core
-  autogen-modules:
-      Paths_lamagraph_core
   hs-source-dirs:
       src
   default-extensions:
@@ -104,8 +102,6 @@ executable clash
   main-is: bin/Clash.hs
   other-modules:
       Paths_lamagraph_core
-  autogen-modules:
-      Paths_lamagraph_core
   hs-source-dirs:
       ./
   default-extensions:
@@ -141,7 +137,7 @@ executable clash
       TemplateHaskell
       QuasiQuotes
       NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -fconstraint-solver-iterations=20 -dynamic
+  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -fconstraint-solver-iterations=20
   build-depends:
       Cabal
     , base
@@ -167,8 +163,6 @@ executable clashi
   main-is: bin/Clashi.hs
   other-modules:
       Paths_lamagraph_core
-  autogen-modules:
-      Paths_lamagraph_core
   hs-source-dirs:
       ./
   default-extensions:
@@ -204,7 +198,7 @@ executable clashi
       TemplateHaskell
       QuasiQuotes
       NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -fconstraint-solver-iterations=20 -dynamic
+  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -fconstraint-solver-iterations=20
   build-depends:
       Cabal
     , base
@@ -230,8 +224,6 @@ executable parseFile
   main-is: bin/HexDecoder.hs
   other-modules:
       Paths_lamagraph_core
-  autogen-modules:
-      Paths_lamagraph_core
   hs-source-dirs:
       ./
   default-extensions:
@@ -267,7 +259,7 @@ executable parseFile
       TemplateHaskell
       QuasiQuotes
       NoImplicitPrelude
-  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -fconstraint-solver-iterations=20 -dynamic
+  ghc-options: -Wall -Wcompat -haddock -fplugin=GHC.TypeLits.Extra.Solver -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fexpose-all-unfoldings -fno-worker-wrapper -fno-unbox-small-strict-fields -fno-unbox-strict-fields -fconstraint-solver-iterations=20
   build-depends:
       Cabal
     , base
@@ -301,8 +293,6 @@ test-suite doctests
       Tests.Core.Unit.Reducer
       Tests.GraphRewriting.SKI
       Tests.GraphRewriting.SKIExpectedNets
-      Paths_lamagraph_core
-  autogen-modules:
       Paths_lamagraph_core
   hs-source-dirs:
       tests

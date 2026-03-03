@@ -102,7 +102,7 @@ executables:
       - base
       - clash-ghc
       - lamagraph-core
-    ghc-options: -dynamic
+    # ghc-options: -dynamic
 
   clashi:
     main: bin/Clashi.hs
@@ -111,7 +111,7 @@ executables:
       - base
       - clash-ghc
       - lamagraph-core
-    ghc-options: -dynamic
+    # ghc-options: -dynamic
 
   parseFile:
     main: bin/HexDecoder.hs
@@ -121,7 +121,7 @@ executables:
       - clash-ghc
       - lamagraph-core
       - split
-    ghc-options: -dynamic
+    # ghc-options: -dynamic
 
 tests:
   doctests:

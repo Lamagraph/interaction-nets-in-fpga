@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-x-partial #-}
+
 import qualified Clash.Prelude as C
 import qualified Clash.Sized.Vector as Vec
 import Core.Core
