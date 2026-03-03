@@ -1,7 +1,6 @@
 import Prelude
 
 import Test.Tasty
-import qualified Tests.Core.Node
 import Tests.Core.Unit.CPU
 import Tests.Core.Unit.Loader
 import Tests.Core.Unit.MemoryManager.MemoryManager
@@ -16,8 +15,7 @@ main = do
       " Unit tests"
       [ testGroup
           "Clash tests"
-          [ Tests.Core.Node.accumTests
-          , reducerUnitTests
+          [ reducerUnitTests
           , memoryManagerUnitTests
           , mealyCoreUnitTests
           , loaderUnitTests
