@@ -25,6 +25,11 @@ jobs:
           restore-keys: |
             pedantic-
 
+      - name: Install GL
+        run: |
+          sudo apt-get update
+          sudo apt-get install libgl-dev
+ 
       - name: Install dependencies
         run: |
           stack update
