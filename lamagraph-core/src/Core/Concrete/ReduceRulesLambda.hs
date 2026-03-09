@@ -76,25 +76,25 @@ eraseToErase ::
   ReduceRuleResult 2 2 2 AgentSimpleLambda
 eraseToErase _ _ _ = ReduceRuleResult def def
 
-instance INet AgentSimpleLambda 2 2 2 where
-  getAddressesAllocationCount :: AgentSimpleLambda -> AgentSimpleLambda -> Index CellsNumber
-  getAddressesAllocationCount left right = case (left, right) of
-    (Apply, Abstract) -> 0
-    (Abstract, Apply) -> 0
-    (Erase, Erase) -> 0
-    (Erase, _) -> 2
-    (_, Erase) -> 2
-    _ -> errorX "No rule for this pair"
+-- instance INet AgentSimpleLambda 2 2 2 where
+--   getAddressesAllocationCount :: AgentSimpleLambda -> AgentSimpleLambda -> Index CellsNumber
+--   getAddressesAllocationCount left right = case (left, right) of
+--     (Apply, Abstract) -> 0
+--     (Abstract, Apply) -> 0
+--     (Erase, Erase) -> 0
+--     (Erase, _) -> 2
+--     (_, Erase) -> 2
+--     _ -> errorX "No rule for this pair"
 
-  makeReduction ::
-    Vec 2 (Maybe AddressNumber) ->
-    LoadedNode 2 AgentSimpleLambda ->
-    LoadedNode 2 AgentSimpleLambda ->
-    ReduceRuleResult 2 2 2 AgentSimpleLambda
-  makeReduction freeAddresses lN rN = case (lN ^. containedNode . nodeType, rN ^. containedNode . nodeType) of
-    (Apply, Abstract) -> applyToLambdaRule freeAddresses lN rN
-    (Abstract, Apply) -> applyToLambdaRule freeAddresses rN lN
-    (Erase, Erase) -> eraseToErase freeAddresses lN rN
-    (Erase, _) -> eraseToAbstractOrApplyRule freeAddresses lN rN
-    (_, Erase) -> eraseToAbstractOrApplyRule freeAddresses rN lN
-    _ -> errorX "No rule for this pair"
+--   makeReduction ::
+--     Vec 2 (Maybe AddressNumber) ->
+--     LoadedNode 2 AgentSimpleLambda ->
+--     LoadedNode 2 AgentSimpleLambda ->
+--     ReduceRuleResult 2 2 2 AgentSimpleLambda
+--   makeReduction freeAddresses lN rN = case (lN ^. containedNode . nodeType, rN ^. containedNode . nodeType) of
+--     (Apply, Abstract) -> applyToLambdaRule freeAddresses lN rN
+--     (Abstract, Apply) -> applyToLambdaRule freeAddresses rN lN
+--     (Erase, Erase) -> eraseToErase freeAddresses lN rN
+--     (Erase, _) -> eraseToAbstractOrApplyRule freeAddresses lN rN
+--     (_, Erase) -> eraseToAbstractOrApplyRule freeAddresses rN lN
+--     _ -> errorX "No rule for this pair"
