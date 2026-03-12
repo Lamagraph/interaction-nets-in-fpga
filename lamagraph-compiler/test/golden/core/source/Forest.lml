@@ -1,0 +1,13 @@
+module Forest
+
+type 'a tree = Leaf of 'a | Node of 'a forest
+and 'a forest = Nil | Cons of 'a tree * 'a forest
+
+let rec tree_sum t = match t with
+  | Leaf v -> v
+  | Node f -> forest_sum f
+and forest_sum f = match f with
+  | Nil -> 0
+  | Cons (t, rest) -> (tree_sum t) + (forest_sum rest)
+
+let _ = print_int (forest_sum (Cons ((Leaf 10), (Cons ((Node (Cons ((Leaf 20), Nil))), Nil)))))

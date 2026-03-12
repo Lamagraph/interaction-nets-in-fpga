@@ -1,0 +1,60 @@
+module Counter
+
+type counter =
+  | Zero
+  | One of int
+  | Two of int * int
+  | Three of int * int * int
+  | Four of int * int * int * int
+  | Five of int * int * int * int * int
+
+type sign =
+  | Positive
+  | Zegative
+  | Negative
+  | Error
+
+let sum_multi x = match x with
+  | Zero -> 0
+  | One a -> a
+  | Two (a, b) -> a + b
+  | Three (a, b, c) -> a + b + c
+  | Four (a, b, c, d) -> a + b + c + d
+  | Five (a, b, c, d, e) -> a + b + c + d + e
+
+let one_sign x = match x with
+  | One x when x > 0 -> Positive
+  | One x when x < 0 -> Negative
+  | One _ -> Zegative
+  | _ -> Error
+
+let signum x = match x with
+  | Positive -> 1
+  | Negative -> -1
+  | _ -> 0
+
+let signed x = match x with
+  | Positive | Negative -> 1
+  | Zegative | Error -> 0
+
+let zero = Zero
+let one = One 1
+let minus_one = One (-10)
+let two = Two (1, 2)
+let three = Three (2, 1, 3)
+let four = Four (1, 4, 3, 2)
+let five = Five (5, 1, 2, 4, 3)
+
+let _ = print_int (sum_multi zero)
+let _ = print_int (sum_multi one)
+let _ = print_int (sum_multi two)
+let _ = print_int (sum_multi three)
+let _ = print_int (sum_multi four)
+let _ = print_int (sum_multi five)
+
+let _ = print_int (signum (one_sign one))
+let _ = print_int (signum (one_sign minus_one))
+let _ = print_int (signum (one_sign three))
+
+let _ = print_int (signed (one_sign zero))
+let _ = print_int ((signed (one_sign one)) + (signed (one_sign minus_one)))

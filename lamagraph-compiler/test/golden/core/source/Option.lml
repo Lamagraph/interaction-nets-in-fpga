@@ -1,0 +1,49 @@
+module Option
+
+type 'a option =
+  | None
+  | Some of 'a
+
+let map f opt =
+  match opt with
+  | Some x -> Some (f x)
+  | None -> None
+
+let mapOrDefault f default opt =
+  match opt with
+  | Some x -> f x
+  | None -> default
+
+let increment x = x + 1
+let double x = x * 2
+
+let f opt = map double (map increment opt)
+
+type 'a list_of_options = 'a option list
+
+type 'a option_of_list = 'a list option
+
+let rec count_somes l = match l with
+  | [] -> 0
+  | hd :: tl ->
+      let count_tl = count_somes tl in
+      match hd with
+        | None -> count_tl
+        | Some _ -> 1 + count_tl
+
+let rec sum_list_of_options l = match l with
+  | [] -> 0
+  | hd :: tl ->
+      let sum_tl = sum_list_of_options tl in
+      match hd with
+        | None -> sum_tl
+        | Some v -> v + sum_tl
+
+let l_of_opts = (Some 1) :: (None :: ((Some 3) :: ((Some 5) :: [])))
+
+let _ = print_int (mapOrDefault increment 0 (f (Some 5)))
+let _ = print_int (mapOrDefault double 0 (Some 42))
+let _ = print_int (mapOrDefault double 0 None)
+
+let result1 = print_int (count_somes l_of_opts)
+let result2 = print_int (sum_list_of_options l_of_opts)
