@@ -21,7 +21,7 @@ data AgentSimpleLambda
   = Apply
   | Abstract
   | Erase
-  deriving (NFDataX, Generic, Show, Eq, ShowX)
+  deriving (NFDataX, Generic, Show, Eq, ShowX, BitPack)
 
 {- | Reduce rule for `Apply` and `Abs`
 
