@@ -1,0 +1,63 @@
+let Insanity.F = Insanity.F
+let Insanity.S = Insanity.S
+let Insanity.T = Insanity.T
+let Insanity.Tempty = Insanity.Tempty
+let rec Insanity.first_sum = fun Insanity.a ->
+                             match Insanity.a as t#a with ( Insanity.F
+                             , [Insanity.x, Insanity.b]
+                             , (#std.+ Insanity.x) (Insanity.second_sum Insanity.b) )
+and
+Insanity.second_sum = fun Insanity.b ->
+                      match Insanity.b as t#b with ( Insanity.S
+                      , [Insanity.x, Insanity.c]
+                      , (#std.+ Insanity.x) (Insanity.third_sum Insanity.c) )
+and
+Insanity.third_sum = fun Insanity.c ->
+                     match Insanity.c as t#c with (Insanity.Tempty, [], 0)
+                     | ( Insanity.T
+                     , [Insanity.x, Insanity.a]
+                     , (#std.+ Insanity.x) (Insanity.first_sum Insanity.a) )
+let Insanity.result = #std.print_int (Insanity.first_sum (Insanity.F ((1),
+                      (Insanity.S ((2), (Insanity.T ((3), (Insanity.F ((4),
+                      (Insanity.S ((5), (Insanity.Tempty))))))))))))
+let Insanity.classify_num = fun Insanity.n -> match Insanity.n as t#d with ( 0
+                                              , []
+                                              , 100 )
+                                              | (1, [], 101)
+                                              | (2, [], 102)
+                                              | (5, [], 105)
+                                              | (DEFAULT, [], 999)
+let Insanity.negate = fun Insanity.b -> match Insanity.b as t#e with ( #std.true
+                                        , []
+                                        , #std.false )
+                                        | (#std.false, [], #std.true)
+let Insanity.to_int = fun Insanity.b -> match Insanity.b as t#f with ( #std.true
+                                        , []
+                                        , 1 )
+                                        | (#std.false, [], 0)
+let Insanity.bool_and = fun Insanity.a -> fun Insanity.b ->
+                        match Insanity.a as t#g with ( #std.true
+                        , []
+                        , match Insanity.b as t#h with ( #std.true
+                          , []
+                          , #std.true )
+                          | (#std.false, [], #std.false) )
+                        | (#std.false, [], #std.false)
+let Insanity.sign = fun Insanity.n -> match Insanity.n as t#i with (0, [], 0)
+                                      | ( DEFAULT
+                                      , []
+                                      , match (#std.> t#i) 0 as t#j with ( #std.true
+                                        , []
+                                        , 1 )
+                                        | (#std.false, [], -1) )
+let t#k = #std.print_int (Insanity.classify_num 0)
+let t#l = #std.print_int (Insanity.classify_num 1)
+let t#m = #std.print_int (Insanity.classify_num 5)
+let t#n = #std.print_int (Insanity.classify_num 42)
+let t#o = #std.print_int (Insanity.to_int (Insanity.negate #std.true))
+let t#p = #std.print_int (Insanity.to_int (Insanity.negate #std.false))
+let t#q = #std.print_int (Insanity.to_int ((Insanity.bool_and #std.true) #std.true))
+let t#r = #std.print_int (Insanity.to_int ((Insanity.bool_and #std.true) #std.false))
+let t#s = #std.print_int (Insanity.sign 0)
+let t#t = #std.print_int (Insanity.sign 42)
+let t#u = #std.print_int (Insanity.sign -10)
