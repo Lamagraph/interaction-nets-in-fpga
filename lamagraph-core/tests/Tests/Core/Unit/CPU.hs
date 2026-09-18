@@ -31,6 +31,8 @@ mealyCoreTestTemplate ::
   , Show agentType
   , ShowX agentType
   , Eq agentType
+  , 1 <= portsNumber
+  , BitPack agentType
   ) =>
   Vec CellsNumber (Maybe (Node portsNumber agentType)) ->
   MemoryManager ->
@@ -53,16 +55,18 @@ mealyCoreTestTemplate initNet initMemoryManager expectedAnswer cycleCount rootNo
   systemActualAnswer =
     sampleN
       cycleCount
-      ( (logicBroad @portsNumber @nodesNumber @edgesNumber @agentType @System)
-          initNet
-          rootNodeAddress
-          initMemoryManager
+      ( bundle $
+          fst $
+            (logicBoard @portsNumber @nodesNumber @edgesNumber @agentType @System)
+              initNet
+              rootNodeAddress
+              initMemoryManager
       )
   answersAreEqual = P.all (`elem` systemActualAnswer) expectedAnswer
 
 idApplyToIdMealyCore :: TestTree
 idApplyToIdMealyCore =
-  mealyCoreTestTemplate @AgentSimpleLambda @2 @2
+  mealyCoreTestTemplate @AgentType @NodesNumber @EdgesNumber
     initialIdApplyToIdNode
     initialIdApplyToIdMM
     [0, 1]

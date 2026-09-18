@@ -95,6 +95,8 @@ library
       array
     , base >=4.7 && <5
     , extra
+    , graph-rewriting
+    , graph-rewriting-lib
     , lens
     , mono-traversable
     , mtl
@@ -107,6 +109,7 @@ library
 executable lamagraph-compiler-exe
   main-is: Main.hs
   other-modules:
+      Term
       Paths_lamagraph_compiler
   hs-source-dirs:
       app
@@ -120,6 +123,8 @@ executable lamagraph-compiler-exe
       array
     , base >=4.7 && <5
     , extra
+    , graph-rewriting
+    , graph-rewriting-lib
     , lamagraph-compiler
     , lens
     , mono-traversable
@@ -161,6 +166,8 @@ test-suite lamagraph-compiler-test
     , directory
     , extra
     , filepath
+    , graph-rewriting
+    , graph-rewriting-lib
     , hedgehog
     , lamagraph-compiler
     , lens

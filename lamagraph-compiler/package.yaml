@@ -30,6 +30,8 @@ dependencies:
   - mtl
   - mono-traversable
   - unliftio
+  - graph-rewriting
+  - graph-rewriting-lib
 
 language: GHC2021
 
