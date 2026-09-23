@@ -18,7 +18,9 @@ module INet.Define where
 
 import Clash.Prelude hiding (Index, imap, (:>))
 import Clash.Sized.Index (Index)
+import qualified Clash.Sized.Vector as Vec
 import Control.Lens hiding (Index, imap, (:>))
+import Control.Monad.State (runState, state)
 import Core.Node
 import INet.Edsl
 import INet.Net (INet (..), ReduceRuleResult)
@@ -65,14 +67,20 @@ betaBody leftPorts rightPorts = do
   wire (leftPorts !! sec2Port1) (rightPorts !! sec2Port1)
 
 {- | erase rule: `Erase >< X` — one fresh `Erase` per secondary port of `X`
--- [AI-WIP] erase rule body in the new EDSL
+Iterates over `X`'s secondary ports with `Vec.mapAccumL`, threading the builder
+state purely (synthesizable: no lists, no monadic folding).
 -}
-eraseAnyBody :: Vec 2 PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
-eraseAnyBody ports = do
-  (primA, _) <- fresh Erase
-  (primB, _) <- fresh Erase
-  wire (ports !! sec2Port0) (Main primA)
-  wire (ports !! sec2Port1) (Main primB)
+eraseAnyBody :: forall n. Vec n PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
+eraseAnyBody ports = state $ \initState ->
+  let st' = fst (Vec.mapAccumL step initState ports)
+   in ((), st')
+ where
+  step :: RuleState 2 4 2 AgentSimpleLambda -> PortPointer -> (RuleState 2 4 2 AgentSimpleLambda, ())
+  step st port = let (a, st') = runState (fan port) st in (st', a)
+  fan :: PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
+  fan port = do
+    (addr, _) <- fresh Erase
+    wire port (Main addr)
 
 {- | `Erase >< Erase`: nothing arises
 -- [AI-WIP] erase-erase rule body in the new EDSL
@@ -81,32 +89,36 @@ eraseEraseBody :: RuleBuilder 2 4 2 AgentSimpleLambda ()
 eraseEraseBody = pure ()
 
 {- | duplicator rule: `Duplicate >< X` — two copies of `X`, one fan `Duplicate` per secondary port of `X`
--- [AI-WIP] duplicator rule body in the new EDSL
+Iterates over `X`'s secondary ports with `Vec.mapAccumL`, threading the builder
+state purely (synthesizable: no lists, no monadic folding).
 -}
 dupAnyBody ::
   forall a.
-  (AgentArity a ~ 2, AgentLabel a AgentSimpleLambda) =>
+  (AgentLabel a AgentSimpleLambda) =>
   Agent a ->
   Vec 2 PortPointer ->
-  Vec 2 PortPointer ->
+  Vec (AgentArity a) PortPointer ->
   RuleBuilder 2 4 2 AgentSimpleLambda ()
-dupAnyBody copyAgent branchPorts auxPorts = do
-  paPorts <- fresh copyAgent
-  pbPorts <- fresh copyAgent
-  pkPorts <- fresh Duplicate
-  plPorts <- fresh Duplicate
-  let (primA, copyA) = paPorts
-      (primB, copyB) = pbPorts
-      (primK, fanK) = pkPorts
-      (primL, fanL) = plPorts
+dupAnyBody copyAgent branchPorts xPorts = do
+  (primA, copyA) <- fresh copyAgent
+  (primB, copyB) <- fresh copyAgent
   wire (branchPorts !! sec2Port0) (Main primA)
   wire (branchPorts !! sec2Port1) (Main primB)
-  wire (auxPorts !! sec2Port0) (Main primK)
-  wire (auxPorts !! sec2Port1) (Main primL)
-  wire (fanK !! sec2Port0) (copyA !! sec2Port0)
-  wire (fanK !! sec2Port1) (copyB !! sec2Port0)
-  wire (fanL !! sec2Port0) (copyA !! sec2Port1)
-  wire (fanL !! sec2Port1) (copyB !! sec2Port1)
+  state $ \initState ->
+    let st' = fst (Vec.mapAccumL step initState (Vec.zip3 xPorts copyA copyB))
+     in ((), st')
+ where
+  step ::
+    RuleState 2 4 2 AgentSimpleLambda ->
+    (PortPointer, PortPointer, PortPointer) ->
+    (RuleState 2 4 2 AgentSimpleLambda, ())
+  step st (xp, ca, cb) = let (a, st') = runState (fan xp ca cb) st in (st', a)
+  fan :: PortPointer -> PortPointer -> PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
+  fan xp ca cb = do
+    (primF, fanP) <- fresh Duplicate
+    wire xp (Main primF)
+    wire (fanP !! sec2Port0) ca
+    wire (fanP !! sec2Port1) cb
 
 -- ====================
 -- INet instance

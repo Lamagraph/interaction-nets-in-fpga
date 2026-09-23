@@ -241,46 +241,65 @@ Creates nothing; crosses the two secondary pairs. `MakeReduction` for
 ### 6.2 Erase: `Erase >< X`
 
 ```haskell
-eraseAnyBody :: Vec 2 PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
-eraseAnyBody ports = do
-  (primA, _) <- fresh Erase
-  (primB, _) <- fresh Erase
-  wire (ports !! sec2Port0) (Main primA)
-  wire (ports !! sec2Port1) (Main primB)
+eraseAnyBody :: forall n. Vec n PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
+eraseAnyBody ports = state $ \initState ->
+  let st' = fst (Vec.mapAccumL step initState ports)
+   in ((), st')
+ where
+  step :: RuleState 2 4 2 AgentSimpleLambda -> PortPointer -> (RuleState 2 4 2 AgentSimpleLambda, ())
+  step st port = let (a, st') = runState (fan port) st in (st', a)
+  fan :: PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
+  fan port = do
+    (addr, _) <- fresh Erase
+    wire port (Main addr)
 ```
 
 Each secondary port of the non-erasure agent becomes an `Erase` at a fresh
 address. `Erase >< Erase` is `eraseEraseBody = pure ()` — nothing arises.
 
+The body is generic over the partner arity `n` (`Vec n`): it traverses the
+partner's secondary ports with `Vec.mapAccumL` and threads the builder state
+purely. No lists, no monadic folding — the traversal stays synthesizable and
+works for any agent arity, not just 2.
+
 ### 6.3 Duplicate: `Duplicate >< X`
 
 ```haskell
 dupAnyBody ::
-  (AgentArity a ~ 2, AgentLabel a AgentSimpleLambda) =>
-  Agent a -> Vec 2 PortPointer -> Vec 2 PortPointer ->
+  forall a.
+  AgentLabel a AgentSimpleLambda =>
+  Agent a ->
+  Vec 2 PortPointer ->
+  Vec (AgentArity a) PortPointer ->
   RuleBuilder 2 4 2 AgentSimpleLambda ()
-dupAnyBody copyAgent branchPorts auxPorts = do
-  paPorts <- fresh copyAgent
-  pbPorts <- fresh copyAgent
-  pkPorts <- fresh Duplicate
-  plPorts <- fresh Duplicate
-  let (primA, copyA) = paPorts
-      (primB, copyB) = pbPorts
-      (primK, fanK)  = pkPorts
-      (primL, fanL)  = plPorts
+dupAnyBody copyAgent branchPorts xPorts = do
+  (primA, copyA) <- fresh copyAgent
+  (primB, copyB) <- fresh copyAgent
   wire (branchPorts !! sec2Port0) (Main primA)
   wire (branchPorts !! sec2Port1) (Main primB)
-  wire (auxPorts    !! sec2Port0) (Main primK)
-  wire (auxPorts    !! sec2Port1) (Main primL)
-  wire (fanK !! sec2Port0) (copyA !! sec2Port0)
-  wire (fanK !! sec2Port1) (copyB !! sec2Port0)
-  wire (fanL !! sec2Port0) (copyA !! sec2Port1)
-  wire (fanL !! sec2Port1) (copyB !! sec2Port1)
+  state $ \initState ->
+    let st' = fst (Vec.mapAccumL step initState (Vec.zip3 xPorts copyA copyB))
+     in ((), st')
+ where
+  step ::
+    RuleState 2 4 2 AgentSimpleLambda ->
+    (PortPointer, PortPointer, PortPointer) ->
+    (RuleState 2 4 2 AgentSimpleLambda, ())
+  step st (xp, ca, cb) = let (a, st') = runState (fan xp ca cb) st in (st', a)
+  fan :: PortPointer -> PortPointer -> PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
+  fan xp ca cb = do
+    (primF, fanP) <- fresh Duplicate
+    wire xp (Main primF)
+    wire (fanP !! sec2Port0) ca
+    wire (fanP !! sec2Port1) cb
 ```
 
-Two copies of `X` (`pa`, `pb`), two fan `Duplicate`s (`pk`, `pl`) that
-cross-connect each copied secondary pair. `copyAgent` is `Apply` or
-`Abstract`, whichever the pair matched.
+Two copies of `X` (`primA`/`primB`), plus one fan `Duplicate` per secondary
+port of `X`: each fan picks a secondary pair and cross-connects it into the two
+copies. `copyAgent` is `Apply` or `Abstract`, whichever the pair matched.
+Same `Vec.mapAccumL` traversal as `eraseAnyBody` — the copy secondary ports and
+`X`'s ports are `zip`-3'ed so each fan gets matching ports; again no lists, and
+the `AgentArity a` of the copied agent is unconstrained (any arity).
 
 ### 6.4 `INet AgentSimpleLambda 4 2 2` instance
 
@@ -346,6 +365,11 @@ hand-written `eraseToAbstractOrApplyRule` output node-for-node (this is what
   a port. Valid targets are open ports of out-of-pair nodes.
 - **Free-pool hygiene.** Free addresses must be disjoint from every address the
   surrounding net references, and used at most once per result.
+- **Rule bodies must stay synthesizable.** No Prelude lists and no monadic
+  folding in a body: iterate secondary-port vectors with `Vec.mapAccumL` /
+  `Vec.zip3` and thread the builder state purely (see §6.2/§6.3). This is what
+  keeps arity-generic bodies like `eraseAnyBody`/`dupAnyBody` working for any
+  `n` while remaining Clash-normalizable.
 - **`[AI-WIP]` markers.** Rule-body comments in `INet.Define.hs` currently carry
   interim `[AI-WIP]` markers from development commits; they are editorial and
   may be stripped in a cleanup commit.
