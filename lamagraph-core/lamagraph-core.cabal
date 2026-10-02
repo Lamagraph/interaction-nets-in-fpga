@@ -142,6 +142,7 @@ test-suite test-library
   other-modules:
     Tests.Core.Node
     Tests.Core.Unit.EdslRules
+    Tests.Core.Unit.EdslRulesUnit
     Tests.Core.Unit.CPU
     Tests.Core.Unit.Loader
     Tests.Core.Unit.Reducer

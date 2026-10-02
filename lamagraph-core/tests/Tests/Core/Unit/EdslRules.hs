@@ -20,6 +20,22 @@ free-address pool is drawn from the complement, so it is distinct from every
 address the net references. Referencing a to-be-freed address from a live
 port — or reusing a free address twice — is an invalid net, and the EDSL
 (`slotByAddr`) and the hand-written rules disagree on such inputs by design.
+
+Two further limits of this property, by construction rather than by accident:
+
+* Every secondary slot of a non-Erase actor is generated /connected/. The
+  hand-written rules raise `error "Agent type of the node is incorrect"` on an
+  empty slot (`Core.Concrete.ReduceRulesLambda`), so the `NotConnected`-slot
+  path is not differentially testable at all; it is pinned against literals in
+  "Tests.Core.Unit.EdslRulesUnit" instead.
+* @Erase >< Erase@ is a single input up to the ignored primaries: Erase has
+  arity 0 and `eraseEraseBody` is `pure ()`. The property confirms the dispatch
+  arm exists and allocates nothing; there is nothing else to vary.
+
+The projections `normEdges` \/ `normNodes` compare ordered lists, which pins the
+allocation and wiring order the rule bodies happen to use. That is intentional —
+it is deterministic — but reordering the `fresh` calls inside a rule body will
+fail these tests without changing semantics.
 -}
 module Tests.Core.Unit.EdslRules where
 
@@ -104,9 +120,18 @@ vec2 = Vec.unsafeFromList
 hasSecs :: RW.AgentSimpleLambda -> Bool
 hasSecs = (/= RW.Erase)
 
--- | @n@ distinct elements drawn from @pool@ (pairwise-distinct by construction)
+{- | @n@ distinct elements drawn from @pool@ (pairwise-distinct by construction)
+
+A short pool would make @take n@ under-deliver, which would silently corrupt
+the @take nLeft@ \/ @drop nLeft@ split of the caller's slots instead of
+failing. Unreachable with the sizes @genActorSecs@ currently uses (at most 4
+slots against at least 6 candidate ports), so this is a guard against future
+edits to the generator rather than a reachable case.
+-}
 genNDistinct :: [a] -> Int -> H.Gen [a]
-genNDistinct pool n = take n <$> Gen.shuffle pool
+genNDistinct pool n
+  | length pool < n = error ("genNDistinct: pool of " ++ show (length pool) ++ " too small for " ++ show n)
+  | otherwise = take n <$> Gen.shuffle pool
 
 {- | Secondary ports of the active pair, arity-aware: every slot of a
 non-Erase actor holds a real connection into an *open* context port; an Erase
