@@ -11,8 +11,16 @@
 
 {- | Usage of the EDSL for the lambda-calculus agent set {Apply, Abstract, Erase, Duplicate}.
 
-Defines the runtime labels, rule bodies, and `INet` instance.
-The generic EDSL machinery lives in "INet.Edsl".
+Defines the runtime labels, rule bodies, and the @INet AgentSimpleLambda 4 2 2@
+instance. The generic EDSL machinery lives in "INet.Edsl".
+
+__Note__ the name @AgentSimpleLambda@ is used twice in the project for two
+/different/ types: this module declares it with four constructors
+(@ApplyLabel@, @AbstractLabel@, @EraseLabel@, @DuplicateLabel@) for the
+4-address-per-pair instance, while "Core.Concrete.ReduceRulesLambda" declares
+its own three-constructor @AgentSimpleLambda@ (@Apply@, @Abstract@, @Erase@)
+for the 2-address instance that @topEntity@ uses. They are unrelated types
+with no conversions between them.
 -}
 module INet.Define where
 
@@ -29,7 +37,8 @@ import INet.Net (INet (..), ReduceRuleResult)
 -- Runtime labels for the lambda-calculus agent set
 -- ====================
 
--- | Flat runtime label stored in `Node._nodeType`
+-- | Flat runtime label stored in `Node._nodeType`.
+-- Not to be confused with the same-named label type of "Core.Concrete.ReduceRulesLambda" (see the module header).
 data AgentSimpleLambda = ApplyLabel | AbstractLabel | EraseLabel | DuplicateLabel
   deriving (Generic, NFDataX, Show, Eq, ShowX)
 
@@ -66,8 +75,8 @@ betaBody leftPorts rightPorts = do
   wire (leftPorts !! sec2Port0) (rightPorts !! sec2Port0)
   wire (leftPorts !! sec2Port1) (rightPorts !! sec2Port1)
 
-{- | erase rule: `Erase >< X` — one fresh `Erase` per secondary port of `X`
-Iterates over `X`'s secondary ports with `Vec.mapAccumL`, threading the builder
+{- | erase rule: @Erase >< X@ — one fresh `Erase` per secondary port of @X@
+Iterates over @X@'s secondary ports with `Vec.mapAccumL`, threading the builder
 state purely (synthesizable: no lists, no monadic folding).
 -}
 eraseAnyBody :: forall n. Vec n PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
@@ -88,8 +97,8 @@ eraseAnyBody ports = state $ \initState ->
 eraseEraseBody :: RuleBuilder 2 4 2 AgentSimpleLambda ()
 eraseEraseBody = pure ()
 
-{- | duplicator rule: `Duplicate >< X` — two copies of `X`, one fan `Duplicate` per secondary port of `X`
-Iterates over `X`'s secondary ports with `Vec.mapAccumL`, threading the builder
+{- | duplicator rule: @Duplicate >< X@ — two copies of @X@, one fan `Duplicate` per secondary port of @X@
+Iterates over @X@'s secondary ports with `Vec.mapAccumL`, threading the builder
 state purely (synthesizable: no lists, no monadic folding).
 -}
 dupAnyBody ::

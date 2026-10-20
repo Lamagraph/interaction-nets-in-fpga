@@ -3,6 +3,20 @@
 {-# HLINT ignore "Eta reduce" #-}
 {-# HLINT ignore "Functor law" #-}
 
+{- |
+Module      : Core.MemoryManager.MemoryManager
+Description : Occupancy bookkeeping for the 16-cell net memory
+
+Maintains the two bit maps over all `CellsNumber` cell addresses:
+`_busyBitMap` (a node lives here) and `_activePairs` (this address heads an
+active pair), and provides the operations the CPU FSM and
+"Core.Reducer" need: allocate free addresses for fresh nodes, find an
+active address to fetch, and retire a reduced pair.
+
+Invariant kept here: for an address marked in `_activePairs` the node stored
+there is active; `deleteActivePair` aborts (`errorX`) unless exactly one of
+the two addresses of the pair is marked.
+-}
 module Core.MemoryManager.MemoryManager where
 
 import Clash.Prelude
@@ -19,6 +33,8 @@ import Core.Node
 >>> :set -fplugin GHC.TypeLits.Normalise
 -}
 
+-- | The two nodes of an interaction-redex, both loaded from RAM with their addresses.
+-- Their principal ports are connected to each other.
 data ActivePair (portsNumber :: Nat) agentType = ActivePair
   { _leftNode :: LoadedNode portsNumber agentType
   , _rightNode :: LoadedNode portsNumber agentType
@@ -26,10 +42,11 @@ data ActivePair (portsNumber :: Nat) agentType = ActivePair
   deriving (Show, Eq, Generic, NFDataX, Bundle, ShowX)
 $(makeLenses ''ActivePair)
 
+-- | Occupancy state of the cell memory (see the module header).
 data MemoryManager
   = MemoryManager
-  { _busyBitMap :: Vec CellsNumber Bool -- map Address : Bool. tell smth like "this Address is busy, so you can not to write here"
-  , _activePairs :: Vec CellsNumber Bool
+  { _busyBitMap :: Vec CellsNumber Bool -- ^ @True@ = the address is busy, nothing can be written there
+  , _activePairs :: Vec CellsNumber Bool -- ^ @True@ = the address holds the head of an active pair
   }
   deriving (Generic, NFDataX, Bundle, Show)
 
@@ -49,7 +66,10 @@ indexToUnsigned ::
   Unsigned m
 indexToUnsigned v = bitCoerce (resize v :: Index (2 ^ m))
 
--- | Get `Vec` of free `AddressNumber`s of given size
+-- | Get `Vec` of free `AddressNumber`s of given size.
+-- Yields the lowest free addresses in ascending order, padded with `Nothing`;
+-- when there are fewer free addresses than requested the missing slots stay
+-- `Nothing` (the caller — a reduction rule — sees an exhausted pool).
 getFreeAddresses ::
   forall maxAddressesCount.
   (KnownNat maxAddressesCount) =>
@@ -79,6 +99,10 @@ markAddressesAsBusy ::
   Vec CellsNumber Bool
 markAddressesAsBusy busyMap addresses = imap (\address addressIsBusy -> Just (indexToUnsigned address) `elem` addresses || addressIsBusy) busyMap
 
+{- | Take @addressesCount@ free addresses and mark them busy in one step.
+Returns fewer (or zero) addresses, padded with `Nothing`, when the memory
+holds fewer free cells than requested.
+-}
 giveAddresses ::
   (KnownNat maxAddressesCount) =>
   Index CellsNumber ->
@@ -98,7 +122,11 @@ markAddress ::
 markAddress busyMap marker address =
   replace address marker busyMap
 
--- | Replace processed active pair at `False` in `Vec` of active pairs
+{- | Mark the place of the reduced pair as free in the active-pairs map.
+
+Enforces the \"exactly one node of the pair is marked\" invariant: if both or
+neither address of the pair are marked in the vector, aborts with `errorX`.
+-}
 deleteActivePair ::
   (KnownNat portsNumber) =>
   Vec CellsNumber Bool ->
@@ -118,7 +146,7 @@ deleteActivePair oldActivePairs activePairToDelete =
       else
         replace (activePairToDelete ^. rightNode . originalAddress) False oldActivePairs
 
--- | Mark `ActivePair`'s place as free
+-- | Mark both addresses of the pair as free in the busy map (their cells may be reused by the rule's fresh nodes).
 freeUpActivePair ::
   (KnownNat portsNumber) =>
   Vec CellsNumber Bool ->
@@ -129,7 +157,7 @@ freeUpActivePair busyMap activePairToFree = markAddress (markAddress busyMap Fal
   leftNodeAddress = activePairToFree ^. leftNode . originalAddress
   rightNodeAddress = activePairToFree ^. rightNode . originalAddress
 
--- | Remove all information about `ActivePair` from `MemoryManager`
+-- | Remove all information about @ActivePair@ from @MemoryManager@
 removeActivePair ::
   (KnownNat portsNumber) =>
   ActivePair portsNumber agentType ->
@@ -140,7 +168,7 @@ removeActivePair acPair memoryManager = MemoryManager{..}
   _activePairs = deleteActivePair (view activePairs memoryManager) acPair
   _busyBitMap = freeUpActivePair (view busyBitMap memoryManager) acPair
 
--- | Give `AddressNumber` of some active `Node`. It returns `Nothing` if there is no `ActivePair`s in the net
+-- | Give `AddressNumber` of some active @Node@ — the lowest marked address. It returns `Nothing` if there is no @ActivePair@s in the net.
 giveActiveAddressNumber ::
   MemoryManager ->
   Maybe AddressNumber

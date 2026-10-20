@@ -98,7 +98,6 @@ library
     Core.Concrete.ReduceRulesLambda
     Core.Concrete.Initial
     INet.Net
-    Core.Concrete.TypesTH
     Core.CPU
     Core.Core
     INet.Edsl
@@ -141,6 +140,7 @@ test-suite test-library
   main-is: unittests.hs
   other-modules:
     Tests.Core.Node
+    Tests.Core.Unit.CycleBudget
     Tests.Core.Unit.EdslRules
     Tests.Core.Unit.EdslRulesUnit
     Tests.Core.Unit.CPU

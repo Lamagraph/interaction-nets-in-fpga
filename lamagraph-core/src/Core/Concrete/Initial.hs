@@ -1,4 +1,21 @@
--- | Module with initial configuration. It will generate (by TemplateHaskell?) automatically in the future
+{- |
+Module      : Core.Concrete.Initial
+Description : Hand-built initial nets and their @MemoryManager@s
+
+Fixtures for the 3-agent rule set of "Core.Concrete.ReduceRulesLambda": a
+net given as `Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda))` (cells 0..n
+occupied, the rest free) plus the matching @MemoryManager@ with the busy and
+active-pairs maps. @topEntity@ is fixed to `initialIdApplyToIdNode` with
+`initialIdApplyToIdMM` and root address 0 (\"Core.Core\"; @docs/architecture.md\"
+describes the fixture).
+
+Port wiring follows the mirror convention: a secondary port @Port a (Id j)@
+always meets the mirror @Port a (Id (1 - j))@ on the other side, so the two
+secondary ports of an agent appear swapped on the wire — self-loops of the
+identity combinator (@\x. x@) are encoded as secondary 0 wired to secondary 1
+and vice versa. Everything here is written by hand; a generator is planned
+(the module is its own specification until then).
+-}
 module Core.Concrete.Initial where
 
 import Clash.Prelude
@@ -6,6 +23,7 @@ import Core.Concrete.ReduceRulesLambda
 import Core.MemoryManager.MemoryManager (MemoryManager (MemoryManager), indexToUnsigned)
 import Core.Node
 
+-- | Tag every occupied cell with its own address, turning a raw net into @LoadedNode@s.
 initialNodeToLoadedNode ::
   Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda)) ->
   Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
@@ -44,9 +62,11 @@ initialIdApplyToIdNode = Just applyNode +>> Just abstract1Node +>> Just abstract
         secPorts = Just (Connected port0) :> Just (Connected port1) :> Nil
      in Node (Just prPort) secPorts Abstract
 
+-- | @LoadedNode@ view of `initialIdApplyToIdNode`.
 initialIdApplyToId :: Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
 initialIdApplyToId = initialNodeToLoadedNode initialIdApplyToIdNode
 
+-- | @MemoryManager@ for `initialIdApplyToId`: cells 0-2 busy, one active pair.
 initialIdApplyToIdMM :: MemoryManager
 initialIdApplyToIdMM = MemoryManager busyMap activePairsMap
  where
@@ -72,6 +92,7 @@ initialLoopEdge = Just applyNode +>> Just abstractNode +>> def
         secPorts = Just (Connected port0) :> Just (Connected port1) :> Nil
      in LoadedNode (Node prPort secPorts Abstract) abstractAddressNumber
 
+-- | @MemoryManager@ for `initialLoopEdge`: cells 0-1 busy, one active pair.
 initialLoopEdgeMM :: MemoryManager
 initialLoopEdgeMM = MemoryManager busyMap activePairsMap
  where
@@ -116,9 +137,11 @@ initialEpsAppToIdNode = Just absIdNode +>> Just applyMainNode +>> Just absEraseN
         secPorts = Nothing :> Nothing :> Nil
      in Node prPort secPorts Erase
 
+-- | @LoadedNode@ view of `initialEpsAppToIdNode`.
 initialEpsAppToId :: Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
 initialEpsAppToId = initialNodeToLoadedNode initialEpsAppToIdNode
 
+-- | @MemoryManager@ for `initialEpsAppToId`: cells 0-4 busy, active pairs at 1 and 3.
 initialEpsAppToIdMM :: MemoryManager
 initialEpsAppToIdMM = MemoryManager busyMap activePairsMap
  where
@@ -149,9 +172,11 @@ initialEpsAppToIdSimpleNode = Just absIdNode +>> Just applyEraseNode +>> Just er
         secPorts = Nothing :> Nothing :> Nil
      in Node prPort secPorts Erase
 
+-- | @LoadedNode@ view of `initialEpsAppToIdSimpleNode`.
 initialEpsAppToIdSimple :: Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
 initialEpsAppToIdSimple = initialNodeToLoadedNode initialEpsAppToIdSimpleNode
 
+-- | @MemoryManager@ for `initialEpsAppToIdSimple`: cells 0-2 busy, one active pair.
 initialEpsAppToIdSimpleMM :: MemoryManager
 initialEpsAppToIdSimpleMM = MemoryManager busyMap activePairsMap
  where
@@ -162,6 +187,7 @@ initialEpsAppToIdSimpleMM = MemoryManager busyMap activePairsMap
 initialIdErase :: Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))
 initialIdErase = initialNodeToLoadedNode initialIdEraseNode
 
+-- | Raw net of `initialIdErase`.
 initialIdEraseNode :: Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda))
 initialIdEraseNode = Just idNode +>> Just eraseNode +>> def
  where
@@ -178,6 +204,7 @@ initialIdEraseNode = Just idNode +>> Just eraseNode +>> def
         secPorts = def
      in Node prPort secPorts Erase
 
+-- | @MemoryManager@ for `initialIdErase`: cells 0-1 busy, one active pair.
 initialIdEraseMM :: MemoryManager
 initialIdEraseMM = MemoryManager busyMap activePairsMap
  where

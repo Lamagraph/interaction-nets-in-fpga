@@ -8,6 +8,24 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
+{- |
+Module      : INet.Edsl
+Description : Embedded DSL for writing reduction rules as monadic rule bodies
+
+A small builder DSL that turns a declarative wiring description of a
+reduction rule into the @ReduceRuleResult@ the generic reducer expects.
+A rule body runs in `RuleBuilder` — @State@ over a fixed-size @RuleState@
+(all vectors sized by the instance parameters, no dynamic allocation):
+`fresh` allocates a new agent at the next free address, `wire` connects two
+port ends (external-to-external connections become @Edge@s, everything else
+is written straight into the fresh nodes' accumulators), and `runReduce`
+materializes the state. Overflow of the fixed vectors is an explicit
+`errorX`, never silent truncation.
+
+"INet.Define" instantiates this DSL for the lambda-calculus agent set; the
+decision records referenced in the section headers live in
+@docs/decisions.md@.
+-}
 module INet.Edsl (
   -- * Agent kinds (decisions.md D-Agent, D-AgentArity)
   AgentKind (..),
@@ -85,6 +103,7 @@ data PortPointer
   | Main AddressNumber
   | Pointer AddressNumber Int
 
+-- | Convert a `Connection` into the pointer vocabulary of the DSL (`NotConnected` becomes `Free`).
 connectionToPointer :: (KnownNat portsNumber) => Connection portsNumber -> PortPointer
 connectionToPointer = \case
   NotConnected -> Free
@@ -147,6 +166,10 @@ slotByAddr a = findIndex isAddr <$> gets _agents
   isAddr (Just (addr, _, _)) = addr == a
   isAddr Nothing = False
 
+{- | Resolve a `PortPointer` against the builder state: `Free` stays free, an
+address already claimed by a fresh node resolves to that node's slot
+(`EndFresh`), anything else is an external end (`EndExternal`).
+-}
 resolveEnd ::
   forall edgesNumber nodesNumber portsNumber l.
   (KnownNat nodesNumber, KnownNat portsNumber) =>
@@ -243,7 +266,7 @@ fresh agent = do
 -- Materialization (decisions.md D-Builder)
 -- ====================
 
--- | Turn an accumulator into a full `Node`
+-- | Turn an accumulator into a full @Node@
 accToNode :: l -> NodeAccumulator portsNumber -> Node portsNumber l
 accToNode lbl NodeAccumulator{..} =
   Node
