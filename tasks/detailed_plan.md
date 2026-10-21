@@ -47,6 +47,37 @@ reachable via curl, so it is stack's own HTTP client, not raw connectivity.
   so the repo is untouched and the project's stack.yaml stays minimal.
 - CI is unaffected (haskell-actions/setup does not use the local config).
 
+### S4: Work around the broken `macos-26-arm64` runner SDK (CI)
+
+**Code:** `.github/workflows/build-and-test.yaml` (one added step, macOS leg
+only).
+
+The CI `build-and-test` macOS job fails at the very first link (the `Setup.hs`
+build inside `stack build --only-dependencies`) with
+`ld: multiple errors: tapi error: malformed file` /
+`error: unknown architecture arm64e.x1-macos`, referencing
+`MacOSX27.0.sdk`. Root cause: the `macos-26-arm64` runner image
+`20261013.0424.1` ships a broken Xcode/CLT 27 SDK whose `.tbd` stubs the
+default linker cannot parse. This is a known, tracked upstream regression —
+[actions/runner-images#14940](https://github.com/actions/runner-images/issues/14940)
+("macos-26-arm64 20261013.0424.1 broke GHC (linking phase)") — and is **not**
+caused by this task: it breaks `main` too, on any Haskell project. The Ubuntu
+leg is unaffected (`ubuntu-latest` still resolves to `ubuntu-24.04`, which
+builds fine).
+
+- **Fix:** on the macOS leg of `build-and-test.yaml`, add a step (gated on
+  `startsWith(matrix.os, 'macos')`) that runs
+  `sudo xcode-select -s /Library/Developer/CommandLineTools` after checkout and
+  before the Haskell setup. Selecting the Command Line Tools toolchain uses a
+  working linker/SDK and unblocks GHC linking. This is the same workaround
+  clash-compiler (the same Clash toolchain this repo uses) adopted for the
+  identical break.
+- **Verification:** YAML parses; `pre-commit run --files .github/workflows/build-and-test.yaml`
+  passes. The real proof is the CI `build-and-test` macOS job going green (CI
+  is the canonical gate — see the build/test note).
+- **Revert when:** drop the step once [actions/runner-images#14940]
+  is fixed and `macos-latest` resolves to a working image.
+
 ### S3: Revert S1's golden-fixture trailing-newline changes
 
 **Code:** `lamagraph-compiler/test/golden*/` — restore the 93 golden fixtures
@@ -135,3 +166,4 @@ pass locally.
 ## Status
 
 - [x] S1: Project facts contract + docs + tasks + CI + infra fixes
+- [ ] S4: Work around the broken `macos-26-arm64` runner SDK (CI)
