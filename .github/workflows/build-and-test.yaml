@@ -48,6 +48,16 @@ jobs:
       - name: Clone project
         uses: actions/checkout@v7
 
+      # The macos-26-arm64 runner image (>= 20261013.0424.1) ships a broken
+      # Xcode/CLT 27 SDK: the default linker fails to parse the SDK's .tbd
+      # stubs ("tapi error: malformed file" / "unknown architecture
+      # arm64e.x1-macos"), which breaks GHC linking on the very first link.
+      # Selecting the Command Line Tools toolchain works around it until the
+      # image is fixed. See: https://github.com/actions/runner-images/issues/14940
+      - name: Work around broken macOS SDK
+        if: ${{ startsWith(matrix.os, 'macos') }}
+        run: sudo xcode-select -s /Library/Developer/CommandLineTools
+
       - name: Setup Haskell with Stack
         uses: haskell-actions/setup@v2.12.1
         id: setup
