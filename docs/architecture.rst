@@ -5,10 +5,9 @@ Architecture
 ============
 
 This page is the **project structure map**: where each kind of thing lives in
-the repository. It is the single source of truth for the *project structure*
-hook (see the project facts contract in ``AGENTS.md``) and is what the
-``project-navigation`` and ``reusing`` skills read before exploring the code.
-Do not scan the whole tree to learn the layout — start here.
+the repository. It is the single source of truth for the project structure,
+read by the ``project-navigation`` and ``reusing`` skills before exploring the
+code. Do not scan the whole tree to learn the layout — start here.
 
 Top level
 =========
@@ -30,7 +29,8 @@ Top level
      - Planning artifacts: ``global_plan.md`` (per batch), ``detailed_plan.md``
        (per task).
    * - ``.opencode/skills/``
-     - Agent skills — thin pointers to the hooks in ``AGENTS.md``.
+     - Agent skills — thin pointers to the facts in ``docs/`` and the skills
+       that own them.
    * - ``.github/workflows/``
      - CI. ``ci.yaml`` orchestrates ``pre-commit.yaml``, ``fourmolu.yaml``,
        ``hlint.yaml``, ``build-and-test.yaml``, ``coverage.yaml``.

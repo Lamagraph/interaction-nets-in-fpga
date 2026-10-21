@@ -12,8 +12,8 @@ the map, and it must stay good enough to navigate by.
 ## Procedure
 
 1. Read `README.md` — the entrypoint for navigating the project.
-2. Read the *project structure* hook (see the project facts contract of
-   `AGENTS.md`) — the directory map of where things live.
+2. Read the project structure map in `docs/architecture.rst` — the directory
+   map of where things live.
 3. From the map, open only the component or guide you need, then read the
    specific source files it names.
 4. Confirm with targeted searches (a named directory, a symbol); never

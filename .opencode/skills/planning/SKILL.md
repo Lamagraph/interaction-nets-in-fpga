@@ -5,9 +5,9 @@ description: Use when planning tasks: creating global plans across multiple task
 
 # Planning
 
-Project-specific facts (integration branch, commit format, doc locations) are
-resolved through the hooks declared in the project facts contract of
-`AGENTS.md`.
+Project-specific facts (integration branch, commit format) are resolved via the
+contribution guidelines in `docs/contributing.rst`; doc locations via the
+project structure map in `docs/architecture.rst`.
 
 ## Multi-task Planning
 
@@ -28,8 +28,8 @@ The global plan must:
 - Name the **hub** issue it belongs to.
 - List all tasks to be done with their IDs, issue numbers (`#N`), brief
   descriptions, and a **Status** (`[done #N]` once the task is integrated).
-- Record the integration branch the batch targets (see the *contribution
-  guidelines* hook; `main` by default).
+- Record the integration branch the batch targets (see the contribution
+  guidelines in `docs/contributing.rst`; `main` by default).
 - Identify dependencies between tasks (which must be done before which).
 - Identify potential conflicts or overlapping changes (e.g., two tasks
   modifying the same file).
@@ -117,9 +117,8 @@ the **Docs** section of each subtask.
 ### Granularity
 
 If a subtask cannot be committed as a self-contained increment, it is too large
-— split it further. The commit message format lives in the *contribution
-guidelines* hook; the operational commit procedure lives in the `git-workflow`
-skill.
+— split it further. The commit message format lives in `docs/contributing.rst`;
+the operational commit procedure lives in the `git-workflow` skill.
 
 ### Bounded uncommitted work
 
