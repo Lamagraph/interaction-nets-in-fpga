@@ -23,6 +23,21 @@ pre-commit run --all-files
 We use [Fourmolu](https://fourmolu.github.io/) as a formatter for Haskell source files with our custom config.
 **Fourmolu must be explicitly enabled in VS Code!**
 
+### Stack
+
+The project builds with [Stack](https://docs.haskellstack.org/). If a local
+`stack build` hangs silently (no output after "Using package location
+completions from a lock file"), the Stack **Casa** package server is the cause
+(it hangs on some machines/Stack versions). Disable it in your user config
+(`~/.stack/config.yaml`):
+
+```yaml
+casa:
+  enable: false
+```
+
+CI is unaffected — it uses `haskell-actions/setup`, which does not hit this.
+
 ## Editor
 
 Our editor of choice is [VS Code](https://code.visualstudio.com/) with following extensions:
