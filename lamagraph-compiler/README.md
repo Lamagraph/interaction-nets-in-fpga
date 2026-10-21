@@ -26,5 +26,5 @@ stack build lamagraph-compiler   # library + exe
 stack test lamagraph-compiler    # golden tests
 ```
 
-The full gate (format, lint, pedantic build, tests) is defined by the
-*quality checks* hook in `AGENTS.md` and run by `.github/workflows/ci.yaml`.
+The full gate (format, lint, pedantic build, tests) is the `quality-gates`
+skill, run by `.github/workflows/ci.yaml`.

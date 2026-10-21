@@ -7,9 +7,9 @@ description: Load first at the start of every session, before doing anything els
 
 The top-level loop that orchestrates all other workflow skills. For a
 single task, load this skill first; it points to the skills that handle each
-step. Project-specific facts (integration branch config key, commit format,
-doc locations) are resolved through the hooks declared in the project facts
-contract of `AGENTS.md`.
+step. Project-specific facts (integration branch config key, commit format)
+are resolved via the contribution guidelines in `docs/contributing.rst`; doc
+locations via the project structure map in `docs/architecture.rst`.
 
 ## Core Rules
 
@@ -28,9 +28,9 @@ contract of `AGENTS.md`.
   mirror is updated after each task integrates, exactly as the detailed plan is
   mirrored to a task issue (see the `subtask-loop` skill).
 - Resolve the **integration branch** once per session using the git config key
-  defined in the *contribution guidelines* hook. It is `main` in direct mode
-  and a personal, long-lived branch in stacked mode. Never commit directly to
-  the integration branch.
+  defined in `docs/contributing.rst`. It is `main` in direct mode and a
+  personal, long-lived branch in stacked mode. Never commit directly to the
+  integration branch.
 - Do tasks strictly **one at a time**. Each task gets its own feature branch
   (created from the integration branch), its own detailed plan, and its own
   integration step. Never combine multiple tasks in a single feature branch.
@@ -41,9 +41,8 @@ contract of `AGENTS.md`.
 - Each decision must be documented before implementation. Documentation must
   be detailed enough to reproduce the project from scratch and understand why
   each decision was made.
-- Commit messages must follow the format defined in the *contribution
-  guidelines* hook and be detailed enough to understand the reasons for
-  changes.
+- Commit messages must follow the format defined in `docs/contributing.rst`
+  and be detailed enough to understand the reasons for changes.
 - Documentation-only tasks (no source code files changed) skip code-specific
   gates (tests, lint, format) but still run the docs build — for documentation
   changes it is the relevant gate — and follow all other workflow rules:

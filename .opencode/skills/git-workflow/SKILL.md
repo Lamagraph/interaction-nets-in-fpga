@@ -1,22 +1,22 @@
 ---
 name: git-workflow
-description: Use when doing git operations: committing, branching, integrating a task, opening pull requests. Covers the operational procedure (commit validation, integration into the integration branch, final PR to main, pre-merge checks); the branching/commit model lives in the contribution guidelines hook.
+description: Use when doing git operations: committing, branching, integrating a task, opening pull requests. Covers the operational procedure (commit validation, integration into the integration branch, final PR to main, pre-merge checks); the branching/commit model lives in docs/contributing.rst.
 ---
 
 # Git Workflow
 
-The model (branching scheme, commit message format, merge strategy, quality
-gate) is defined by the *contribution guidelines* hook (see the project facts
-contract of `AGENTS.md`; single source of truth). This skill keeps only the
-operational procedure.
+The model (branching scheme, commit message format, merge strategy) is defined
+by the contribution guidelines in `docs/contributing.rst` (single source of
+truth). The quality gate is the `quality-gates` skill. This skill keeps only
+the operational procedure.
 
 ## Branches
 
 All work targets an **integration branch**, resolved once per session from the
-git config key named in the *contribution guidelines* hook:
+git config key named in `docs/contributing.rst`:
 
 ```bash
-INTEGRATION=$(git config --get <key from contribution guidelines> || echo main)
+INTEGRATION=$(git config --get lamagraph.integration-branch || echo main)
 ```
 
 It is `main` by default (direct mode). A developer may redirect it to a
@@ -28,9 +28,9 @@ rebase + fast-forward merge (see below).
 
 ## Third-party content
 
-The *project structure* hook names the directories that hold third-party or
-generated content (vendored dependencies, generated bindings). They are not
-first-party source:
+The project structure map in `docs/architecture.rst` names the directories
+that hold third-party or generated content (vendored dependencies, generated
+bindings). They are not first-party source:
 
 - Never stage or commit changes inside such a path unless the task is
   explicitly about updating or regenerating it.
@@ -40,8 +40,8 @@ first-party source:
 ## Commits
 
 **Pre-commit validation**: before running `git commit`, verify the prepared
-message follows the format from the *contribution guidelines* — exactly one
-subtask identifier per commit (ranges, lists, or commas are forbidden). If the
+message follows the format from `docs/contributing.rst` — exactly one subtask
+identifier per commit (ranges, lists, or commas are forbidden). If the
 message mentions multiple subtask identifiers, STOP — split the changes into
 individual commits. One commit per completed atomic subtask.
 
@@ -60,12 +60,11 @@ line per fully resolved issue including the task's own (no more). A task that
 only partially addresses a linked issue uses a bare `#N` reference (no
 keyword). The last task of a batch also carries `Closes #<hub>` once every
 sub-issue of the hub is fully resolved, so the hub closes when that commit
-reaches `main`. The model and closing timing live in the *contribution
-guidelines*.
+reaches `main`. The model and closing timing live in `docs/contributing.rst`.
 
 ### Pre-commit checklist
 
-1. Run the commit gate per the *quality checks* hook: style, tests, docs build.
+1. Run the commit gate per the `quality-gates` skill: style, tests, docs build.
 
 ### Commit scope
 

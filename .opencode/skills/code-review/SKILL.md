@@ -12,8 +12,8 @@ iterate until there are zero findings.
 ## Procedure
 
 1. Determine the task's changes against the integration branch (resolve
-   `$INTEGRATION` per the *contribution guidelines* hook): `git diff --stat
-   "$INTEGRATION"...HEAD` and `git diff "$INTEGRATION"...HEAD`.
+   `$INTEGRATION` per the contribution guidelines in `docs/contributing.rst`):
+   `git diff --stat "$INTEGRATION"...HEAD` and `git diff "$INTEGRATION"...HEAD`.
 2. Review against the checklist below.
 3. For every finding, fix it in a follow-up commit on the same feature branch
    (one commit per subtask/fix as per `git-workflow`).
