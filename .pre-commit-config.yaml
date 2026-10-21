@@ -4,7 +4,10 @@ repos:
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
-        exclude: "ast/.*|ppr/.*|core/.*|output/.*|nets/.*|.*.svg"
+        # SVG figures and the golden-test fixtures must not be reformatted:
+        # the fixtures are compared byte-for-byte against generator output
+        # (renderPretty/renderUnbounded) that ends without a trailing newline.
+        exclude: '.*\.svg$|lamagraph-compiler/test/golden'
       - id: check-yaml
       - id: fix-byte-order-marker
       - id: mixed-line-ending
