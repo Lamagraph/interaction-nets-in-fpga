@@ -11,9 +11,8 @@ the project's single-source-of-truth principle.
 
 ## Checklist
 
-Run through these before creating new material, using the *project structure*
-hook (see the project facts contract of `AGENTS.md`) to know where each kind
-of material lives:
+Run through these before creating new material, using the project structure
+map in `docs/architecture.rst` to know where each kind of material lives:
 
 - [ ] **Existing code** — search the library source for an existing function,
       class, or type that already does (or nearly does) the job. Prefer

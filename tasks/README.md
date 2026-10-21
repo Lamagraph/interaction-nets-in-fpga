@@ -15,8 +15,8 @@ corresponding GitHub comment is a pure mirror.
 - A task is done only when its subtask commits are on the integration branch
   and the last subtask's commit carries `Closes #<N>` (the task's own issue).
 - Subtask identifiers are unique within a task and appear in commit subjects
-  as `(<issue>-S<n>): <summary>` (see the contribution guidelines hook in
-  `AGENTS.md`).
+  as `(<issue>-S<n>): <summary>` (see the contribution guidelines in
+  `docs/contributing.rst`).
 - The `global_plan.md` is mirrored to the hub issue as a comment whose first
   line is `<!-- global-plan -->`; `detailed_plan.md` is mirrored to the task
   issue as a comment whose first line is `<!-- detailed-plan -->`. The local

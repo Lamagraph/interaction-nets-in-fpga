@@ -1,6 +1,6 @@
 ---
 name: quality-gates
-description: Use before integrating a task. Defines the hard gate that must pass and how to interpret its result; the gate contents (tests, style, docs build) are defined by the quality checks hook and the CI workflows it references.
+description: Use before integrating a task. Defines the hard gate that must pass and how to interpret its result; the gate contents (tests, style, docs build) are the checks in the CI workflows.
 ---
 
 # Quality Gates
@@ -12,14 +12,15 @@ immediately before the final pull request to `main`.
 
 ## What the gate is
 
-The gate is **every** check defined in the *quality checks* hook (see the
-project facts contract of `AGENTS.md`) — including compilation and test
-execution, not only style and docs. The CI workflows are the source of truth
-for the exact commands they run; this skill only defines the gate semantics.
+The gate is **every** check in `.github/workflows/` — including compilation and
+test execution, not only style and docs. The CI workflows are the source of
+truth for the exact commands they run (the structure map in
+`docs/architecture.rst` lists them); this skill only defines the gate
+semantics.
 
 ## Procedure
 
-1. Run every check from the *quality checks* hook that applies to the areas the
+1. Run every check from `.github/workflows/` that applies to the areas the
    change touches. Build: exit 0. Tests: 0 failures, 0 skipped. Style: no
    errors. Docs build: exit 0.
 2. Interpret the result:

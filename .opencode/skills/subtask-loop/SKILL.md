@@ -7,8 +7,7 @@ description: Use when executing an atomic subtask from the detailed plan: implem
 
 Each atomic subtask from `tasks/detailed_plan.md` is executed as a
 self-contained cycle. Project-specific facts (commit format, integration
-branch) are resolved through the hooks declared in the project facts contract
-of `AGENTS.md`.
+branch) are resolved via the contribution guidelines in `docs/contributing.rst`.
 
 ## Cycle Steps
 
@@ -73,8 +72,8 @@ passes.
 ### 6. Commit
 
 **Load the `git-workflow` skill before committing.** The commit message format
-lives in the *contribution guidelines* hook; the operational procedure
-(validation, merge) lives in the skill.
+lives in `docs/contributing.rst`; the operational procedure (validation,
+merge) lives in the skill.
 
 ### 7. Mark Completed
 
@@ -190,7 +189,7 @@ failing tests to make the suite green. Instead:
 This section is the **single source of truth** for what "done" means. Before
 a task is considered done — its last subtask's commit carries `Closes #<N>`
 (the task's own issue) and is merged to its integration branch (see the
-*contribution guidelines* hook) — verify:
+contribution guidelines in `docs/contributing.rst`) — verify:
 
 - [ ] Every clause in the task description is traceable to implemented and
       committed code.
