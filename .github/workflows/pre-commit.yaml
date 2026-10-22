@@ -17,20 +17,18 @@ jobs:
       # the primary style gate; this keeps the pre-commit job consistent with
       # a local commit.
       # The local fourmolu/hlint hooks in .pre-commit-config.yaml need those
-      # tools on PATH at the versions pinned in stack.yaml extra-deps. Install
-      # cabal via the runner image's preinstalled ghcup, then `cabal install`
-      # fourmolu-0.18.0.0 and hlint-3.10 (built from Hackage, into ~/.local,
-      # on PATH). fourmolu has no prebuilt ghcup binary, so it is built from
-      # source. The dedicated fourmolu.yaml / hlint.yaml jobs remain the
-      # primary style gate.
+      # tools on PATH at the versions pinned in stack.yaml extra-deps. Neither
+      # has a prebuilt ghcup binary on this platform, so build both from
+      # Hackage via `cabal install` (into ~/.local/bin, on PATH). The
+      # dedicated fourmolu.yaml / hlint.yaml jobs remain the primary style
+      # gate.
       - name: Install style tools (pinned versions)
         run: |
           export PATH="/usr/local/.ghcup/bin:$HOME/.local/bin:$PATH"
           ghcup install ghc 9.8.4 --set
           ghcup install cabal --set
-          ghcup install hlint 3.10 --set
           cabal update
-          cabal install fourmolu-0.18.0.0
+          cabal install fourmolu-0.18.0.0 hlint-3.10
 
 
       - name: Install pre-commit
