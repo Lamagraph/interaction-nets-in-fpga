@@ -1,0 +1,11 @@
+module Complex
+
+type 'a tree = Leaf of 'a | Node of 'a tree * 'a tree
+
+let rec sum_tree t = match t with
+  | Leaf v -> v
+  | Node (Leaf a, Leaf b) -> a + b
+  | Node (left, right) -> (sum_tree left) + (sum_tree right)
+
+let _ = print_int (sum_tree (Node ((Leaf 10), (Leaf 20))))
+let _ = print_int (sum_tree (Node ((Leaf 1), (Node ((Leaf 2), (Leaf 3))))))
