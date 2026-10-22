@@ -24,6 +24,11 @@ repos:
       - id: mixed-line-ending
   - repo: local
     hooks:
+      # The style tools (fourmolu, hlint) are the local commit gate. They are
+      # resolved from PATH at the versions pinned in stack.yaml extra-deps
+      # (installed via ghcup locally and in the CI pre-commit job — see
+      # pre-commit.yaml). The dedicated fourmolu.yaml / hlint.yaml jobs remain
+      # the primary style gate in CI.
       - id: fourmolu
         name: fourmolu
         entry: style-hooks/fourmolu-check.sh
@@ -31,6 +36,6 @@ repos:
         files: '\.hs$'
       - id: hlint
         name: hlint
-        entry: stack exec -- hlint --
+        entry: hlint
         language: system
         files: '\.hs$'

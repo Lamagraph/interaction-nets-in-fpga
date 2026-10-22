@@ -9,9 +9,25 @@ jobs:
       - name: Clone project
         uses: actions/checkout@v7
 
+      # The local fourmolu/hlint hooks in .pre-commit-config.yaml need those
+      # tools on PATH at the versions pinned in stack.yaml extra-deps. Install
+      # them via ghcup (into ~/.local/bin, on PATH) so both the fourmolu
+      # wrapper (style-hooks/fourmolu-check.sh) and the hlint hook resolve the
+      # pinned versions. The dedicated fourmolu.yaml / hlint.yaml jobs remain
+      # the primary style gate; this keeps the pre-commit job consistent with
+      # a local commit.
+      - name: Install style tools (pinned versions)
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org \
+            | GHUP_INSTALL_NO_COMPLETE=1 GHUP_INSTALL_METHOD=curl bash
+          export PATH="$HOME/.ghcup/bin:$PATH"
+          ghcup install fourmolu 0.18.0.0 --set
+          ghcup install hlint 3.10 --set
+
       - name: Install pre-commit
         run: |
           pipx install pre-commit
+          export PATH="$HOME/.local/bin:$PATH"
 
       - name: Run pre-commit
         run: |
