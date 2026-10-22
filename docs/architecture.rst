@@ -158,7 +158,9 @@ CI
    * - ``pre-commit.yaml``
      - ``pre-commit run --all-files`` (tidy-up hooks).
    * - ``fourmolu.yaml``
-     - Fourmolu format check (version pinned in the workflow).
+     - Fourmolu format check (version pinned in the workflow). Also runs
+       directly on every ``pull_request`` (in addition to being called by
+       the ``CI`` chain) so its result is independent of the chain.
    * - ``hlint.yaml``
      - HLint, fail on warning.
    * - ``build-and-test.yaml``
