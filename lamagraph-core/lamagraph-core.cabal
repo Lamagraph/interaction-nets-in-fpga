@@ -119,6 +119,7 @@ executable clashi
     ghc-options: -dynamic
   build-depends: base, clash-ghc, lamagraph-core
 
+
 test-suite doctests
   type:             exitcode-stdio-1.0
   default-language: Haskell2010
@@ -139,6 +140,10 @@ test-suite test-library
   main-is: unittests.hs
   other-modules:
     Tests.Core.Node
+    Tests.Core.Unit.CPU
+    Tests.Core.Unit.Loader
+    Tests.Core.Unit.MemoryManager.MemoryManager
+    Tests.Core.Unit.Reducer
     NodeGenerate
   build-depends:
     lamagraph-core,
