@@ -33,7 +33,7 @@ map in `docs/architecture.rst` to know where each kind of material lives:
 
 - If a close match exists, **generalize it** (make it generic enough to cover
   both cases) rather than copy-paste.
-- Record what is reused in each subtask's **Code** section of
-  `tasks/detailed_plan.md`.
+- Record what is reused in each subtask's **Code** section of the detailed
+  plan (the `<!-- detailed-plan -->` comment on the task issue).
 - When in doubt, prefer the existing abstraction; only create new material when
   no reasonable generalization is possible.

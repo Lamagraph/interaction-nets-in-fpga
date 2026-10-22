@@ -5,8 +5,10 @@ description: Use when executing an atomic subtask from the detailed plan: implem
 
 # Subtask Execution Loop
 
-Each atomic subtask from `tasks/detailed_plan.md` is executed as a
-self-contained cycle. Project-specific facts (commit format, integration
+Each atomic subtask from the detailed plan — the `<!-- detailed-plan -->`
+comment on the task issue (the single source of truth; the local file
+`tasks/detailed_plan.md` is a gitignored working cache of it) — is executed as
+a self-contained cycle. Project-specific facts (commit format, integration
 branch) are resolved via the contribution guidelines in `docs/contributing.rst`.
 
 ## Cycle Steps
@@ -77,21 +79,23 @@ merge) lives in the skill.
 
 ### 7. Mark Completed
 
-Mark the subtask as completed in `tasks/detailed_plan.md` (`[done]` suffix +
-commit hash on the subtask heading), then mirror the file onto the plan
-comment of the task issue: find the comment by its `<!-- detailed-plan -->`
-first line and PATCH its body to the current file content:
+Mark the subtask as completed in the plan comment of the task issue
+(`[done]` suffix + commit hash on the subtask heading). The
+`<!-- detailed-plan -->` comment is the single source of truth: find it by its
+first line and PATCH its body to the updated plan:
 
 ```bash
 REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 CID=$(gh api "repos/$REPO/issues/<N>/comments" \
   --jq '[.[] | select(.body | startswith("<!-- detailed-plan -->"))] | last.id')
+# build the updated plan body, e.g. from the local cache:
 { echo '<!-- detailed-plan -->'; cat tasks/detailed_plan.md; } > /tmp/plan_comment.md
 gh api -X PATCH "repos/$REPO/issues/comments/$CID" \
   --input <(jq -Rs '{body: .}' /tmp/plan_comment.md)
 ```
 
-The local file is the single source of truth; the comment is a pure mirror.
+Keep the local `tasks/detailed_plan.md` in sync as a convenience cache, but it
+is gitignored and never committed; the comment is authoritative.
 
 If at any point in steps 1–7 you hit an unresolvable problem that prevents 100%
 completion, **STOP the cycle immediately** and follow the Blocked Work Protocol
@@ -103,7 +107,7 @@ work, or known limitations. Do NOT proceed to the next subtask.
 A subtask has exactly two valid outcomes:
 
 - **Resolved**: implemented, tested, docs updated, committed. Record the commit
-  hash in `tasks/detailed_plan.md`.
+  hash in the plan comment (step 7).
 - **Blocked**: an algorithmic or design problem prevents 100% completion. Do NOT
   commit partial work. Do NOT proceed to the next subtask. Follow the Blocked
   Work Protocol.
@@ -162,7 +166,8 @@ failing tests to make the suite green. Instead:
    or splitting the task.
 4. **Transfer user guidance to the task** per the `user-guidance-transfer`
    skill — post it verbatim as a comment on the task issue.
-5. Append a `## Design Notes` section to `tasks/detailed_plan.md`. See the
+5. Append a `## Design Notes` section to the plan comment (the
+   `<!-- detailed-plan -->` comment on the task issue). See the
    `planning` skill for the full template. Minimum required content:
 
    - **Correct Design**: algorithmic design as confirmed by the user —
@@ -179,8 +184,8 @@ failing tests to make the suite green. Instead:
      goals.
    - **Skipped Tests**: list any tests skipped and the reason.
 
-   Commit this summary so the plan serves as a persistent design record for
-   future task refinement.
+   The patched plan comment serves as the persistent design record for future
+   task refinement (keep the local cache file in sync).
 6. Post the block report (the `## Design Notes` content) as a comment on the
    task issue, so the block is visible in the task record.
 
@@ -214,9 +219,8 @@ the issue stays open until the final pull request to `main` (opened on the
 user's explicit request) lands. Never edit the issue body — it is
 user-authored and immutable.
 
-Commit hashes recorded in `tasks/detailed_plan.md` may change after an
-integration-branch rebase; the `(<issue>-S<n>)` commit subject is the stable
-key.
+Commit hashes recorded in the plan comment may change after an integration-
+branch rebase; the `(<issue>-S<n>)` commit subject is the stable key.
 
 Complete means COMPLETE: every requirement met, every test passing, every
 edge case handled. Never close a task with known failures or unresolved

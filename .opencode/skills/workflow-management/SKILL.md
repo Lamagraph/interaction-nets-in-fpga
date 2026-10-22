@@ -22,11 +22,12 @@ locations via the project structure map in `docs/architecture.rst`.
   through the REST API (`POST repos/$REPO/issues/<HUB>/sub_issues`). Listing the
   task numbers inside the hub body is **not** a substitute for the sub-issue
   relationship.
-- The global plan for the active batch lives in `tasks/global_plan.md` (single
-  source of truth) and is mirrored to the hub issue as a comment whose first
-  line is `<!-- global-plan -->`. Task progress is marked in the file and the
-  mirror is updated after each task integrates, exactly as the detailed plan is
-  mirrored to a task issue (see the `subtask-loop` skill).
+- The global plan for the active batch lives in the hub issue as a comment
+  whose first line is `<!-- global-plan -->` (single source of truth). Task
+  progress is marked in that comment after each task integrates, exactly as
+  the detailed plan comment is updated on a task issue (see the `subtask-loop`
+  skill). A gitignored local copy `tasks/global_plan.md` is kept as a working
+  cache and is never committed.
 - Resolve the **integration branch** once per session using the git config key
   defined in `docs/contributing.rst`. It is `main` in direct mode and a
   personal, long-lived branch in stacked mode. Never commit directly to the
@@ -66,11 +67,12 @@ locations via the project structure map in `docs/architecture.rst`.
 
       Verify the parent: `gh api "repos/$REPO/issues/<N>/parent" --jq .number`
       must print the hub number.
-   c. Write the global plan in `tasks/global_plan.md` (see the `planning`
-      skill), naming the hub and listing each task with its issue number.
-   d. Post the global plan as a comment on the hub whose first line is
-      `<!-- global-plan -->` (a pure mirror of the file). A related task added
-      later is attached to the same hub and added to the plan.
+   c. Write the global plan (see the `planning` skill), naming the hub and
+      listing each task with its issue number.
+   d. Post it as a comment on the hub whose first line is `<!-- global-plan -->`
+      (the single source of truth). A related task added later is attached to
+      the same hub and added to the plan. Keep a gitignored local copy
+      `tasks/global_plan.md` in sync as a working cache.
 1. Ensure user-defined tasks, the global plan, and project architecture are
    aligned.
 2. Choose exactly ONE open `task`-labeled issue that is not yet done: a task
@@ -83,14 +85,16 @@ locations via the project structure map in `docs/architecture.rst`.
    `git-workflow`), then create a feature branch from the integration branch for
    this single task (branching model: *contribution guidelines*; procedure:
    `git-workflow`).
-4. Generate a detailed plan in `tasks/detailed_plan.md`, decomposing the task
-   into atomic subtasks (see `planning`), then post it as a comment on the
-   task issue; the first line of the comment is the marker
-   `<!-- detailed-plan -->`.
+4. Generate the detailed plan, decomposing the task into atomic subtasks (see
+   `planning`), and post it as a comment on the task issue; the first line of
+   the comment is the marker `<!-- detailed-plan -->` (the single source of
+   truth). Keep a gitignored local copy `tasks/detailed_plan.md` in sync as a
+   working cache.
 5. Load the `subtask-loop` skill, then execute each subtask using its cycle.
 5a. Verify all subtasks are complete and unblocked. Check
-    `tasks/detailed_plan.md`:
-    - If any subtask is marked `[blocked]` or `[deferred]`, STOP immediately.
+   the `<!-- detailed-plan -->` comment on the task issue (and its local cache
+   `tasks/detailed_plan.md`):
+   - If any subtask is marked `[blocked]` or `[deferred]`, STOP immediately.
       The task is NOT complete. Do NOT proceed to code review or the PR.
       Report blocking subtasks to the user and await guidance.
     - If a subtask was attempted, not committed, and its work reverted, the
@@ -99,7 +103,9 @@ locations via the project structure map in `docs/architecture.rst`.
     code changes:
     - Verify `git branch --show-current` is the correct feature branch.
     - Review committed subtasks: `git log --oneline` on the feature branch.
-    - Read `tasks/detailed_plan.md` and `tasks/global_plan.md`.
+    - Read the plan comments (the `<!-- detailed-plan -->` comment on the task
+     issue and the `<!-- global-plan -->` comment on the hub), and their local
+     caches `tasks/detailed_plan.md` / `tasks/global_plan.md`.
     - Cross-reference committed file changes with planned subtasks:
       `git diff --stat HEAD.."$INTEGRATION"`.
     - Report status to the user: "S1-S3 committed, S4 pending, ..."
@@ -119,10 +125,11 @@ locations via the project structure map in `docs/architecture.rst`.
      fast-forward merge the feature branch into `$INTEGRATION`, then delete the
      feature branch. Do **not** push for a PR and do **not** open a PR.
 9. For a batch, update its progress: mark the integrated task `[done #<N>]` in
-   `tasks/global_plan.md`, then mirror the file to the hub's global-plan
-   comment using the same procedure as the detailed plan (step 7 of the
-   `subtask-loop` skill), substituting the hub number for the task number and
-   the `<!-- global-plan -->` marker for `<!-- detailed-plan -->`.
+   the hub's global-plan comment (`<!-- global-plan -->`) using the same
+   procedure as the detailed plan (step 7 of the `subtask-loop` skill),
+   substituting the hub number for the task number and the `<!-- global-plan
+   -->` marker for `<!-- detailed-plan -->`. Keep the local cache
+   `tasks/global_plan.md` in sync.
 10. Verify the last subtask's commit carries `Closes #<N>` (the task's own
     issue) as a standalone line — the issue closes when the commit reaches
     `main`. For the last task of a batch, the same commit also carries
