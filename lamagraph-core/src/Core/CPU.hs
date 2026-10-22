@@ -174,6 +174,7 @@ step i@(CPUIn processedLoadedNode) =
         put
           s
             { _phase = ReduceInterface
+            , _memoryManager = writeNewActives delta _memoryManager
             , _delta = delta
             }
         pure $ defaultOut _rootNodeAddress
