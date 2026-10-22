@@ -25,9 +25,12 @@ Top level
        evaluator).
    * - ``docs/``
      - Project documentation (this tree). ``index.rst`` is the entrypoint.
-   * - ``tasks/``
-     - Planning artifacts: ``global_plan.md`` (per batch), ``detailed_plan.md``
-       (per task).
+    * - ``tasks/``
+      - Gitignored local working cache of the plans. The single source of truth
+        is the ``<!-- global-plan -->`` comment on the hub issue and the
+        ``<!-- detailed-plan -->`` comment on the task issue; the files here
+        (``global_plan.md``, ``detailed_plan.md``) are convenience copies,
+        never committed.
    * - ``.opencode/skills/``
      - Agent skills — thin pointers to the facts in ``docs/`` and the skills
        that own them.
@@ -137,6 +140,10 @@ Documentation
      - ``lamagraph-core/README.md``, ``lamagraph-compiler/README.md``.
    * - Release notes
      - ``lamagraph-compiler/CHANGELOG.md``.
+   * - Plans (global / detailed)
+     - The ``<!-- global-plan -->`` comment on the hub issue and the
+       ``<!-- detailed-plan -->`` comment on the task issue (single source of
+       truth). ``tasks/`` holds a gitignored local cache.
 
 CI
 ==
