@@ -1,0 +1,13 @@
+module OrPatterns
+
+type 'a binop = Add | Sub
+type 'a expr = Op of 'a binop * 'a | Num of 'a
+
+let apply e = match e with
+  | Op ((Add | Sub), x) -> x
+  | Num x -> x
+  | _ -> 0
+
+let _ = print_int (apply (Op (Add, 5)))
+let _ = print_int (apply (Op (Sub, 9)))
+let _ = print_int (apply (Num 7))

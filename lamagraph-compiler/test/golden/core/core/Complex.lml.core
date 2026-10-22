@@ -1,0 +1,22 @@
+let Complex.Leaf = Complex.Leaf
+let Complex.Node = Complex.Node
+let Complex.Op = Complex.Op
+let Complex.LeafExpr = Complex.LeafExpr
+let rec Complex.sum_tree = fun Complex.t ->
+                           match Complex.t as t#a with ( Complex.Leaf
+                           , [Complex.v]
+                           , Complex.v )
+                           | ( Complex.Node
+                           , [t#b, t#c, t#b, t#c]
+                           , match t#b as t#b with ( Complex.Leaf
+                             , [t#e]
+                             , match t#c as t#c with ( Complex.Leaf
+                               , [t#d]
+                               , (#std.+ t#e) t#d ) ) )
+                           | ( Complex.Node
+                           , [Complex.left, Complex.right]
+                           , (#std.+ (Complex.sum_tree Complex.left)) (Complex.sum_tree Complex.right) )
+let t#f = #std.print_int (Complex.sum_tree (Complex.Node ((Complex.Leaf 10),
+          (Complex.Leaf 20))))
+let t#g = #std.print_int (Complex.sum_tree (Complex.Node ((Complex.Leaf 1),
+          (Complex.Node ((Complex.Leaf 2), (Complex.Leaf 3))))))

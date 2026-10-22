@@ -1,0 +1,18 @@
+let OrPatterns.Add = OrPatterns.Add
+let OrPatterns.Sub = OrPatterns.Sub
+let OrPatterns.Op = OrPatterns.Op
+let OrPatterns.Num = OrPatterns.Num
+let OrPatterns.apply = fun OrPatterns.e ->
+                       match OrPatterns.e as t#a with ( OrPatterns.Op
+                       , [t#b, OrPatterns.x, t#b, t#c]
+                       , OrPatterns.x )
+                       | ( OrPatterns.Op
+                       , [t#d, OrPatterns.x, t#d, t#e]
+                       , OrPatterns.x )
+                       | (OrPatterns.Num, [OrPatterns.x], OrPatterns.x)
+                       | (DEFAULT, [], 0)
+let t#f = #std.print_int (OrPatterns.apply (OrPatterns.Op ((OrPatterns.Add),
+          (5))))
+let t#g = #std.print_int (OrPatterns.apply (OrPatterns.Op ((OrPatterns.Sub),
+          (9))))
+let t#h = #std.print_int (OrPatterns.apply (OrPatterns.Num 7))

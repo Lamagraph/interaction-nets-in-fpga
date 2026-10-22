@@ -4,7 +4,7 @@ import Relude
 
 import Control.Monad.Extra
 import Data.Foldable.Extra hiding (elem)
-import Data.List (partition, (!!))
+import Data.List (partition)
 import Data.List.NonEmpty qualified as NE
 
 import Lamagraph.Compiler.Core
@@ -123,7 +123,8 @@ sameOuterPatternNoGuard (L _ (LmlCase _ (L _ pat1) _ _)) (L _ (LmlCase _ (L _ pa
   samePat pat1 pat2
  where
   samePat :: LmlPat LmlcTc -> LmlPat LmlcTc -> Bool
-  samePat (LmlPatConstruct _ (L _ name1) _) (LmlPatConstruct _ (L _ name2) _) = name1 == name2
+  samePat (LmlPatConstruct _ (L _ name1) sub1) (LmlPatConstruct _ (L _ name2) sub2) =
+    name1 == name2 && sameSubPat sub1 sub2
   samePat (LmlPatAny _) (LmlPatAny _) = True
   samePat (LmlPatVar{}) (LmlPatVar{}) = True
   samePat (LmlPatVar{}) (LmlPatAny _) = True
@@ -137,6 +138,21 @@ sameOuterPatternNoGuard (L _ (LmlCase _ (L _ pat1) _ _)) (L _ (LmlCase _ (L _ pa
   sameLiteral (LmlChar _ c1) (LmlChar _ c2) = c1 == c2
   sameLiteral (LmlString _ s1) (LmlString _ s2) = s1 == s2
   sameLiteral _ _ = False
+
+  -- Two constructor sub-patterns group together only when both are simple
+  -- (no nested constructor / or patterns). This keeps complex constructor
+  -- patterns in separate match alternatives so each is desugared independently.
+  sameSubPat :: Maybe (LLmlPat LmlcTc) -> Maybe (LLmlPat LmlcTc) -> Bool
+  sameSubPat Nothing Nothing = True
+  sameSubPat (Just p1) (Just p2) = not (isComplexPat p1 || isComplexPat p2)
+  sameSubPat _ _ = False
+
+  isComplexPat :: LLmlPat LmlcTc -> Bool
+  isComplexPat (L _ pat) = case pat of
+    LmlPatConstruct{} -> True
+    LmlPatTuple _ p ps -> any isComplexPat (p : toList ps)
+    LmlPatOr{} -> True
+    _ -> False
 
 compilePatternGroupOriginal :: Var -> NonEmpty (LLmlCase LmlcTc) -> MonadDesugar CoreMatchAlt
 compilePatternGroupOriginal scrut (singleCase@(L _ (LmlCase ty (L _ pat) _ _)) :| []) =
@@ -274,308 +290,16 @@ compilePatternGroupWithFallback scrut cases@(firstCase :| _) fallback =
         desugarLmlCaseWithFallback scrut firstCase fallback
 
 compileConstructorGroup :: Var -> Ty -> Name -> NonEmpty (LLmlCase LmlcTc) -> MonadDesugar CoreMatchAlt
-compileConstructorGroup scrut ty constrName cases@(firstCase :| _) = do
-  let subPatternSets = NE.map extractConstructorSubPatterns cases
-
-  if all isSimpleVarPattern (toList subPatternSets)
-    then do
-      desugarLLmlCase scrut firstCase
-    else do
-      compileNestedConstructorMatch scrut ty constrName cases subPatternSets
+compileConstructorGroup scrut _ty _constrName cases = do
+  -- Desugar the first case's full pattern; 'desugarLLmlCase' handles both
+  -- simple and complex (nested constructor / or) patterns, and the enclosing
+  -- match already has one alternative per constructor group.
+  desugarLLmlCase scrut (NE.head cases)
 
 compileConstructorGroupWithFallback ::
   Var -> Ty -> Name -> NonEmpty (LLmlCase LmlcTc) -> CoreExpr -> MonadDesugar CoreMatchAlt
-compileConstructorGroupWithFallback scrut ty constrName cases fallback = do
-  let subPatternSets = NE.map extractConstructorSubPatterns cases
-      firstCase = NE.head cases
-
-  if all isSimpleVarPattern (toList subPatternSets)
-    then desugarLmlCaseWithFallback scrut firstCase fallback
-    else compileNestedConstructorMatchWithFallback scrut ty constrName (toList cases) (toList subPatternSets) fallback
-
-extractConstructorSubPatterns :: LLmlCase LmlcTc -> Maybe (NonEmpty (LLmlPat LmlcTc))
-extractConstructorSubPatterns (L _ (LmlCase _ (L _ (LmlPatConstruct _ _ maybeLPat)) _ _)) =
-  case maybeLPat of
-    Nothing -> Nothing
-    Just (L _ (LmlPatTuple _ p1 ps)) -> Just (p1 :| toList ps)
-    Just (L loc singlePat) -> Just (L loc singlePat :| [])
-extractConstructorSubPatterns _ = Nothing
-
-isSimpleVarPattern :: Maybe (NonEmpty (LLmlPat LmlcTc)) -> Bool
-isSimpleVarPattern Nothing = True
-isSimpleVarPattern (Just pats) = all isSimpleVar (toList pats)
- where
-  isSimpleVar :: LLmlPat LmlcTc -> Bool
-  isSimpleVar (L _ (LmlPatVar{})) = True
-  isSimpleVar (L _ (LmlPatAny _)) = True
-  isSimpleVar _ = False
-
-compileNestedConstructorMatch ::
-  Var ->
-  Ty ->
-  Name ->
-  NonEmpty (LLmlCase LmlcTc) ->
-  NonEmpty (Maybe (NonEmpty (LLmlPat LmlcTc))) ->
-  MonadDesugar CoreMatchAlt
-compileNestedConstructorMatch _scrut ty constrName cases (firstSet :| restSets) = do
-  let arity = maybe 0 length firstSet
-
-  argVars <- replicateM arity freshVar
-
-  let rhsExprs = map extractRHS (toList cases)
-      subPatternSets = firstSet : restSets
-
-  nestedExpr <- buildNestedMatchForPosition argVars 0 ty (zip subPatternSets rhsExprs)
-
-  pure (DataAlt constrName, argVars, nestedExpr)
-
-compileNestedConstructorMatchWithFallback ::
-  Var -> Ty -> Name -> [LLmlCase LmlcTc] -> [Maybe (NonEmpty (LLmlPat LmlcTc))] -> CoreExpr -> MonadDesugar CoreMatchAlt
-compileNestedConstructorMatchWithFallback _scrut ty constrName cases subPatternSets fallback = do
-  let arity = case listToMaybe subPatternSets of
-        Nothing -> 0
-        Just Nothing -> 0
-        Just (Just pats) -> length pats
-
-  argVars <- replicateM arity freshVar
-
-  nestedExpr <- buildNestedMatchWithFallback argVars 0 ty cases subPatternSets fallback
-
-  pure (DataAlt constrName, argVars, nestedExpr)
-
-buildNestedMatchWithFallback ::
-  [Var] -> Int -> Ty -> [LLmlCase LmlcTc] -> [Maybe (NonEmpty (LLmlPat LmlcTc))] -> CoreExpr -> MonadDesugar CoreExpr
-buildNestedMatchWithFallback argVars pos ty cases subPatternSets fallback = do
-  let casesWithPats = zip cases subPatternSets
-      groupedByPattern = groupCasesBySubPatternAt pos casesWithPats
-
-  alts <- mapM (compileSubPatternGroupWithFallback argVars pos ty fallback) groupedByPattern
-
-  case nonEmpty alts of
-    Nothing -> pure fallback
-    Just altsNE -> do
-      let scrutVar = argVars !! pos
-      pure $ Match (Var scrutVar) scrutVar altsNE
-
-groupCasesBySubPatternAt ::
-  Int -> [(LLmlCase LmlcTc, Maybe (NonEmpty (LLmlPat LmlcTc)))] -> [[(LLmlCase LmlcTc, Maybe (LLmlPat LmlcTc))]]
-groupCasesBySubPatternAt pos casePairs =
-  let extracted = map (second (getPatternAt pos)) casePairs
-      grouped = groupByPatternType extracted
-   in grouped
- where
-  getPatternAt :: Int -> Maybe (NonEmpty (LLmlPat LmlcTc)) -> Maybe (LLmlPat LmlcTc)
-  getPatternAt _ Nothing = Nothing
-  getPatternAt idx (Just pats) = listToMaybe (drop idx (toList pats))
-
-  groupByPatternType :: [(LLmlCase LmlcTc, Maybe (LLmlPat LmlcTc))] -> [[(LLmlCase LmlcTc, Maybe (LLmlPat LmlcTc))]]
-  groupByPatternType [] = []
-  groupByPatternType (p : ps) =
-    let (same, diff) = partition (samePatType p) ps
-     in (p : same) : groupByPatternType diff
-
-  samePatType (_, Nothing) (_, Nothing) = True
-  samePatType (_, Just (L _ p1)) (_, Just (L _ p2)) =
-    case (p1, p2) of
-      (LmlPatConstruct _ (L _ n1) _, LmlPatConstruct _ (L _ n2) _) -> n1 == n2
-      (LmlPatVar{}, LmlPatVar{}) -> True
-      (LmlPatAny _, LmlPatAny _) -> True
-      (LmlPatVar{}, LmlPatAny _) -> True
-      (LmlPatAny _, LmlPatVar{}) -> True
-      _ -> False
-  samePatType _ _ = False
-
-  samePatType :: (LLmlCase LmlcTc, Maybe (LLmlPat LmlcTc)) -> (LLmlCase LmlcTc, Maybe (LLmlPat LmlcTc)) -> Bool
-
-compileSubPatternGroupWithFallback ::
-  [Var] -> Int -> Ty -> CoreExpr -> [(LLmlCase LmlcTc, Maybe (LLmlPat LmlcTc))] -> MonadDesugar CoreMatchAlt
-compileSubPatternGroupWithFallback _argVars _pos _ty fallback [] =
-  pure (DEFAULT, [], fallback)
-compileSubPatternGroupWithFallback argVars pos _ty fallback ((firstCase, firstPat) : _rest) = case firstPat of
-  Nothing -> do
-    let scrutVar = argVars !! pos
-    desugarLmlCaseWithFallback scrutVar firstCase fallback
-  Just (L _ (LmlPatVar (FullName n, _) _)) -> do
-    let (L _ (LmlCase _ _ maybeGuard rhs)) = firstCase
-    rhsCore <- desugarLLmlExpr rhs
-
-    finalRhs <- case maybeGuard of
-      Nothing -> pure rhsCore
-      Just guardExpr -> do
-        guardResult <- desugarLLmlExpr guardExpr
-        guardVar <- freshVar
-        let trueAlt = (DataAlt (Name $ mkLongident $ stdPrefix :| ["true"]), [], rhsCore)
-            falseAlt = (DataAlt (Name $ mkLongident $ stdPrefix :| ["false"]), [], fallback)
-        pure $ Match guardResult guardVar (trueAlt :| [falseAlt])
-
-    let boundVar = Id $ Name n
-    let scrutVar = argVars !! pos
-    pure (DEFAULT, [], replaceVar boundVar scrutVar finalRhs)
-  Just (L _ (LmlPatAny _)) -> do
-    let (L _ (LmlCase _ _ maybeGuard rhs)) = firstCase
-    rhsCore <- desugarLLmlExpr rhs
-
-    finalRhs <- case maybeGuard of
-      Nothing -> pure rhsCore
-      Just guardExpr -> do
-        guardResult <- desugarLLmlExpr guardExpr
-        guardVar <- freshVar
-        let trueAlt = (DataAlt (Name $ mkLongident $ stdPrefix :| ["true"]), [], rhsCore)
-            falseAlt = (DataAlt (Name $ mkLongident $ stdPrefix :| ["false"]), [], fallback)
-        pure $ Match guardResult guardVar (trueAlt :| [falseAlt])
-
-    pure (DEFAULT, [], finalRhs)
-  Just (L _ (LmlPatConstruct _ (L _ constrName) maybeSub)) -> do
-    case maybeSub of
-      Nothing -> do
-        let (L _ (LmlCase _ _ maybeGuard rhs)) = firstCase
-        rhsCore <- desugarLLmlExpr rhs
-
-        finalRhs <- case maybeGuard of
-          Nothing -> pure rhsCore
-          Just guardExpr -> do
-            guardResult <- desugarLLmlExpr guardExpr
-            guardVar <- freshVar
-            let trueAlt = (DataAlt (Name $ mkLongident $ stdPrefix :| ["true"]), [], rhsCore)
-                falseAlt = (DataAlt (Name $ mkLongident $ stdPrefix :| ["false"]), [], fallback)
-            pure $ Match guardResult guardVar (trueAlt :| [falseAlt])
-
-        pure (DataAlt (Name constrName), [], finalRhs)
-      Just subPat -> do
-        let patternGroup = (firstCase, firstPat) : _rest
-            allCasesInGroup = map fst patternGroup
-            hasGuards = any (\(L _ (LmlCase _ _ g _)) -> isJust g) allCasesInGroup
-            isComplexNesting = case subPat of
-              L _ (LmlPatTuple _ p ps) -> not $ all isSimpleVarOrWildcard (p : toList ps)
-              _ -> False
-
-        let scrutVar = argVars !! pos
-        if isComplexNesting && hasGuards
-          then do
-            let buildNestedCase (L caseLoc (LmlCase caseTy _ maybeGuard rhs), _) =
-                  L caseLoc (LmlCase caseTy subPat maybeGuard rhs)
-                nestedCases = map buildNestedCase patternGroup
-
-            case nonEmpty nestedCases of
-              Nothing -> do
-                pure (DEFAULT, [], fallback)
-              Just nestedCasesNE -> do
-                nestedAlts <- compilePatternsWithBacktracking scrutVar nestedCasesNE
-                pure (NE.head nestedAlts)
-          else do
-            let (L caseLoc (LmlCase caseTy _ maybeGuard rhs)) = firstCase
-                newCase = L caseLoc (LmlCase caseTy subPat maybeGuard rhs)
-            desugarLmlCaseWithFallback scrutVar newCase fallback
-  Just subPat -> do
-    let (L caseLoc (LmlCase caseTy _ maybeGuard rhs)) = firstCase
-        newCase = L caseLoc (LmlCase caseTy subPat maybeGuard rhs)
-    let scrutVar = argVars !! pos
-    desugarLmlCaseWithFallback scrutVar newCase fallback
-
-extractRHS :: LLmlCase LmlcTc -> LLmlExpr LmlcTc
-extractRHS (L _ (LmlCase _ _ _ rhs)) = rhs
-
-buildNestedMatchForPosition ::
-  [Var] -> Int -> Ty -> [(Maybe (NonEmpty (LLmlPat LmlcTc)), LLmlExpr LmlcTc)] -> MonadDesugar CoreExpr
-buildNestedMatchForPosition argVars pos ty casePairs = do
-  let groupedByPattern = groupCasesBySubPattern pos casePairs
-
-  alts <-
-    Relude.mapMaybeM
-      ( \grp -> case nonEmpty grp of
-          Nothing -> pure Nothing
-          Just groupNE -> Just <$> compileSubPatternGroup argVars pos ty groupNE
-      )
-      groupedByPattern
-
-  case nonEmpty alts of
-    Nothing -> do
-      let scrutVar = argVars !! pos
-      pure $ Var scrutVar
-    Just altsNE -> do
-      let scrutVar = argVars !! pos
-      pure $ Match (Var scrutVar) scrutVar altsNE
-
-groupCasesBySubPattern ::
-  Int -> [(Maybe (NonEmpty (LLmlPat LmlcTc)), LLmlExpr LmlcTc)] -> [[(Maybe (LLmlPat LmlcTc), LLmlExpr LmlcTc)]]
-groupCasesBySubPattern pos cases =
-  let extracted = map (first (getPatternAt pos)) cases
-      grouped = groupByPattern extracted
-   in grouped
- where
-  getPatternAt :: Int -> Maybe (NonEmpty (LLmlPat LmlcTc)) -> Maybe (LLmlPat LmlcTc)
-  getPatternAt _ Nothing = Nothing
-  getPatternAt idx (Just pats) = listToMaybe (drop idx (toList pats))
-
-  groupByPattern :: [(Maybe (LLmlPat LmlcTc), LLmlExpr LmlcTc)] -> [[(Maybe (LLmlPat LmlcTc), LLmlExpr LmlcTc)]]
-  groupByPattern [] = []
-  groupByPattern (p : ps) =
-    let (same, diff) = partition (samePatternType p) ps
-     in (p : same) : groupByPattern diff
-
-  samePatternType (Nothing, _) (Nothing, _) = True
-  samePatternType (Just (L _ p1), _) (Just (L _ p2), _) =
-    case (p1, p2) of
-      (LmlPatConstruct _ (L _ n1) _, LmlPatConstruct _ (L _ n2) _) -> n1 == n2
-      (LmlPatVar{}, LmlPatVar{}) -> True
-      (LmlPatAny _, LmlPatAny _) -> True
-      (LmlPatVar{}, LmlPatAny _) -> True
-      (LmlPatAny _, LmlPatVar{}) -> True
-      _ -> False
-  samePatternType _ _ = False
-
-  samePatternType :: (Maybe (LLmlPat LmlcTc), LLmlExpr LmlcTc) -> (Maybe (LLmlPat LmlcTc), LLmlExpr LmlcTc) -> Bool
-
-compileSubPatternGroup ::
-  [Var] -> Int -> Ty -> NonEmpty (Maybe (LLmlPat LmlcTc), LLmlExpr LmlcTc) -> MonadDesugar CoreMatchAlt
-compileSubPatternGroup argVars pos ty patternGroup@((firstPat, firstRHS) :| _) = case firstPat of
-  Nothing -> do
-    rhs <- desugarLLmlExpr firstRHS
-    pure (DEFAULT, [], rhs)
-  Just (L _ (LmlPatVar (FullName n, _) _)) -> do
-    rhs <- desugarLLmlExpr firstRHS
-    let boundVar = Id $ Name n
-    let scrutVar = argVars !! pos
-    pure (DEFAULT, [], replaceVar boundVar scrutVar rhs)
-  Just (L _ (LmlPatAny _)) -> do
-    rhs <- desugarLLmlExpr firstRHS
-    pure (DEFAULT, [], rhs)
-  Just (L _ (LmlPatConstruct _ (L _ constrName) maybeSub)) -> do
-    case maybeSub of
-      Nothing -> do
-        rhs <- desugarLLmlExpr firstRHS
-        pure (DataAlt (Name constrName), [], rhs)
-      Just (L _ subPat) -> do
-        let subPatterns = case subPat of
-              LmlPatTuple _ p ps -> p : toList ps
-              otherPat -> [L generatedSrcSpan otherPat]
-            arity = length subPatterns
-
-        subVars <- replicateM arity freshVar
-
-        let extractNestedPat (Just (L _ (LmlPatConstruct _ _ (Just (L _ constructorArg)))), rhs) =
-              let subs = case constructorArg of
-                    LmlPatTuple _ p ps -> Just $ p :| toList ps
-                    otherPat -> Just $ L generatedSrcSpan otherPat :| []
-               in (subs, rhs)
-            extractNestedPat (Just (L _ (LmlPatConstruct _ _ Nothing)), rhs) =
-              (Nothing, rhs)
-            extractNestedPat (_, rhs) = (Nothing, rhs)
-        let nestedPatterns = NE.map extractNestedPat patternGroup
-
-        case subVars of
-          [] -> do
-            rhs <- desugarLLmlExpr firstRHS
-            pure (DataAlt (Name constrName), [], rhs)
-          _ : _ -> do
-            nestedExpr <- buildNestedMatchForPosition subVars 0 ty (toList nestedPatterns)
-            pure (DataAlt (Name constrName), subVars, nestedExpr)
-  Just (L _ (LmlPatConstant _ lit)) -> do
-    rhs <- desugarLLmlExpr firstRHS
-    pure (LitAlt (desugarLmlLit lit), [], rhs)
-  _ -> do
-    rhs <- desugarLLmlExpr firstRHS
-    pure (DEFAULT, [], rhs)
+compileConstructorGroupWithFallback scrut _ty _constrName cases fallback = do
+  desugarLmlCaseWithFallback scrut (NE.head cases) fallback
 
 compileTupleGroup :: Var -> Ty -> NonEmpty (LLmlCase LmlcTc) -> MonadDesugar CoreMatchAlt
 compileTupleGroup scrut _ty (firstCase :| _) =
@@ -593,7 +317,6 @@ desugarNestedPatHelper (L _ innerPat) = case innerPat of
     pure (freshV, \_ rhs -> rhs)
   LmlPatConstraint _ lPat _ ->
     desugarNestedPatHelper lPat
-  LmlPatOr{} -> error "FIXME: Or patterns in tuples aren't supported."
   LmlPatConstruct _ (L _ constructorName) maybeLPat -> do
     case maybeLPat of
       Nothing -> do
@@ -649,6 +372,109 @@ isSimpleVarOrWildcard (L _ (LmlPatAny _)) = True
 isSimpleVarOrWildcard (L _ (LmlPatConstraint _ lPat _)) = isSimpleVarOrWildcard lPat
 isSimpleVarOrWildcard _ = False
 
+-- | Desugars an arbitrary (possibly nested) pattern 'pat' matched against the
+-- scrutinee 'scrutineeVar', producing a core expression for the case body
+-- 'bodyExpr' with the pattern's variables bound. This is the general case for
+-- nested constructor patterns and or-patterns (which are already flattened by
+-- 'expandOrPatterns' before reaching here).
+desugarComplexPattern ::
+  Var ->
+  LLmlPat LmlcTc ->
+  CoreExpr ->
+  MonadDesugar CoreExpr
+desugarComplexPattern scrutineeVar (L _ pat) bodyExpr = case pat of
+  LmlPatVar (FullName n, _) _ ->
+    pure $ replaceVar (Id $ Name n) scrutineeVar bodyExpr
+  LmlPatAny _ ->
+    pure bodyExpr
+  LmlPatConstant _ _ ->
+    pure bodyExpr
+  LmlPatConstraint _ lPat _ ->
+    desugarComplexPattern scrutineeVar lPat bodyExpr
+  LmlPatOr{} ->
+    pure bodyExpr
+  LmlPatTuple _ lPat lPats ->
+    desugarComplexPatternFields scrutineeVar (lPat : toList lPats) TupleAlt bodyExpr
+  LmlPatConstruct _ (L _ constructorName) maybeLPat ->
+    case maybeLPat of
+      Nothing ->
+        pure bodyExpr
+      Just (L _ args) ->
+        case args of
+          LmlPatTuple _ lPat lPats ->
+            desugarComplexPatternFields scrutineeVar (lPat : toList lPats) (DataAlt (Name constructorName)) bodyExpr
+          single ->
+            -- Single (non-tuple) argument, e.g. @Leaf a@: bind it to a fresh
+            -- var and desugar the sub-pattern against that var.
+            do
+              subVar <- freshVar
+              nested <- desugarComplexPattern subVar (L generatedSrcSpan single) bodyExpr
+              pure $
+                 Match
+                   (Var scrutineeVar)
+                   scrutineeVar
+                   ((DataAlt (Name constructorName), [subVar], nested) :| [])
+  where
+   desugarComplexPatternFields ::
+     Var ->
+     [LLmlPat LmlcTc] ->
+     AltCon ->
+     CoreExpr ->
+     MonadDesugar CoreExpr
+   desugarComplexPatternFields fieldScrutineeVar lPats altCon fieldBody = do
+    -- Each field is bound to a variable: simple patterns bind their own
+    -- identifier (via 'desugarNestedPatHelper'); complex patterns bind a fresh
+    -- var (via 'desugarComplexPattern'). Collect the bound vars and the
+    -- composed body.
+    (boundVars, bound) <- foldrM bindField ([] :: [Var], fieldBody) lPats
+    pure $
+      Match
+        (Var fieldScrutineeVar)
+        fieldScrutineeVar
+        ((altCon, boundVars, bound) :| [])
+    where
+     bindField ::
+       LLmlPat LmlcTc ->
+       ([Var], CoreExpr) ->
+       MonadDesugar ([Var], CoreExpr)
+     bindField lPat (vs, body) =
+       if isSimpleVarOrWildcard lPat
+         then do
+           (v, wrapper) <- desugarNestedPatHelper lPat
+           pure (v : vs, wrapper v body)
+         else do
+           v <- freshVar
+           nested <- desugarComplexPattern v lPat body
+           pure (v : vs, nested)
+
+-- | Bind a list of field patterns (each against its own fresh variable) into a
+-- case body, composing the per-field bindings. Simple patterns bind directly
+-- (via 'desugarNestedPatHelper'); nested constructor / or patterns are
+-- desugared via 'desugarComplexPattern'.
+desugarComplexFields ::
+  [Var] ->
+  [LLmlPat LmlcTc] ->
+  CoreExpr ->
+  MonadDesugar ([Var], CoreExpr)
+desugarComplexFields subVars lPats bodyExpr =
+  let pairs = zip lPats subVars
+   in foldrM (\(lp, v) (vs, body) -> bindField lp v vs body) (subVars, bodyExpr) pairs
+ where
+  bindField ::
+    LLmlPat LmlcTc ->
+    Var ->
+    [Var] ->
+    CoreExpr ->
+    MonadDesugar ([Var], CoreExpr)
+  bindField lp v vs body =
+    if isSimpleVarOrWildcard lp
+      then do
+        (bv, wrapper) <- desugarNestedPatHelper lp
+        pure (bv : vs, wrapper bv body)
+      else do
+        nested <- desugarComplexPattern v lp body
+        pure (v : vs, nested)
+
 desugarLmlCase :: Var -> LmlCase LmlcTc -> MonadDesugar CoreMatchAlt
 desugarLmlCase scrutineeVar (LmlCase ty (L _ pat) Nothing lExpr) = do
   expr <- desugarLLmlExpr lExpr
@@ -667,34 +493,38 @@ desugarLmlCase scrutineeVar (LmlCase ty (L _ pat) Nothing lExpr) = do
       pure (TupleAlt, vars, exprWithMatches)
     LmlPatConstruct _ (L _ longident) maybeLPat ->
       let constuctorName = Name longident
-       in case maybeLPat of
-            Nothing -> pure (DataAlt constuctorName, [], expr)
-            Just (L _ args) -> do
-              case args of
-                LmlPatVar (FullName n, _) _ -> do
-                  pure (DataAlt constuctorName, [Id $ Name n], expr)
-                LmlPatAny _ -> do
-                  freshV <- freshVar
-                  pure (DataAlt constuctorName, [freshV], expr)
-                LmlPatTuple _ lPat lPats -> do
-                  let pats = lPat : toList lPats
-                      allSimple = all isSimpleVarOrWildcard pats
-                  if allSimple
-                    then do
-                      (vars, wrappers) <- mapAndUnzipM desugarNestedPatHelper pats
-                      let exprWithMatches = foldr (\(var, wrapper) acc -> wrapper var acc) expr (zip vars wrappers)
-                      pure (DataAlt constuctorName, vars, exprWithMatches)
-                    else do
-                      vars <- replicateM (length pats) freshVar
-                      pure (DataAlt constuctorName, vars, expr)
-                LmlPatConstruct{} -> do
-                  freshV <- freshVar
-                  pure (DataAlt constuctorName, [freshV], expr)
-                _ -> do
-                  freshV <- freshVar
-                  pure (DataAlt constuctorName, [freshV], expr)
-    LmlPatOr{} -> error "FIXME: Or patterns in constructors aren't supported."
+        in case maybeLPat of
+          Nothing -> pure (DataAlt constuctorName, [], expr)
+          Just (L _ args) ->
+            case args of
+              LmlPatVar (FullName n, _) _ ->
+                pure (DataAlt constuctorName, [Id $ Name n], expr)
+              LmlPatAny _ -> do
+                freshV <- freshVar
+                pure (DataAlt constuctorName, [freshV], expr)
+              LmlPatTuple _ lPat lPats ->
+                let pats = lPat : toList lPats
+                    allSimple = all isSimpleVarOrWildcard pats
+                 in if allSimple
+                      then do
+                        (vars, wrappers) <- mapAndUnzipM desugarNestedPatHelper pats
+                        let exprWithMatches = foldr (\(var, wrapper) acc -> wrapper var acc) expr (zip vars wrappers)
+                        pure (DataAlt constuctorName, vars, exprWithMatches)
+                      else do
+                        -- Complex constructor: bind each field var and desugar
+                        -- the field patterns against those vars via
+                        -- 'desugarComplexFields' (which uses
+                        -- 'desugarComplexPattern' for nested patterns).
+                        argVars <- replicateM (length pats) freshVar
+                        (boundVars, body) <- desugarComplexFields argVars pats expr
+                        pure (DataAlt constuctorName, boundVars, body)
+              _ -> do
+                freshV <- freshVar
+                pure (DataAlt constuctorName, [freshV], expr)
     LmlPatConstraint _ lPat _ -> desugarLmlCase scrutineeVar (LmlCase ty lPat Nothing lExpr)
+    -- Or-patterns are flattened by 'expandOrPatterns' before reaching here; a
+    -- residual one is a safety net (match any, use the case body).
+    LmlPatOr{} -> pure (DEFAULT, [], expr)
 desugarLmlCase _scrutineeVar (LmlCase _ty (L _ _pat) (Just _guardExpr) lExpr) = do
   expr <- desugarLLmlExpr lExpr
   pure (DEFAULT, [], expr)
