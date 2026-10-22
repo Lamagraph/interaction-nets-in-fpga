@@ -19,9 +19,10 @@ into implementation. First set up the batch, then plan it:
    **sub-issue** via the REST API (`POST repos/$REPO/issues/<HUB>/sub_issues`
    with the task's database `id`); a link in the hub body is **not** a
    sub-issue. The exact commands live in the `workflow-management` skill.
-2. Create the high-level global plan in `tasks/global_plan.md`, naming the hub
-   and listing each task with its issue number, then mirror it to the hub as a
-   comment whose first line is `<!-- global-plan -->`.
+2. Create the high-level global plan as a comment on the hub whose first line
+   is `<!-- global-plan -->`, naming the hub and listing each task with its
+   issue number. This comment is the single source of truth; keep a gitignored
+   local copy at `tasks/global_plan.md` as a working cache (never committed).
 
 The global plan must:
 
@@ -44,18 +45,19 @@ The global plan must:
 - Propose an execution order that minimizes rework and avoids conflicts.
 - Align tasks with the project architecture.
 
-After the global plan is created and mirrored to the hub, proceed with the
-normal working loop: one task at a time, a feature branch per task created from
-the integration branch, a detailed plan in `tasks/detailed_plan.md` for each.
-After each task integrates, mark it `[done #N]` in `tasks/global_plan.md` and
-update the hub's `<!-- global-plan -->` comment. The local file is the single
-source of truth; the hub comment is a pure mirror (see the `workflow-management`
-skill).
+After the global plan is posted to the hub, proceed with the normal working
+loop: one task at a time, a feature branch per task created from the
+integration branch, a detailed plan (the `<!-- detailed-plan -->` comment on
+the task issue) for each. After each task integrates, mark it `[done #N]` in
+the hub's `<!-- global-plan -->` comment and keep the local cache
+`tasks/global_plan.md` in sync. The hub comment is the single source of truth;
+the local file is a gitignored cache (see the `workflow-management` skill).
 
 ## Detailed Plan (Atomic Subtasks)
 
-`tasks/detailed_plan.md` MUST decompose the task into atomic subtasks. Each
-subtask:
+The detailed plan — the `<!-- detailed-plan -->` comment on the task issue,
+kept in sync with the gitignored local cache `tasks/detailed_plan.md` — MUST
+decompose the task into atomic subtasks. Each subtask:
 
 - Is small enough to complete in a single focused work session (typically
   30–90 minutes).
@@ -76,7 +78,7 @@ subtask's **Code** section.
 
 ### Subtask Format
 
-Each subtask in `tasks/detailed_plan.md` MUST include these four sections. **A
+Each subtask in the detailed plan MUST include these four sections. **A
 subtask with missing Code, Tests, or Docs sections is incomplete and must not
 be executed.**
 
@@ -128,9 +130,10 @@ session is interrupted, the loss is bounded to that single subtask.
 ## Post-Implementation Design Notes
 
 When a task hits algorithmic limitations — partially completed, with skipped
-tests or remaining work — append a `## Design Notes` section to
-`tasks/detailed_plan.md`. This serves as persistent design knowledge for future
-task refinement. The section must be structured as follows:
+tests or remaining work — append a `## Design Notes` section to the detailed
+plan (the `<!-- detailed-plan -->` comment on the task issue; keep the local
+cache in sync). This serves as persistent design knowledge for future task
+refinement. The section must be structured as follows:
 
 ```
 ## Design Notes (discovered during implementation)

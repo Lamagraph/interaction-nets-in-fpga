@@ -18,7 +18,8 @@ verbatim.
    interpret.
 3. If the guidance is algorithmic and belongs in the persistent design record,
    also record it verbatim in the `### <Topic>` section of the `## Design
-   Notes` block in `tasks/detailed_plan.md` (see the `planning` skill).
+   Notes` block of the detailed plan (the `<!-- detailed-plan -->` comment on
+   the task issue; see the `planning` skill).
 
 Example comment:
 
