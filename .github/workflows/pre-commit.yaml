@@ -16,11 +16,14 @@ jobs:
       # pinned versions. The dedicated fourmolu.yaml / hlint.yaml jobs remain
       # the primary style gate; this keeps the pre-commit job consistent with
       # a local commit.
+      # The ubuntu-24.04 runner image ships ghcup at /usr/local/.ghcup (on
+      # PATH). Use it to install the style tools at the versions pinned in
+      # stack.yaml extra-deps (into ~/.ghcup, on PATH), so the fourmolu
+      # wrapper and the hlint hook resolve the pinned versions. The dedicated
+      # fourmolu.yaml / hlint.yaml jobs remain the primary style gate.
       - name: Install style tools (pinned versions)
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org \
-            | GHUP_INSTALL_NO_COMPLETE=1 GHUP_INSTALL_METHOD=curl bash
-          export PATH="$HOME/.ghcup/bin:$PATH"
+          export PATH="/usr/local/.ghcup/bin:$HOME/.local/bin:$PATH"
           ghcup install fourmolu 0.18.0.0 --set
           ghcup install hlint 3.10 --set
 
