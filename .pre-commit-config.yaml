@@ -1,3 +1,14 @@
+# Local style hooks.
+#
+# fourmolu and hlint run on every *.hs file at commit time, mirroring the
+# CI style jobs. Versions are pinned in stack.yaml extra-deps to match the
+# CI workflows exactly (see docs/contributing.rst, "Local style checks").
+#
+# The fourmolu hook is a wrapper script (style-hooks/fourmolu-check.sh):
+# fourmolu 0.18 has no check mode (its -c flag is check-idempotence, which
+# does not detect an unformatted file), so the wrapper runs fourmolu on
+# each file and compares its output to the file contents.
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -11,3 +22,20 @@ repos:
       - id: check-yaml
       - id: fix-byte-order-marker
       - id: mixed-line-ending
+  - repo: local
+    hooks:
+      # The style tools (fourmolu, hlint) are the local commit gate. They are
+      # resolved from PATH at the versions pinned in stack.yaml extra-deps
+      # (installed via ghcup locally and in the CI pre-commit job — see
+      # pre-commit.yaml). The dedicated fourmolu.yaml / hlint.yaml jobs remain
+      # the primary style gate in CI.
+      - id: fourmolu
+        name: fourmolu
+        entry: style-hooks/fourmolu-check.sh
+        language: system
+        files: '\.hs$'
+      - id: hlint
+        name: hlint
+        entry: hlint
+        language: system
+        files: '\.hs$'

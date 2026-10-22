@@ -34,6 +34,44 @@ Commit subjects follow ``(<issue>-S<n>): <summary>`` — one subtask identifier
 per commit, e.g. ``(73-S1): add project facts contract``. Ranges, lists, and
 commas are forbidden.
 
+Local style checks
+==================
+
+The style gate (fourmolu formatting, hlint) runs locally at commit time via
+the pre-commit hooks in ``.pre-commit-config.yaml`` and is pinned to the exact
+versions the CI workflows use, so local results match CI bit-for-bit.
+
+Commands (run from the repo root):
+
+.. code-block:: bash
+
+   fourmolu -i <file>                     # fix formatting in place
+   fourmolu <file> | diff <file> -        # verify (empty diff = formatted)
+   hlint .                                # lint
+   pre-commit run --all-files             # every CI style hook in one run
+
+Version pinning: the style tools are pinned in ``stack.yaml``
+``extra-deps`` (fourmolu, hlint) and installed on PATH at those exact
+versions (``ghcup install <tool> <version> --set``). Never substitute a
+differently-versioned local binary — a different fourmolu version may
+format differently and produce spurious diffs. The CI workflows
+(``.github/workflows/``) remain the single source of truth for the exact
+commands and versions; bump the ``extra-deps`` pins together with the
+workflow versions when they change.
+
+The fourmolu pre-commit hook is a wrapper (``style-hooks/fourmolu-check.sh``):
+fourmolu 0.18 has no check mode (its ``-c`` flag is check-idempotence, which
+does not detect an unformatted file), so the wrapper runs fourmolu on each
+file and compares its output to the file contents.
+
+The style tools are resolved from PATH at the versions pinned in
+``stack.yaml`` ``extra-deps``: locally install them once (e.g.
+``ghcup install fourmolu 0.18.0.0 --set`` / ``ghcup install hlint 3.10
+--set``), and the CI ``pre-commit`` job installs the same pinned versions via
+ghcup. The dedicated ``fourmolu.yaml`` / ``hlint.yaml`` jobs remain the
+primary style gate; the pre-commit hooks keep a local commit consistent with
+CI.
+
 Issue closing
 =============
 
