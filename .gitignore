@@ -76,3 +76,10 @@ node_modules/
 lamagraph-compiler/src/Lamagraph/Compiler/Parser.info
 lamagraph-compiler/src/Lamagraph/Compiler/Parser.hs
 lamagraph-compiler/src/Lamagraph/Compiler/Parser/Lexer.hs
+
+# Planning artifacts: the source of truth is the plan comment on the
+# hub/task issue; this directory is a local working cache, never committed.
+/tasks/
+
+# Local session planning notes (durable agent plans), never committed.
+.opencode/plans/
