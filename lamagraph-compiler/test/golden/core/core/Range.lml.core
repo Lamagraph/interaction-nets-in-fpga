@@ -1,0 +1,49 @@
+let rec Range.range = fun Range.n ->
+                      match (#std.< Range.n) 1 as t#a with ( #std.true
+                      , []
+                      , #std.[] )
+                      | ( #std.false
+                      , []
+                      , let Range.tl = Range.range ((#std.- Range.n) 1)
+                      in #std.:: ((Range.n), (Range.tl)) )
+let rec Range.sum_list = fun Range.l -> match Range.l as t#b with ( #std.[]
+                                        , []
+                                        , 0 )
+                                        | ( #std.::
+                                        , [Range.hd, Range.tl]
+                                        , (#std.+ Range.hd) (Range.sum_list Range.tl) )
+let rec Range.length = fun Range.l -> match Range.l as t#c with (#std.[], [], 0)
+                                      | ( #std.::
+                                      , [t#d, Range.tl]
+                                      , (#std.+ 1) (Range.length Range.tl) )
+let rec Range.map = fun Range.f -> fun Range.l ->
+                    match Range.l as t#e with ( #std.::
+                    , [Range.hd, Range.tl]
+                    , #std.:: ((Range.f Range.hd),
+                    ((Range.map Range.f) Range.tl)) )
+                    | (#std.[], [], #std.[])
+let Range.increment = fun Range.x -> (#std.+ Range.x) 1
+let Range.head_of_head = fun Range.ll -> match Range.ll as t#f with ( #std.[]
+                                         , []
+                                         , 0 )
+                                         | ( #std.::
+                                         , [Range.l, t#i]
+                                         , match Range.l as t#g with ( #std.[]
+                                           , []
+                                           , 1 )
+                                           | ( #std.::
+                                           , [Range.hd, t#h]
+                                           , Range.hd ) )
+let Range.r = Range.range 100
+let Range.l = #std.:: ((1), (#std.:: ((2), (#std.:: ((3), (#std.[]))))))
+let Range.l' = let Range.list_increment = Range.map Range.increment
+               in Range.list_increment Range.l
+let Range.ll = #std.:: ((#std.:: ((42), (#std.:: ((43), (#std.[]))))),
+               (#std.:: ((#std.:: ((44), (#std.[]))), (#std.[]))))
+let Range.empty_ll = #std.:: ((#std.[]), (#std.[]))
+let t#j = #std.print_int (Range.sum_list Range.r)
+let t#k = #std.print_int (Range.length Range.r)
+let t#l = #std.print_int (Range.length Range.l)
+let t#m = #std.print_int (Range.sum_list Range.l')
+let t#n = #std.print_int (Range.head_of_head Range.ll)
+let t#o = #std.print_int (Range.head_of_head Range.empty_ll)
