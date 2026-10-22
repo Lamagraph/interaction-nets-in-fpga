@@ -155,7 +155,7 @@ idApplyToIdCycleCount =
     initialIdApplyToIdNode
     initialIdApplyToIdMM
     0
-    6
+    9
     "id apply to id cycle count"
 
 epsApplyToIdSimpleCycleCount :: TestTree
@@ -164,7 +164,7 @@ epsApplyToIdSimpleCycleCount =
     initialEpsAppToIdSimpleNode
     initialEpsAppToIdSimpleMM
     1
-    6
+    9
     "id apply to eps simplified cycle count"
 
 epsApplyToIdCycleCount :: TestTree
@@ -173,7 +173,7 @@ epsApplyToIdCycleCount =
     initialEpsAppToIdNode
     initialEpsAppToIdMM
     1
-    20
+    26
     "id apply to eps cycle count"
 
 cycleCountUnitTests :: TestTree
