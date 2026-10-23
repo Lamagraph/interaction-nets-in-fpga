@@ -20,7 +20,33 @@ maxSteps :: Int
 maxSteps = 500000
 
 main :: IO ()
-main = defaultMain $ testGroup "lamagraph-ski" [diagTest, spikeTest]
+main = defaultMain $ testGroup "lamagraph-ski" [valueTests, diagTest, spikeTest]
+
+{- | Unit tests for 'canonicalize' over the runtime value constructors, plus the
+error case for a non-result value (a primitive).
+-}
+valueTests :: TestTree
+valueTests =
+  testGroup
+    "canonicalize"
+    [ testCase "VInt" $ assertCanonical (VInt 5) (RInt 5)
+    , testCase "VChar" $ assertCanonical (VChar 'a') (RChar 'a')
+    , testCase "VString" $ assertCanonical (VString "hello") (RString "hello")
+    , testCase "VTuple" $ assertCanonical (VTuple (VInt 1) (VInt 2 :| [VInt 3])) (RTuple [RInt 1, RInt 2, RInt 3])
+    , testCase "VAdt" $
+        assertCanonical
+          (VAdt (Name (mkLongident (pure "Cons"))) [VInt 1, VInt 2])
+          (RAdt (Name (mkLongident (pure "Cons"))) [RInt 1, RInt 2])
+    , testCase "primitive is an error" $ case canonicalize (VUnaryPrim UPMinus) of
+        Left (NonResultValue _) -> return ()
+        other -> assertFailure $ "expected Left (NonResultValue), got " <> show other
+    ]
+
+-- | Assert that 'canonicalize' succeeds on @input@ and yields @expected@.
+assertCanonical :: Value -> Value' -> Assertion
+assertCanonical input expected = case canonicalize input of
+  Right v -> assertEqual "canonicalize" expected v
+  Left e -> assertFailure $ "expected Right " <> show expected <> ", got Left " <> show e
 
 {- | @1 + 1@ must decode (SKI) to 2, and the direct Church numeral 2 must also
 decode to 2. Validates the decoder on a minimal case.

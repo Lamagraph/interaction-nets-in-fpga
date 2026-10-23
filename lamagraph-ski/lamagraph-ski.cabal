@@ -28,6 +28,7 @@ library
       Lamagraph.Ski.Encode
       Lamagraph.Ski.Lambda
       Lamagraph.Ski.Run
+      Lamagraph.Ski.Value
   other-modules:
       Paths_lamagraph_ski
   hs-source-dirs:

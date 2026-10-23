@@ -12,6 +12,7 @@ module Lamagraph.Ski (
   module Lamagraph.Ski.Encode,
   module Lamagraph.Ski.Lambda,
   module Lamagraph.Ski.Run,
+  module Lamagraph.Ski.Value,
 ) where
 
 import GraphRewriting (Graph)
@@ -24,6 +25,7 @@ import Lamagraph.Ski.Decode
 import Lamagraph.Ski.Encode
 import Lamagraph.Ski.Lambda
 import Lamagraph.Ski.Run
+import Lamagraph.Ski.Value
 
 import Relude
 
