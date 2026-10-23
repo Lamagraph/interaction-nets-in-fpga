@@ -1,0 +1,322 @@
+(Module
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
+ CharStringTc, t3: int
+ #std, -: int -> int -> int
+ CharStringTc, c: char
+ CharStringTc, s: string
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ CharStringTc, t2: string
+ CharStringTc, t1: char
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ CharStringTc, id_string: string -> string
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ #std, print_int: int -> ()
+ CharStringTc, id_char: char -> char
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ CharStringTc, classify: char -> int
+ #std, false: bool
+ (Just
+ (L
+  { :1:8-20 }
+  ("CharStringTc")))
+ [ (L
+    { :3:1-12 }
+    (ValD
+     (L
+      { :3:5-12 }
+      (NonRec
+       [ (L
+          { :3:5-12 }
+          (Bind
+           CharStringTc, c: char
+           (L
+            { :3:5-6 }
+            (PatVar
+             (CharStringTc, c, char)
+             (L
+              { :3:5-6 }
+              "c")))
+           (L
+            { :3:9-12 }
+            (ExprConstant char char
+             'a')))) ]))))
+ , (L
+    { :4:1-13 }
+    (ValD
+     (L
+      { :4:5-13 }
+      (NonRec
+       [ (L
+          { :4:5-13 }
+          (Bind
+           CharStringTc, s: string
+           (L
+            { :4:5-6 }
+            (PatVar
+             (CharStringTc, s, string)
+             (L
+              { :4:5-6 }
+              "s")))
+           (L
+            { :4:9-13 }
+            (ExprConstant string string
+             "ab")))) ]))))
+ , (L
+    { :5:1-27 }
+    (ValD
+     (L
+      { :5:5-27 }
+      (NonRec
+       [ (L
+          { :5:5-27 }
+          (Bind
+           CharStringTc, id_char: char -> char
+           (L
+            { :5:5-12 }
+            (PatVar
+             (CharStringTc, id_char, char -> char)
+             (L
+              { :5:5-12 }
+              "id_char")))
+           (L
+            { :5:13-27 }
+            (ExprFunction
+             char -> char
+             (L
+              { :5:13-23 }
+              (PatConstraint
+               char
+               (L
+                { :5:14-15 }
+                (PatVar
+                 (CharStringTc, x, 'd)
+                 (L
+                  { :5:14-15 }
+                  "x")))
+               (L
+                { :5:18-22 }
+                (TyConstr
+                 char
+                 (L
+                  { :5:18-22 }
+                  ("char"))
+                 []))))
+             (L
+              { :5:26-27 }
+              (ExprIdent
+               char
+               "CharStringTc, x")))))) ]))))
+ , (L
+    { :6:1-31 }
+    (ValD
+     (L
+      { :6:5-31 }
+      (NonRec
+       [ (L
+          { :6:5-31 }
+          (Bind
+           CharStringTc, id_string: string -> string
+           (L
+            { :6:5-14 }
+            (PatVar
+             (CharStringTc, id_string, string -> string)
+             (L
+              { :6:5-14 }
+              "id_string")))
+           (L
+            { :6:15-31 }
+            (ExprFunction
+             string -> string
+             (L
+              { :6:15-27 }
+              (PatConstraint
+               string
+               (L
+                { :6:16-17 }
+                (PatVar
+                 (CharStringTc, y, 'f)
+                 (L
+                  { :6:16-17 }
+                  "y")))
+               (L
+                { :6:20-26 }
+                (TyConstr
+                 string
+                 (L
+                  { :6:20-26 }
+                  ("string"))
+                 []))))
+             (L
+              { :6:30-31 }
+              (ExprIdent
+               string
+               "CharStringTc, y")))))) ]))))
+ , (L
+    { :(7,1)-(10,11) }
+    (ValD
+     (L
+      { :(7,5)-(10,11) }
+      (NonRec
+       [ (L
+          { :(7,5)-(10,11) }
+          (Bind
+           CharStringTc, classify: char -> int
+           (L
+            { :7:5-13 }
+            (PatVar
+             (CharStringTc, classify, char -> int)
+             (L
+              { :7:5-13 }
+              "classify")))
+           (L
+            { :(7,14)-(10,11) }
+            (ExprFunction
+             char -> int
+             (L
+              { :7:14-16 }
+              (PatVar
+               (CharStringTc, ch, char)
+               (L
+                { :7:14-16 }
+                "ch")))
+             (L
+              { :(7,19)-(10,11) }
+              (ExprMatch
+               int
+               (L
+                { :7:25-27 }
+                (ExprIdent
+                 char
+                 "CharStringTc, ch"))
+               [ (L
+                  { :8:5-13 }
+                  (Case
+                   char -> int
+                   (L
+                    { :8:5-8 }
+                    (PatConstant
+                     char
+                     char
+                     'a'))
+                   (Nothing)
+                   (L
+                    { :8:12-13 }
+                    (ExprConstant int int
+                     1))))
+               , (L
+                  { :9:5-13 }
+                  (Case
+                   char -> int
+                   (L
+                    { :9:5-8 }
+                    (PatConstant
+                     char
+                     char
+                     'b'))
+                   (Nothing)
+                   (L
+                    { :9:12-13 }
+                    (ExprConstant int int
+                     2))))
+               , (L
+                  { :10:5-11 }
+                  (Case
+                   char -> int
+                   (L
+                    { :10:5-6 }
+                    (PatAny
+                     char))
+                   (Nothing)
+                   (L
+                    { :10:10-11 }
+                    (ExprConstant int int
+                     0)))) ])))))) ]))))
+ , (L
+    { :11:1-19 }
+    (ValD
+     (L
+      { :11:5-19 }
+      (NonRec
+       [ (L
+          { :11:5-19 }
+          (Bind
+           CharStringTc, t1: char
+           (L
+            { :11:5-7 }
+            (PatVar
+             (CharStringTc, t1, char)
+             (L
+              { :11:5-7 }
+              "t1")))
+           (L
+            { :11:10-19 }
+            (ExprApply
+             char
+             (L
+              { :11:10-17 }
+              (ExprIdent
+               char -> char
+               "CharStringTc, id_char"))
+             [(L { :11:18-19 } (ExprIdent char "CharStringTc, c"))])))) ]))))
+ , (L
+    { :12:1-21 }
+    (ValD
+     (L
+      { :12:5-21 }
+      (NonRec
+       [ (L
+          { :12:5-21 }
+          (Bind
+           CharStringTc, t2: string
+           (L
+            { :12:5-7 }
+            (PatVar
+             (CharStringTc, t2, string)
+             (L
+              { :12:5-7 }
+              "t2")))
+           (L
+            { :12:10-21 }
+            (ExprApply
+             string
+             (L
+              { :12:10-19 }
+              (ExprIdent
+               string -> string
+               "CharStringTc, id_string"))
+             [(L { :12:20-21 } (ExprIdent string "CharStringTc, s"))])))) ]))))
+ , (L
+    { :13:1-22 }
+    (ValD
+     (L
+      { :13:5-22 }
+      (NonRec
+       [ (L
+          { :13:5-22 }
+          (Bind
+           CharStringTc, t3: int
+           (L
+            { :13:5-7 }
+            (PatVar
+             (CharStringTc, t3, int)
+             (L
+              { :13:5-7 }
+              "t3")))
+           (L
+            { :13:10-22 }
+            (ExprApply
+             int
+             (L
+              { :13:10-18 }
+              (ExprIdent
+               char -> int
+               "CharStringTc, classify"))
+             [(L { :13:19-22 } (ExprConstant char char 'a'))])))) ])))) ])

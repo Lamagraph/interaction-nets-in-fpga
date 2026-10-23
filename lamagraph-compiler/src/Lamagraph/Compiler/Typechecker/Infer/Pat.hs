@@ -58,12 +58,12 @@ inferLmlPat env@(TyEnv tyEnv) tyConstrEnv NonRecursive = \case
               finalSubst = constrSubst @@ collectedSubst
           pure (outType, finalSubst, LmlPatConstruct outType lLongident (Just lPatTyped))
   LmlPatOr _ leftLPat rightLPat -> do
-    (leftTy, leftSubst@(Subst leftMap), leftLPatTyped) <- inferLLmlPat env tyConstrEnv NonRecursive leftLPat
-    (rightTy, rightSubst@(Subst rightMap), rightLPatTyped) <- inferLLmlPat env tyConstrEnv NonRecursive rightLPat
-    let leftKeys = HashMap.keysSet leftMap
-        rightKeys = HashMap.keysSet rightMap
-        union = leftKeys `HashSet.union` rightKeys
-        intersection = leftKeys `HashSet.intersection` rightKeys
+    (leftTy, leftSubst, leftLPatTyped) <- inferLLmlPat env tyConstrEnv NonRecursive leftLPat
+    (rightTy, rightSubst, rightLPatTyped) <- inferLLmlPat env tyConstrEnv NonRecursive rightLPat
+    let leftNames = boundVarNames leftLPat
+        rightNames = boundVarNames rightLPat
+        union = leftNames `HashSet.union` rightNames
+        intersection = leftNames `HashSet.intersection` rightNames
         symmetricDifference = union `HashSet.difference` intersection
 
     -- Both sides must bind same identifiers with the same type,
@@ -92,3 +92,18 @@ inferLmlPat env tyConstrEnv Recursive = \case
     let outTy = apply unifierSubst ty
     pure (outTy, unifierSubst @@ patSubst, LmlPatConstraint outTy lPatTyped lTyTyped)
   _ -> throwError NonVariableInLetRec
+
+-- | Identifiers bound by a resolved pattern.
+boundVarNames :: LLmlPat LmlcMr -> HashSet Name
+boundVarNames (L _ pat) = go pat
+ where
+  go :: LmlPat LmlcMr -> HashSet Name
+  go = \case
+    LmlPatAny _ -> HashSet.empty
+    LmlPatVar (FullName n) _ -> HashSet.singleton (Name n)
+    LmlPatConstant _ _ -> HashSet.empty
+    LmlPatTuple _ lPat lPats -> foldr HashSet.union (go (unLoc lPat)) (toList (fmap (go . unLoc) lPats))
+    LmlPatConstruct _ _ Nothing -> HashSet.empty
+    LmlPatConstruct _ _ (Just lPat) -> go (unLoc lPat)
+    LmlPatOr _ lPat rPat -> go (unLoc lPat) `HashSet.union` go (unLoc rPat)
+    LmlPatConstraint _ lPat _ -> go (unLoc lPat)

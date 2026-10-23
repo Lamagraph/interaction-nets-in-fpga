@@ -1,0 +1,335 @@
+(Module
+ #std, None: forall 'a. 'a option
+ #std, >: int -> int -> bool
+ OrPatternsTc, is_some: forall 'g. 'g OrPatternsTc, opt -> bool
+ OrPatternsTc, t1: bool
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ OrPatternsTc, None: forall 'a. 'a OrPatternsTc, opt
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ OrPatternsTc, t3: int
+ #std, print_int: int -> ()
+ OrPatternsTc, pick: forall 'q. 'q OrPatternsTc, opt -> 'q
+ OrPatternsTc, t2: bool
+ #std, []: forall 'a. 'a list
+ OrPatternsTc, is_none: forall 'k. 'k OrPatternsTc, opt -> bool
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ OrPatternsTc, Some: forall 'a. 'a -> 'a OrPatternsTc, opt
+ #std, false: bool
+ (Just
+ (L
+  { :1:8-20 }
+  ("OrPatternsTc")))
+ [ (L
+    { :3:1-32 }
+    (TyD
+     [ (L
+        { :3:6-32 }
+        (DataDecl
+         (L
+          { :3:9-12 }
+          "opt")
+         [(L { :3:6-8 } (TyVar 'a (L { :3:7-8 } "a")))]
+         [ (L
+            { :3:15-19 }
+            (ConDecl
+             (L
+              { :3:15-19 }
+              "None")
+             []))
+         , (L
+            { :3:22-32 }
+            (ConDecl
+             (L
+              { :3:22-26 }
+              "Some")
+             [(L { :3:30-32 } (TyVar 'a (L { :3:31-32 } "a")))])) ])) ]))
+ , (L
+    { :5:1-37 }
+    (ValD
+     (L
+      { :5:5-37 }
+      (NonRec
+       [ (L
+          { :5:5-37 }
+          (Bind
+           OrPatternsTc, is_some: forall 'g. 'g OrPatternsTc, opt -> bool
+           (L
+            { :5:5-12 }
+            (PatVar
+             (OrPatternsTc, is_some, 'g OrPatternsTc, opt -> bool)
+             (L
+              { :5:5-12 }
+              "is_some")))
+           (L
+            { :5:13-37 }
+            (ExprFunction
+             'g OrPatternsTc, opt -> bool
+             (L
+              { :5:13-30 }
+              (ParOr
+               'g OrPatternsTc, opt
+               (L
+                { :5:14-20 }
+                (PatConstruct
+                 'd OrPatternsTc, opt
+                 (L
+                  { :5:14-18 }
+                  ("OrPatternsTc, Some"))
+                 (Just
+                 (L
+                  { :5:19-20 }
+                  (PatVar
+                   (OrPatternsTc, x, 'd)
+                   (L
+                    { :5:19-20 }
+                    "x"))))))
+               (L
+                { :5:23-29 }
+                (PatConstruct
+                 'g OrPatternsTc, opt
+                 (L
+                  { :5:23-27 }
+                  ("OrPatternsTc, Some"))
+                 (Just
+                 (L
+                  { :5:28-29 }
+                  (PatVar
+                   (OrPatternsTc, x, 'g)
+                   (L
+                    { :5:28-29 }
+                    "x"))))))))
+             (L
+              { :5:33-37 }
+              (ExprConstruct
+               bool
+               (L
+                { :5:33-37 }
+                ("#std, true"))
+               (Nothing))))))) ]))))
+ , (L
+    { :6:1-33 }
+    (ValD
+     (L
+      { :6:5-33 }
+      (NonRec
+       [ (L
+          { :6:5-33 }
+          (Bind
+           OrPatternsTc, is_none: forall 'k. 'k OrPatternsTc, opt -> bool
+           (L
+            { :6:5-12 }
+            (PatVar
+             (OrPatternsTc, is_none, 'k OrPatternsTc, opt -> bool)
+             (L
+              { :6:5-12 }
+              "is_none")))
+           (L
+            { :6:13-33 }
+            (ExprFunction
+             'k OrPatternsTc, opt -> bool
+             (L
+              { :6:13-26 }
+              (ParOr
+               'k OrPatternsTc, opt
+               (L
+                { :6:14-18 }
+                (PatConstruct
+                 'j OrPatternsTc, opt
+                 (L
+                  { :6:14-18 }
+                  ("OrPatternsTc, None"))
+                 (Nothing)))
+               (L
+                { :6:21-25 }
+                (PatConstruct
+                 'k OrPatternsTc, opt
+                 (L
+                  { :6:21-25 }
+                  ("OrPatternsTc, None"))
+                 (Nothing)))))
+             (L
+              { :6:29-33 }
+              (ExprConstruct
+               bool
+               (L
+                { :6:29-33 }
+                ("#std, true"))
+               (Nothing))))))) ]))))
+ , (L
+    { :7:1-31 }
+    (ValD
+     (L
+      { :7:5-31 }
+      (NonRec
+       [ (L
+          { :7:5-31 }
+          (Bind
+           OrPatternsTc, pick: forall 'q. 'q OrPatternsTc, opt -> 'q
+           (L
+            { :7:5-9 }
+            (PatVar
+             (OrPatternsTc, pick, 'q OrPatternsTc, opt -> 'q)
+             (L
+              { :7:5-9 }
+              "pick")))
+           (L
+            { :7:10-31 }
+            (ExprFunction
+             'q OrPatternsTc, opt -> 'q
+             (L
+              { :7:10-27 }
+              (ParOr
+               'q OrPatternsTc, opt
+               (L
+                { :7:11-17 }
+                (PatConstruct
+                 'n OrPatternsTc, opt
+                 (L
+                  { :7:11-15 }
+                  ("OrPatternsTc, Some"))
+                 (Just
+                 (L
+                  { :7:16-17 }
+                  (PatVar
+                   (OrPatternsTc, x, 'n)
+                   (L
+                    { :7:16-17 }
+                    "x"))))))
+               (L
+                { :7:20-26 }
+                (PatConstruct
+                 'q OrPatternsTc, opt
+                 (L
+                  { :7:20-24 }
+                  ("OrPatternsTc, Some"))
+                 (Just
+                 (L
+                  { :7:25-26 }
+                  (PatVar
+                   (OrPatternsTc, x, 'q)
+                   (L
+                    { :7:25-26 }
+                    "x"))))))))
+             (L
+              { :7:30-31 }
+              (ExprIdent
+               'q
+               "OrPatternsTc, x")))))) ]))))
+ , (L
+    { :8:1-26 }
+    (ValD
+     (L
+      { :8:5-26 }
+      (NonRec
+       [ (L
+          { :8:5-26 }
+          (Bind
+           OrPatternsTc, t1: bool
+           (L
+            { :8:5-7 }
+            (PatVar
+             (OrPatternsTc, t1, bool)
+             (L
+              { :8:5-7 }
+              "t1")))
+           (L
+            { :8:10-26 }
+            (ExprApply
+             bool
+             (L
+              { :8:10-17 }
+              (ExprIdent
+               int OrPatternsTc, opt -> bool
+               "OrPatternsTc, is_some"))
+             [ (L
+                { :8:18-26 }
+                (ExprConstruct
+                 int OrPatternsTc, opt
+                 (L
+                  { :8:19-23 }
+                  ("OrPatternsTc, Some"))
+                 (Just
+                 (L
+                  { :8:24-25 }
+                  (ExprConstant int int
+                   1))))) ])))) ]))))
+ , (L
+    { :9:1-22 }
+    (ValD
+     (L
+      { :9:5-22 }
+      (NonRec
+       [ (L
+          { :9:5-22 }
+          (Bind
+           OrPatternsTc, t2: bool
+           (L
+            { :9:5-7 }
+            (PatVar
+             (OrPatternsTc, t2, bool)
+             (L
+              { :9:5-7 }
+              "t2")))
+           (L
+            { :9:10-22 }
+            (ExprApply
+             bool
+             (L
+              { :9:10-17 }
+              (ExprIdent
+               'aa OrPatternsTc, opt -> bool
+               "OrPatternsTc, is_none"))
+             [ (L
+                { :9:18-22 }
+                (ExprConstruct
+                 'aa OrPatternsTc, opt
+                 (L
+                  { :9:18-22 }
+                  ("OrPatternsTc, None"))
+                 (Nothing))) ])))) ]))))
+ , (L
+    { :10:1-24 }
+    (ValD
+     (L
+      { :10:5-24 }
+      (NonRec
+       [ (L
+          { :10:5-24 }
+          (Bind
+           OrPatternsTc, t3: int
+           (L
+            { :10:5-7 }
+            (PatVar
+             (OrPatternsTc, t3, int)
+             (L
+              { :10:5-7 }
+              "t3")))
+           (L
+            { :10:10-24 }
+            (ExprApply
+             int
+             (L
+              { :10:10-14 }
+              (ExprIdent
+               int OrPatternsTc, opt -> int
+               "OrPatternsTc, pick"))
+             [ (L
+                { :10:15-24 }
+                (ExprConstruct
+                 int OrPatternsTc, opt
+                 (L
+                  { :10:16-20 }
+                  ("OrPatternsTc, Some"))
+                 (Just
+                 (L
+                  { :10:21-23 }
+                  (ExprConstant int int
+                   42))))) ])))) ])))) ])

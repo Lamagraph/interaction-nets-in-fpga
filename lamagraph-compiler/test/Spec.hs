@@ -15,6 +15,7 @@ import Lamagraph.Compiler.Parser.PrettyAstGolden
 import Lamagraph.Compiler.Parser.PrettyLmlGolden
 import Lamagraph.Compiler.Syntax.SyntaxInstancesTest
 import Lamagraph.Compiler.TokenPassingCBVGolden
+import Lamagraph.Compiler.Typechecker.InferTest
 import Lamagraph.Compiler.Typechecker.PrettyTypedGolden
 
 main :: IO ()
@@ -36,9 +37,9 @@ main = do
           , coreTests'
           , evalTests'
           , evalModuleTests'
-          , netsTests'
-          , syntaxInstancesTests
-          ]
+           , netsTests'
+           , syntaxInstancesTests
+           ]
   defaultMain tests
 
 lexerTests :: TestTree
@@ -54,7 +55,7 @@ parserTests = do
 typeCheckerTests :: IO TestTree
 typeCheckerTests = do
   tc <- typecheckerPrettyAstGolden
-  pure $ testGroup "Typechecker" [tc]
+  pure $ testGroup "Typechecker" [tc, inferUnitTests]
 
 moduleTypeCheckerTests :: IO TestTree
 moduleTypeCheckerTests = do

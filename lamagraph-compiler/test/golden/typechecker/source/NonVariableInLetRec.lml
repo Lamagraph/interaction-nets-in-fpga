@@ -1,0 +1,3 @@
+module NonVariableInLetRec
+
+let rec 5 = 1

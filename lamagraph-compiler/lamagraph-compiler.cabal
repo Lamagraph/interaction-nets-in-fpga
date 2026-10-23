@@ -148,6 +148,7 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Syntax.SyntaxInstancesTest
       Lamagraph.Compiler.Syntax.TestGen
       Lamagraph.Compiler.TokenPassingCBVGolden
+      Lamagraph.Compiler.Typechecker.InferTest
       Lamagraph.Compiler.Typechecker.PrettyTypedGolden
       Paths_lamagraph_compiler
   hs-source-dirs:
