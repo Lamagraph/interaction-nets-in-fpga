@@ -150,6 +150,7 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Parser.PrettyAstGolden
       Lamagraph.Compiler.Parser.PrettyLmlGolden
       Lamagraph.Compiler.Parser.SrcLocTest
+      Lamagraph.Compiler.PrettyAstTest
       Lamagraph.Compiler.Syntax.SyntaxInstancesTest
       Lamagraph.Compiler.Syntax.TestGen
       Lamagraph.Compiler.TokenPassingCBVGolden

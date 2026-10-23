@@ -1,0 +1,167 @@
+(Module
+ (Just
+ (L
+  { :1:8-12 }
+  ("Cons")))
+ [ (L
+    { :3:1-18 }
+    (ValD
+     (L
+      { :3:5-18 }
+      (NonRec
+       [ (L
+          { :3:5-18 }
+          (Bind
+           (L
+            { :3:5-7 }
+            (PatVar
+             (L
+              { :3:5-7 }
+              "xs")))
+           (L
+            { :3:10-18 }
+            (ExprConstruct
+             (L
+              { :3:11-13 }
+              ("::"))
+             (Just
+             (L
+              { :3:10-18 }
+              (ExprTuple
+               [ (L
+                  { :3:10-11 }
+                  (ExprConstant 1))
+               , (L
+                  { :3:13-18 }
+                  (ExprConstruct
+                   (L
+                    { :3:14-16 }
+                    ("::"))
+                   (Just
+                   (L
+                    { :3:13-18 }
+                    (ExprTuple
+                     [ (L
+                        { :3:13-14 }
+                        (ExprConstant 2))
+                     , (L
+                        { :3:16-18 }
+                        (ExprConstruct
+                         (L
+                          { :3:16-18 }
+                          ("[]"))
+                         (Nothing))) ]))))) ]))))))) ]))))
+ , (L
+    { :4:1-16 }
+    (ValD
+     (L
+      { :4:5-16 }
+      (NonRec
+       [ (L
+          { :4:5-16 }
+          (Bind
+           (L
+            { :4:5-7 }
+            (PatVar
+             (L
+              { :4:5-7 }
+              "ys")))
+           (L
+            { :4:11-16 }
+            (ExprConstruct
+             (L
+              { <compiler-generated code> }
+              ("::"))
+             (Just
+             (L
+              { :4:11-16 }
+              (ExprTuple
+               [ (L
+                  { :4:11-12 }
+                  (ExprConstant 1))
+               , (L
+                  { :4:14-16 }
+                  (ExprConstruct
+                   (L
+                    { <compiler-generated code> }
+                    ("::"))
+                   (Just
+                   (L
+                    { :4:14-16 }
+                    (ExprTuple
+                     [ (L
+                        { :4:14-15 }
+                        (ExprConstant 2))
+                     , (L
+                        { :4:15-16 }
+                        (ExprConstruct
+                         (L
+                          { <compiler-generated code> }
+                          ("[]"))
+                         (Nothing))) ]))))) ]))))))) ]))))
+ , (L
+    { :5:1-23 }
+    (ValD
+     (L
+      { :5:5-23 }
+      (NonRec
+       [ (L
+          { :5:5-23 }
+          (Bind
+           (L
+            { :5:5-9 }
+            (PatVar
+             (L
+              { :5:5-9 }
+              "head")))
+           (L
+            { :5:10-23 }
+            (ExprFunction
+             (L
+              { :5:10-19 }
+              (PatConstruct
+               (L
+                { :5:12-14 }
+                ("::"))
+               (Just
+               (L
+                { :5:11-18 }
+                (PatTuple
+                 [ (L
+                    { :5:11-12 }
+                    (PatVar
+                     (L
+                      { :5:11-12 }
+                      "a")))
+                 , (L
+                    { :5:14-18 }
+                    (PatVar
+                     (L
+                      { :5:14-18 }
+                      "rest"))) ])))))
+             (L
+              { :5:22-23 }
+              (ExprIdent
+               "a")))))) ]))))
+ , (L
+    { :6:1-15 }
+    (ValD
+     (L
+      { :6:5-15 }
+      (NonRec
+       [ (L
+          { :6:5-15 }
+          (Bind
+           (L
+            { :6:5-10 }
+            (PatVar
+             (L
+              { :6:5-10 }
+              "empty")))
+           (L
+            { :6:13-15 }
+            (ExprConstruct
+             (L
+              { :6:13-15 }
+              ("[]"))
+             (Nothing))))) ])))) ])

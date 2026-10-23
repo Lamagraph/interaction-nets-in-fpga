@@ -1,0 +1,9 @@
+module Cons
+
+let xs = (1 :: (2 :: []))
+
+let ys = (1 :: (2 :: []))
+
+let head = fun (a :: rest) -> a
+
+let empty = []
