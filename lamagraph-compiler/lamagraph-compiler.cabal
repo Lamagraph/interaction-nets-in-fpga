@@ -140,6 +140,7 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.GoldenCommon
       Lamagraph.Compiler.Module.Eval.EvalModuleGolden
       Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden
+      Lamagraph.Compiler.ModuleResolver.ResolveTest
       Lamagraph.Compiler.NetsGolden
       Lamagraph.Compiler.Parser.LexerTest
       Lamagraph.Compiler.Parser.ParserRoundtrip
