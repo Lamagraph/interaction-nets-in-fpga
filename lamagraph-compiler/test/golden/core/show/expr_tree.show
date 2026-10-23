@@ -1,0 +1,1 @@
+App (Lam (Id (Name (Longident ("x" :| [])))) (App (Var (Id (Name (Longident ("x" :| []))))) (Lit (LitInt 42)))) (Tuple (Lit (LitChar 'a')) (Lit (LitString "ab") :| []))

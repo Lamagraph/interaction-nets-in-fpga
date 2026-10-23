@@ -1,0 +1,1 @@
+Rec ((Id (Name (Longident ("x" :| []))),Lam (Id (Name (Longident ("x" :| [])))) (Var (Id (Name (Longident ("x" :| [])))))) :| [(Id (Name (Longident ("y" :| []))),Lam (Id (Name (Longident ("y" :| [])))) (App (Var (Id (Name (Longident ("y" :| []))))) (Lit (LitInt 42))))])

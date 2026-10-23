@@ -3,6 +3,7 @@ import Relude
 import Test.Tasty
 import Test.Tasty.Hedgehog
 
+import Lamagraph.Compiler.Core.CoreTest
 import Lamagraph.Compiler.Core.PrettyCoreGolden
 import Lamagraph.Compiler.Eval.EvalGolden
 import Lamagraph.Compiler.Module.Eval.EvalModuleGolden
@@ -61,7 +62,7 @@ moduleTypeCheckerTests = do
 coreTests :: IO TestTree
 coreTests = do
   core <- corePrettyGolden
-  pure $ testGroup "Core" [core]
+  pure $ testGroup "Core" [core, coreUnitTests]
 
 evalTests :: IO TestTree
 evalTests = do
