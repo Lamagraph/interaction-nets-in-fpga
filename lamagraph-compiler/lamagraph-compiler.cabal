@@ -144,10 +144,12 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.ModuleResolver.ResolveTest
       Lamagraph.Compiler.Nets.NetsTest
       Lamagraph.Compiler.NetsGolden
+      Lamagraph.Compiler.Parser.LexerStateTest
       Lamagraph.Compiler.Parser.LexerTest
       Lamagraph.Compiler.Parser.ParserRoundtrip
       Lamagraph.Compiler.Parser.PrettyAstGolden
       Lamagraph.Compiler.Parser.PrettyLmlGolden
+      Lamagraph.Compiler.Parser.SrcLocTest
       Lamagraph.Compiler.Syntax.SyntaxInstancesTest
       Lamagraph.Compiler.Syntax.TestGen
       Lamagraph.Compiler.TokenPassingCBVGolden
