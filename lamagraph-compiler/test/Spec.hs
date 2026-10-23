@@ -10,6 +10,7 @@ import Lamagraph.Compiler.Eval.EvalTest
 import Lamagraph.Compiler.Module.Eval.EvalModuleGolden
 import Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden
 import Lamagraph.Compiler.ModuleResolver.ResolveTest
+import Lamagraph.Compiler.Nets.NetsTest
 import Lamagraph.Compiler.NetsGolden
 import Lamagraph.Compiler.Parser.LexerTest
 import Lamagraph.Compiler.Parser.ParserRoundtrip
@@ -87,6 +88,7 @@ netsTest = do
   outNet <- outNetGolden
   tokenPassingCBV <- tokenPassingCBVLmlGolden
   tokenPassingCBVParallel <- tokenPassingCBVParallelLmlGolden
+  netsExamples <- netsExamplesGolden
   pure $
     testGroup
       "Nets"
@@ -97,4 +99,6 @@ netsTest = do
       , tokenPassingCBVParallel
       , tokenPassingCBVCoreGolden
       , tokenPassingCBVParallelCoreGolden
+      , netsExamples
+      , netsUnitTests
       ]

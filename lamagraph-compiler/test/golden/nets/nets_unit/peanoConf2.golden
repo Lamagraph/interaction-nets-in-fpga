@@ -1,0 +1,1 @@
+Configuration {heap = fromList [], stack = Just (AnnTerm [Nothing] (Agent Succ [Agent Zero []]),AnnTerm [Just 0,Nothing] (Agent Add [Agent Zero [],Var 0])) :| [Nothing], phi = fromList [(0,1),(1,0)], iface = [AnnTerm [] (Var 1)], cycles = fromList [], threadState = Delist}

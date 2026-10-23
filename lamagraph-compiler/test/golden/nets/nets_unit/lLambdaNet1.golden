@@ -1,0 +1,1 @@
+Net {terms = [Var 1], equations = [(Agent Abs [Var 2,Var 2],Agent App [Var 1,Agent Abs [Var 3,Var 3]])]}

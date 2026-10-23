@@ -85,4 +85,5 @@ tests:
       - tasty-hedgehog
       - hedgehog
       - directory
+      - bytestring
       - transformers
