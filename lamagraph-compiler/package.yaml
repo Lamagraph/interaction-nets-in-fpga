@@ -78,6 +78,7 @@ tests:
     dependencies:
       - lamagraph-compiler
       - filepath
+      - hashable
       - tasty
       - tasty-hunit
       - tasty-golden
