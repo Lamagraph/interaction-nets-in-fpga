@@ -8,6 +8,7 @@ import Lamagraph.Compiler.Core.PrettyCoreGolden
 import Lamagraph.Compiler.Eval.EvalGolden
 import Lamagraph.Compiler.Module.Eval.EvalModuleGolden
 import Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden
+import Lamagraph.Compiler.ModuleResolver.ResolveTest
 import Lamagraph.Compiler.NetsGolden
 import Lamagraph.Compiler.Parser.LexerTest
 import Lamagraph.Compiler.Parser.ParserRoundtrip
@@ -39,7 +40,8 @@ main = do
           , evalModuleTests'
            , netsTests'
            , syntaxInstancesTests
-           ]
+            , resolverUnitTests
+            ]
   defaultMain tests
 
 lexerTests :: TestTree
