@@ -18,6 +18,7 @@ import Lamagraph.Compiler.Parser.ParserRoundtrip
 import Lamagraph.Compiler.Parser.PrettyAstGolden
 import Lamagraph.Compiler.Parser.PrettyLmlGolden
 import Lamagraph.Compiler.Parser.SrcLocTest
+import Lamagraph.Compiler.PrettyAstTest
 import Lamagraph.Compiler.Syntax.SyntaxInstancesTest
 import Lamagraph.Compiler.TokenPassingCBVGolden
 import Lamagraph.Compiler.Typechecker.InferTest
@@ -56,7 +57,7 @@ parserTests = do
   parserASTGolden <- parserPrettyAstGolden
   parserLmlGolden <- parserPrettyLmlGolden
   let roundtrip = testPropertyNamed "Parser roundtrip (AST -> LML -> AST)" "prop_ParserRoundtrip" prop_ParserRoundtrip
-  return $ testGroup "Parser" [parserASTGolden, parserLmlGolden, roundtrip, srcLocTests, lexerStateTests]
+  return $ testGroup "Parser" [parserASTGolden, parserLmlGolden, roundtrip, srcLocTests, lexerStateTests, prettyAstTests]
 
 typeCheckerTests :: IO TestTree
 typeCheckerTests = do
