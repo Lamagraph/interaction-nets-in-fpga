@@ -114,10 +114,12 @@ Haskell compiler for the LML language. Source lives under
      - Pretty-printers.
    * - ``app/Main.hs``
      - Executable entrypoint (``lamagraph-compiler-exe``).
-   * - ``test/``
-     - Golden-test suite. ``Spec.hs`` is the tasty entrypoint; golden fixtures
-       live under ``test/golden/`` (``core``, ``eval``, ``nets``, ``parser``,
-       ``typechecker``) and ``test/golden-module/``.
+    * - ``test/``
+      - Test suite (golden + unit + property). ``Spec.hs`` is the tasty
+        entrypoint; golden fixtures live under ``test/golden/`` (``core``,
+        ``eval``, ``nets``, ``parser``, ``typechecker``) and
+        ``test/golden-module/``; unit/property tests sit beside the modules
+        they exercise (e.g. ``test/Lamagraph/Compiler/<Area>/*Test.hs``).
    * - ``lamagraph-compiler.cabal``
      - Package descriptor, generated from ``package.yaml`` by hpack.
    * - ``CHANGELOG.md``
