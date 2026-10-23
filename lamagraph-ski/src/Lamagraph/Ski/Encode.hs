@@ -7,6 +7,7 @@ introduces a name clash.
 -}
 module Lamagraph.Ski.Encode (
   encode,
+  encodeValue,
   stdPlus,
   stdMinus,
   stdTimes,
@@ -21,8 +22,9 @@ import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.ModuleResolver.DefaultEnv (stdPrefix)
 import Lamagraph.Compiler.Syntax.Longident (Longident (..), mkLongident)
 import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
-import Lamagraph.Ski.Church (addLam, churchLam)
+import Lamagraph.Ski.Church (addLam, churchLam, intToChurch)
 import Lamagraph.Ski.Lambda (Lam (..), freshName, subst, toSki)
+import Lamagraph.Ski.Value (Value' (..))
 
 {- | Translate a closed LML core program (top-level bindings + result
 expression) to a SKI term. Minimal subset: integer literals, '+', let,
@@ -32,6 +34,14 @@ encode :: [CoreBind] -> CoreExpr -> Term.Expr
 encode binds resultExpr =
   let lam = evalState (buildLam binds resultExpr) 0
    in toSki lam
+
+{- | Encode a canonical value as a SKI term. The minimal subset only produces
+'RInt' (a Church numeral); the other 'Value'' constructors are stubbed for Task
+C.
+-}
+encodeValue :: Value' -> Term.Expr
+encodeValue (RInt n) = intToChurch n
+encodeValue other = error $ "encodeValue: " <> show other <> " is not supported yet (Task C)"
 
 {- | Build the lambda term for a program: convert the result expression, then
 inline the top-level (non-recursive) bindings.
@@ -52,8 +62,8 @@ coreExprToLam :: CoreExpr -> State Int Lam
 coreExprToLam = \case
   Var v
     | v == stdPlus -> addLam
-    | v == stdMinus -> error "encode: '-' is not supported yet (added in S4)"
-    | v == stdTimes -> error "encode: '*' is not supported yet (added in S4)"
+    | v == stdMinus -> error "encode: '-' is not supported yet (added in S5)"
+    | v == stdTimes -> error "encode: '*' is not supported yet (added in S5)"
     | otherwise -> pure (LVar (varName v))
   Lit (LitInt n) -> churchLam n
   Lit _ -> error "encode: non-integer literal not supported in the minimal subset"

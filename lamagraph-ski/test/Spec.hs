@@ -20,7 +20,7 @@ maxSteps :: Int
 maxSteps = 500000
 
 main :: IO ()
-main = defaultMain $ testGroup "lamagraph-ski" [valueTests, diagTest, spikeTest]
+main = defaultMain $ testGroup "lamagraph-ski" [valueTests, churchTests, diagTest, spikeTest]
 
 {- | Unit tests for 'canonicalize' over the runtime value constructors, plus the
 error case for a non-result value (a primitive).
@@ -47,6 +47,26 @@ assertCanonical :: Value -> Value' -> Assertion
 assertCanonical input expected = case canonicalize input of
   Right v -> assertEqual "canonicalize" expected v
   Left e -> assertFailure $ "expected Right " <> show expected <> ", got Left " <> show e
+
+{- | Round-trip and operation tests for the Church value encodings:
+'encodeValue (RInt n)' must decode back to @n@ (for small @n@), and the Church
+arithmetic combinators must produce the right results.
+-}
+churchTests :: TestTree
+churchTests =
+  testGroup
+    "church encodings"
+    [ testCase "encodeValue round-trip n=0" $ checkDecode "encodeValue 0" (encodeValue (RInt 0)) 0
+    , testCase "encodeValue round-trip n=1" $ checkDecode "encodeValue 1" (encodeValue (RInt 1)) 1
+    , testCase "encodeValue round-trip n=2" $ checkDecode "encodeValue 2" (encodeValue (RInt 2)) 2
+    , testCase "mult 2 3 = 6" $ checkDecode "mult 2 3" (apply2 multLam 2 3) 6
+    ]
+
+{- | Apply a binary Church combinator (a lambda term) to two Church numerals,
+yielding the SKI term for the result.
+-}
+apply2 :: State Int Lam -> Int -> Int -> Term.Expr
+apply2 op a b = Term.A (Term.A (toSki (evalState op 0)) (intToChurch a)) (intToChurch b)
 
 {- | @1 + 1@ must decode (SKI) to 2, and the direct Church numeral 2 must also
 decode to 2. Validates the decoder on a minimal case.
