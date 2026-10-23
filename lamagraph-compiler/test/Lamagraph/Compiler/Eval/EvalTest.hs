@@ -3,7 +3,6 @@ module Lamagraph.Compiler.Eval.EvalTest (evalUnitTests) where
 import Relude hiding (show)
 
 import Control.Exception (try)
-import Control.Monad.Trans.Identity (runIdentityT)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Prelude (show)

@@ -8,7 +8,7 @@ import Prettyprinter.Render.Text
 
 import Lamagraph.Compiler.Parser
 import Lamagraph.Compiler.PrettyLml ()
-import Lamagraph.Compiler.Syntax
+import Lamagraph.Compiler.Syntax ()
 import Lamagraph.Compiler.Syntax.TestGen (genModule)
 
 prop_ParserRoundtrip :: Property
