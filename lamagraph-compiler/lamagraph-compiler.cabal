@@ -145,6 +145,8 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Parser.ParserRoundtrip
       Lamagraph.Compiler.Parser.PrettyAstGolden
       Lamagraph.Compiler.Parser.PrettyLmlGolden
+      Lamagraph.Compiler.Syntax.SyntaxInstancesTest
+      Lamagraph.Compiler.Syntax.TestGen
       Lamagraph.Compiler.TokenPassingCBVGolden
       Lamagraph.Compiler.Typechecker.PrettyTypedGolden
       Paths_lamagraph_compiler
