@@ -1,0 +1,3 @@
+module VariableClashInPattern
+
+let f (x, x) = x

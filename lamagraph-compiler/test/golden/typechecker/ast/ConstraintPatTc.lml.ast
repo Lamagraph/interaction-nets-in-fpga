@@ -1,0 +1,189 @@
+(Module
+ #std, None: forall 'a. 'a option
+ ConstraintPatTc, quadruple: int -> int
+ #std, >: int -> int -> bool
+ #std, -: int -> int -> int
+ #std, ~-: int -> int
+ #std, <=: int -> int -> bool
+ #std, /: int -> int -> int
+ #std, ::: forall 'a. ('a * 'a list) -> 'a list
+ #std, *: int -> int -> int
+ #std, +: int -> int -> int
+ #std, Some: forall 'a. 'a -> 'a option
+ ConstraintPatTc, double: int -> int
+ #std, print_int: int -> ()
+ #std, []: forall 'a. 'a list
+ #std, >=: int -> int -> bool
+ #std, true: bool
+ #std, <: int -> int -> bool
+ #std, false: bool
+ ConstraintPatTc, t: int
+ (Just
+ (L
+  { :1:8-23 }
+  ("ConstraintPatTc")))
+ [ (L
+    { :3:1-29 }
+    (ValD
+     (L
+      { :3:5-29 }
+      (NonRec
+       [ (L
+          { :3:5-29 }
+          (Bind
+           ConstraintPatTc, double: int -> int
+           (L
+            { :3:5-11 }
+            (PatVar
+             (ConstraintPatTc, double, int -> int)
+             (L
+              { :3:5-11 }
+              "double")))
+           (L
+            { :3:12-29 }
+            (ExprFunction
+             int -> int
+             (L
+              { :3:12-21 }
+              (PatConstraint
+               int
+               (L
+                { :3:13-14 }
+                (PatVar
+                 (ConstraintPatTc, x, 'b)
+                 (L
+                  { :3:13-14 }
+                  "x")))
+               (L
+                { :3:17-20 }
+                (TyConstr
+                 int
+                 (L
+                  { :3:17-20 }
+                  ("int"))
+                 []))))
+             (L
+              { :3:24-29 }
+              (ExprApply
+               int
+               (L
+                { :3:26-27 }
+                (ExprIdent
+                 int -> int -> int
+                 "#std, +"))
+               [ (L
+                  { :3:24-25 }
+                  (ExprIdent
+                   int
+                   "ConstraintPatTc, x"))
+               , (L
+                  { :3:28-29 }
+                  (ExprIdent
+                   int
+                   "ConstraintPatTc, x")) ])))))) ]))))
+ , (L
+    { :(4,1)-(5,23) }
+    (ValD
+     (L
+      { :(4,5)-(5,23) }
+      (NonRec
+       [ (L
+          { :(4,5)-(5,23) }
+          (Bind
+           ConstraintPatTc, quadruple: int -> int
+           (L
+            { :4:5-14 }
+            (PatVar
+             (ConstraintPatTc, quadruple, int -> int)
+             (L
+              { :4:5-14 }
+              "quadruple")))
+           (L
+            { :(4,15)-(5,23) }
+            (ExprFunction
+             int -> int
+             (L
+              { :4:15-16 }
+              (PatVar
+               (ConstraintPatTc, y, int)
+               (L
+                { :4:15-16 }
+                "y")))
+             (L
+              { :(4,19)-(5,23) }
+              (ExprMatch
+               int
+               (L
+                { :4:25-26 }
+                (ExprIdent
+                 int
+                 "ConstraintPatTc, y"))
+               [ (L
+                  { :5:5-23 }
+                  (Case
+                   int -> int
+                   (L
+                    { :5:5-14 }
+                    (PatConstraint
+                     int
+                     (L
+                      { :5:6-7 }
+                      (PatVar
+                       (ConstraintPatTc, z, 'f)
+                       (L
+                        { :5:6-7 }
+                        "z")))
+                     (L
+                      { :5:10-13 }
+                      (TyConstr
+                       int
+                       (L
+                        { :5:10-13 }
+                        ("int"))
+                       []))))
+                   (Nothing)
+                   (L
+                    { :5:18-23 }
+                    (ExprApply
+                     int
+                     (L
+                      { :5:20-21 }
+                      (ExprIdent
+                       int -> int -> int
+                       "#std, *"))
+                     [ (L
+                        { :5:18-19 }
+                        (ExprIdent
+                         int
+                         "ConstraintPatTc, z"))
+                     , (L
+                        { :5:22-23 }
+                        (ExprConstant int int
+                         4)) ])))) ])))))) ]))))
+ , (L
+    { :6:1-20 }
+    (ValD
+     (L
+      { :6:5-20 }
+      (NonRec
+       [ (L
+          { :6:5-20 }
+          (Bind
+           ConstraintPatTc, t: int
+           (L
+            { :6:5-6 }
+            (PatVar
+             (ConstraintPatTc, t, int)
+             (L
+              { :6:5-6 }
+              "t")))
+           (L
+            { :6:9-20 }
+            (ExprApply
+             int
+             (L
+              { :6:9-18 }
+              (ExprIdent
+               int -> int
+               "ConstraintPatTc, quadruple"))
+             [(L { :6:19-20 } (ExprConstant int int 2))])))) ])))) ])

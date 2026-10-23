@@ -1,0 +1,13 @@
+module CharStringTc
+
+let c = 'a'
+let s = "ab"
+let id_char (x : char) = x
+let id_string (y : string) = y
+let classify ch = match ch with
+  | 'a' -> 1
+  | 'b' -> 2
+  | _ -> 0
+let t1 = id_char c
+let t2 = id_string s
+let t3 = classify 'a'

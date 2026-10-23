@@ -98,7 +98,7 @@ inferLmlBindGroup env tyConstrEnv (LmlBindGroup _ NonRecursive binds) = do
   bgEnv <- foldlM1 tyEnvUnionDisj newEnvs
   pure (TyEnv $ coerce bgEnv `HashMap.union` coerce env, LmlBindGroup noExtField NonRecursive lBinds)
 inferLmlBindGroup env tyConstrEnv (LmlBindGroup _ Recursive binds) = do
-  let varNames = fmap (\(L _ (LmlBind _ lPat _)) -> extractVarName lPat) binds
+  varNames <- forM binds (\(L _ (LmlBind _ lPat _)) -> extractVarName lPat)
   let mkPlaceholderType :: LLmlExpr LmlcMr -> MonadTypecheck Ty
       mkPlaceholderType (L _ expr) = go expr
        where
@@ -141,10 +141,10 @@ inferLmlBindGroup env tyConstrEnv (LmlBindGroup _ Recursive binds) = do
 
   pure (resultEnv, LmlBindGroup noExtField Recursive finalBinds)
  where
-  extractVarName :: LLmlPat LmlcMr -> Name
-  extractVarName (L _ (LmlPatVar (FullName fname) _)) = Name fname
+  extractVarName :: LLmlPat LmlcMr -> MonadTypecheck Name
+  extractVarName (L _ (LmlPatVar (FullName fname) _)) = pure (Name fname)
   extractVarName (L _ (LmlPatConstraint _ lPat _)) = extractVarName lPat
-  extractVarName _ = error "Recursive bindings must be simple variable patterns"
+  extractVarName _ = throwError NonVariableInLetRec
 
 inferLLmlNonRecBind :: TyEnv -> TyConstrEnv -> LLmlBind LmlcMr -> MonadTypecheck (TyEnv, LLmlBind LmlcTc)
 inferLLmlNonRecBind env tyConstrEnv (L loc bind) = over _2 (L loc) <$> inferLmlNonRecBind env tyConstrEnv bind

@@ -1,0 +1,6 @@
+module ConstraintPatTc
+
+let double (x : int) = x + x
+let quadruple y = match y with
+  | (z : int) -> z * 4
+let t = quadruple 2

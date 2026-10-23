@@ -1,0 +1,5 @@
+module UnboundVariable
+
+type pair = Pair of int
+
+let x = pair

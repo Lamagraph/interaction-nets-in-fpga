@@ -1,0 +1,10 @@
+module OrPatternsTc
+
+type 'a opt = None | Some of 'a
+
+let is_some (Some x | Some x) = true
+let is_none (None | None) = true
+let pick (Some x | Some x) = x
+let t1 = is_some (Some 1)
+let t2 = is_none None
+let t3 = pick (Some 42)
