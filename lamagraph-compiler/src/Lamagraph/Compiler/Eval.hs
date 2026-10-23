@@ -1,4 +1,16 @@
-module Lamagraph.Compiler.Eval (MonadEval, Eval, EvalEnv (..), EvalMock, evalCoreBinds, defEvalEnv, evalCoreBindsDefEnv) where
+module Lamagraph.Compiler.Eval (
+  MonadEval,
+  Eval,
+  EvalEnv (..),
+  EvalMock,
+  UnaryPrim (..),
+  BinaryPrim (..),
+  Value (..),
+  EvalException (..),
+  evalCoreBinds,
+  defEvalEnv,
+  evalCoreBindsDefEnv,
+) where
 
 import Relude hiding (modifyIORef', newIORef, readIORef)
 
@@ -34,7 +46,6 @@ data EvalException
   | EInvalidUnaryApply UnaryPrim Value
   | EInvalidBinaryApply BinaryPrim Value Value
   | EInvalidValueApply Value Value
-  | EManyLetRecs
   | EMatchFailed
   | ENonLambdaUnderLetRec
   deriving (Show, Typeable)

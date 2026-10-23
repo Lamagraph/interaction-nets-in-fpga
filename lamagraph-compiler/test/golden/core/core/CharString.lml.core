@@ -1,0 +1,18 @@
+let CharString.classifyChar = fun CharString.c ->
+                              match CharString.c as t#a with ('a', [], 1)
+                              | ('b', [], 2)
+                              | (DEFAULT, [], 0)
+let CharString.classifyStr = fun CharString.s ->
+                             match CharString.s as t#b with ("hi", [], 10)
+                             | ("yo", [], 20)
+                             | (DEFAULT, [], 0)
+let CharString.ca = 'a'
+let CharString.cb = 'b'
+let CharString.cz = 'z'
+let CharString.shi = "hi"
+let CharString.sbye = "bye"
+let t#c = #std.print_int (CharString.classifyChar CharString.ca)
+let t#d = #std.print_int (CharString.classifyChar CharString.cb)
+let t#e = #std.print_int (CharString.classifyChar CharString.cz)
+let t#f = #std.print_int (CharString.classifyStr CharString.shi)
+let t#g = #std.print_int (CharString.classifyStr CharString.sbye)

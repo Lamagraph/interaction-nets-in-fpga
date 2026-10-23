@@ -1,0 +1,23 @@
+module CharString
+
+let classifyChar c = match c with
+  | 'a' -> 1
+  | 'b' -> 2
+  | _ -> 0
+
+let classifyStr s = match s with
+  | "hi" -> 10
+  | "yo" -> 20
+  | _ -> 0
+
+let ca = 'a'
+let cb = 'b'
+let cz = 'z'
+let shi = "hi"
+let sbye = "bye"
+
+let _ = print_int (classifyChar ca)
+let _ = print_int (classifyChar cb)
+let _ = print_int (classifyChar cz)
+let _ = print_int (classifyStr shi)
+let _ = print_int (classifyStr sbye)
