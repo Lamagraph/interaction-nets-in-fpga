@@ -2,14 +2,78 @@ module Main (main) where
 
 import Relude
 
+import Common.Term qualified as Term
+import Data.HashMap.Lazy qualified as HashMap
 import Test.Tasty
 import Test.Tasty.HUnit
 
-main :: IO ()
-main = defaultMain $ testGroup "lamagraph-ski" [stubTest]
+import Lamagraph.Compiler.Core
+import Lamagraph.Compiler.Eval
+import Lamagraph.Compiler.Syntax.Longident (mkLongident)
+import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
+import Lamagraph.Ski
 
-stubTest :: TestTree
-stubTest = testCase "package scaffolds and builds" $ do
-  let stubValue :: Int
-      stubValue = 1
-  stubValue @=? 1
+{- | Step budget for reducing a decoded term to normal form. Generous because
+the naive SKI translation is verbose and the fixed-order reducer is slow.
+-}
+maxSteps :: Int
+maxSteps = 500000
+
+main :: IO ()
+main = defaultMain $ testGroup "lamagraph-ski" [diagTest, spikeTest]
+
+{- | @1 + 1@ must decode (SKI) to 2, and the direct Church numeral 2 must also
+decode to 2. Validates the decoder on a minimal case.
+-}
+diagTest :: TestTree
+diagTest = testCase "diag: 1 + 1 decodes to 2" $ do
+  let resultExpr :: CoreExpr
+      resultExpr = App (App (Var stdPlus) (Lit (LitInt 1))) (Lit (LitInt 1))
+  lmlVal <- lmlEvalExpr [] resultExpr
+  case lmlVal of
+    VInt 2 -> return ()
+    other -> assertFailure $ "lml gave " <> show other <> ", expected VInt 2"
+  checkDecode "church 2" (toSki (evalState (churchLam 2) 0)) 2
+  checkDecode "ski(1+1)" (encode [] resultExpr) 2
+
+{- | The spike: @let x = 2 + 3 in x@ must decode (SKI) to 5, agreeing with the
+LML interpreter, and the direct Church numeral 5 must also decode to 5. Uses a
+top-level @let@ to exercise binding inlining.
+-}
+spikeTest :: TestTree
+spikeTest = testCase "spike: let x = 2 + 3 in x decodes to 5 (lml and ski agree)" $ do
+  let xVar :: Var
+      xVar = Id (Name (mkLongident (pure "x")))
+      sumExpr :: CoreExpr
+      sumExpr = App (App (Var stdPlus) (Lit (LitInt 2))) (Lit (LitInt 3))
+      binds :: [CoreBind]
+      binds = [NonRec xVar sumExpr]
+      resultExpr :: CoreExpr
+      resultExpr = Var xVar
+  lmlVal <- lmlEvalExpr binds resultExpr
+  case lmlVal of
+    VInt 5 -> return ()
+    other -> assertFailure $ "lml gave " <> show other <> ", expected VInt 5"
+  checkDecode "ski(let x = 2+3 in x)" (encode binds resultExpr) 5
+  checkDecode "church 5" (toSki (evalState (churchLam 5) 0)) 5
+
+-- | Decode a SKI term to an integer and assert it equals @expected@.
+checkDecode :: String -> Term.Expr -> Int -> IO ()
+checkDecode label term expected = do
+  let r = decodeChurch maxSteps term
+  case r of
+    Left step -> assertFailure $ label <> ": reduction did not reach normal form within " <> show step <> " steps"
+    Right n -> assertEqual (label <> " decoded value") expected n
+
+{- | Evaluate a core expression (with its enclosing bindings) with the LML
+interpreter by binding the result expression to a fresh variable and reading it
+back from the environment.
+-}
+lmlEvalExpr :: [CoreBind] -> CoreExpr -> IO Value
+lmlEvalExpr binds e = do
+  let resultVar = Id (Name (mkLongident (pure "__result__")))
+  env <- runIdentityT (evalCoreBindsDefEnv (binds ++ [NonRec resultVar e]))
+  case env of
+    EvalEnv hm -> case HashMap.lookup resultVar hm of
+      Just v -> pure v
+      Nothing -> fail "result var not in env"

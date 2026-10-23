@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.3.
 --
 -- see: https://github.com/sol/hpack
 
@@ -22,6 +22,12 @@ source-repository head
 library
   exposed-modules:
       Lamagraph.Ski
+      Lamagraph.Ski.Church
+      Lamagraph.Ski.Compare
+      Lamagraph.Ski.Decode
+      Lamagraph.Ski.Encode
+      Lamagraph.Ski.Lambda
+      Lamagraph.Ski.Run
   other-modules:
       Paths_lamagraph_ski
   hs-source-dirs:
