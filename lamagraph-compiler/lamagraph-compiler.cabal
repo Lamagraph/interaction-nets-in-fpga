@@ -137,6 +137,7 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Core.CoreTest
       Lamagraph.Compiler.Core.PrettyCoreGolden
       Lamagraph.Compiler.Eval.EvalGolden
+      Lamagraph.Compiler.Eval.EvalTest
       Lamagraph.Compiler.GoldenCommon
       Lamagraph.Compiler.Module.Eval.EvalModuleGolden
       Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden
@@ -179,5 +180,6 @@ test-suite lamagraph-compiler-test
     , tasty-golden
     , tasty-hedgehog
     , tasty-hunit
+    , transformers
     , unliftio
   default-language: GHC2021

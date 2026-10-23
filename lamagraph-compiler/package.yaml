@@ -85,3 +85,4 @@ tests:
       - tasty-hedgehog
       - hedgehog
       - directory
+      - transformers

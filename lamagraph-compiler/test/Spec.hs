@@ -6,6 +6,7 @@ import Test.Tasty.Hedgehog
 import Lamagraph.Compiler.Core.CoreTest
 import Lamagraph.Compiler.Core.PrettyCoreGolden
 import Lamagraph.Compiler.Eval.EvalGolden
+import Lamagraph.Compiler.Eval.EvalTest
 import Lamagraph.Compiler.Module.Eval.EvalModuleGolden
 import Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden
 import Lamagraph.Compiler.ModuleResolver.ResolveTest
@@ -38,10 +39,10 @@ main = do
           , coreTests'
           , evalTests'
           , evalModuleTests'
-           , netsTests'
-           , syntaxInstancesTests
-            , resolverUnitTests
-            ]
+          , netsTests'
+          , syntaxInstancesTests
+          , resolverUnitTests
+          ]
   defaultMain tests
 
 lexerTests :: TestTree
@@ -72,7 +73,7 @@ coreTests = do
 evalTests :: IO TestTree
 evalTests = do
   eval <- evalGolden
-  pure $ testGroup "Eval" [eval]
+  pure $ testGroup "Eval" [eval, evalUnitTests]
 
 evalModuleTests :: IO TestTree
 evalModuleTests = do
