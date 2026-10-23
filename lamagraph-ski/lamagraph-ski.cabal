@@ -1,0 +1,71 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           lamagraph-ski
+version:        0.1.0.0
+description:    Translator from the LML core language to the SKI combinator calculus (L1) and a pure interaction-net runner, used to differentially test the LML interpreter against the interaction-nets-based (SKI) interpreter.
+homepage:       https://github.com/Lamagraph/interaction-nets-in-fpga#readme
+bug-reports:    https://github.com/Lamagraph/interaction-nets-in-fpga/issues
+author:         Nikolai Ponomarev
+maintainer:     wowasterdev@gmail.com
+copyright:      2024 Lamagraph
+license:        MIT
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/Lamagraph/interaction-nets-in-fpga
+
+library
+  exposed-modules:
+      Lamagraph.Ski
+  other-modules:
+      Paths_lamagraph_ski
+  hs-source-dirs:
+      src
+  default-extensions:
+      NoImplicitPrelude
+      OverloadedStrings
+      LambdaCase
+      MonoLocalBinds
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , graph-rewriting
+    , graph-rewriting-ski
+    , lamagraph-compiler
+    , mtl
+    , relude
+  default-language: GHC2021
+
+test-suite lamagraph-ski-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_lamagraph_ski
+  hs-source-dirs:
+      test
+  default-extensions:
+      NoImplicitPrelude
+      OverloadedStrings
+      LambdaCase
+      MonoLocalBinds
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , graph-rewriting
+    , graph-rewriting-ski
+    , hedgehog
+    , lamagraph-compiler
+    , lamagraph-ski
+    , mtl
+    , relude
+    , tasty
+    , tasty-hedgehog
+    , tasty-hunit
+  default-language: GHC2021

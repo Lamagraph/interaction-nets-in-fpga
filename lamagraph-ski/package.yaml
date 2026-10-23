@@ -1,0 +1,58 @@
+name: lamagraph-ski
+version: 0.1.0.0
+github: "Lamagraph/interaction-nets-in-fpga"
+license: MIT
+author: "Nikolai Ponomarev"
+maintainer: "wowasterdev@gmail.com"
+copyright: "2024 Lamagraph"
+
+description:
+  Translator from the LML core language to the SKI combinator calculus (L1)
+  and a pure interaction-net runner, used to differentially test the LML
+  interpreter against the interaction-nets-based (SKI) interpreter.
+
+dependencies:
+  - base >= 4.7 && < 5
+  - relude
+  - containers
+  - mtl
+  - lamagraph-compiler
+  - graph-rewriting
+  - graph-rewriting-ski
+
+library:
+  source-dirs: src
+
+tests:
+  lamagraph-ski-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - lamagraph-ski
+      - tasty
+      - tasty-hunit
+      - tasty-hedgehog
+      - hedgehog
+
+language: GHC2021
+
+default-extensions:
+  - NoImplicitPrelude
+  - OverloadedStrings
+  - LambdaCase
+  - MonoLocalBinds
+
+ghc-options:
+  - -Wall
+  - -Wcompat
+  - -Widentities
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wmissing-export-lists
+  - -Wmissing-home-modules
+  - -Wpartial-fields
+  - -Wredundant-constraints

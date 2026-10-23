@@ -20,10 +20,14 @@ Top level
    * - ``lamagraph-core/``
      - Clash library implementing the interaction-net processor (hardware
        description).
-   * - ``lamagraph-compiler/``
-     - Haskell compiler for the LML language (parser, typechecker, encoders,
-       evaluator).
-   * - ``docs/``
+    * - ``lamagraph-compiler/``
+      - Haskell compiler for the LML language (parser, typechecker, encoders,
+        evaluator).
+    * - ``lamagraph-ski/``
+      - Translator from the LML core language to the SKI combinator calculus
+        (L1) plus a pure interaction-net runner; differentially tests the LML
+        interpreter against the interaction-nets-based (SKI) interpreter.
+    * - ``docs/``
      - Project documentation (this tree). ``index.rst`` is the entrypoint.
     * - ``tasks/``
       - Gitignored local working cache of the plans. The single source of truth
@@ -37,8 +41,8 @@ Top level
    * - ``.github/workflows/``
      - CI. ``ci.yaml`` orchestrates ``pre-commit.yaml``, ``fourmolu.yaml``,
        ``hlint.yaml``, ``build-and-test.yaml``, ``coverage.yaml``.
-   * - ``stack.yaml``
-     - Stack project file (resolver + the two packages).
+    * - ``stack.yaml``
+      - Stack project file (resolver + the three packages).
 
 lamagraph-core
 ==============
