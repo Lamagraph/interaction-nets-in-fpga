@@ -1,9 +1,10 @@
 module Lamagraph.Compiler.Core.CoreTest (coreUnitTests) where
 
-import Relude
+import Relude hiding (show)
 
 import Data.Hashable (hash)
 import Data.Text qualified as T
+import Prelude (show)
 import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden

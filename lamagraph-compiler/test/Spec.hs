@@ -13,6 +13,7 @@ import Lamagraph.Compiler.Parser.LexerTest
 import Lamagraph.Compiler.Parser.ParserRoundtrip
 import Lamagraph.Compiler.Parser.PrettyAstGolden
 import Lamagraph.Compiler.Parser.PrettyLmlGolden
+import Lamagraph.Compiler.Syntax.SyntaxInstancesTest
 import Lamagraph.Compiler.TokenPassingCBVGolden
 import Lamagraph.Compiler.Typechecker.PrettyTypedGolden
 
@@ -36,6 +37,7 @@ main = do
           , evalTests'
           , evalModuleTests'
           , netsTests'
+          , syntaxInstancesTests
           ]
   defaultMain tests
 
