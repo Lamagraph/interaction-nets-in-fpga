@@ -1,0 +1,1 @@
+Configuration {heap = fromList [], stack = Nothing :| [], phi = fromList [(0,1),(1,0),(2,3),(3,2),(4,5),(5,4)], iface = [AnnTerm [] (Var 5)], cycles = fromList [], threadState = Process (AnnTerm [Just 0,Just 1,Nothing] (Agent Abs [Var 0,Var 1]),AnnTerm [Just 2,Just 3,Just 4,Nothing] (Agent App [Var 4,Agent Abs [Var 3,Var 2]]))}

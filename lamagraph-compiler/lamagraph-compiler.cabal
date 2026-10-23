@@ -142,6 +142,7 @@ test-suite lamagraph-compiler-test
       Lamagraph.Compiler.Module.Eval.EvalModuleGolden
       Lamagraph.Compiler.Module.Typechecker.TypecheckerModuleGolden
       Lamagraph.Compiler.ModuleResolver.ResolveTest
+      Lamagraph.Compiler.Nets.NetsTest
       Lamagraph.Compiler.NetsGolden
       Lamagraph.Compiler.Parser.LexerTest
       Lamagraph.Compiler.Parser.ParserRoundtrip
@@ -164,6 +165,7 @@ test-suite lamagraph-compiler-test
   build-depends:
       array
     , base >=4.7 && <5
+    , bytestring
     , directory
     , extra
     , filepath
