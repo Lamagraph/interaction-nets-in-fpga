@@ -9,6 +9,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Lamagraph.Compiler.Core
+import Lamagraph.Compiler.Core.MonadDesugar (runMonadDesugar)
+import Lamagraph.Compiler.Driver (desugarLmlProgram, parseLmlProgram, resolveLmlProgram, typecheckLmlProgram)
 import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.Syntax.Longident (mkLongident)
 import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
@@ -23,7 +25,9 @@ maxSteps = MaxSteps 500000
 main :: IO ()
 main =
   defaultMain $
-    testGroup "lamagraph-ski" [valueTests, churchTests, translateTests, runnerTests, skiEvalTests, diagTest, spikeTest]
+    testGroup
+      "lamagraph-ski"
+      [valueTests, churchTests, translateTests, runnerTests, skiEvalTests, fixedExampleTests, diagTest, spikeTest]
 
 {- | Unit tests for 'canonicalize' over the runtime value constructors, plus the
 error case for a non-result value (a primitive).
@@ -175,6 +179,63 @@ assertSkiEval :: [CoreBind] -> CoreExpr -> Value' -> IO ()
 assertSkiEval binds expr expected = case skiEval binds expr of
   Right v -> assertEqual "skiEval" expected v
   Left e -> assertFailure $ "skiEval failed: " <> show e
+
+{- | Fixed-example differential tests: each LML program is run through the full
+Driver pipeline (parse, resolve, typecheck, desugar) and then through
+'translateAndRun', which must agree with the LML interpreter. The result is the
+right-hand side of the last top-level binding.
+
+The set covers addition, multiplication, an anonymous lambda, and a named
+lambda bound by a top-level @let@. The lambda examples use an identity body
+(@fun x -> x@) so they exercise the lambda mechanism (abstraction +
+application) without the cost of a Church-arithmetic reduction. The
+saturating-subtraction example (@5 - 2@), a nested-@let@ example, and
+lambda-with-arithmetic bodies are intentionally omitted: under the current
+(unoptimized) SKI reducer they take many minutes each, so they are deferred
+until the reduction is sped up (see the S4 note on exercising @'-'@).
+-}
+fixedExampleTests :: TestTree
+fixedExampleTests =
+  testGroup
+    "translateAndRun (fixed examples)"
+    [ testCase "2 + 3 = 5" $ assertTranslateAndRun "module M\nlet result = 2 + 3" (RInt 5)
+    , testCase "2 * 3 = 6" $ assertTranslateAndRun "module M\nlet result = 2 * 3" (RInt 6)
+    , testCase "(fun x -> x) 4 = 4" $ assertTranslateAndRun "module M\nlet result = (fun x -> x) 4" (RInt 4)
+    , testCase "let f = fun x -> x in f 3 = 3" $
+        assertTranslateAndRun "module M\nlet f = fun x -> x\nlet result = f 3" (RInt 3)
+    ]
+
+{- | Compile a LML source program and run it through 'translateAndRun', asserting
+the result equals @expected@.
+-}
+assertTranslateAndRun :: Text -> Value' -> IO ()
+assertTranslateAndRun src expected = case compileLml src of
+  Left e -> assertFailure $ "compileLml failed: " <> e
+  Right (binds, resultExpr) -> do
+    res <- translateAndRun binds resultExpr
+    case res of
+      Right v -> assertEqual "translateAndRun" expected v
+      Left e -> assertFailure $ "translateAndRun failed: " <> show e
+
+{- | Compile a LML source program to (enclosing binds, result expression), where
+the result is the right-hand side of the last top-level binding and all preceding
+bindings form the enclosing context.
+-}
+compileLml :: Text -> Either String ([CoreBind], CoreExpr)
+compileLml src = case parseLmlProgram [src] of
+  Left e -> Left ("parse: " <> e)
+  Right parsed ->
+    let resolved = resolveLmlProgram parsed
+     in case typecheckLmlProgram resolved of
+          Left e -> Left ("typecheck: " <> show e)
+          Right typed ->
+            let binds = runMonadDesugar (desugarLmlProgram typed)
+             in case viaNonEmpty id binds of
+                  Nothing -> Left "empty program: no result binding"
+                  Just bs -> Right (init bs, rhsOf (last bs))
+ where
+  rhsOf (NonRec _ e) = e
+  rhsOf _ = error "compileLml: last binding must be a non-recursive let"
 
 {- | @1 + 1@ must decode (SKI) to 2, and the direct Church numeral 2 must also
 decode to 2. Validates the decoder on a minimal case.
