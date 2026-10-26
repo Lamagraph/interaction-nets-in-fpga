@@ -29,9 +29,9 @@ import GraphRewriting (
   evalGraph,
   existNode,
   mergeEdges,
+  neighbours,
   newEdge,
   newNode,
-  neighbours,
   readEdgeList,
   readNode,
   runGraph,
@@ -170,24 +170,24 @@ classifyActive su sv
   | otherwise = Nothing
  where
   matchFirst x y = case (x, y) of
-    (I {}, A {}) -> Just (RK_I, x, y)
-    (K0 {}, A {}) -> Just (RK_K0, x, y)
-    (K1 {}, A {}) -> Just (RK_K1, x, y)
-    (S0 {}, A {}) -> Just (RK_S0, x, y)
-    (S1 {}, A {}) -> Just (RK_S1, x, y)
-    (S2 {}, A {}) -> Just (RK_S2, x, y)
-    (E {}, I {}) -> Just (RK_E0, x, y)
-    (E {}, K0 {}) -> Just (RK_E0, x, y)
-    (E {}, S0 {}) -> Just (RK_E0, x, y)
-    (E {}, K1 {}) -> Just (RK_E1, x, y)
-    (E {}, S1 {}) -> Just (RK_E1, x, y)
-    (E {}, S2 {}) -> Just (RK_E2, x, y)
-    (D {}, I {}) -> Just (RK_D0, x, y)
-    (D {}, K0 {}) -> Just (RK_D0, x, y)
-    (D {}, S0 {}) -> Just (RK_D0, x, y)
-    (D {}, K1 {}) -> Just (RK_D1, x, y)
-    (D {}, S1 {}) -> Just (RK_D1, x, y)
-    (D {}, S2 {}) -> Just (RK_D2, x, y)
+    (I{}, A{}) -> Just (RK_I, x, y)
+    (K0{}, A{}) -> Just (RK_K0, x, y)
+    (K1{}, A{}) -> Just (RK_K1, x, y)
+    (S0{}, A{}) -> Just (RK_S0, x, y)
+    (S1{}, A{}) -> Just (RK_S1, x, y)
+    (S2{}, A{}) -> Just (RK_S2, x, y)
+    (E{}, I{}) -> Just (RK_E0, x, y)
+    (E{}, K0{}) -> Just (RK_E0, x, y)
+    (E{}, S0{}) -> Just (RK_E0, x, y)
+    (E{}, K1{}) -> Just (RK_E1, x, y)
+    (E{}, S1{}) -> Just (RK_E1, x, y)
+    (E{}, S2{}) -> Just (RK_E2, x, y)
+    (D{}, I{}) -> Just (RK_D0, x, y)
+    (D{}, K0{}) -> Just (RK_D0, x, y)
+    (D{}, S0{}) -> Just (RK_D0, x, y)
+    (D{}, K1{}) -> Just (RK_D1, x, y)
+    (D{}, S1{}) -> Just (RK_D1, x, y)
+    (D{}, S2{}) -> Just (RK_D2, x, y)
     _ -> Nothing
 
 {- | Classify an eraser / duplicator pair for the @eliminate@ rule, returning the
@@ -197,133 +197,133 @@ one of the duplicator's input ports.
 classifyElim :: SKI -> SKI -> Maybe (SKI, SKI)
 classifyElim su sv =
   case (su, sv) of
-    (E {inp = iE}, D {inp1 = i1, inp2 = i2})
+    (E{inp = iE}, D{inp1 = i1, inp2 = i2})
       | iE == i1 || iE == i2 -> Just (su, sv)
-    (D {inp1 = i1, inp2 = i2}, E {inp = iE})
+    (D{inp1 = i1, inp2 = i2}, E{inp = iE})
       | iE == i1 || iE == i2 -> Just (sv, su)
     _ -> Nothing
 
 -- | Perform an active-pair contraction, returning the affected nodes.
 contractActive :: RuleKind -> Node -> Node -> SKI -> SKI -> Rewrite SKI [Node]
 contractActive kind u v xv yv = case (kind, xv, yv) of
-  (RK_I, I {}, A {inp = iA, out2 = o2}) -> do
+  (RK_I, I{}, A{inp = iA, out2 = o2}) -> do
     aff0 <- neighBoth u v
     mergeEdges iA o2
     deleteNode u
     deleteNode v
     return aff0
-  (RK_K0, K0 {}, A {inp = iA, out2 = o2}) -> do
+  (RK_K0, K0{}, A{inp = iA, out2 = o2}) -> do
     aff0 <- neighBoth u v
-    n <- newNode (K1 {inp = iA, out = o2})
+    n <- newNode (K1{inp = iA, out = o2})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n])
-  (RK_K1, K1 {out = oK}, A {inp = iA, out2 = o2A}) -> do
+  (RK_K1, K1{out = oK}, A{inp = iA, out2 = o2A}) -> do
     aff0 <- neighBoth u v
-    n <- newNode (E {inp = o2A})
+    n <- newNode (E{inp = o2A})
     mergeEdges iA oK
     deleteNode u
     deleteNode v
     return (aff0 ++ [n])
-  (RK_S0, S0 {}, A {inp = iA, out2 = o2A}) -> do
+  (RK_S0, S0{}, A{inp = iA, out2 = o2A}) -> do
     aff0 <- neighBoth u v
-    n <- newNode (S1 {inp = iA, out = o2A})
+    n <- newNode (S1{inp = iA, out = o2A})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n])
-  (RK_S1, S1 {out = oS}, A {inp = iA, out2 = o2A}) -> do
+  (RK_S1, S1{out = oS}, A{inp = iA, out2 = o2A}) -> do
     aff0 <- neighBoth u v
-    n <- newNode (S2 {inp = iA, out1 = oS, out2 = o2A})
+    n <- newNode (S2{inp = iA, out1 = oS, out2 = o2A})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n])
-  (RK_S2, S2 {inp = iS, out1 = oS1, out2 = o2S}, A {inp = iA, out1 = o1A, out2 = o2A}) -> do
+  (RK_S2, S2{inp = iS, out1 = oS1, out2 = o2S}, A{inp = iA, out1 = o1A, out2 = o2A}) -> do
     aff0 <- neighBoth u v
     i1D <- newEdge
     iB <- newEdge
     i2D <- newEdge
-    n1 <- newNode (A {inp = iS, out1 = oS1, out2 = i1D})
-    n2 <- newNode (A {inp = iA, out1 = o1A, out2 = iB})
-    n3 <- newNode (D {inp1 = i1D, inp2 = i2D, out = o2A})
-    n4 <- newNode (A {inp = iB, out1 = o2S, out2 = i2D})
+    n1 <- newNode (A{inp = iS, out1 = oS1, out2 = i1D})
+    n2 <- newNode (A{inp = iA, out1 = o1A, out2 = iB})
+    n3 <- newNode (D{inp1 = i1D, inp2 = i2D, out = o2A})
+    n4 <- newNode (A{inp = iB, out1 = o2S, out2 = i2D})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n1, n2, n3, n4])
-  (RK_E0, E {}, _) -> do
+  (RK_E0, E{}, _) -> do
     aff0 <- neighBoth u v
     deleteNode u
     deleteNode v
     return aff0
-  (RK_E1, E {}, K1 {out = oN}) -> do
+  (RK_E1, E{}, K1{out = oN}) -> do
     aff0 <- neighBoth u v
-    n <- newNode (E {inp = oN})
+    n <- newNode (E{inp = oN})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n])
-  (RK_E1, E {}, S1 {out = oN}) -> do
+  (RK_E1, E{}, S1{out = oN}) -> do
     aff0 <- neighBoth u v
-    n <- newNode (E {inp = oN})
+    n <- newNode (E{inp = oN})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n])
-  (RK_E2, E {}, S2 {out1 = o1, out2 = o2}) -> do
+  (RK_E2, E{}, S2{out1 = o1, out2 = o2}) -> do
     aff0 <- neighBoth u v
-    n1 <- newNode (E {inp = o1})
-    n2 <- newNode (E {inp = o2})
+    n1 <- newNode (E{inp = o1})
+    n2 <- newNode (E{inp = o2})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n1, n2])
-  (RK_D0, D {inp1 = iD1, inp2 = iD2}, I {}) -> do
+  (RK_D0, D{inp1 = iD1, inp2 = iD2}, I{}) -> do
     aff0 <- neighBoth u v
-    n1 <- newNode (I {inp = iD1})
-    n2 <- newNode (I {inp = iD2})
+    n1 <- newNode (I{inp = iD1})
+    n2 <- newNode (I{inp = iD2})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n1, n2])
-  (RK_D0, D {inp1 = iD1, inp2 = iD2}, K0 {}) -> do
+  (RK_D0, D{inp1 = iD1, inp2 = iD2}, K0{}) -> do
     aff0 <- neighBoth u v
-    n1 <- newNode (K0 {inp = iD1})
-    n2 <- newNode (K0 {inp = iD2})
+    n1 <- newNode (K0{inp = iD1})
+    n2 <- newNode (K0{inp = iD2})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n1, n2])
-  (RK_D0, D {inp1 = iD1, inp2 = iD2}, S0 {}) -> do
+  (RK_D0, D{inp1 = iD1, inp2 = iD2}, S0{}) -> do
     aff0 <- neighBoth u v
-    n1 <- newNode (S0 {inp = iD1})
-    n2 <- newNode (S0 {inp = iD2})
+    n1 <- newNode (S0{inp = iD1})
+    n2 <- newNode (S0{inp = iD2})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n1, n2])
-  (RK_D1, D {inp1 = iD1, inp2 = iD2}, K1 {out = oN}) -> do
+  (RK_D1, D{inp1 = iD1, inp2 = iD2}, K1{out = oN}) -> do
     aff0 <- neighBoth u v
     iD1' <- newEdge
     iD2' <- newEdge
-    n1 <- newNode (K1 {inp = iD1, out = iD1'})
-    n2 <- newNode (K1 {inp = iD2, out = iD2'})
-    n3 <- newNode (D {inp1 = iD1', inp2 = iD2', out = oN})
+    n1 <- newNode (K1{inp = iD1, out = iD1'})
+    n2 <- newNode (K1{inp = iD2, out = iD2'})
+    n3 <- newNode (D{inp1 = iD1', inp2 = iD2', out = oN})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n1, n2, n3])
-  (RK_D1, D {inp1 = iD1, inp2 = iD2}, S1 {out = oN}) -> do
+  (RK_D1, D{inp1 = iD1, inp2 = iD2}, S1{out = oN}) -> do
     aff0 <- neighBoth u v
     iD1' <- newEdge
     iD2' <- newEdge
-    n1 <- newNode (S1 {inp = iD1, out = iD1'})
-    n2 <- newNode (S1 {inp = iD2, out = iD2'})
-    n3 <- newNode (D {inp1 = iD1', inp2 = iD2', out = oN})
+    n1 <- newNode (S1{inp = iD1, out = iD1'})
+    n2 <- newNode (S1{inp = iD2, out = iD2'})
+    n3 <- newNode (D{inp1 = iD1', inp2 = iD2', out = oN})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n1, n2, n3])
-  (RK_D2, D {inp1 = iD1, inp2 = iD2}, S2 {out1 = o1, out2 = o2}) -> do
+  (RK_D2, D{inp1 = iD1, inp2 = iD2}, S2{out1 = o1, out2 = o2}) -> do
     aff0 <- neighBoth u v
     l1 <- newEdge
     l2 <- newEdge
     x1 <- newEdge
     x2 <- newEdge
-    n1 <- newNode (S2 {inp = iD1, out1 = l1, out2 = x1})
-    n2 <- newNode (S2 {inp = iD2, out1 = x2, out2 = l2})
-    n3 <- newNode (D {inp1 = l1, inp2 = x2, out = o1})
-    n4 <- newNode (D {inp1 = x1, inp2 = l2, out = o2})
+    n1 <- newNode (S2{inp = iD1, out1 = l1, out2 = x1})
+    n2 <- newNode (S2{inp = iD2, out1 = x2, out2 = l2})
+    n3 <- newNode (D{inp1 = l1, inp2 = x2, out = o1})
+    n4 <- newNode (D{inp1 = x1, inp2 = l2, out = o2})
     deleteNode u
     deleteNode v
     return (aff0 ++ [n1, n2, n3, n4])
@@ -331,7 +331,7 @@ contractActive kind u v xv yv = case (kind, xv, yv) of
 
 -- | Perform the @eliminate@ contraction, returning the affected nodes.
 contractElim :: Node -> Node -> SKI -> SKI -> Rewrite SKI [Node]
-contractElim u v E {inp = iE} D {out = oD, inp1 = i1, inp2 = i2}
+contractElim u v E{inp = iE} D{out = oD, inp1 = i1, inp2 = i2}
   | iE == i1 = do
       aff0 <- neighBoth u v
       mergeEdges oD i2
