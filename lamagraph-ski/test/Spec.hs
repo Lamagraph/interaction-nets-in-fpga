@@ -20,7 +20,7 @@ maxSteps :: Int
 maxSteps = 500000
 
 main :: IO ()
-main = defaultMain $ testGroup "lamagraph-ski" [valueTests, churchTests, diagTest, spikeTest]
+main = defaultMain $ testGroup "lamagraph-ski" [valueTests, churchTests, translateTests, diagTest, spikeTest]
 
 {- | Unit tests for 'canonicalize' over the runtime value constructors, plus the
 error case for a non-result value (a primitive).
@@ -68,6 +68,47 @@ yielding the SKI term for the result.
 apply2 :: State Int Lam -> Int -> Int -> Term.Expr
 apply2 op a b = Term.A (Term.A (toSki (evalState op 0)) (intToChurch a)) (intToChurch b)
 
+{- | Tests for the 'translateCore' translator: every minimal-subset construct
+translates to a closed SKI term (no free @V@ nodes), and the '@'*'@ operator
+wires to the Church mult combinator (end-to-end). The '@'+'@ wiring is covered
+by the diag/spike tests below.
+-}
+translateTests :: TestTree
+translateTests =
+  testGroup
+    "translateCore"
+    [ testGroup
+        "closed (no free V nodes)"
+        [ testCase "int literal" $ assertClosed (translateCore [] (Lit (LitInt 5)))
+        , testCase "plus" $ assertClosed (translateCore [] (binOp stdPlus 2 3))
+        , testCase "times" $ assertClosed (translateCore [] (binOp stdTimes 2 3))
+        , testCase "minus" $ assertClosed (translateCore [] (binOp stdMinus 5 2))
+        , testCase "nested let" $
+            let xVar = Id (Name (mkLongident (pure "x")))
+             in assertClosed (translateCore [NonRec xVar (binOp stdPlus 2 3)] (Var xVar))
+        , testCase "lambda + application" $
+            let xVar = Id (Name (mkLongident (pure "x")))
+                lamApp = App (Lam xVar (App (App (Var stdPlus) (Var xVar)) (Lit (LitInt 1)))) (Lit (LitInt 4))
+             in assertClosed (translateCore [] lamApp)
+        ]
+    , testCase "end-to-end: 2 * 3 = 6" $ checkDecode "translate(2*3)" (translateCore [] (binOp stdTimes 2 3)) 6
+    ]
+
+-- | Build a core binary-operator application @(op a b)@.
+binOp :: Var -> Int -> Int -> CoreExpr
+binOp op a b = App (App (Var op) (Lit (LitInt a))) (Lit (LitInt b))
+
+-- | Assert that a SKI term is closed (has no free @V@ nodes).
+assertClosed :: Term.Expr -> Assertion
+assertClosed term = assertEqual "free V nodes" 0 (countV term)
+
+-- | Count the @V@ (variable) nodes in a SKI term.
+countV :: Term.Expr -> Int
+countV = \case
+  Term.V _ -> 1
+  Term.A f x -> countV f + countV x
+  _ -> 0
+
 {- | @1 + 1@ must decode (SKI) to 2, and the direct Church numeral 2 must also
 decode to 2. Validates the decoder on a minimal case.
 -}
@@ -80,7 +121,7 @@ diagTest = testCase "diag: 1 + 1 decodes to 2" $ do
     VInt 2 -> return ()
     other -> assertFailure $ "lml gave " <> show other <> ", expected VInt 2"
   checkDecode "church 2" (toSki (evalState (churchLam 2) 0)) 2
-  checkDecode "ski(1+1)" (encode [] resultExpr) 2
+  checkDecode "ski(1+1)" (translateCore [] resultExpr) 2
 
 {- | The spike: @let x = 2 + 3 in x@ must decode (SKI) to 5, agreeing with the
 LML interpreter, and the direct Church numeral 5 must also decode to 5. Uses a
@@ -100,7 +141,7 @@ spikeTest = testCase "spike: let x = 2 + 3 in x decodes to 5 (lml and ski agree)
   case lmlVal of
     VInt 5 -> return ()
     other -> assertFailure $ "lml gave " <> show other <> ", expected VInt 5"
-  checkDecode "ski(let x = 2+3 in x)" (encode binds resultExpr) 5
+  checkDecode "ski(let x = 2+3 in x)" (translateCore binds resultExpr) 5
   checkDecode "church 5" (toSki (evalState (churchLam 5) 0)) 5
 
 -- | Decode a SKI term to an integer and assert it equals @expected@.

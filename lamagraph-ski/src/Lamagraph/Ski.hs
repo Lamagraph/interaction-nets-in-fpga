@@ -12,6 +12,7 @@ module Lamagraph.Ski (
   module Lamagraph.Ski.Encode,
   module Lamagraph.Ski.Lambda,
   module Lamagraph.Ski.Run,
+  module Lamagraph.Ski.Translate,
   module Lamagraph.Ski.Value,
 ) where
 
@@ -25,6 +26,7 @@ import Lamagraph.Ski.Decode
 import Lamagraph.Ski.Encode
 import Lamagraph.Ski.Lambda
 import Lamagraph.Ski.Run
+import Lamagraph.Ski.Translate
 import Lamagraph.Ski.Value
 
 import Relude
@@ -40,7 +42,7 @@ form. Returns 'Left step' if the step budget is exceeded.
 -}
 encodeAndReduce :: [CoreBind] -> CoreExpr -> Either Int (Graph SKI)
 encodeAndReduce binds resultExpr =
-  reduceToNormalForm defaultMaxSteps (fromTerm (encode binds resultExpr))
+  reduceToNormalForm defaultMaxSteps (fromTerm (translateCore binds resultExpr))
 
 {- | The SKI graph for the Church numeral @n@ (for comparing against reduced
 program results).
