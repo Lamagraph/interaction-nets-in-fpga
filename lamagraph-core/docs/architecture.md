@@ -190,6 +190,7 @@ flowchart TD
     end
     subgraph L3["EDSL (exercised by tests only)"]
         Edsl["INet.Edsl"]
+        EdslAgents["INet.Edsl.Agents"]
         Define["INet.Define"]
     end
     subgraph L4["Memory management"]
@@ -227,7 +228,7 @@ flowchart TD
     style L3 fill:#f9f,stroke-dasharray: 5 5
 ```
 
-The EDSL layer is a dead end in the import graph: nothing in `src/` imports `INet.Edsl` or `INet.Define`; they are exercised by the test suite and intended for future front-ends.
+The EDSL layer is a dead end in the import graph: nothing in `src/` imports `INet.Edsl`, `INet.Edsl.Agents`, or `INet.Define`; they are exercised by the test suite and intended for future front-ends.
 
 **Authoritative version.** This layer overview is maintained by hand. The machine-extracted per-module graph is generated from `import` lines by `agent-scripts/gen-module-graph.sh` into [module-graph.generated.md](module-graph.generated.md) — if the two ever disagree, regenerate and trust the generated one. Consistency of the docs set (freshness of the generated graph, relative links, exposed-module counts) is checked by `agent-scripts/check-docs.sh`; run it after editing anything under `docs/`.
 
@@ -237,7 +238,7 @@ Layer summary:
 |---|---|
 | Foundations | `Core.Node`, `Core.Map` |
 | Contract | `INet.Net` |
-| EDSL (tests only) | `INet.Edsl`, `INet.Define` |
+| EDSL (tests only) | `INet.Edsl`, `INet.Edsl.Agents`, `INet.Define` |
 | Memory management | `Core.MemoryManager.MemoryManager`, `…NodeChanges`, `…ChangesAccumulator` |
 | Reduction core (generic) | `Core.Reducer` |
 | Concrete instances / fixtures | `Core.Concrete.ReduceRulesLambda`, `Core.Concrete.Initial` |
@@ -245,14 +246,15 @@ Layer summary:
 
 ### 5.1 Module map
 
-All 14 exposed modules; the per-module reference (exports, contracts, invariants) lives in Haddock.
+All 15 exposed modules; the per-module reference (exports, contracts, invariants) lives in Haddock.
 
 | Module | Responsibility | Layer |
 |---|---|---|
 | `Core.Node` | Net data types: `Node`, `Port`, `Edge`, addresses. | Foundations |
 | `Core.Map` | Tiny address-keyed association `Vec` for accumulated updates. | Foundations |
 | `INet.Net` | Agent-set interface: `ReduceRuleResult`, `INet` class. | Contract |
-| `INet.Edsl` | Builder DSL for reduction-rule bodies. | EDSL |
+| `INet.Edsl` | Builder DSL for reduction-rule bodies; generic `AgentLabel` class. | EDSL |
+| `INet.Edsl.Agents` | Template Haskell generator for an agent-set declaration skeleton. | EDSL |
 | `INet.Define` | Lambda agent set wired through the EDSL (tests only). | EDSL |
 | `Core.MemoryManager.MemoryManager` | Busy/active-pair bitmaps, free-address allocation. | Memory management |
 | `Core.MemoryManager.NodeChanges` | `Delta` / `Interface` / `Changes` types; applying patches. | Memory management |

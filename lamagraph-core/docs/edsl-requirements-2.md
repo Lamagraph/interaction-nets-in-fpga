@@ -51,7 +51,7 @@ second attempt.
 | F7 | Dispatch on the pair of agent constructors | body of `(\|><\|)` |
 | F8 | Static per-pair allocation count consumed by the memory manager | `getAddressesAllocationCount` |
 | F9 | Target class: vector of free addresses in, `ReduceRuleResult` (edges + loaded nodes) out | `INet.Net.INet` |
-| F10 | TemplateHaskell planned for routine generation: agent label type, GADT constructors, conversions, dispatch glue | comments in `Define.hs` |
+| F10 | TemplateHaskell generates the agent skeleton: label enum, kind tags, arity family, GADT constructors, `AgentLabel` instances (dispatch glue stays hand-written) | `INet.Edsl.Agents.declareAgents`, used in `INet.Define` |
 
 ### 2.2 Problems identified
 

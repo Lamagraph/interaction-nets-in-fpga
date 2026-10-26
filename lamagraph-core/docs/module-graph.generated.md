@@ -39,6 +39,7 @@ flowchart TD
     INet.Net --> Core.Reducer
     Core.Node --> INet.Define
     INet.Edsl --> INet.Define
+    INet.Edsl.Agents --> INet.Define
     INet.Net --> INet.Define
     Core.Node --> INet.Edsl
     INet.Net --> INet.Edsl

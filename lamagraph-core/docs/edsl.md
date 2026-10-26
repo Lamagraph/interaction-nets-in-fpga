@@ -13,23 +13,23 @@ a rule author must respect. Design rationale lives in
 
 ## 1. Modules and layering
 
-| Module          | Role                                                          |
-|-----------------|---------------------------------------------------------------|
-| `Core.Node`     | Foundation types: `Node`, `LoadedNode`, `Connection`, `Port`, `Edge`, address space |
-| `INet.Net`      | `INet` class and `ReduceRuleResult` — the contract a rule set implements |
-| `INet.Edsl`     | Rule-body machinery: builder state, `fresh`/`wire`, materialization; plus the agent-kind declaration skeleton |
-| `INet.Define`   | Concrete usage: `{Apply, Abstract, Erase, Duplicate}` runtime labels, rule bodies, `INet` instance |
+| Module             | Role                                                       |
+|--------------------|------------------------------------------------------------|
+| `Core.Node`        | Foundation types: `Node`, `LoadedNode`, `Connection`, `Port`, `Edge`, address space |
+| `INet.Net`         | `INet` class and `ReduceRuleResult` — the contract a rule set implements |
+| `INet.Edsl`        | Rule-body machinery: builder state, `fresh`/`wire`, materialization; the generic `AgentLabel` class |
+| `INet.Edsl.Agents` | Template Haskell generator: `declareAgents` emits an agent set's declaration skeleton |
+| `INet.Define`      | Concrete usage: `declareAgents` splice for `{Apply, Abstract, Erase, Duplicate}`, rule bodies, `INet` instance |
 
-The **machinery** in `INet.Edsl` is agent-set agnostic: `RuleBuilder`,
-`fresh`, `wire`, `nodeSecondaries`, and `runReduce` are parameterized over an
-agent kind (`k`) and label type (`l`) and work for any agent set without
-change (decision **D-Modules**). The **declaration skeleton** — `AgentKind`,
-`AgentArity`, and the `Agent` singleton — is *currently* defined in `INet.Edsl`
-but carries the lambda-calculus set (`Apply`, `Abstract`, `Erase`,
-`Duplicate`); a different agent set replaces these declarations (or the
-skeleton is parameterized) while the machinery stays untouched.
-`INet.Define` is the lambda-calculus-specific layer that declares runtime
-labels and writes the rules.
+The **machinery** in `INet.Edsl` is fully agent-set agnostic: `RuleBuilder`,
+`fresh`, `wire`, `nodeSecondaries`, and `runReduce` are parameterized over a
+singleton type (`s`) and label type (`l`) and know only the generic
+`AgentLabel` class (decision **D-Modules**). The **declaration skeleton** —
+runtime label enum, kind tags, arity family, and the singleton GADT — is
+generated per agent set by `INet.Edsl.Agents.declareAgents`, so a different
+agent set is declared by calling the generator with different names and
+declarations while the machinery stays untouched. `INet.Define` is the
+lambda-calculus-specific layer: one splice plus the rules.
 
 ## 2. Core types
 
@@ -124,36 +124,59 @@ Contract:
 - Dispatch is **symmetric**: rule bodies are written once; both orientations
   reuse them (decision **D-Symmetry**).
 
-## 4. Agent declaration skeleton
+## 4. Agent declaration skeleton (Template Haskell)
 
-The declaration *pattern* is generic — a type-level kind tag, a type family
-for the arity, a GADT singleton, and a label-mapping class. The concrete kinds
-below are the **lambda-calculus set**, currently declared in `INet.Edsl`
-(see §1 for the layering caveat).
+The declaration block for an agent set is generated from one list by
+`INet.Edsl.Agents.declareAgents :: String -> [AgentDecl] -> Q [Dec]`, where
+`AgentDecl = (String, Int)` is `(constructor name, secondary arity)`. Names of
+the singleton, tag, and runtime-label constructors are derived by suffix:
+
+| Input pair | Singleton | Tag | Runtime label |
+|---|---|---|---|
+| `("Apply", 2)` | `Apply` | `ApplyKind` | `ApplyLabel` |
+| `("Erase", 0)` | `Erase` | `EraseKind` | `EraseLabel` |
+
+The type-level names are fixed (`AgentKind`, `AgentArity`, `Agent`); only the
+runtime label **type** name is passed to the splice:
 
 ```haskell
+$(declareAgents
+  "AgentSimpleLambda"
+  [ ("Apply", 2)
+  , ("Abstract", 2)
+  , ("Erase", 0)
+  , ("Duplicate", 2)
+  ])
+
+-- generated:
+data AgentSimpleLambda = ApplyLabel | AbstractLabel | EraseLabel | DuplicateLabel
+  deriving (Generic, NFDataX, Show, Eq, ShowX)
+
 data AgentKind = ApplyKind | AbstractKind | EraseKind | DuplicateKind
+  deriving (Generic, Show, Eq, NFDataX, ShowX)
 
 type family AgentArity (k :: AgentKind) :: Nat where
-  AgentArity 'ApplyKind    = 2
-  AgentArity 'AbstractKind = 2
-  AgentArity 'EraseKind    = 0
+  AgentArity 'ApplyKind     = 2
+  AgentArity 'AbstractKind  = 2
+  AgentArity 'EraseKind     = 0
   AgentArity 'DuplicateKind = 2
 
 data Agent (k :: AgentKind) where
-  Apply    :: Agent 'ApplyKind
-  Abstract :: Agent 'AbstractKind
-  Erase    :: Agent 'EraseKind
-  Duplicate :: Agent 'DuplicateKind
+  Apply :: Agent 'ApplyKind
+  ...
 
-class (KnownNat (AgentArity k)) => AgentLabel k l | k -> l where
-  agentLabel :: Agent k -> l
+instance AgentLabel (Agent 'ApplyKind) AgentSimpleLambda where
+  type AgentArityOf (Agent 'ApplyKind) = AgentArity 'ApplyKind
+  agentLabel _ = ApplyLabel
 ```
 
-The arity is a **type-level** number (`AgentArity`), so `fresh` returns a
-secondary-port vector whose length GHC derives (decision **D-Agent**,
-**D-AgentArity**). `AgentLabel` maps a singleton tag to the flat runtime label
-stored in `Node._nodeType`.
+The arity is a **type-level** number, so `fresh` returns a secondary-port
+vector whose length GHC derives (decision **D-Agent**, **D-AgentArity**). The
+generic class in `INet.Edsl` is indexed by the singleton type and exposes its
+arity through the associated family `AgentArityOf`, which the generated
+instances bridge to the kind-indexed `AgentArity` family of the set. This is
+what lets the machinery name no concrete agent set. `AgentLabel` also maps the
+singleton to the flat runtime label stored in `Node._nodeType`.
 
 ## 5. Rule-body primitives
 
@@ -187,9 +210,11 @@ Converts a pair node's secondary slots into port pointers:
 ### 5.2 Creating fresh nodes
 
 ```haskell
-fresh :: (AgentLabel k l, KnownNat (AgentArity k), KnownNat p, KnownNat n) =>
-  Agent k -> RuleBuilder e n p l (AddressNumber, Vec (AgentArity k) PortPointer)
+fresh :: (AgentLabel s l, KnownNat (AgentArityOf s), KnownNat p, KnownNat n) =>
+  s -> RuleBuilder e n p l (AddressNumber, Vec (AgentArityOf s) PortPointer)
 ```
+
+The first argument is the generated singleton (e.g. `Apply` or `Erase`).
 
 Allocates the next address from the free pool, creates the node accumulator
 with that label, and returns the node's **address** (for wiring its principal
@@ -267,10 +292,10 @@ works for any agent arity, not just 2.
 ```haskell
 dupAnyBody ::
   forall a.
-  AgentLabel a AgentSimpleLambda =>
+  AgentLabel (Agent a) AgentSimpleLambda =>
   Agent a ->
   Vec 2 PortPointer ->
-  Vec (AgentArity a) PortPointer ->
+  Vec (AgentArityOf (Agent a)) PortPointer ->
   RuleBuilder 2 4 2 AgentSimpleLambda ()
 dupAnyBody copyAgent branchPorts xPorts = do
   (primA, copyA) <- fresh copyAgent
@@ -299,7 +324,7 @@ port of `X`: each fan picks a secondary pair and cross-connects it into the two
 copies. `copyAgent` is `Apply` or `Abstract`, whichever the pair matched.
 Same `Vec.mapAccumL` traversal as `eraseAnyBody` — the copy secondary ports and
 `X`'s ports are `zip`-3'ed so each fan gets matching ports; again no lists, and
-the `AgentArity a` of the copied agent is unconstrained (any arity).
+the `AgentArityOf (Agent a)` of the copied agent is unconstrained (any arity).
 
 ### 6.4 `INet AgentSimpleLambda 4 2 2` instance
 

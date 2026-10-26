@@ -163,7 +163,9 @@ Resolved by this discussion:
 
 Still open:
 
-- Q1 (whether TH emits whole `INet` instances or helper functions);
+- Q1 (whether TH emits whole `INet` instances or helper functions) —
+  **resolved**: helper declarations only (`INet.Edsl.Agents.declareAgents`
+  emits the agent skeleton); the `INet` instance is hand-written;
 - whether the sugar layer (SF17/SF18) is wanted for the first iteration;
 - concrete naming of body primitives (creation `fresh`, wiring `wire`,
   traversal) — partially fixed (see decisions.md D-Fresh/D-Wire), remaining

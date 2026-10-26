@@ -22,15 +22,14 @@ is written straight into the fresh nodes' accumulators), and `runReduce`
 materializes the state. Overflow of the fixed vectors is an explicit
 `errorX`, never silent truncation.
 
-"INet.Define" instantiates this DSL for the lambda-calculus agent set; the
-decision records referenced in the section headers live in
-@docs/decisions.md@.
+The agent set itself (kind tags, arity family, singleton GADT, runtime label
+enum) is not declared here: "INet.Edsl.Agents" generates it from one
+declaration list, and the usage module (e.g. "INet.Define") supplies the
+concrete names. This module only knows the generic `AgentLabel` class.
+Decision records live in @docs/decisions.md@.
 -}
 module INet.Edsl (
-  -- * Agent kinds (decisions.md D-Agent, D-AgentArity)
-  AgentKind (..),
-  AgentArity,
-  Agent (..),
+  -- * Agent labels (decisions.md D-Agent, D-AgentArity)
   AgentLabel (..),
 
   -- * Port pointers (decisions.md D-Wire)
@@ -67,31 +66,24 @@ import Core.Node
 import INet.Net
 
 -- ====================
--- Agent kinds (decisions.md D-Agent, D-AgentArity)
+-- Agent labels (decisions.md D-Agent, D-AgentArity)
 -- ====================
 
--- | Type-level tag for an agent kind
-data AgentKind = ApplyKind | AbstractKind | EraseKind | DuplicateKind
-  deriving (Generic, Show, Eq, NFDataX, ShowX)
+{- | Class mapping an agent singleton to its runtime label and exposing its
+type-level secondary arity.
 
--- | Type-level secondary-port arity of an agent
-type family AgentArity (k :: AgentKind) :: Nat where
-  AgentArity 'ApplyKind = 2
-  AgentArity 'AbstractKind = 2
-  AgentArity 'EraseKind = 0
-  AgentArity 'DuplicateKind = 2
+Indexing by the singleton type (rather than by the promoted tag) keeps this
+module free of any concrete agent set: the generator in "INet.Edsl.Agents"
+emits one instance per agent, bridging @AgentArityOf@ to the kind-indexed
+arity family of that set (e.g. @AgentArity (Agent 'ApplyKind) = AgentArity
+'ApplyKind@). Decision D-Agent.
+-}
+class (KnownNat (AgentArityOf s)) => AgentLabel (s :: Type) l | s -> l where
+  -- | Type-level secondary-port arity of the agent singleton
+  type AgentArityOf s :: Nat
 
--- | Singleton value per agent kind, used as the `fresh` argument
-data Agent (k :: AgentKind) where
-  Apply :: Agent 'ApplyKind
-  Abstract :: Agent 'AbstractKind
-  Erase :: Agent 'EraseKind
-  Duplicate :: Agent 'DuplicateKind
-
--- | Class mapping singleton agent to runtime label (decisions.md D-Agent)
-class (KnownNat (AgentArity k)) => AgentLabel k l | k -> l where
   -- | Convert singleton to runtime label
-  agentLabel :: Agent k -> l
+  agentLabel :: s -> l
 
 -- ====================
 -- Port references
@@ -242,10 +234,10 @@ wire p1 p2 = do
 
 -- | Create a fresh node; returns its address and bindable secondary ports (decisions.md D-Fresh)
 fresh ::
-  forall k l e n p.
-  (AgentLabel k l, KnownNat (AgentArity k), KnownNat p, KnownNat n) =>
-  Agent k ->
-  RuleBuilder e n p l (AddressNumber, Vec (AgentArity k) PortPointer)
+  forall s l e n p.
+  (AgentLabel s l, KnownNat (AgentArityOf s), KnownNat p, KnownNat n) =>
+  s ->
+  RuleBuilder e n p l (AddressNumber, Vec (AgentArityOf s) PortPointer)
 fresh agent = do
   s <- get
   let i = _nextAgent s
@@ -256,7 +248,7 @@ fresh agent = do
             Just freeAddr -> freeAddr
             Nothing -> errorX "fresh: free address pool exhausted"
           lbl = agentLabel agent
-          arity = natVal (SNat @(AgentArity k))
+          arity = natVal (SNat @(AgentArityOf s))
           acc = NodeAccumulator NotConnected (initSecAcc arity)
           ports = imap (\j _ -> Pointer addr (fromIntegral j)) (repeat ())
       put s{_agents = replace i (Just (addr, lbl, acc)) (_agents s), _nextAgent = i + 1}

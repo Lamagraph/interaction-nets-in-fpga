@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -11,8 +12,10 @@
 
 {- | Usage of the EDSL for the lambda-calculus agent set {Apply, Abstract, Erase, Duplicate}.
 
-Defines the runtime labels, rule bodies, and the @INet AgentSimpleLambda 4 2 2@
-instance. The generic EDSL machinery lives in "INet.Edsl".
+The agent-set skeleton (runtime label enum, kind tags, arity family, singleton
+GADT, label instances) is generated from one declaration list by
+"INet.Edsl.Agents"; the rule bodies and the @INet AgentSimpleLambda 4 2 2@
+instance are written by hand. The generic EDSL machinery lives in "INet.Edsl".
 
 __Note__ the name @AgentSimpleLambda@ is used twice in the project for two
 /different/ types: this module declares it with four constructors
@@ -31,25 +34,27 @@ import Control.Lens hiding (Index, imap, (:>))
 import Control.Monad.State (runState, state)
 import Core.Node
 import INet.Edsl
+import INet.Edsl.Agents (declareAgents)
 import INet.Net (INet (..), ReduceRuleResult)
 
 -- ====================
--- Runtime labels for the lambda-calculus agent set
+-- Agent set: {Apply, Abstract, Erase, Duplicate}
 -- ====================
 
--- | Flat runtime label stored in `Node._nodeType`.
--- Not to be confused with the same-named label type of "Core.Concrete.ReduceRulesLambda" (see the module header).
-data AgentSimpleLambda = ApplyLabel | AbstractLabel | EraseLabel | DuplicateLabel
-  deriving (Generic, NFDataX, Show, Eq, ShowX)
-
--- | Map singleton agent to runtime label (decisions.md D-Agent)
-instance AgentLabel 'ApplyKind AgentSimpleLambda where agentLabel _ = ApplyLabel
-
-instance AgentLabel 'AbstractKind AgentSimpleLambda where agentLabel _ = AbstractLabel
-
-instance AgentLabel 'EraseKind AgentSimpleLambda where agentLabel _ = EraseLabel
-
-instance AgentLabel 'DuplicateKind AgentSimpleLambda where agentLabel _ = DuplicateLabel
+{- | Generate the flat runtime label @AgentSimpleLambda@ (stored in
+@Node._nodeType@; not to be confused with the same-named label type of
+"Core.Concrete.ReduceRulesLambda", see the module header), the promoted-tag
+enum, the kind-indexed arity family, the singleton GADT, and the
+@AgentLabel@ instances.
+-}
+$( declareAgents
+     "AgentSimpleLambda"
+     [ ("Apply", 2)
+     , ("Abstract", 2)
+     , ("Erase", 0)
+     , ("Duplicate", 2)
+     ]
+ )
 
 -- ====================
 -- Secondary-port indices for arity-2 agents
@@ -103,10 +108,10 @@ state purely (synthesizable: no lists, no monadic folding).
 -}
 dupAnyBody ::
   forall a.
-  (AgentLabel a AgentSimpleLambda) =>
+  (AgentLabel (Agent a) AgentSimpleLambda) =>
   Agent a ->
   Vec 2 PortPointer ->
-  Vec (AgentArity a) PortPointer ->
+  Vec (AgentArityOf (Agent a)) PortPointer ->
   RuleBuilder 2 4 2 AgentSimpleLambda ()
 dupAnyBody copyAgent branchPorts xPorts = do
   (primA, copyA) <- fresh copyAgent
