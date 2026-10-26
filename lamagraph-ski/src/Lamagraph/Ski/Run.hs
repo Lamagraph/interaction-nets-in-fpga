@@ -4,6 +4,9 @@ budget is exhausted. No IO and no per-step printing, so it is suitable for
 property tests.
 -}
 module Lamagraph.Ski.Run (
+  MaxSteps (..),
+  StepOverflow (..),
+  defaultMaxSteps,
   reduceToNormalForm,
   reduceSteps,
   applyOneReport,
@@ -24,6 +27,22 @@ import GraphRewriting (
 import INet.Graph (SKI (..))
 import INet.Rules qualified as Rules
 
+{- | A step budget bounding SKI reduction. Wraps the raw step count so a step
+budget is not confused with a step count or a plain integer.
+-}
+newtype MaxSteps = MaxSteps Int
+  deriving (Eq, Ord, Show)
+
+{- | The step count at which a reduction exhausted its 'MaxSteps' budget before
+reaching normal form.
+-}
+newtype StepOverflow = StepOverflow Int
+  deriving (Eq, Ord, Show)
+
+-- | The default step budget for reducing a SKI net to normal form.
+defaultMaxSteps :: MaxSteps
+defaultMaxSteps = MaxSteps 100000
+
 -- | The full SKI reduction rule set.
 skiRules :: [Rule SKI]
 skiRules =
@@ -42,14 +61,14 @@ skiRules =
   , Rules.eliminate
   ]
 
-{- | Reduce a SKI graph to normal form, or return 'Left step' if the step
-budget is exceeded before reaching normal form.
+{- | Reduce a SKI graph to normal form, or return 'Left' with the step count at
+which the 'MaxSteps' budget was exhausted.
 -}
-reduceToNormalForm :: Int -> Graph SKI -> Either Int (Graph SKI)
-reduceToNormalForm maxSteps g0 =
+reduceToNormalForm :: MaxSteps -> Graph SKI -> Either StepOverflow (Graph SKI)
+reduceToNormalForm (MaxSteps maxSteps) g0 =
   case reduceSteps maxSteps g0 of
     (_, g, True) -> Right g
-    (step, _, False) -> Left step
+    (step, _, False) -> Left (StepOverflow step)
 
 {- | Reduce a SKI graph for at most @n@ steps. Returns the step count reached,
 the resulting graph, and whether normal form was reached (no rule fires).

@@ -73,7 +73,7 @@ acyclic graph, as a reduced normal form is.
 -}
 countLogical :: (SKI -> Bool) -> Graph SKI -> Int
 countLogical match = evalGraph trav
-  where
+ where
   trav :: Rewrite SKI Int
   trav = do
     r <- findR

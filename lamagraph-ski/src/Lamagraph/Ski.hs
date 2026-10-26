@@ -3,7 +3,6 @@
 design doc for the pipeline and encoding choices.
 -}
 module Lamagraph.Ski (
-  defaultMaxSteps,
   encodeAndReduce,
   churchGraph,
   module Lamagraph.Ski.Church,
@@ -33,14 +32,11 @@ import Relude
 
 -- * Pipeline helpers
 
--- | Default step budget for reducing a SKI net to normal form.
-defaultMaxSteps :: Int
-defaultMaxSteps = 100000
-
 {- | Encode a closed LML core program to a SKI term and reduce it to normal
-form. Returns 'Left step' if the step budget is exceeded.
+form with the default step budget. Returns 'Left' with the step count at which
+the budget was exhausted.
 -}
-encodeAndReduce :: [CoreBind] -> CoreExpr -> Either Int (Graph SKI)
+encodeAndReduce :: [CoreBind] -> CoreExpr -> Either StepOverflow (Graph SKI)
 encodeAndReduce binds resultExpr =
   reduceToNormalForm defaultMaxSteps (fromTerm (translateCore binds resultExpr))
 

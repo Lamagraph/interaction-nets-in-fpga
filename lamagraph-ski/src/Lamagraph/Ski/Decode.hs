@@ -20,7 +20,7 @@ import Common.Term qualified as Term
 import INet.Graph (SKI (..), fromTerm)
 
 import Lamagraph.Ski.Compare (countLogical)
-import Lamagraph.Ski.Run (reduceToNormalForm)
+import Lamagraph.Ski.Run (MaxSteps (..), StepOverflow (..), reduceToNormalForm)
 
 -- | Marker name for one unit in the unary decoding chain.
 tickName :: String
@@ -32,9 +32,9 @@ baseName = "__base__"
 
 {- | Decode a Church-encoded integer from a SKI term. The term must denote a
 Church numeral (a function of two arguments). Returns the decoded integer,
-or 'Left step' if the step budget is exceeded before reaching normal form.
+or 'Left' with the step count at which the 'MaxSteps' budget was exhausted.
 -}
-decodeChurch :: Int -> Term.Expr -> Either Int Int
+decodeChurch :: MaxSteps -> Term.Expr -> Either StepOverflow Int
 decodeChurch maxSteps term =
   let decoderFn = Term.A (Term.A Term.S (Term.A Term.K (Term.V tickName))) Term.I
       full = Term.A (Term.A term decoderFn) (Term.V baseName)

@@ -4,6 +4,7 @@ import Relude
 
 import Common.Term qualified as Term
 import Data.HashMap.Lazy qualified as HashMap
+import INet.Graph (fromTerm)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -16,11 +17,11 @@ import Lamagraph.Ski
 {- | Step budget for reducing a decoded term to normal form. Generous because
 the naive SKI translation is verbose and the fixed-order reducer is slow.
 -}
-maxSteps :: Int
-maxSteps = 500000
+maxSteps :: MaxSteps
+maxSteps = MaxSteps 500000
 
 main :: IO ()
-main = defaultMain $ testGroup "lamagraph-ski" [valueTests, churchTests, translateTests, diagTest, spikeTest]
+main = defaultMain $ testGroup "lamagraph-ski" [valueTests, churchTests, translateTests, runnerTests, diagTest, spikeTest]
 
 {- | Unit tests for 'canonicalize' over the runtime value constructors, plus the
 error case for a non-result value (a primitive).
@@ -109,6 +110,38 @@ countV = \case
   Term.A f x -> countV f + countV x
   _ -> 0
 
+{- | Tests for the step-bounded SKI runner: a well-behaved term (the Church
+numeral 5) reduces to normal form within the budget, while the non-terminating
+term @Omega = (\\x. x x) (\\x. x x)@ exhausts the budget.
+-}
+runnerTests :: TestTree
+runnerTests =
+  testGroup
+    "reduceToNormalForm"
+    [ testCase "church 5 reduces to normal form" $ assertReachesNormalForm (intToChurch 5)
+    , testCase "Omega hits the step bound" $ assertHitsBound omegaTerm
+    ]
+
+-- | Assert that a SKI term reduces to normal form within the default budget.
+assertReachesNormalForm :: Term.Expr -> Assertion
+assertReachesNormalForm term =
+  case reduceToNormalForm defaultMaxSteps (fromTerm term) of
+    Right _ -> return ()
+    Left (StepOverflow step) -> assertFailure $ "did not reach normal form within " <> show step <> " steps"
+
+-- | Assert that a SKI term exhausts a small step budget (does not reach normal form).
+assertHitsBound :: Term.Expr -> Assertion
+assertHitsBound term =
+  case reduceToNormalForm (MaxSteps 100) (fromTerm term) of
+    Left (StepOverflow _) -> return ()
+    Right _ -> assertFailure "should not reach normal form"
+
+{- | The SKI term for @Omega = (\\x. x x) (\\x. x x)@, which reduces to itself
+forever (non-terminating).
+-}
+omegaTerm :: Term.Expr
+omegaTerm = toSki (LApp (LLam "x" (LApp (LVar "x") (LVar "x"))) (LLam "y" (LApp (LVar "y") (LVar "y"))))
+
 {- | @1 + 1@ must decode (SKI) to 2, and the direct Church numeral 2 must also
 decode to 2. Validates the decoder on a minimal case.
 -}
@@ -149,7 +182,7 @@ checkDecode :: String -> Term.Expr -> Int -> IO ()
 checkDecode label term expected = do
   let r = decodeChurch maxSteps term
   case r of
-    Left step -> assertFailure $ label <> ": reduction did not reach normal form within " <> show step <> " steps"
+    Left (StepOverflow step) -> assertFailure $ label <> ": reduction did not reach normal form within " <> show step <> " steps"
     Right n -> assertEqual (label <> " decoded value") expected n
 
 {- | Evaluate a core expression (with its enclosing bindings) with the LML
