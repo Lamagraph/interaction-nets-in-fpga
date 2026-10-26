@@ -41,12 +41,15 @@ translateCore binds resultExpr =
   fmap toSki (evalState (runExceptT (buildLam binds resultExpr)) 0)
 
 {- | Build the lambda term for a program: convert the result expression, then
-inline the top-level (non-recursive) bindings.
+inline the top-level (non-recursive) bindings. The bindings are inlined in
+reverse source order: a later binding's right-hand side may reference an earlier
+binding, so the earlier binding must still be a live variable when the later one
+is inlined (otherwise the reference would be left free).
 -}
 buildLam :: [CoreBind] -> CoreExpr -> TranslateM Lam
 buildLam binds resultExpr = do
   resultLam <- coreExprToLam resultExpr
-  inlineBinds binds resultLam
+  inlineBinds (reverse binds) resultLam
 
 inlineBinds :: [CoreBind] -> Lam -> TranslateM Lam
 inlineBinds [] lam = pure lam

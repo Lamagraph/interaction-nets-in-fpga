@@ -235,14 +235,10 @@ Driver pipeline (parse, resolve, typecheck, desugar) and then through
 'translateAndRun', which must agree with the LML interpreter. The result is the
 right-hand side of the last top-level binding.
 
-The set covers addition, multiplication, an anonymous lambda, and a named
-lambda bound by a top-level @let@. The lambda examples use an identity body
-(@fun x -> x@) so they exercise the lambda mechanism (abstraction +
-application) without the cost of a Church-arithmetic reduction. The
-saturating-subtraction example (@5 - 2@), a nested-@let@ example, and
-lambda-with-arithmetic bodies are intentionally omitted: under the current
-(unoptimized) SKI reducer they take many minutes each, so they are deferred
-until the reduction is sped up (see the S4 note on exercising @'-'@).
+The set covers addition, multiplication, saturating subtraction, an anonymous
+lambda, a named lambda bound by a top-level @let@, a nested @let@, and a lambda
+with an arithmetic body. These were the examples deferred while the SKI reducer
+was unoptimized; the worklist driver makes them fast enough to run in the suite.
 -}
 fixedExampleTests :: TestTree
 fixedExampleTests =
@@ -250,9 +246,13 @@ fixedExampleTests =
     "translateAndRun (fixed examples)"
     [ testCase "2 + 3 = 5" $ assertTranslateAndRun "module M\nlet result = 2 + 3" (RInt 5)
     , testCase "2 * 3 = 6" $ assertTranslateAndRun "module M\nlet result = 2 * 3" (RInt 6)
+    , testCase "5 - 2 = 3" $ assertTranslateAndRun "module M\nlet result = 5 - 2" (RInt 3)
     , testCase "(fun x -> x) 4 = 4" $ assertTranslateAndRun "module M\nlet result = (fun x -> x) 4" (RInt 4)
     , testCase "let f = fun x -> x in f 3 = 3" $
         assertTranslateAndRun "module M\nlet f = fun x -> x\nlet result = f 3" (RInt 3)
+    , testCase "nested let: (2+3)*2 = 10" $
+        assertTranslateAndRun "module M\nlet a = 2 + 3\nlet b = a * 2\nlet result = b" (RInt 10)
+    , testCase "(fun x -> x + 1) 4 = 5" $ assertTranslateAndRun "module M\nlet result = (fun x -> x + 1) 4" (RInt 5)
     ]
 
 {- | Compile a LML source program and run it through 'translateAndRun', asserting
