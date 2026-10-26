@@ -26,6 +26,7 @@ library
       Lamagraph.Ski.Compare
       Lamagraph.Ski.Decode
       Lamagraph.Ski.Encode
+      Lamagraph.Ski.Error
       Lamagraph.Ski.Lambda
       Lamagraph.Ski.Run
       Lamagraph.Ski.Translate

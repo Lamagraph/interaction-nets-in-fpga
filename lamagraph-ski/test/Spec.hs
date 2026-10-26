@@ -21,7 +21,9 @@ maxSteps :: MaxSteps
 maxSteps = MaxSteps 500000
 
 main :: IO ()
-main = defaultMain $ testGroup "lamagraph-ski" [valueTests, churchTests, translateTests, runnerTests, diagTest, spikeTest]
+main =
+  defaultMain $
+    testGroup "lamagraph-ski" [valueTests, churchTests, translateTests, runnerTests, skiEvalTests, diagTest, spikeTest]
 
 {- | Unit tests for 'canonicalize' over the runtime value constructors, plus the
 error case for a non-result value (a primitive).
@@ -80,24 +82,32 @@ translateTests =
     "translateCore"
     [ testGroup
         "closed (no free V nodes)"
-        [ testCase "int literal" $ assertClosed (translateCore [] (Lit (LitInt 5)))
-        , testCase "plus" $ assertClosed (translateCore [] (binOp stdPlus 2 3))
-        , testCase "times" $ assertClosed (translateCore [] (binOp stdTimes 2 3))
-        , testCase "minus" $ assertClosed (translateCore [] (binOp stdMinus 5 2))
+        [ testCase "int literal" $ assertClosed (mustTranslate [] (Lit (LitInt 5)))
+        , testCase "plus" $ assertClosed (mustTranslate [] (binOp stdPlus 2 3))
+        , testCase "times" $ assertClosed (mustTranslate [] (binOp stdTimes 2 3))
+        , testCase "minus" $ assertClosed (mustTranslate [] (binOp stdMinus 5 2))
         , testCase "nested let" $
             let xVar = Id (Name (mkLongident (pure "x")))
-             in assertClosed (translateCore [NonRec xVar (binOp stdPlus 2 3)] (Var xVar))
+             in assertClosed (mustTranslate [NonRec xVar (binOp stdPlus 2 3)] (Var xVar))
         , testCase "lambda + application" $
             let xVar = Id (Name (mkLongident (pure "x")))
                 lamApp = App (Lam xVar (App (App (Var stdPlus) (Var xVar)) (Lit (LitInt 1)))) (Lit (LitInt 4))
-             in assertClosed (translateCore [] lamApp)
+             in assertClosed (mustTranslate [] lamApp)
         ]
-    , testCase "end-to-end: 2 * 3 = 6" $ checkDecode "translate(2*3)" (translateCore [] (binOp stdTimes 2 3)) 6
+    , testCase "end-to-end: 2 * 3 = 6" $ checkDecode "translate(2*3)" (mustTranslate [] (binOp stdTimes 2 3)) 6
     ]
 
 -- | Build a core binary-operator application @(op a b)@.
 binOp :: Var -> Int -> Int -> CoreExpr
 binOp op a b = App (App (Var op) (Lit (LitInt a))) (Lit (LitInt b))
+
+{- | Translate a core program, crashing with a clear message on failure (for
+tests that expect a successful translation).
+-}
+mustTranslate :: [CoreBind] -> CoreExpr -> Term.Expr
+mustTranslate binds expr = case translateCore binds expr of
+  Right t -> t
+  Left e -> error $ "mustTranslate: unexpected translation failure: " <> show e
 
 -- | Assert that a SKI term is closed (has no free @V@ nodes).
 assertClosed :: Term.Expr -> Assertion
@@ -142,6 +152,30 @@ forever (non-terminating).
 omegaTerm :: Term.Expr
 omegaTerm = toSki (LApp (LLam "x" (LApp (LVar "x") (LVar "x"))) (LLam "y" (LApp (LVar "y") (LVar "y"))))
 
+{- | Tests for 'skiEval': distinct small integers evaluate to distinct values,
+and the decoder is stable across equivalent encodings (@1 + 1@ and the direct
+Church numeral @2@ both evaluate to @2@).
+-}
+skiEvalTests :: TestTree
+skiEvalTests =
+  testGroup
+    "skiEval"
+    [ testCase "distinct small ints" $ do
+        assertSkiEval [] (Lit (LitInt 0)) (RInt 0)
+        assertSkiEval [] (Lit (LitInt 1)) (RInt 1)
+        assertSkiEval [] (Lit (LitInt 2)) (RInt 2)
+        assertSkiEval [] (Lit (LitInt 3)) (RInt 3)
+    , testCase "stable across equivalent encodings (1+1 == church 2)" $ do
+        assertSkiEval [] (binOp stdPlus 1 1) (RInt 2)
+        assertSkiEval [] (Lit (LitInt 2)) (RInt 2)
+    ]
+
+-- | Evaluate a core program via 'skiEval' and assert it equals @expected@.
+assertSkiEval :: [CoreBind] -> CoreExpr -> Value' -> IO ()
+assertSkiEval binds expr expected = case skiEval binds expr of
+  Right v -> assertEqual "skiEval" expected v
+  Left e -> assertFailure $ "skiEval failed: " <> show e
+
 {- | @1 + 1@ must decode (SKI) to 2, and the direct Church numeral 2 must also
 decode to 2. Validates the decoder on a minimal case.
 -}
@@ -154,7 +188,7 @@ diagTest = testCase "diag: 1 + 1 decodes to 2" $ do
     VInt 2 -> return ()
     other -> assertFailure $ "lml gave " <> show other <> ", expected VInt 2"
   checkDecode "church 2" (toSki (evalState (churchLam 2) 0)) 2
-  checkDecode "ski(1+1)" (translateCore [] resultExpr) 2
+  checkDecode "ski(1+1)" (mustTranslate [] resultExpr) 2
 
 {- | The spike: @let x = 2 + 3 in x@ must decode (SKI) to 5, agreeing with the
 LML interpreter, and the direct Church numeral 5 must also decode to 5. Uses a
@@ -174,7 +208,7 @@ spikeTest = testCase "spike: let x = 2 + 3 in x decodes to 5 (lml and ski agree)
   case lmlVal of
     VInt 5 -> return ()
     other -> assertFailure $ "lml gave " <> show other <> ", expected VInt 5"
-  checkDecode "ski(let x = 2+3 in x)" (translateCore binds resultExpr) 5
+  checkDecode "ski(let x = 2+3 in x)" (mustTranslate binds resultExpr) 5
   checkDecode "church 5" (toSki (evalState (churchLam 5) 0)) 5
 
 -- | Decode a SKI term to an integer and assert it equals @expected@.

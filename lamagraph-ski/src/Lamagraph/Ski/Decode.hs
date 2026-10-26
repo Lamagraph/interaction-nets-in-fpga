@@ -11,6 +11,7 @@ module Lamagraph.Ski.Decode (
   tickName,
   baseName,
   decodeChurch,
+  skiEval,
 ) where
 
 import Relude
@@ -18,9 +19,13 @@ import Relude
 import Common.Term qualified as Term
 
 import INet.Graph (SKI (..), fromTerm)
+import Lamagraph.Compiler.Core (CoreBind, CoreExpr)
 
 import Lamagraph.Ski.Compare (countLogical)
-import Lamagraph.Ski.Run (MaxSteps (..), StepOverflow (..), reduceToNormalForm)
+import Lamagraph.Ski.Error (SkiError (..))
+import Lamagraph.Ski.Run (MaxSteps (..), StepOverflow (..), defaultMaxSteps, reduceToNormalForm)
+import Lamagraph.Ski.Translate (translateCore)
+import Lamagraph.Ski.Value (Value' (..))
 
 -- | Marker name for one unit in the unary decoding chain.
 tickName :: String
@@ -46,3 +51,17 @@ decodeChurch maxSteps term =
   isTick = \case
     V{name = n} -> n == tickName
     _ -> False
+
+{- | Evaluate a closed LML core program to a canonical value via the SKI
+pipeline: translate to a SKI term, then decode the result with the default step
+budget. The minimal subset only produces 'RInt' (a Church numeral); the other
+'Value'' constructors are out of scope (Task C). Fails with
+'UnsupportedConstruct' if the program uses a construct outside the minimal
+subset, or 'StepOverflowReached' if the reduction exhausts the budget.
+-}
+skiEval :: [CoreBind] -> CoreExpr -> Either SkiError Value'
+skiEval binds resultExpr = do
+  expr <- translateCore binds resultExpr
+  case decodeChurch defaultMaxSteps expr of
+    Left step -> Left (StepOverflowReached step)
+    Right n -> Right (RInt n)
