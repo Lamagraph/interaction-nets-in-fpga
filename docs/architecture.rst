@@ -124,10 +124,51 @@ Haskell compiler for the LML language. Source lives under
         ``eval``, ``nets``, ``parser``, ``typechecker``) and
         ``test/golden-module/``; unit/property tests sit beside the modules
         they exercise (e.g. ``test/Lamagraph/Compiler/<Area>/*Test.hs``).
-   * - ``lamagraph-compiler.cabal``
+    * - ``lamagraph-compiler.cabal``
+      - Package descriptor, generated from ``package.yaml`` by hpack.
+    * - ``CHANGELOG.md``
+      - User-facing release notes (Keep a Changelog + PVP).
+
+lamagraph-ski
+=============
+
+Translator from the LML core language to the SKI combinator calculus (L1) and a
+pure interaction-net runner; differentially tests the LML interpreter against
+the SKI interpreter. Design notes in :doc:`lml-ski`. Source lives under
+``src/Lamagraph/Ski/``.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Path
+     - Contents
+   * - ``src/Lamagraph/Ski.hs``
+     - Top-level: ``encodeAndReduce``, ``translateAndRun`` (differential entry
+       point), ``churchGraph``.
+   * - ``src/Lamagraph/Ski/Translate.hs``
+     - Core→SKI translator (``translateCore``); inlines non-recursive lets and
+       swaps ``+ - *`` for Church combinators.
+   * - ``src/Lamagraph/Ski/Church.hs``
+     - Church encodings (numerals, ``add``/``mult``/``sub``/``pred``, booleans).
+   * - ``src/Lamagraph/Ski/Lambda.hs``
+     - Named-``λ`` IR and the lambda→SKI abstraction rule (``toSki``).
+   * - ``src/Lamagraph/Ski/Run.hs``
+     - Pure step-bounded reducer (``MaxSteps``, ``StepOverflow``,
+       ``reduceToNormalForm``) over the SKI rule set.
+   * - ``src/Lamagraph/Ski/Decode.hs``
+     - Result extraction: unary ``decodeChurch`` and ``skiEval``.
+   * - ``src/Lamagraph/Ski/Compare.hs``
+     - D-expanding logical node count (``countLogical``) used by the decoder.
+   * - ``src/Lamagraph/Ski/Value.hs``
+     - Canonical ``Value'`` and ``canonicalize`` (runtime value → ``Value'``).
+   * - ``src/Lamagraph/Ski/Encode.hs``
+     - ``encodeValue`` (canonical value → SKI term).
+   * - ``src/Lamagraph/Ski/Error.hs``
+     - ``SkiError`` (translation / reduction / comparison errors).
+   * - ``test/Spec.hs``
+     - Test suite (unit + fixed-example differential tests).
+   * - ``lamagraph-ski.cabal``
      - Package descriptor, generated from ``package.yaml`` by hpack.
-   * - ``CHANGELOG.md``
-     - User-facing release notes (Keep a Changelog + PVP).
 
 Documentation
 =============

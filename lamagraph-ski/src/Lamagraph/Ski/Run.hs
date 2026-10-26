@@ -33,8 +33,8 @@ budget is not confused with a step count or a plain integer.
 newtype MaxSteps = MaxSteps Int
   deriving (Eq, Ord, Show)
 
-{- | The step count at which a reduction exhausted its 'MaxSteps' budget before
-reaching normal form.
+{- | The step count at which a reduction exhausted its
+'Lamagraph.Ski.Run.MaxSteps' budget before reaching normal form.
 -}
 newtype StepOverflow = StepOverflow Int
   deriving (Eq, Ord, Show)
@@ -62,7 +62,7 @@ skiRules =
   ]
 
 {- | Reduce a SKI graph to normal form, or return 'Left' with the step count at
-which the 'MaxSteps' budget was exhausted.
+which the 'Lamagraph.Ski.Run.MaxSteps' budget was exhausted.
 -}
 reduceToNormalForm :: MaxSteps -> Graph SKI -> Either StepOverflow (Graph SKI)
 reduceToNormalForm (MaxSteps maxSteps) g0 =

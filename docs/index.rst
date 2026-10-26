@@ -16,6 +16,7 @@ Contents
    :caption: Documentation
 
    architecture
+   lml-ski
    contributing
 
 Navigation
@@ -23,6 +24,8 @@ Navigation
 
 - :doc:`architecture` — the project structure map (where each kind of thing
   lives). Read this before exploring the code.
+- :doc:`lml-ski` — design of the LML→SKI translator and the differential
+  (LML vs SKI) test pipeline.
 - :doc:`contributing` — the contribution guidelines (integration branch, commit
   format, merge strategy).
 - ``README.md`` — project landing page (interaction-net formalism, required

@@ -76,7 +76,7 @@ coreExprToLam = \case
   Let (Rec _) _ -> throwError (UnsupportedConstruct "recursive let")
   other -> throwError (UnsupportedConstruct ("construct " <> show other))
 
--- | Render a core 'Var' as a plain string (dot-joined long identifier).
+-- | Render a core variable as a plain string (dot-joined long identifier).
 varName :: Var -> String
 varName (Id (Name (Longident texts))) = T.unpack (T.intercalate "." (toList texts))
 

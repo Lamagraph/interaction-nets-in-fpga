@@ -37,7 +37,8 @@ baseName = "__base__"
 
 {- | Decode a Church-encoded integer from a SKI term. The term must denote a
 Church numeral (a function of two arguments). Returns the decoded integer,
-or 'Left' with the step count at which the 'MaxSteps' budget was exhausted.
+or 'Left' with the step count at which the 'Lamagraph.Ski.Run.MaxSteps' budget
+was exhausted.
 -}
 decodeChurch :: MaxSteps -> Term.Expr -> Either StepOverflow Int
 decodeChurch maxSteps term =

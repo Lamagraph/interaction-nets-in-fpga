@@ -32,4 +32,4 @@ jobs:
 
       - name: Build Haddock docs
         run: |
-          stack haddock lamagraph-core lamagraph-compiler
+          stack haddock lamagraph-core lamagraph-compiler lamagraph-ski

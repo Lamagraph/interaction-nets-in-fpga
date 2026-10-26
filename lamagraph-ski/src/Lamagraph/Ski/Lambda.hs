@@ -7,6 +7,7 @@ module Lamagraph.Ski.Lambda (
   fv,
   subst,
   toSki,
+  abstractSki,
   freshName,
 ) where
 

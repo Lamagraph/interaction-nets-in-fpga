@@ -4,7 +4,7 @@ combinator calculus.
 
 The lambda structures mirror the Core-language encodings in
 'Lamagraph.Compiler.Nets.Encodings.LambdaCalculusCore' (re-expressed over the
-'Ski' 'Lam' IR rather than duplicated). Binder names are generated fresh (via a
+'Lam' IR rather than duplicated). Binder names are generated fresh (via a
 'State' counter) so that composing encodings never introduces a name clash.
 -}
 module Lamagraph.Ski.Church (
