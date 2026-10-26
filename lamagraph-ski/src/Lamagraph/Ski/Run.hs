@@ -9,6 +9,7 @@ module Lamagraph.Ski.Run (
   defaultMaxSteps,
   reduceToNormalForm,
   reduceSteps,
+  reduceStepsFixedOrder,
   applyOneReport,
   showGraph,
 ) where
@@ -19,13 +20,14 @@ import Data.List qualified as List
 import GraphRewriting (
   Graph,
   Rule,
-  apply,
+  apply',
   edges,
-  execGraph,
   nodes,
+  runGraph,
  )
 import INet.Graph (SKI (..))
 import INet.Rules qualified as Rules
+import Lamagraph.Ski.Worklist (reduceStepsWL)
 
 {- | A step budget bounding SKI reduction. Wraps the raw step count so a step
 budget is not confused with a step count or a plain integer.
@@ -70,11 +72,20 @@ reduceToNormalForm (MaxSteps maxSteps) g0 =
     (_, g, True) -> Right g
     (step, _, False) -> Left (StepOverflow step)
 
-{- | Reduce a SKI graph for at most @n@ steps. Returns the step count reached,
-the resulting graph, and whether normal form was reached (no rule fires).
+{- | Reduce a SKI graph for at most @n@ steps using the worklist driver
+('Lamagraph.Ski.Worklist.reduceStepsWL'). Returns the step count reached, the
+resulting graph, and whether normal form was reached (no rule fires).
 -}
 reduceSteps :: Int -> Graph SKI -> (Int, Graph SKI, Bool)
-reduceSteps maxSteps g0 = go 0 g0 maxSteps
+reduceSteps = reduceStepsWL
+
+{- | Reduce a SKI graph for at most @n@ steps with the fixed-order driver: on
+every step it tries each rule (in a fixed order) against the whole graph. This
+is the reference implementation — correct but O(graph size) per step — kept for
+debugging and for verifying the worklist driver against it.
+-}
+reduceStepsFixedOrder :: Int -> Graph SKI -> (Int, Graph SKI, Bool)
+reduceStepsFixedOrder maxSteps g0 = go 0 g0 maxSteps
  where
   go step g remaining
     | remaining <= 0 = (step, g, False)
@@ -108,8 +119,8 @@ applyOne g0 = go g0 skiRules
  where
   go _ [] = (False, g0)
   go gcur (r : rs) =
-    let g' = execGraph (apply r) gcur
-     in if g' /= gcur then (True, g') else go g' rs
+    let (fired, g') = runGraph (apply' r) gcur
+     in if fired then (True, g') else go gcur rs
 
 -- | Apply one step, reporting which rule fired (if any). For debugging.
 applyOneReport :: Graph SKI -> (Maybe String, Graph SKI)
@@ -117,8 +128,8 @@ applyOneReport g0 = go g0 (zip ruleNames skiRules)
  where
   go _ [] = (Nothing, g0)
   go gcur ((name, r) : rs) =
-    let g' = execGraph (apply r) gcur
-     in if g' /= gcur then (Just name, g') else go g' rs
+    let (fired, g') = runGraph (apply' r) gcur
+     in if fired then (Just name, g') else go gcur rs
 
 {- | A human-readable dump of a SKI graph (its nodes and the node sets each
 edge connects). For debugging / the S2 spike.

@@ -31,6 +31,7 @@ library
       Lamagraph.Ski.Run
       Lamagraph.Ski.Translate
       Lamagraph.Ski.Value
+      Lamagraph.Ski.Worklist
   other-modules:
       Paths_lamagraph_ski
   hs-source-dirs:

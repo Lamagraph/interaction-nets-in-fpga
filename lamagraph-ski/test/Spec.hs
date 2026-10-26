@@ -4,7 +4,8 @@ import Relude
 
 import Common.Term qualified as Term
 import Data.HashMap.Lazy qualified as HashMap
-import INet.Graph (fromTerm)
+import GraphRewriting (Graph)
+import INet.Graph (SKI (..), fromTerm)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -31,6 +32,7 @@ main =
       , churchTests
       , translateTests
       , runnerTests
+      , equivalenceTests
       , skiEvalTests
       , fixedExampleTests
       , benchmarkTests
@@ -165,6 +167,45 @@ forever (non-terminating).
 omegaTerm :: Term.Expr
 omegaTerm = toSki (LApp (LLam "x" (LApp (LVar "x") (LVar "x"))) (LLam "y" (LApp (LVar "y") (LVar "y"))))
 
+{- | Equivalence tests: the worklist driver ('reduceSteps') and the fixed-order
+reference ('reduceStepsFixedOrder') must both reach normal form and decode to the
+same value on a set of small terms. Guards against a regression in the worklist
+driver's correctness (it uses a different contraction order, so the step count
+may differ, but the decoded result must not).
+-}
+equivalenceTests :: TestTree
+equivalenceTests =
+  testGroup
+    "worklist vs fixed-order equivalence"
+    [ equiv "church 0" (intToChurch 0)
+    , equiv "church 5" (intToChurch 5)
+    , equiv "church 10" (intToChurch 10)
+    ]
+ where
+  equiv :: String -> Term.Expr -> TestTree
+  equiv label term = testCase label $ do
+    let g = fromTerm (wrapDecoder term)
+        (_sw, gw, nw) = reduceSteps maxStepsInt g
+        (_sf, gf, nf) = reduceStepsFixedOrder maxStepsInt g
+    assertBool "worklist reached normal form" nw
+    assertBool "fixed-order reached normal form" nf
+    assertEqual "decoded values agree" (decodeTicks gw) (decodeTicks gf)
+
+-- | Wrap a term with the unary decoder (the same wrapper 'decodeChurch' uses).
+wrapDecoder :: Term.Expr -> Term.Expr
+wrapDecoder term =
+  let decoderFn = Term.A (Term.A Term.S (Term.A Term.K (Term.V tickName))) Term.I
+   in Term.A (Term.A term decoderFn) (Term.V baseName)
+
+-- | Count the tick nodes in a reduced graph (the decoded integer).
+decodeTicks :: Graph SKI -> Int
+decodeTicks = countLogical isTick
+ where
+  isTick :: SKI -> Bool
+  isTick = \case
+    V{name = n} -> n == tickName
+    _ -> False
+
 {- | Tests for 'skiEval': distinct small integers evaluate to distinct values,
 and the decoder is stable across equivalent encodings (@1 + 1@ and the direct
 Church numeral @2@ both evaluate to @2@).
@@ -281,11 +322,11 @@ maxStepsInt :: Int
 maxStepsInt = case maxSteps of
   MaxSteps n -> n
 
-{- | Generous step-count regression guard. Measured baseline on the current
-(unoptimized) reducer: identity = 175, 1+1 = 3766, 2*3 = 5379, 2+3 = 6689
-steps. The guard sits well above the baseline so the optimized reducer (which
-may change the contraction order and thus the step count) still passes; it
-bounds a catastrophic regression.
+{- | Generous step-count regression guard. Measured baseline on the worklist
+reducer: identity = 121, 1+1 = 1432, 2*3 = 1463, 2+3 = 1848 steps. (The earlier
+fixed-order reducer took 175 / 3766 / 5379 / 6689 respectively.) The guard sits
+well above the baseline so a change in contraction order still passes; it bounds
+a catastrophic regression.
 -}
 stepGuard :: Int
 stepGuard = 2000000
