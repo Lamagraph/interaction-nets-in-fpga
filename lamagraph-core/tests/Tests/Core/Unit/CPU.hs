@@ -18,6 +18,7 @@ import Core.Node
 import INet.Net
 import Test.Tasty
 import Test.Tasty.HUnit
+import Tests.Core.Unit.Common.Assert (assertDump)
 import Prelude as P
 
 mealyCoreTestTemplate ::
@@ -36,19 +37,12 @@ mealyCoreTestTemplate ::
   MemoryManager ->
   [AddressNumber] ->
   Int ->
-  -- [CPUOut portsNumber agentType] ->
   AddressNumber ->
   TestName ->
   TestTree
 mealyCoreTestTemplate initNet initMemoryManager expectedAnswer cycleCount rootNodeAddress testName =
   testCase testName $
-    assertBool
-      ( "expected:\n"
-          P.++ show expectedAnswer
-          P.++ "\nactual:\n"
-          P.++ showX systemActualAnswer
-      )
-      answersAreEqual
+    assertDump (show expectedAnswer) (showX systemActualAnswer) answersAreEqual
  where
   systemActualAnswer =
     sampleN

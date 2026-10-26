@@ -140,14 +140,22 @@ test-suite test-library
   main-is: unittests.hs
   other-modules:
     Tests.Core.Node
+    Tests.Core.Unit.Common.Assert
+    Tests.Core.Unit.Common.Fixtures
+    Tests.Core.Unit.Common.Normalize
+    Tests.Core.Unit.Common.Rule
+    Tests.Core.Unit.Common.Sim
+    Tests.Core.Unit.CPU
     Tests.Core.Unit.CycleBudget
     Tests.Core.Unit.EdslRules
     Tests.Core.Unit.EdslRulesUnit
-    Tests.Core.Unit.CPU
+    Tests.Core.Unit.EdslRulesUnit.AllocationCount
+    Tests.Core.Unit.EdslRulesUnit.Beta
+    Tests.Core.Unit.EdslRulesUnit.Duplicate
+    Tests.Core.Unit.EdslRulesUnit.Erase
     Tests.Core.Unit.Loader
+    Tests.Core.Unit.MemoryManager
     Tests.Core.Unit.Reducer
-    Tests.Core.Unit.MemoryManager.MemoryManager
-    NodeGenerate
   build-depends:
     lamagraph-core,
     QuickCheck,

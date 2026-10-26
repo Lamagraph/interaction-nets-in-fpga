@@ -10,6 +10,12 @@
 
 {-# HLINT ignore "Use head" #-}
 
+{- | Unit tests: the signal-level RAM access of "Core.Loader".
+
+Each test samples a fixed number of cycles of the loader circuit built on the
+fixture net (via "Tests.Core.Unit.Common.Sim".`netRam`) and checks that the
+expected answer shows up in the sampled window.
+-}
 module Tests.Core.Unit.Loader where
 
 import Clash.Prelude
@@ -22,6 +28,15 @@ import Core.Loader (loadActivePair, loadInterface)
 import Core.MemoryManager.MemoryManager
 import Core.MemoryManager.NodeChanges
 import Core.Node
+import Tests.Core.Unit.Common.Assert (assertDump)
+import Tests.Core.Unit.Common.Fixtures (
+  mkActivePair,
+  pairEpsAppToIdRoot,
+  pairEpsAppToIdSimple,
+  pairIdApplyToId,
+  pairIdErase,
+ )
+import Tests.Core.Unit.Common.Sim (netRam, sampleSystemN)
 import qualified Prelude as P
 
 activePairGettingTemplate ::
@@ -38,21 +53,14 @@ activePairGettingTemplate ::
   Maybe (ActivePair portsNumber agentType) ->
   TestTree
 activePairGettingTemplate testName initialMM initialNet expectedActivePair =
-  testCase ("load active pair: " P.++ testName)
-    $ assertBool
-      ( "expected:\n"
-          P.++ show expectedActivePair
-          P.++ "\nactual:\n"
-          P.++ showX systemActualAnswer
-      )
-      answersAreEqual
+  testCase ("load active pair: " P.++ testName) $
+    assertDump (show expectedActivePair) (showX systemActualAnswer) answersAreEqual
  where
   systemActualAnswer =
-    sampleWithResetN @System
-      d1
+    sampleSystemN
       2
       ( loadActivePair
-          (exposeEnable (blockRam initialNet))
+          (netRam initialNet)
           (pure $ giveActiveAddressNumber initialMM)
       )
   answersAreEqual = expectedActivePair `elem` systemActualAnswer
@@ -71,21 +79,14 @@ activePairGettingComplexTemplate ::
   [Maybe (ActivePair portsNumber agentType)] ->
   TestTree
 activePairGettingComplexTemplate testName initialNet activeAddresses expectedActivePairs =
-  testCase ("load active pair: " P.++ testName)
-    $ assertBool
-      ( "expected:\n"
-          P.++ show expectedActivePairs
-          P.++ "\nactual:\n"
-          P.++ showX systemActualAnswer
-      )
-      answersAreEqual
+  testCase ("load active pair: " P.++ testName) $
+    assertDump (show expectedActivePairs) (showX systemActualAnswer) answersAreEqual
  where
   systemActualAnswer =
-    sampleWithResetN @System
-      d1
+    sampleSystemN
       (P.length activeAddresses - 1)
       ( loadActivePair
-          (exposeEnable (blockRam initialNet))
+          (netRam initialNet)
           (fromList activeAddresses)
       )
   answersAreEqual = P.all (`elem` systemActualAnswer) expectedActivePairs
@@ -106,23 +107,15 @@ interfaceReadWriteTemplate ::
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   TestTree
 interfaceReadWriteTemplate testName initialNet interface changedExNodes expectedNotWrittenInterface =
-  testCase ("load interface: " P.++ testName)
-    $ assertBool
-      ( "expected:\n"
-          P.++ show expectedNotWrittenInterface
-          P.++ "\n"
-          P.++ show changedExNodes
-          P.++ "\nactual:\n"
-          P.++ showX systemActualAnswer
-      )
-      answersAreEqual
+  testCase ("load interface: " P.++ testName) $
+    assertDump expectedDump (showX systemActualAnswer) answersAreEqual
  where
+  expectedDump = show expectedNotWrittenInterface P.++ "\n" P.++ show changedExNodes
   systemActualAnswer =
-    sampleWithResetN @System
-      d1
+    sampleSystemN
       2
       ( loadInterface
-          (exposeEnable (blockRam initialNet))
+          (netRam initialNet)
           (pure interface)
           (pure changedExNodes)
       )
@@ -144,23 +137,15 @@ interfaceReadWriteComplexTemplate ::
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   TestTree
 interfaceReadWriteComplexTemplate testName initialNet interface changedExNodes expectedNotWrittenInterface =
-  testCase ("load interface: " P.++ testName)
-    $ assertBool
-      ( "expected:\n"
-          P.++ show expectedNotWrittenInterface
-          P.++ "\n"
-          P.++ show changedExNodes
-          P.++ "\nactual:\n"
-          P.++ showX systemActualAnswer
-      )
-      answersAreEqual
+  testCase ("load interface: " P.++ testName) $
+    assertDump expectedDump (showX systemActualAnswer) answersAreEqual
  where
+  expectedDump = show expectedNotWrittenInterface P.++ "\n" P.++ show changedExNodes
   systemActualAnswer =
-    sampleWithResetN @System
-      d1
+    sampleSystemN
       (P.length changedExNodes)
       ( loadInterface
-          (exposeEnable (blockRam initialNet))
+          (netRam initialNet)
           (fromList interface)
           (fromList changedExNodes)
       )
@@ -168,10 +153,10 @@ interfaceReadWriteComplexTemplate testName initialNet interface changedExNodes e
     expectedNotWrittenInterface
       `elem` systemActualAnswer
       && P.last changedExNodes
-      `elem` systemActualAnswer
+        `elem` systemActualAnswer
       && changedExNodes
-      P.!! 3
-      `elem` systemActualAnswer
+        P.!! 3
+        `elem` systemActualAnswer
 
 combinationComplexTemplate ::
   forall agentType portsNumber externalNodesNumber.
@@ -191,38 +176,33 @@ combinationComplexTemplate ::
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   TestTree
 combinationComplexTemplate testName initialNet activeAddresses interfaces changedExNodes expectedActivePairs expectedNotWrittenInterface =
-  testCase ("load interface and active pair: " P.++ testName)
-    $ assertBool
-      ( "expected:\n"
-          P.++ show expectedNotWrittenInterface
-          P.++ "\n"
-          P.++ show changedExNodes
-          P.++ "\n"
-          P.++ show expectedActivePairs
-          P.++ "\nactual:\n"
-          P.++ show systemActualAnswer
-      )
-      answersAreEqual
+  testCase ("load interface and active pair: " P.++ testName) $
+    assertDump expectedDump (show systemActualAnswer) answersAreEqual
  where
+  expectedDump =
+    show expectedNotWrittenInterface
+      P.++ "\n"
+      P.++ show changedExNodes
+      P.++ "\n"
+      P.++ show expectedActivePairs
   signalActiveAddress = fromList activeAddresses
   signalInterface = fromList interfaces
   signalChangedExNodes = fromList changedExNodes
   systemActualAnswer =
-    sampleWithResetN @System
-      d1
+    sampleSystemN
       (P.length changedExNodes - 1)
       ( bundle
           ( mux
               (signalActiveAddress ./=. def)
               ( loadActivePair
-                  (exposeEnable (blockRam initialNet))
+                  (netRam initialNet)
                   signalActiveAddress
               )
               def
           , mux
               (signalInterface ./=. def)
               ( loadInterface
-                  (exposeEnable (blockRam initialNet))
+                  (netRam initialNet)
                   signalInterface
                   signalChangedExNodes
               )
@@ -239,7 +219,7 @@ activePairGettingIdToId =
     "id apply to id"
     initialIdApplyToIdMM
     initialIdApplyToIdNode
-    (ActivePair <$> head initialIdApplyToId <*> (initialIdApplyToId !! 2))
+    (Just (mkActivePair pairIdApplyToId))
 
 activePairGettingEpsToId :: TestTree
 activePairGettingEpsToId =
@@ -247,7 +227,7 @@ activePairGettingEpsToId =
     "eps apply to id"
     initialEpsAppToIdMM
     initialEpsAppToIdNode
-    (ActivePair <$> (initialEpsAppToId !! 1) <*> (initialEpsAppToId !! 2))
+    (Just (mkActivePair pairEpsAppToIdRoot))
 
 activePairGettingEpsToIdSimple :: TestTree
 activePairGettingEpsToIdSimple =
@@ -255,7 +235,7 @@ activePairGettingEpsToIdSimple =
     "eps apply to id simple"
     initialEpsAppToIdSimpleMM
     initialEpsAppToIdSimpleNode
-    (ActivePair <$> (initialEpsAppToIdSimple !! 1) <*> (initialEpsAppToIdSimple !! 2))
+    (Just (mkActivePair pairEpsAppToIdSimple))
 
 activePairGettingIdErase :: TestTree
 activePairGettingIdErase =
@@ -263,7 +243,7 @@ activePairGettingIdErase =
     "id connected to erase"
     initialIdEraseMM
     initialIdEraseNode
-    (ActivePair <$> head initialIdErase <*> (initialIdErase !! 1))
+    (Just (mkActivePair pairIdErase))
 
 activePairGettingComplex :: TestTree
 activePairGettingComplex =
@@ -321,6 +301,9 @@ interfaceReadWriteComplexIdToIdChangeToErase =
         sPorts = Just port0 :> Just port1 :> Nil
      in LoadedNode (Node prPort sPorts Abstract) 1
 
+{- | Disabled: kept as a written-out fixture for the combined
+active-pair\/interface load. Not part of `loaderUnitTests` below.
+-}
 combinationComplex :: TestTree
 combinationComplex =
   combinationComplexTemplate
@@ -397,8 +380,8 @@ combinationComplex =
       :> Nil
   activePair1 = ActivePair <$> initialEpsAppToId !! 1 <*> (initialEpsAppToId !! 2)
   activePair2 =
-    Just
-      $ ActivePair
+    Just $
+      ActivePair
         ( LoadedNode
             { _containedNode =
                 Node

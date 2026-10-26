@@ -1,12 +1,11 @@
-{-# LANGUAGE PatternSynonyms #-}
-
-{- | Property tests: EDSL rules (INet.Define) must match the hand-written
-rules (Core.Concrete.ReduceRulesLambda) on the shared agent set.
+{- | Property tests: EDSL rules ("INet.Define") must match the hand-written
+rules ("Core.Concrete.ReduceRulesLambda") on the shared agent set.
 
 The hand-written module knows only @{Apply, Abstract, Erase}@ and returns a
 smaller result (`ReduceRuleResult 2 2 2`); the EDSL returns `ReduceRuleResult
 4 2 2` with extra `Nothing` padding. Comparison normalizes both sides to
-projected lists, so only real content is compared.
+projected lists ("Tests.Core.Unit.Common.Normalize"), so only real content is
+compared.
 
 Generators produce non-trivial inputs: a random connected sub-net of 4-8
 nodes with distinct addresses, from which an active pair is drawn. The pair's
@@ -25,7 +24,7 @@ Two further limits of this property, by construction rather than by accident:
 
 * Every secondary slot of a non-Erase actor is generated /connected/. The
   hand-written rules raise `error "Agent type of the node is incorrect"` on an
-  empty slot (`Core.Concrete.ReduceRulesLambda`), so the `NotConnected`-slot
+  empty slot ("Core.Concrete.ReduceRulesLambda"), so the `NotConnected`-slot
   path is not differentially testable at all; it is pinned against literals in
   "Tests.Core.Unit.EdslRulesUnit" instead.
 * @Erase >< Erase@ is a single input up to the ignored primaries: Erase has
@@ -40,44 +39,19 @@ fail these tests without changing semantics.
 module Tests.Core.Unit.EdslRules where
 
 import Clash.Prelude (Vec)
-import qualified Clash.Prelude as C
 import qualified Clash.Sized.Vector as Vec
 import qualified Core.Concrete.ReduceRulesLambda as RW
 import Core.Node
-import Data.Maybe (mapMaybe)
 import qualified Hedgehog as H
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified INet.Define as Def
-import INet.Net (INet (..), ReduceRuleResult (..))
+import INet.Net (INet (makeReduction), ReduceRuleResult)
 import Test.Tasty
 import Test.Tasty.Hedgehog
 import Prelude
 
--- ====================
--- Normalization
--- ====================
-
--- | Project a `ReduceRuleResult` onto the list of its real edges
-normEdges :: ReduceRuleResult n e p l -> [Edge p]
-normEdges = mapMaybe id . C.toList . _edges
-
--- | Project a `ReduceRuleResult` onto the list of its real nodes (EDSL labels)
-normNodesDef :: ReduceRuleResult n e p Def.AgentSimpleLambda -> [LoadedNode p Def.AgentSimpleLambda]
-normNodesDef = mapMaybe id . C.toList . _nodes
-
--- | Project a `ReduceRuleResult` onto its real nodes, relabeled to EDSL labels
-normNodesRW :: ReduceRuleResult n e p RW.AgentSimpleLambda -> [LoadedNode p Def.AgentSimpleLambda]
-normNodesRW = mapMaybe (fmap conv) . C.toList . _nodes
- where
-  conv (LoadedNode (Node prim secs lbl) addr) = LoadedNode (Node prim secs (toDef lbl)) addr
-
--- | Map a hand-written label onto the EDSL label
-toDef :: RW.AgentSimpleLambda -> Def.AgentSimpleLambda
-toDef = \case
-  RW.Apply -> Def.ApplyLabel
-  RW.Abstract -> Def.AbstractLabel
-  RW.Erase -> Def.EraseLabel
+import Tests.Core.Unit.Common.Normalize (freeVec2, freeVec4, mkNode, normEdges, normNodesDef, normNodesRW, toDef)
 
 -- ====================
 -- Generators: random sub-nets
@@ -181,30 +155,6 @@ genSubnetFixture lLbl rLbl = do
     b <- Gen.filter (/= a) (Gen.element adds)
     pure (a, b)
 
--- | Hand-written rules require a fully-populated free-address pool
-freeVec2 :: AddressNumber -> AddressNumber -> Vec 2 (Maybe AddressNumber)
-freeVec2 a0 a1 = Just a0 C.:> Just a1 C.:> C.Nil
-
--- | EDSL pool: same two free addresses, remaining budget unused
-freeVec4 :: AddressNumber -> AddressNumber -> Vec 4 (Maybe AddressNumber)
-freeVec4 a0 a1 = Just a0 C.:> Just a1 C.:> Nothing C.:> Nothing C.:> C.Nil
-
-mkNodeDef ::
-  Def.AgentSimpleLambda ->
-  Vec 2 (Maybe (Connection 2)) ->
-  AddressNumber ->
-  AddressNumber ->
-  LoadedNode 2 Def.AgentSimpleLambda
-mkNodeDef lbl secs addr partner = LoadedNode (Node (Connected (Port partner Primary)) secs lbl) addr
-
-mkNodeRW ::
-  RW.AgentSimpleLambda ->
-  Vec 2 (Maybe (Connection 2)) ->
-  AddressNumber ->
-  AddressNumber ->
-  LoadedNode 2 RW.AgentSimpleLambda
-mkNodeRW lbl secs addr partner = LoadedNode (Node (Connected (Port partner Primary)) secs lbl) addr
-
 -- ====================
 -- Hand-written dispatch
 -- ====================
@@ -234,10 +184,10 @@ hardwiredApply freeAddrs lN rN = case (nodeLabel lN, nodeLabel rN) of
 propEdslMatchesHardwired :: RW.AgentSimpleLambda -> RW.AgentSimpleLambda -> H.Property
 propEdslMatchesHardwired rwLbl rwRbl = H.property $ do
   f <- H.forAll (genSubnetFixture rwLbl rwRbl)
-  let lN_RW = mkNodeRW rwLbl (sfLeftSecs f) (sfLeftAddr f) (sfRightAddr f)
-      rN_RW = mkNodeRW rwRbl (sfRightSecs f) (sfRightAddr f) (sfLeftAddr f)
-      lN_D = mkNodeDef (toDef rwLbl) (sfLeftSecs f) (sfLeftAddr f) (sfRightAddr f)
-      rN_D = mkNodeDef (toDef rwRbl) (sfRightSecs f) (sfRightAddr f) (sfLeftAddr f)
+  let lN_RW = mkNode rwLbl (sfLeftSecs f) (sfLeftAddr f) (sfRightAddr f)
+      rN_RW = mkNode rwRbl (sfRightSecs f) (sfRightAddr f) (sfLeftAddr f)
+      lN_D = mkNode (toDef rwLbl) (sfLeftSecs f) (sfLeftAddr f) (sfRightAddr f)
+      rN_D = mkNode (toDef rwRbl) (sfRightSecs f) (sfRightAddr f) (sfLeftAddr f)
       hard :: ReduceRuleResult 2 2 2 RW.AgentSimpleLambda
       hard = hardwiredApply (freeVec2 (sfFree0 f) (sfFree1 f)) lN_RW rN_RW
       eds :: ReduceRuleResult 4 2 2 Def.AgentSimpleLambda

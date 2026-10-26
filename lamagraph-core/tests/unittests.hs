@@ -7,7 +7,7 @@ import Tests.Core.Unit.CycleBudget (cycleBudgetTests)
 import Tests.Core.Unit.EdslRules (edslRulesTests)
 import Tests.Core.Unit.EdslRulesUnit (allocationCountTests, edslRulesUnitTests)
 import Tests.Core.Unit.Loader
-import Tests.Core.Unit.MemoryManager.MemoryManager
+import Tests.Core.Unit.MemoryManager
 import Tests.Core.Unit.Reducer
 
 main :: IO ()
