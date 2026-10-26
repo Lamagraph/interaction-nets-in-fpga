@@ -27,7 +27,16 @@ main =
   defaultMain $
     testGroup
       "lamagraph-ski"
-      [valueTests, churchTests, translateTests, runnerTests, skiEvalTests, fixedExampleTests, diagTest, spikeTest]
+      [ valueTests
+      , churchTests
+      , translateTests
+      , runnerTests
+      , skiEvalTests
+      , fixedExampleTests
+      , benchmarkTests
+      , diagTest
+      , spikeTest
+      ]
 
 {- | Unit tests for 'canonicalize' over the runtime value constructors, plus the
 error case for a non-result value (a primitive).
@@ -236,6 +245,50 @@ compileLml src = case parseLmlProgram [src] of
  where
   rhsOf (NonRec _ e) = e
   rhsOf _ = error "compileLml: last binding must be a non-recursive let"
+
+{- | Reduction step-count baseline for a fixed set of programs. Measures the
+number of interaction-net contractions (via 'reduceSteps') to reduce the wrapped
+decode term — the same term 'decodeChurch' reduces — to normal form. Establishes
+the baseline the reducer optimization improves on, and gives #87 the step
+magnitudes to set its bounds. The step count is reported so the baseline is
+visible; a generous regression guard bounds it.
+-}
+benchmarkTests :: TestTree
+benchmarkTests =
+  testGroup
+    "reduction step counts (baseline)"
+    [ bench "1 + 1" "module M\nlet result = 1 + 1"
+    , bench "2 + 3" "module M\nlet result = 2 + 3"
+    , bench "2 * 3" "module M\nlet result = 2 * 3"
+    , bench "(fun x -> x) 4" "module M\nlet result = (fun x -> x) 4"
+    ]
+ where
+  bench :: String -> Text -> TestTree
+  bench label src = testCase label $ do
+    case compileLml src of
+      Left e -> assertFailure $ "compileLml failed: " <> e
+      Right (binds, resultExpr) -> do
+        let term = mustTranslate binds resultExpr
+            decoderFn = Term.A (Term.A Term.S (Term.A Term.K (Term.V tickName))) Term.I
+            full = Term.A (Term.A term decoderFn) (Term.V baseName)
+            (steps, _g, reachedNF) = reduceSteps maxStepsInt (fromTerm full)
+        unless reachedNF $ assertFailure "did not reach normal form"
+        when (steps > stepGuard) $ assertFailure $ "step count " <> show steps <> " exceeds guard " <> show stepGuard
+        putStrLn $ "  " <> label <> ": " <> show steps <> " steps"
+
+-- | The step budget as a plain 'Int' (for 'reduceSteps'); must match 'maxSteps'.
+maxStepsInt :: Int
+maxStepsInt = case maxSteps of
+  MaxSteps n -> n
+
+{- | Generous step-count regression guard. Measured baseline on the current
+(unoptimized) reducer: identity = 175, 1+1 = 3766, 2*3 = 5379, 2+3 = 6689
+steps. The guard sits well above the baseline so the optimized reducer (which
+may change the contraction order and thus the step count) still passes; it
+bounds a catastrophic regression.
+-}
+stepGuard :: Int
+stepGuard = 2000000
 
 {- | @1 + 1@ must decode (SKI) to 2, and the direct Church numeral 2 must also
 decode to 2. Validates the decoder on a minimal case.
