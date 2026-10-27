@@ -1,5 +1,9 @@
 on:
   workflow_call:
+  # Also runs directly on every pull request, in parallel with the CI
+  # chain, so a format failure is visible even if an upstream job in the
+  # chain is cancelled or failed before it reaches the fourmolu step.
+  pull_request:
 
 jobs:
   hlint:
