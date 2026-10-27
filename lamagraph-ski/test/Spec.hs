@@ -351,8 +351,8 @@ unitValue :: Value'
 unitValue = RAdt (Name (mkLongident (pure "()"))) []
 
 {- | Tests for the char/string/unit encodings and @print_int@: char and string
-literals round-trip through the SKI pipeline, a char-literal match classifies a
-character, and @print_int@ returns unit (the printed side-effect is ignored).
+literals round-trip through the SKI pipeline, an int-literal match classifies
+a value, and @print_int@ returns unit (the printed side-effect is ignored).
 All differential (LML == SKI).
 -}
 charStringTests :: TestTree
