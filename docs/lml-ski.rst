@@ -54,7 +54,9 @@ boolean constructors (``true``/``false``), the comparison operators
 (``< > <= >=``), and ``print_int`` for their Church combinators — then converts
 it to SKI via the standard lambda→SKI abstraction rule
 (``Lamagraph.Ski.Lambda.toSki``). Every binder is given a fresh name so
-composing terms never introduces a name clash. An if-then-else (a ``match`` on a
+composing terms never introduces a name clash. ``print_int`` translates to a
+no-op returning unit: the printed side-effect is ignored, and the differential
+comparison is on the return value. An if-then-else (a ``match`` on a
 boolean) is translated to a direct Church-bool selection. A ``match`` on an ADT
 value dispatches on the constructor tag (see the tagged ADT encoding below):
 each alternative's condition is the Church equality of the tag and the
@@ -64,6 +66,16 @@ same way, comparing the scrutinee (a Church numeral) to each literal.
 Constructs outside the supported subset (recursive ``let``, string-literal
 match alternatives, other match forms) are reported as
 ``UnsupportedConstruct``.
+
+.. note::
+
+   Recursive ``let`` is deferred, not merely unimplemented: the Z-combinator
+   encoding is infeasible in the eager worklist reducer. The combinator parks
+   its self-application in an argument that the body discards, but the eager
+   reducer reduces that argument at every step — even a non-recursive
+   ``let rec`` body overflows the step budget. Recursion is to be revisited
+   with a demand-driven reducer; the encoding-variant analysis (Z, Y, thunk,
+   demand-driven) lives in the design notes on task #88.
 
 The abstraction rule carries one essential efficiency shortcut: ``λv. t`` is
 translated to ``K t`` when ``v`` is not free in ``t``. Without it the ``S`` rule
