@@ -91,7 +91,34 @@ decodeValue :: MaxSteps -> Value' -> Term.Expr -> Either StepOverflow Value'
 decodeValue maxSteps shape term = case shape of
   RInt _ -> decodeChurch maxSteps term <&> RInt
   RBool _ -> decodeBool maxSteps term <&> RBool
+  RTuple vs -> decodeTuple maxSteps vs term
   _ -> Left (StepOverflow 0)
+
+-- | The SKI selector @λa b. a@ (first projection of a Church pair).
+fstSel :: Term.Expr
+fstSel = Term.A (Term.A Term.S (Term.A Term.K Term.K)) Term.I
+
+-- | The SKI selector @λa b. b@ (second projection of a Church pair).
+sndSel :: Term.Expr
+sndSel = Term.A Term.K Term.I
+
+{- | Decode a nested-Church-pair term to a tuple, directed by the shape (the
+expected list of element shapes). A Core tuple @(e1, ..., en)@ is encoded as the
+right-associated nesting @pair e1 (pair e2 (... (pair e(n-1) en)))@; this walks
+that nesting, projecting @fst@/@snd@ at each level and decoding each element with
+'decodeValue'. The base case (a single remaining element) decodes the leaf
+directly. Returns 'Left' with the step count at which the
+'Lamagraph.Ski.Run.MaxSteps' budget was exhausted.
+-}
+decodeTuple :: MaxSteps -> [Value'] -> Term.Expr -> Either StepOverflow Value'
+decodeTuple _ [] _ = Left (StepOverflow 0)
+decodeTuple maxSteps [x] term = decodeValue maxSteps x term <&> \v -> RTuple [v]
+decodeTuple maxSteps (x : xs) term = do
+  v1 <- decodeValue maxSteps x (Term.A term fstSel)
+  rest <- decodeTuple maxSteps xs (Term.A term sndSel)
+  case rest of
+    RTuple rs -> pure (RTuple (v1 : rs))
+    _ -> Left (StepOverflow 0)
 
 {- | Evaluate a closed LML core program to a canonical value via the SKI
 pipeline: translate to a SKI term, then decode the result (directed by the

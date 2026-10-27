@@ -81,8 +81,11 @@ subtraction (``max 0 (a - b)``). Booleans use the standard Church encoding
 bool combinators. The comparisons ``< > <= >=`` are Church combinators over
 Church numerals that return a Church bool, built from saturating subtraction,
 ``isZero``, and ``not`` (e.g. ``a <= b`` is ``isZero (sub a b)`` and ``a < b``
-is ``not (isZero (sub b a))``). The wider value set (tuples, ADTs via Scott
-encoding, char/string) is the scope of the follow-up subtasks.
+is ``not (isZero (sub b a))``). Tuples use the Church pair
+(``pair x y = λf. f x y``, with ``fst p = p (λx y. x)`` and
+``snd p = p (λx y. y)``); an n-tuple is the right-associated nesting
+``pair e1 (pair e2 (... (pair e(n-1) en)))``. The wider value set (ADTs via
+Scott encoding, char/string) is the scope of the follow-up subtasks.
 
 Extraction (decoding)
 =====================
@@ -99,10 +102,13 @@ expands ``D`` nodes and counts *logical* occurrences
 
 A Church bool is decoded by applying it to two distinct markers (the ``true``
 and ``false`` branch markers); whichever marker survives in the normal form
-gives the boolean value. The decoder is **shape-directed**: it is told the
-expected ``Value'`` shape (taken from the LML interpreter's result), which
-supplies the type information the SKI normal form lacks, and dispatches to the
-integer or boolean decoder accordingly.
+gives the boolean value. A tuple is decoded by walking the nested-pair
+structure: at each level the pair is projected with the ``fst``/``snd``
+selectors and each element is decoded recursively. The decoder is
+**shape-directed**: it is told the expected ``Value'`` shape (taken from the
+LML interpreter's result), which supplies the type information the SKI normal
+form lacks, and dispatches to the integer, boolean, or tuple decoder
+accordingly.
 
 Integer (natural) limitation
 ============================

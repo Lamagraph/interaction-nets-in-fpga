@@ -43,6 +43,7 @@ main =
       , equivalenceTests
        , skiEvalTests
        , boolTests
+       , tupleTests
        , fixedExampleTests
       , harnessTests
       , propertyTests
@@ -278,6 +279,27 @@ boolTests =
   boolAlt d e = (DataAlt (nameOfVar d), [], e)
    where
     nameOfVar (Id n) = n
+
+{- | Tests for the tuple (nested Church pair) encoding: a Core tuple decodes to
+the expected 'RTuple' (2-, 3-, and mixed-element), and a tuple program agrees
+between the LML interpreter and the SKI pipeline.
+-}
+tupleTests :: TestTree
+tupleTests =
+  testGroup
+    "tuples"
+    [ testCase "2-tuple (1, 2)" $
+        assertSkiEval [] (Tuple (Lit (LitInt 1)) (Lit (LitInt 2) :| [])) (RTuple [RInt 1, RInt 2])
+    , testCase "3-tuple (1, 2, 3)" $
+        assertSkiEval
+          []
+          (Tuple (Lit (LitInt 1)) (Lit (LitInt 2) :| [Lit (LitInt 3)]))
+          (RTuple [RInt 1, RInt 2, RInt 3])
+    , testCase "mixed tuple (1, 2 + 3)" $
+        assertSkiEval [] (Tuple (Lit (LitInt 1)) (binOp stdPlus 2 3 :| [])) (RTuple [RInt 1, RInt 5])
+    , testCase "differential: (1, 2) LML == SKI" $
+        assertTranslateAndRun "module M\nlet result = (1, 2)" (RTuple [RInt 1, RInt 2])
+    ]
 
 {- | Fixed-example differential tests: each LML program is run through the full
 Driver pipeline (parse, resolve, typecheck, desugar) and then through

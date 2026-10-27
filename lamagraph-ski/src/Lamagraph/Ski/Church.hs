@@ -25,6 +25,9 @@ module Lamagraph.Ski.Church (
   gtLam,
   leLam,
   geLam,
+  pairLam,
+  fstLam,
+  sndLam,
   intToChurch,
 ) where
 
@@ -259,6 +262,30 @@ geLam = do
           n
           (LApp isZeroL (LApp (LApp subL (LVar n)) (LVar m)))
       )
+
+-- | Church pair constructor: @pair x y = λf. f x y@.
+pairLam :: State Int Lam
+pairLam = do
+  x <- freshName
+  y <- freshName
+  f <- freshName
+  pure $ LLam x (LLam y (LLam f (LApp (LApp (LVar f) (LVar x)) (LVar y))))
+
+-- | Church pair first projection: @fst p = p (λx y. x)@.
+fstLam :: State Int Lam
+fstLam = do
+  p <- freshName
+  x <- freshName
+  y <- freshName
+  pure $ LLam p (LApp (LVar p) (LLam x (LLam y (LVar x))))
+
+-- | Church pair second projection: @snd p = p (λx y. y)@.
+sndLam :: State Int Lam
+sndLam = do
+  p <- freshName
+  x <- freshName
+  y <- freshName
+  pure $ LLam p (LApp (LVar p) (LLam x (LLam y (LVar y))))
 
 -- | The SKI term for the Church numeral @n@ (a closed term, no free @V@ nodes).
 intToChurch :: Int -> Term.Expr

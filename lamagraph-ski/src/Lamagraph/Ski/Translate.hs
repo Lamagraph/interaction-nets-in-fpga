@@ -37,6 +37,7 @@ import Lamagraph.Ski.Church (
   leLam,
   ltLam,
   multLam,
+  pairLam,
   subLam,
   trueLam,
  )
@@ -108,7 +109,20 @@ coreExprToLam = \case
         falseBranch <- coreExprToLam (altBody falseAlt)
         pure (LApp (LApp scrutLam trueBranch) falseBranch)
     | otherwise -> throwError (UnsupportedConstruct "match")
-  other -> throwError (UnsupportedConstruct ("construct " <> show other))
+  Tuple hd tl -> do
+    hdLam <- coreExprToLam hd
+    tlLams <- mapM coreExprToLam (toList tl)
+    pairL <- lift pairLam
+    pure (nestPairs pairL (hdLam :| tlLams))
+
+{- | Nest a non-empty list of elements into right-associated Church pairs:
+@[e1, e2, e3]@ becomes @pair e1 (pair e2 e3)@. A single element is returned
+as-is (the base of the nesting). A Core tuple is a head plus a non-empty tail,
+so the element list always has length ≥ 2.
+-}
+nestPairs :: Lam -> NonEmpty Lam -> Lam
+nestPairs _ (x :| []) = x
+nestPairs pair (x :| (y : ys)) = LApp (LApp pair x) (nestPairs pair (y :| ys))
 
 -- | Render a core variable as a plain string (dot-joined long identifier).
 varName :: Var -> String
