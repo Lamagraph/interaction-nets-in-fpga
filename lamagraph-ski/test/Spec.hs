@@ -4,10 +4,14 @@ import Relude
 
 import Common.Term qualified as Term
 import Data.HashMap.Lazy qualified as HashMap
+import Data.Text qualified as T
 import GraphRewriting (Graph)
+import Hedgehog hiding (Var)
+import Hedgehog.Gen qualified as Gen
 import INet.Graph (SKI (..), fromTerm)
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.Hedgehog (testProperty)
 
 import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.Core.MonadDesugar (runMonadDesugar)
@@ -36,6 +40,7 @@ main =
       , skiEvalTests
       , fixedExampleTests
       , harnessTests
+      , propertyTests
       , benchmarkTests
       , diagTest
       , spikeTest
@@ -322,6 +327,58 @@ harnessTests =
         case compileLml "module M\nlet double = fun x -> x + x\nlet result = double 3" of
           Left e -> assertFailure $ "compileLml failed: " <> e
           Right (binds, resultExpr) -> assertEqualBoth binds resultExpr (RInt 6)
+    ]
+
+-- * Fixed minimal-subset programs + differential property
+
+{- | Fixed minimal-subset programs as LML source templates. Each template carries
+a @{n}@ placeholder for the random input; the property substitutes a bounded
+integer and checks the LML interpreter and the SKI pipeline agree. The programs
+cover addition, multiplication, let, lambda, and (higher-order) application,
+with no recursion (recursion is #88's scope).
+-}
+programTemplates :: [(String, Text)]
+programTemplates =
+  [ ("double", "module M\nlet double = fun x -> x + x\nlet result = double {n}")
+  , ("sum2", "module M\nlet sum2 = fun x y -> x + y\nlet result = sum2 3 {n}")
+  ,
+    ( "apply_twice"
+    , "module M\nlet apply_twice = fun f x -> f (f x)\nlet double = fun x -> x + x\nlet result = apply_twice double {n}"
+    )
+  ,
+    ( "compose"
+    , "module M\nlet compose = fun f g x -> f (g x)\nlet double = fun x -> x + x\nlet inc = fun x -> x + 1\nlet result = compose double inc {n}"
+    )
+  , ("let_heavy", "module M\nlet result = let a = {n} + 1 in let b = a * 2 in b + a")
+  ]
+
+-- | Substitute the @{n}@ placeholder in a template with the input integer.
+substituteTemplate :: Int -> Text -> Text
+substituteTemplate n = T.replace "{n}" (T.pack (show n))
+
+{- | The differential property: for every fixed program and every bounded input,
+the LML interpreter and the SKI pipeline must agree. A compile failure, a
+step-overflow, or a value mismatch is a loud property failure (never a hang):
+the reduction is bounded by 'defaultMaxSteps'.
+-}
+propDifferential :: Property
+propDifferential = withTests 100 . property $ do
+  n <- forAll (Gen.element [0 .. 8])
+  (name, template) <- forAll (Gen.element programTemplates)
+  let src = substituteTemplate n template
+  case compileLml src of
+    Left e -> fail $ "compileLml failed for " <> name <> " " <> show n <> ": " <> e
+    Right (binds, resultExpr) -> do
+      res <- liftIO $ translateAndRun binds resultExpr
+      case res of
+        Right _ -> Hedgehog.assert True
+        Left err -> fail $ "differential failure for " <> name <> " " <> show n <> ": " <> show err
+
+propertyTests :: TestTree
+propertyTests =
+  testGroup
+    "differential property (minimal subset)"
+    [ testProperty "lml == ski for all (program, input)" propDifferential
     ]
 
 {- | Reduction step-count baseline for a fixed set of programs. Measures the
