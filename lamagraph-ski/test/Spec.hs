@@ -45,6 +45,7 @@ main =
       , boolTests
       , tupleTests
       , adtTests
+      , charStringTests
       , fixedExampleTests
       , harnessTests
       , propertyTests
@@ -323,6 +324,10 @@ adtTests =
         assertTranslateAndRun
           "module M\ntype flag = Off | On\nlet result = match On with\n  | Off -> 0\n  | On -> 1"
           (RInt 1)
+    , testCase "0-arg ctor, reordered alts: match Off (On first) -> 0" $
+        assertTranslateAndRun
+          "module M\ntype flag = Off | On\nlet result = match Off with\n  | On -> 1\n  | Off -> 0"
+          (RInt 0)
     , testCase "nested ctors: match (Some (Pair (1, 2))) -> 3" $
         assertTranslateAndRun
           "module M\ntype 'a pair = Pair of 'a * 'a\ntype 'a opt = None | Some of 'a\nlet result = match (Some (Pair (1, 2))) with\n  | None -> 0\n  | Some p -> match p with\n    | Pair (a, b) -> a + b"
@@ -339,6 +344,39 @@ adtTests =
         assertTranslateAndRun
           "module M\ntype flag = Off | On\nlet result = On"
           (RAdt (Name (mkLongident ("M" :| ["On"]))) [])
+    ]
+
+-- | The canonical unit value (@()@), as the LML interpreter produces it.
+unitValue :: Value'
+unitValue = RAdt (Name (mkLongident (pure "()"))) []
+
+{- | Tests for the char/string/unit encodings and @print_int@: char and string
+literals round-trip through the SKI pipeline, a char-literal match classifies a
+character, and @print_int@ returns unit (the printed side-effect is ignored).
+All differential (LML == SKI).
+-}
+charStringTests :: TestTree
+charStringTests =
+  testGroup
+    "char / string / unit"
+    [ testCase "char literal: 'a'" $
+        assertTranslateAndRun "module M\nlet result = 'a'" (RChar 'a')
+    , testCase "string literal: \"hi\"" $
+        assertTranslateAndRun "module M\nlet result = \"hi\"" (RString "hi")
+    , testCase "print_int 5 = unit" $
+        assertTranslateAndRun "module M\nlet result = print_int 5" unitValue
+    , testCase "int-literal match: classify 1 = 10" $
+        assertTranslateAndRun
+          "module M\nlet classify n = match n with\n  | 1 -> 10\n  | 2 -> 20\n  | _ -> 0\nlet result = classify 1"
+          (RInt 10)
+    , testCase "int-literal match: classify 2 = 20" $
+        assertTranslateAndRun
+          "module M\nlet classify n = match n with\n  | 1 -> 10\n  | 2 -> 20\n  | _ -> 0\nlet result = classify 2"
+          (RInt 20)
+    , testCase "int-literal match: classify 7 = 0 (default)" $
+        assertTranslateAndRun
+          "module M\nlet classify n = match n with\n  | 1 -> 10\n  | 2 -> 20\n  | _ -> 0\nlet result = classify 7"
+          (RInt 0)
     ]
 
 {- | Fixed-example differential tests: each LML program is run through the full

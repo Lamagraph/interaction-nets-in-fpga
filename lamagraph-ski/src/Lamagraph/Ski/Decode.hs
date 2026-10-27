@@ -18,6 +18,7 @@ module Lamagraph.Ski.Decode (
 import Relude
 
 import Common.Term qualified as Term
+import Data.Text qualified as T
 
 import INet.Graph (SKI (..), fromTerm)
 import Lamagraph.Compiler.Core (CoreBind, CoreExpr)
@@ -92,9 +93,10 @@ decodeValue :: MaxSteps -> Value' -> Term.Expr -> Either StepOverflow Value'
 decodeValue maxSteps shape term = case shape of
   RInt _ -> decodeChurch maxSteps term <&> RInt
   RBool _ -> decodeBool maxSteps term <&> RBool
+  RChar _ -> decodeChurch maxSteps term <&> \n -> RChar (chr n)
+  RString s -> decodeString maxSteps s term
   RTuple vs -> decodeTuple maxSteps vs term
   RAdt con vs -> decodeAdt maxSteps con vs term
-  _ -> Left (StepOverflow 0)
 
 -- | The SKI selector @λa b. a@ (first projection of a Church pair).
 fstSel :: Term.Expr
@@ -137,6 +139,25 @@ decodeAdt :: MaxSteps -> Name -> [Value'] -> Term.Expr -> Either StepOverflow Va
 decodeAdt _ con [] _ = pure (RAdt con [])
 decodeAdt maxSteps con fieldShapes term =
   RAdt con <$> decodePairFields maxSteps fieldShapes (Term.A term sndSel)
+
+{- | Decode a string term to a string, directed by the shape (the expected
+string, which supplies the length). The term is the nested-Church-pair tuple of
+the string's character code points; this decodes that tuple (one @RInt@ per
+character) and converts the code points back to characters. The empty string is
+returned directly (its term is the unit placeholder). Returns 'Left' with the
+step count at which the 'Lamagraph.Ski.Run.MaxSteps' budget was exhausted.
+-}
+decodeString :: MaxSteps -> Text -> Term.Expr -> Either StepOverflow Value'
+decodeString maxSteps s term
+  | T.null s = pure (RString T.empty)
+  | otherwise = case decodeTuple maxSteps [RInt 0 | _ <- T.unpack s] term of
+      Left e -> Left e
+      Right (RTuple elems) ->
+        let codePoints = [n | RInt n <- elems]
+         in if length codePoints == T.length s
+              then pure (RString (T.pack (map chr codePoints)))
+              else Left (StepOverflow 0)
+      Right _ -> Left (StepOverflow 0)
 
 {- | Evaluate a closed LML core program to a canonical value via the SKI
 pipeline: translate to a SKI term, then decode the result (directed by the

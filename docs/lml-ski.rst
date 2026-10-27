@@ -50,17 +50,20 @@ Translation
 
 ``Lamagraph.Ski.Translate.translateCore`` expands the core term to a named-``λ``
 term — inlining non-recursive ``let`` bindings and swapping ``+ - *``, the
-boolean constructors (``true``/``false``), and the comparison operators
-(``< > <= >=``) for their Church combinators — then converts it to SKI via the
-standard lambda→SKI abstraction rule (``Lamagraph.Ski.Lambda.toSki``). Every
-binder is given a fresh name so composing terms never introduces a name clash.
-An if-then-else (a ``match`` on a boolean) is translated to a direct Church-bool
-selection. A ``match`` on an ADT value dispatches on the constructor tag (see
-the tagged ADT encoding below): each alternative's condition is
-``isZero (sub tagVal (tag C))`` and its body is applied to the field
-projections of the value's argument pair. Constructs outside the supported
-subset (recursive ``let``, non-integer literals, other match forms) are
-reported as ``UnsupportedConstruct``.
+boolean constructors (``true``/``false``), the comparison operators
+(``< > <= >=``), and ``print_int`` for their Church combinators — then converts
+it to SKI via the standard lambda→SKI abstraction rule
+(``Lamagraph.Ski.Lambda.toSki``). Every binder is given a fresh name so
+composing terms never introduces a name clash. An if-then-else (a ``match`` on a
+boolean) is translated to a direct Church-bool selection. A ``match`` on an ADT
+value dispatches on the constructor tag (see the tagged ADT encoding below):
+each alternative's condition is the Church equality of the tag and the
+constructor's tag, and its body is applied to the field projections of the
+value's argument pair. A ``match`` on integer/character literals dispatches the
+same way, comparing the scrutinee (a Church numeral) to each literal.
+Constructs outside the supported subset (recursive ``let``, string-literal
+match alternatives, other match forms) are reported as
+``UnsupportedConstruct``.
 
 The abstraction rule carries one essential efficiency shortcut: ``λv. t`` is
 translated to ``K t`` when ``v`` is not free in ``t``. Without it the ``S`` rule
@@ -93,11 +96,28 @@ arities, so each constructor is assigned a globally-unique Church-numeral tag
 in source order, and a value is the Church pair ``(tag, args)`` — a 0-arity
 constructor carries ``unit`` (``true``) as its argument, a single field is
 carried directly, and several fields as a nested tuple pair. A ``match``
-dispatches on the tag (``isZero (sub tagVal (tag C))`` per alternative) and
-binds each alternative's fields to the projections of the argument pair (field
-``i`` of ``n`` is ``fst (snd^(i-1) args)`` for ``i < n`` and
-``snd^(n-1) args`` for ``i == n``). This mirrors the interpreter's tagged
-``VAdt``. Char and string are the scope of the follow-up subtasks.
+dispatches on the tag (the Church equality of the tag and the constructor's tag
+per alternative) and binds each alternative's fields to the projections of the
+argument pair (field ``i`` of ``n`` is ``fst (snd^(i-1) args)`` for ``i < n``
+and ``snd^(n-1) args`` for ``i == n``). This mirrors the interpreter's tagged
+``VAdt``. Characters are encoded as the Church numeral of their code point;
+strings as the nested-pair tuple of their characters' code points (the empty
+string is the unit placeholder). Unit (``()``) is a closed placeholder term
+(Church ``true``).
+
+Because saturating subtraction makes ``isZero (sub m n)`` test ``m <= n``
+rather than ``m == n``, the tag/literal dispatch uses true Church equality
+(``isZero (sub m n) AND isZero (sub n m)``); a one-sided test would
+mis-dispatch when the scrutinee's value is smaller than an earlier
+alternative's.
+
+.. note::
+
+   Char-literal *matches* (e.g. ``match c with | 'a' -> ...``) are supported
+   but intractable in practice: the dispatch subtracts the scrutinee's code
+   point (~97–122) from each literal's, and Church subtraction is linear in the
+   value, so a single char-classify exceeds the step budget by an order of
+   magnitude. Char/string *literals* (as values) are fine.
 
 Extraction (decoding)
 =====================
@@ -119,11 +139,14 @@ structure: at each level the pair is projected with the ``fst``/``snd``
 selectors and each element is decoded recursively. The decoder is
 **shape-directed**: it is told the expected ``Value'`` shape (taken from the
 LML interpreter's result), which supplies the type information the SKI normal
-form lacks, and dispatches to the integer, boolean, tuple, or ADT decoder
-accordingly. An ADT value is decoded from its ``(tag, args)`` pair: the
-constructor is supplied by the shape, so only the argument pair is projected
-(a single field directly, several fields as a nested tuple) and each field is
-decoded recursively.
+form lacks, and dispatches to the integer, boolean, char, string, tuple, or ADT
+decoder accordingly. A char is decoded as a Church numeral (the code point) and
+converted back with ``chr``. A string is decoded as the nested-pair tuple of
+code points (the shape supplies the length) and converted back to a string. An
+ADT value is decoded from its ``(tag, args)`` pair: the constructor is supplied
+by the shape, so only the argument pair is projected (a single field directly,
+several fields as a nested tuple) and each field is decoded recursively; a
+0-field ADT (unit) is returned directly from the shape.
 
 Integer (natural) limitation
 ============================

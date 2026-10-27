@@ -31,6 +31,7 @@ import Lamagraph.Compiler.Syntax.Longident (Longident (..), mkLongident)
 import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
 import Lamagraph.Ski.Church (
   addLam,
+  andLam,
   churchLam,
   falseLam,
   fstLam,
@@ -44,6 +45,7 @@ import Lamagraph.Ski.Church (
   sndLam,
   subLam,
   trueLam,
+  unitLam,
  )
 import Lamagraph.Ski.Error (SkiError (..))
 import Lamagraph.Ski.Lambda (Lam (..), freshName, subst, toSki)
@@ -98,10 +100,15 @@ coreExprToLam tags = \case
     | v == stdLess -> lift ltLam
     | v == stdGreaterEq -> lift geLam
     | v == stdLessEq -> lift leLam
+    | v == stdPrintInt -> do
+        x <- lift freshName
+        unitL <- lift unitLam
+        pure (LLam x unitL)
     | Map.member (varName v) tags -> conValueLam tags v
     | otherwise -> pure (LVar (varName v))
   Lit (LitInt n) -> lift (churchLam n)
-  Lit other -> throwError (UnsupportedConstruct ("literal " <> show other))
+  Lit (LitChar c) -> lift (churchLam (ord c))
+  Lit (LitString s) -> litStringLam s
   App (Var v) x
     | Map.member (varName v) tags -> conAppLam tags v x
     | otherwise -> LApp <$> coreExprToLam tags (Var v) <*> coreExprToLam tags x
@@ -123,6 +130,7 @@ coreExprToLam tags = \case
         falseBranch <- coreExprToLam tags (altBody falseAlt)
         pure (LApp (LApp scrutLam trueBranch) falseBranch)
     | isAdtMatch alts -> adtMatchLam tags scrutinee alts
+    | isLitMatch alts -> litMatchLam tags scrutinee alts
     | otherwise -> throwError (UnsupportedConstruct "match")
   Tuple hd tl -> do
     hdLam <- coreExprToLam tags hd
@@ -138,6 +146,21 @@ so the element list always has length ≥ 2.
 nestPairs :: Lam -> NonEmpty Lam -> Lam
 nestPairs _ (x :| []) = x
 nestPairs pair (x :| (y : ys)) = LApp (LApp pair x) (nestPairs pair (y :| ys))
+
+{- | Encode a string literal as the nested-Church-pair tuple of its characters'
+code points (@'\"ab\"' -> pair 97 98@); the empty string is encoded as the unit
+placeholder. The shape-directed decoder recovers the string from the code-point
+tuple (see 'Lamagraph.Ski.Decode.decodeString').
+-}
+litStringLam :: Text -> TranslateM Lam
+litStringLam s
+  | T.null s = lift unitLam
+  | otherwise = do
+      pairL <- lift pairLam
+      cps <- mapM (lift . churchLam . ord) (T.unpack s)
+      case nonEmpty cps of
+        Nothing -> lift unitLam
+        Just ne -> pure (nestPairs pairL ne)
 
 {- | The tag table for ADT constructors: a map from a constructor's name (its
 'varName') to a unique Church-numeral tag. Core loses the ADT grouping (which
@@ -198,6 +221,60 @@ isAdtMatch alts = all isAdtAlt (toList alts)
     DEFAULT -> True
     _ -> False
 
+{- | Whether a match is a numeric-literal match: every alternative is a
+@LitAlt@ on an integer or character literal (both Church-numeral encodings) or
+a @DEFAULT@. String-literal alternatives (tuple encodings) are not matched here.
+-}
+isLitMatch :: NonEmpty CoreMatchAlt -> Bool
+isLitMatch alts = all isNumLitAlt (toList alts)
+ where
+  isNumLitAlt (c, _, _) = case c of
+    LitAlt (LitInt _) -> True
+    LitAlt (LitChar _) -> True
+    DEFAULT -> True
+    _ -> False
+
+{- | Translate a numeric-literal match: the scrutinee is a Church numeral (an
+integer or a character's code point); dispatch by testing
+@isZero (sub scrutinee (lit))@ for each literal alternative and evaluating its
+body. Analogous to the ADT tag dispatch, but the scrutinee is the value itself
+rather than a @(tag, args)@ pair.
+-}
+litMatchLam :: ConTags -> CoreExpr -> NonEmpty CoreMatchAlt -> TranslateM Lam
+litMatchLam tags scrutinee alts = do
+  scrutLam <- coreExprToLam tags scrutinee
+  let dispatch [] = lift (churchLam 0)
+      dispatch ((LitAlt lit, _, body) : rest) = do
+        condLam <- litEqLam scrutLam lit
+        thenLam <- coreExprToLam tags body
+        elseLam <- dispatch rest
+        pure (LApp (LApp condLam thenLam) elseLam)
+      dispatch ((DEFAULT, _, body) : _) = coreExprToLam tags body
+      dispatch ((other, _, _) : _) = throwError (UnsupportedConstruct ("match alt " <> show other))
+  dispatch (toList alts)
+
+{- | The Church bool @(m == n)@. Because 'subLam' saturates at 0,
+@isZero (sub m n)@ tests @m <= n@, not @m == n@; true equality is
+@isZero (sub m n) AND isZero (sub n m)@.
+-}
+churchEqLam :: Lam -> Lam -> TranslateM Lam
+churchEqLam m n = do
+  subL <- lift subLam
+  isZeroL <- lift isZeroLam
+  andL <- lift andLam
+  let le1 = LApp isZeroL (LApp (LApp subL m) n)
+      le2 = LApp isZeroL (LApp (LApp subL n) m)
+  pure (LApp (LApp andL le1) le2)
+
+-- | The Church bool @(scrutinee == lit)@, via 'churchEqLam'.
+litEqLam :: Lam -> Literal -> TranslateM Lam
+litEqLam scrutLam lit = do
+  litLam <- case lit of
+    LitInt n -> lift (churchLam n)
+    LitChar c -> lift (churchLam (ord c))
+    other -> throwError (UnsupportedConstruct ("literal match on " <> show other))
+  churchEqLam scrutLam litLam
+
 {- | Translate an ADT match: the scrutinee is the pair @(tag, args)@; dispatch
 by testing @tag == (tag C)@ for each constructor alternative, binding the
 alternative's fields to the projections of @args@ and evaluating its body.
@@ -221,14 +298,12 @@ adtMatchLam tags scrutinee alts = do
       dispatch ((other, _, _) : _) = throwError (UnsupportedConstruct ("match alt " <> show other))
   dispatch (toList alts)
 
--- | The Church bool @(tagVal == (tag con))@, i.e. @isZero (sub tagVal (tag con))@.
+-- | The Church bool @(tagVal == (tag con))@, via 'churchEqLam'.
 eqTagLam :: ConTags -> Lam -> String -> TranslateM Lam
 eqTagLam tags tagVal conName = do
-  subL <- lift subLam
-  isZeroL <- lift isZeroLam
   tagL <-
     lift (churchLam (fromMaybe (error (toText ("eqTagLam: unknown constructor " <> conName))) (Map.lookup conName tags)))
-  pure (LApp isZeroL (LApp (LApp subL tagVal) tagL))
+  churchEqLam tagVal tagL
 
 {- | The then-branch of an ADT alternative: wrap the body in lambdas for the
 fields and apply the projections of @args@. For @n@ fields, field @i@ (1-indexed)
@@ -295,6 +370,12 @@ stdGreaterEq = Id (Name (mkLongident (stdPrefix :| [">="])))
 -- | The @#std.<=@ operator variable.
 stdLessEq :: Var
 stdLessEq = Id (Name (mkLongident (stdPrefix :| ["<="])))
+
+{- | The @#std.print_int@ variable (a no-op in the SKI pipeline: it returns
+unit, and the printed side-effect is ignored by the value comparison).
+-}
+stdPrintInt :: Var
+stdPrintInt = Id (Name (mkLongident (stdPrefix :| ["print_int"])))
 
 {- | Whether a match is a boolean (if-then-else) match: exactly two @DataAlt@
 alternatives for @#std.true@ and @#std.false@, in that order.

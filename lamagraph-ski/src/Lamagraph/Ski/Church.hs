@@ -28,6 +28,7 @@ module Lamagraph.Ski.Church (
   pairLam,
   fstLam,
   sndLam,
+  unitLam,
   intToChurch,
 ) where
 
@@ -155,6 +156,13 @@ falseLam = do
   x <- freshName
   y <- freshName
   pure $ LLam x (LLam y (LVar y))
+
+{- | The unit value (@()@). Encoded as a closed placeholder term (Church
+@true@): unit carries no information, and the shape-directed decoder ignores
+the term for a 0-field ADT, so any closed term works.
+-}
+unitLam :: State Int Lam
+unitLam = trueLam
 
 -- | Church @isZero@: @\n. n (\x. false) true@.
 isZeroLam :: State Int Lam
