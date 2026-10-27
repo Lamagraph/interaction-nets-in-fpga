@@ -67,7 +67,9 @@ test-suite lamagraph-ski-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , bytestring
     , containers
+    , filepath
     , graph-rewriting
     , graph-rewriting-ski
     , hedgehog
@@ -76,6 +78,7 @@ test-suite lamagraph-ski-test
     , mtl
     , relude
     , tasty
+    , tasty-golden
     , tasty-hedgehog
     , tasty-hunit
   default-language: GHC2021

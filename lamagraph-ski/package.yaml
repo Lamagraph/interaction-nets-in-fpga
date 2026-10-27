@@ -36,7 +36,10 @@ tests:
       - tasty
       - tasty-hunit
       - tasty-hedgehog
+      - tasty-golden
       - hedgehog
+      - bytestring
+      - filepath
 
 language: GHC2021
 

@@ -3,13 +3,17 @@ module Main (main) where
 import Relude
 
 import Common.Term qualified as Term
+import Data.ByteString.Lazy.Char8 (pack)
 import Data.HashMap.Lazy qualified as HashMap
+import Data.List (lookup)
 import Data.Text qualified as T
 import GraphRewriting (Graph)
 import Hedgehog hiding (Var)
 import Hedgehog.Gen qualified as Gen
 import INet.Graph (SKI (..), fromTerm)
+import System.FilePath ((<.>), (</>))
 import Test.Tasty
+import Test.Tasty.Golden (goldenVsString)
 import Test.Tasty.HUnit
 import Test.Tasty.Hedgehog (testProperty)
 
@@ -41,6 +45,7 @@ main =
       , fixedExampleTests
       , harnessTests
       , propertyTests
+      , goldenTests
       , benchmarkTests
       , diagTest
       , spikeTest
@@ -380,6 +385,49 @@ propertyTests =
     "differential property (minimal subset)"
     [ testProperty "lml == ski for all (program, input)" propDifferential
     ]
+
+-- * Golden regression triples
+
+{- | Golden regression triples: for a fixed set of (program, input) pairs, the
+canonical result (agreed by the LML interpreter and the SKI pipeline) is captured
+in a golden file under @test\/golden\/@. A change in either interpreter's result
+flips the golden (a loud regression). The set is deliberately small to bound
+runtime; the property test above covers the broader input space.
+-}
+goldenTests :: TestTree
+goldenTests =
+  testGroup
+    "golden regression triples"
+    [ goldenVsString (name <> "-" <> show input) goldenFile (goldenAction name input)
+    | (name, input) <- goldenTriples
+    , let goldenFile = "test" </> "golden" </> name <> "-" <> show input <.> "out"
+    ]
+ where
+  goldenAction :: String -> Int -> IO LByteString
+  goldenAction name input = do
+    case compileLml (substituteTemplate input (templateFor name)) of
+      Left e -> fail $ "compileLml failed: " <> e
+      Right (binds, resultExpr) -> do
+        res <- translateAndRun binds resultExpr
+        case res of
+          Right v -> return (pack (show v))
+          Left err -> fail $ "differential failure: " <> show err
+
+-- | The fixed set of (program, input) golden triples.
+goldenTriples :: [(String, Int)]
+goldenTriples =
+  [ ("double", 3)
+  , ("sum2", 4)
+  , ("apply_twice", 2)
+  , ("compose", 5)
+  , ("let_heavy", 1)
+  ]
+
+-- | Look up a program template by name (from 'programTemplates').
+templateFor :: String -> Text
+templateFor name = case lookup name programTemplates of
+  Just t -> t
+  Nothing -> error $ T.pack ("templateFor: unknown program " <> name)
 
 {- | Reduction step-count baseline for a fixed set of programs. Measures the
 number of interaction-net contractions (via 'reduceSteps') to reduce the wrapped
