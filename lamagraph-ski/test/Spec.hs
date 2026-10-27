@@ -313,13 +313,6 @@ assertEqualBoth binds expr expected = do
     Right v -> assertEqual "LML and SKI agree" expected v
     Left e -> assertFailure $ "differential failure: " <> show e
 
-{- | Build a core integer-literal expression — a random input for the property
-tests. The minimal subset only produces integer results, so inputs are bounded
-integers.
--}
-intInput :: Int -> CoreExpr
-intInput n = Lit (LitInt n)
-
 {- | Smoke test for the differential harness: a trivial program (@double 3@) must
 agree between the LML interpreter and the SKI pipeline, and the agreed value must
 be @6@. Exercises 'assertEqualBoth' end-to-end (compile → run both → compare).
