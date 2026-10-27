@@ -30,10 +30,9 @@ The test suite (``lamagraph-ski/test/Spec.hs``) exercises the pipeline with
 three complementary layers, all built on ``translateAndRun``:
 
 - **Harness** — ``assertEqualBoth`` runs a core program through both evaluators
-  and asserts the agreed value equals an expected one; ``intInput`` builds a
-  bounded integer input. A ``StepOverflowReached`` or any ``SkiError`` is a loud
-  failure (the reduction is bounded by ``defaultMaxSteps``, so a test never
-  hangs).
+  and asserts the agreed value equals an expected one. A ``StepOverflowReached``
+  or any ``SkiError`` is a loud failure (the reduction is bounded by
+  ``defaultMaxSteps``, so a test never hangs).
 - **Property** — a hedgehog property instantiates a fixed set of minimal-subset
   LML programs (addition, multiplication, ``let``, lambda, higher-order
   application; no recursion) with random bounded inputs (``0..8``) and asserts
