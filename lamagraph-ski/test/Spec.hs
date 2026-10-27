@@ -35,6 +35,7 @@ main =
       , equivalenceTests
       , skiEvalTests
       , fixedExampleTests
+      , harnessTests
       , benchmarkTests
       , diagTest
       , spikeTest
@@ -286,6 +287,42 @@ compileLml src = case parseLmlProgram [src] of
  where
   rhsOf (NonRec _ e) = e
   rhsOf _ = error "compileLml: last binding must be a non-recursive let"
+
+-- * Differential test harness
+
+{- | Assert that the LML interpreter and the SKI pipeline agree on the program,
+and that the agreed value equals @expected@. Built on 'translateAndRun', which
+runs both evaluators and reports 'Mismatch' (carrying both values) on
+disagreement. A 'StepOverflowReached' or any other 'SkiError' is a loud failure
+(never a hang): the reduction is bounded by 'defaultMaxSteps'.
+-}
+assertEqualBoth :: [CoreBind] -> CoreExpr -> Value' -> IO ()
+assertEqualBoth binds expr expected = do
+  res <- translateAndRun binds expr
+  case res of
+    Right v -> assertEqual "LML and SKI agree" expected v
+    Left e -> assertFailure $ "differential failure: " <> show e
+
+{- | Build a core integer-literal expression — a random input for the property
+tests. The minimal subset only produces integer results, so inputs are bounded
+integers.
+-}
+intInput :: Int -> CoreExpr
+intInput n = Lit (LitInt n)
+
+{- | Smoke test for the differential harness: a trivial program (@double 3@) must
+agree between the LML interpreter and the SKI pipeline, and the agreed value must
+be @6@. Exercises 'assertEqualBoth' end-to-end (compile → run both → compare).
+-}
+harnessTests :: TestTree
+harnessTests =
+  testGroup
+    "differential harness"
+    [ testCase "smoke: double 3 agrees (LML == SKI)" $ do
+        case compileLml "module M\nlet double = fun x -> x + x\nlet result = double 3" of
+          Left e -> assertFailure $ "compileLml failed: " <> e
+          Right (binds, resultExpr) -> assertEqualBoth binds resultExpr (RInt 6)
+    ]
 
 {- | Reduction step-count baseline for a fixed set of programs. Measures the
 number of interaction-net contractions (via 'reduceSteps') to reduce the wrapped
