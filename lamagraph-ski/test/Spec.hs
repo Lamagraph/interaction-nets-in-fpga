@@ -41,10 +41,11 @@ main =
       , translateTests
       , runnerTests
       , equivalenceTests
-       , skiEvalTests
-       , boolTests
-       , tupleTests
-       , fixedExampleTests
+      , skiEvalTests
+      , boolTests
+      , tupleTests
+      , adtTests
+      , fixedExampleTests
       , harnessTests
       , propertyTests
       , goldenTests
@@ -237,8 +238,9 @@ skiEvalTests =
         assertSkiEval [] (Lit (LitInt 2)) (RInt 2)
     ]
 
--- | Evaluate a core program via 'skiEval' and assert it equals @expected@. The
--- expected value doubles as the decode shape (the decoder is type-directed).
+{- | Evaluate a core program via 'skiEval' and assert it equals @expected@. The
+expected value doubles as the decode shape (the decoder is type-directed).
+-}
 assertSkiEval :: [CoreBind] -> CoreExpr -> Value' -> IO ()
 assertSkiEval binds expr expected = case skiEval expected binds expr of
   Right v -> assertEqual "skiEval" expected v
@@ -299,6 +301,44 @@ tupleTests =
         assertSkiEval [] (Tuple (Lit (LitInt 1)) (binOp stdPlus 2 3 :| [])) (RTuple [RInt 1, RInt 5])
     , testCase "differential: (1, 2) LML == SKI" $
         assertTranslateAndRun "module M\nlet result = (1, 2)" (RTuple [RInt 1, RInt 2])
+    ]
+
+{- | Tests for the ADT (tagged) encoding: constructor values and applications
+decode to the expected value, and match programs agree between the LML
+interpreter and the SKI pipeline. Covers 0-, 1-, and 2-arity constructors.
+-}
+adtTests :: TestTree
+adtTests =
+  testGroup
+    "ADTs (tagged encoding)"
+    [ testCase "1-arg ctor: match (Some 5) -> 5" $
+        assertTranslateAndRun
+          "module M\ntype 'a opt = None | Some of 'a\nlet result = match (Some 5) with\n  | None -> 0\n  | Some v -> v"
+          (RInt 5)
+    , testCase "2-arg ctor: match (Pair (3, 4)) -> 7" $
+        assertTranslateAndRun
+          "module M\ntype 'a pair = Pair of 'a * 'a\nlet result = match (Pair (3, 4)) with\n  | Pair (a, b) -> a + b"
+          (RInt 7)
+    , testCase "0-arg ctor: match On -> 1" $
+        assertTranslateAndRun
+          "module M\ntype flag = Off | On\nlet result = match On with\n  | Off -> 0\n  | On -> 1"
+          (RInt 1)
+    , testCase "nested ctors: match (Some (Pair (1, 2))) -> 3" $
+        assertTranslateAndRun
+          "module M\ntype 'a pair = Pair of 'a * 'a\ntype 'a opt = None | Some of 'a\nlet result = match (Some (Pair (1, 2))) with\n  | None -> 0\n  | Some p -> match p with\n    | Pair (a, b) -> a + b"
+          (RInt 3)
+    , testCase "ADT value: Some 5" $
+        assertTranslateAndRun
+          "module M\ntype 'a opt = None | Some of 'a\nlet result = Some 5"
+          (RAdt (Name (mkLongident ("M" :| ["Some"]))) [RInt 5])
+    , testCase "ADT value: Pair (3, 4)" $
+        assertTranslateAndRun
+          "module M\ntype 'a pair = Pair of 'a * 'a\nlet result = Pair (3, 4)"
+          (RAdt (Name (mkLongident ("M" :| ["Pair"]))) [RInt 3, RInt 4])
+    , testCase "ADT value: On (0-arg ctor)" $
+        assertTranslateAndRun
+          "module M\ntype flag = Off | On\nlet result = On"
+          (RAdt (Name (mkLongident ("M" :| ["On"]))) [])
     ]
 
 {- | Fixed-example differential tests: each LML program is run through the full

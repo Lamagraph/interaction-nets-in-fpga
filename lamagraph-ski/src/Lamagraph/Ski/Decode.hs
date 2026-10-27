@@ -21,6 +21,7 @@ import Common.Term qualified as Term
 
 import INet.Graph (SKI (..), fromTerm)
 import Lamagraph.Compiler.Core (CoreBind, CoreExpr)
+import Lamagraph.Compiler.Typechecker.TcTypes (Name)
 
 import Lamagraph.Ski.Compare (countLogical)
 import Lamagraph.Ski.Error (SkiError (..))
@@ -72,8 +73,8 @@ decodeBool :: MaxSteps -> Term.Expr -> Either StepOverflow Bool
 decodeBool maxSteps term =
   let full = Term.A (Term.A term (Term.V tickTName)) (Term.V tickFName)
    in case reduceToNormalForm maxSteps (fromTerm full) of
-         Left step -> Left step
-         Right g -> Right (countLogical (isMarker tickTName) g > 0)
+        Left step -> Left step
+        Right g -> Right (countLogical (isMarker tickTName) g > 0)
  where
   isMarker :: String -> SKI -> Bool
   isMarker m = \case
@@ -92,6 +93,7 @@ decodeValue maxSteps shape term = case shape of
   RInt _ -> decodeChurch maxSteps term <&> RInt
   RBool _ -> decodeBool maxSteps term <&> RBool
   RTuple vs -> decodeTuple maxSteps vs term
+  RAdt con vs -> decodeAdt maxSteps con vs term
   _ -> Left (StepOverflow 0)
 
 -- | The SKI selector @λa b. a@ (first projection of a Church pair).
@@ -102,23 +104,39 @@ fstSel = Term.A (Term.A Term.S (Term.A Term.K Term.K)) Term.I
 sndSel :: Term.Expr
 sndSel = Term.A Term.K Term.I
 
+{- | Decode a nested-Church-pair term to its elements, directed by the shape
+(the expected list of element shapes). The term is the right-associated nesting
+@pair e1 (pair e2 (... (pair e(n-1) en)))@; this walks that nesting, projecting
+@fst@/@snd@ at each level and decoding each element with 'decodeValue'. The base
+case (a single remaining element) decodes the leaf directly. Returns 'Left' with
+the step count at which the 'Lamagraph.Ski.Run.MaxSteps' budget was exhausted.
+-}
+decodePairFields :: MaxSteps -> [Value'] -> Term.Expr -> Either StepOverflow [Value']
+decodePairFields _ [] _ = Left (StepOverflow 0)
+decodePairFields maxSteps [x] term = decodeValue maxSteps x term <&> (: [])
+decodePairFields maxSteps (x : xs) term = do
+  v1 <- decodeValue maxSteps x (Term.A term fstSel)
+  rest <- decodePairFields maxSteps xs (Term.A term sndSel)
+  pure (v1 : rest)
+
 {- | Decode a nested-Church-pair term to a tuple, directed by the shape (the
-expected list of element shapes). A Core tuple @(e1, ..., en)@ is encoded as the
-right-associated nesting @pair e1 (pair e2 (... (pair e(n-1) en)))@; this walks
-that nesting, projecting @fst@/@snd@ at each level and decoding each element with
-'decodeValue'. The base case (a single remaining element) decodes the leaf
-directly. Returns 'Left' with the step count at which the
-'Lamagraph.Ski.Run.MaxSteps' budget was exhausted.
+expected list of element shapes).
 -}
 decodeTuple :: MaxSteps -> [Value'] -> Term.Expr -> Either StepOverflow Value'
-decodeTuple _ [] _ = Left (StepOverflow 0)
-decodeTuple maxSteps [x] term = decodeValue maxSteps x term <&> \v -> RTuple [v]
-decodeTuple maxSteps (x : xs) term = do
-  v1 <- decodeValue maxSteps x (Term.A term fstSel)
-  rest <- decodeTuple maxSteps xs (Term.A term sndSel)
-  case rest of
-    RTuple rs -> pure (RTuple (v1 : rs))
-    _ -> Left (StepOverflow 0)
+decodeTuple maxSteps shapes term = RTuple <$> decodePairFields maxSteps shapes term
+
+{- | Decode a tagged-ADT term to an ADT value, directed by the shape (the
+constructor name and the expected field shapes). The term is the pair
+@(tag, args)@; the tag is supplied by the shape (the constructor is known from
+the LML interpreter's result), so only @args@ is projected: a single field is
+decoded directly, several fields as a nested-Church-pair tuple. Returns 'Left'
+with the step count at which the 'Lamagraph.Ski.Run.MaxSteps' budget was
+exhausted.
+-}
+decodeAdt :: MaxSteps -> Name -> [Value'] -> Term.Expr -> Either StepOverflow Value'
+decodeAdt _ con [] _ = pure (RAdt con [])
+decodeAdt maxSteps con fieldShapes term =
+  RAdt con <$> decodePairFields maxSteps fieldShapes (Term.A term sndSel)
 
 {- | Evaluate a closed LML core program to a canonical value via the SKI
 pipeline: translate to a SKI term, then decode the result (directed by the

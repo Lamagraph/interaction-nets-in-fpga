@@ -55,9 +55,12 @@ boolean constructors (``true``/``false``), and the comparison operators
 standard lambda→SKI abstraction rule (``Lamagraph.Ski.Lambda.toSki``). Every
 binder is given a fresh name so composing terms never introduces a name clash.
 An if-then-else (a ``match`` on a boolean) is translated to a direct Church-bool
-selection. Constructs outside the supported subset (integer literals, ``+ - *``,
-booleans, comparisons, ``let``, lambda, application) are reported as
-``UnsupportedConstruct``.
+selection. A ``match`` on an ADT value dispatches on the constructor tag (see
+the tagged ADT encoding below): each alternative's condition is
+``isZero (sub tagVal (tag C))`` and its body is applied to the field
+projections of the value's argument pair. Constructs outside the supported
+subset (recursive ``let``, non-integer literals, other match forms) are
+reported as ``UnsupportedConstruct``.
 
 The abstraction rule carries one essential efficiency shortcut: ``λv. t`` is
 translated to ``K t`` when ``v`` is not free in ``t``. Without it the ``S`` rule
@@ -84,8 +87,17 @@ Church numerals that return a Church bool, built from saturating subtraction,
 is ``not (isZero (sub b a))``). Tuples use the Church pair
 (``pair x y = λf. f x y``, with ``fst p = p (λx y. x)`` and
 ``snd p = p (λx y. y)``); an n-tuple is the right-associated nesting
-``pair e1 (pair e2 (... (pair e(n-1) en)))``. The wider value set (ADTs via
-Scott encoding, char/string) is the scope of the follow-up subtasks.
+``pair e1 (pair e2 (... (pair e(n-1) en)))``. ADTs use a **tagged** encoding:
+Core loses the ADT grouping (which constructors form one sum type) and the
+arities, so each constructor is assigned a globally-unique Church-numeral tag
+in source order, and a value is the Church pair ``(tag, args)`` — a 0-arity
+constructor carries ``unit`` (``true``) as its argument, a single field is
+carried directly, and several fields as a nested tuple pair. A ``match``
+dispatches on the tag (``isZero (sub tagVal (tag C))`` per alternative) and
+binds each alternative's fields to the projections of the argument pair (field
+``i`` of ``n`` is ``fst (snd^(i-1) args)`` for ``i < n`` and
+``snd^(n-1) args`` for ``i == n``). This mirrors the interpreter's tagged
+``VAdt``. Char and string are the scope of the follow-up subtasks.
 
 Extraction (decoding)
 =====================
@@ -107,8 +119,11 @@ structure: at each level the pair is projected with the ``fst``/``snd``
 selectors and each element is decoded recursively. The decoder is
 **shape-directed**: it is told the expected ``Value'`` shape (taken from the
 LML interpreter's result), which supplies the type information the SKI normal
-form lacks, and dispatches to the integer, boolean, or tuple decoder
-accordingly.
+form lacks, and dispatches to the integer, boolean, tuple, or ADT decoder
+accordingly. An ADT value is decoded from its ``(tag, args)`` pair: the
+constructor is supplied by the shape, so only the argument pair is projected
+(a single field directly, several fields as a nested tuple) and each field is
+decoded recursively.
 
 Integer (natural) limitation
 ============================
