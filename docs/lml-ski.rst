@@ -49,12 +49,22 @@ Translation
 ===========
 
 ``Lamagraph.Ski.Translate.translateCore`` expands the core term to a named-``λ``
-term — inlining non-recursive ``let`` bindings and swapping ``+ - *`` for their
-Church combinators — then converts it to SKI via the standard lambda→SKI
-abstraction rule (``Lamagraph.Ski.Lambda.toSki``). Every binder is given a fresh
-name so composing terms never introduces a name clash. Constructs outside the
-minimal subset (integer literals, ``+ - *``, ``let``, lambda, application) are
-reported as ``UnsupportedConstruct``.
+term — inlining non-recursive ``let`` bindings and swapping ``+ - *``, the
+boolean constructors (``true``/``false``), and the comparison operators
+(``< > <= >=``) for their Church combinators — then converts it to SKI via the
+standard lambda→SKI abstraction rule (``Lamagraph.Ski.Lambda.toSki``). Every
+binder is given a fresh name so composing terms never introduces a name clash.
+An if-then-else (a ``match`` on a boolean) is translated to a direct Church-bool
+selection. Constructs outside the supported subset (integer literals, ``+ - *``,
+booleans, comparisons, ``let``, lambda, application) are reported as
+``UnsupportedConstruct``.
+
+The abstraction rule carries one essential efficiency shortcut: ``λv. t`` is
+translated to ``K t`` when ``v`` is not free in ``t``. Without it the ``S`` rule
+re-abstracts every subterm and the term blows up exponentially in the nesting
+depth — a comparison combinator grew to ~290k SKI nodes and its reduction to
+~580k steps; with the shortcut the same combinator is ~230 nodes and reduces in
+~1k steps. The shortcut keeps the translation linear in the term size.
 
 Top-level bindings are inlined by substitution in **reverse** source order: a
 later binding's right-hand side may reference an earlier binding, so the earlier
@@ -66,9 +76,13 @@ Encodings
 
 Integers are encoded as **Church naturals** (``Lamagraph.Ski.Church``): ``+`` is
 Church addition, ``*`` is Church multiplication, and ``-`` is saturating Church
-subtraction (``max 0 (a - b)``). Booleans use the standard Church encoding. The
-wider value set (tuples, ADTs via Scott encoding, char/string) is the scope of
-the follow-up task.
+subtraction (``max 0 (a - b)``). Booleans use the standard Church encoding
+(``true = λt f. t``, ``false = λt f. f``), with ``not``/``and``/``or`` as Church
+bool combinators. The comparisons ``< > <= >=`` are Church combinators over
+Church numerals that return a Church bool, built from saturating subtraction,
+``isZero``, and ``not`` (e.g. ``a <= b`` is ``isZero (sub a b)`` and ``a < b``
+is ``not (isZero (sub b a))``). The wider value set (tuples, ADTs via Scott
+encoding, char/string) is the scope of the follow-up subtasks.
 
 Extraction (decoding)
 =====================
@@ -82,6 +96,13 @@ base reduces to a chain of exactly ``n`` ``tick`` nodes, which are counted.
 Because the net shares ``tick`` through a ``D`` (duplicator) node, the count
 expands ``D`` nodes and counts *logical* occurrences
 (``Lamagraph.Ski.Compare.countLogical``), not physical nodes.
+
+A Church bool is decoded by applying it to two distinct markers (the ``true``
+and ``false`` branch markers); whichever marker survives in the normal form
+gives the boolean value. The decoder is **shape-directed**: it is told the
+expected ``Value'`` shape (taken from the LML interpreter's result), which
+supplies the type information the SKI normal form lacks, and dispatches to the
+integer or boolean decoder accordingly.
 
 Integer (natural) limitation
 ============================

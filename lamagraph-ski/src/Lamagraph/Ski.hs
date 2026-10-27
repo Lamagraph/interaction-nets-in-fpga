@@ -63,7 +63,7 @@ translateAndRun binds resultExpr = do
   case lmlRes of
     Left e -> return (Left e)
     Right a ->
-      let skiRes = skiEval binds resultExpr
+      let skiRes = skiEval a binds resultExpr
        in case skiRes of
             Left e -> return (Left e)
             Right b

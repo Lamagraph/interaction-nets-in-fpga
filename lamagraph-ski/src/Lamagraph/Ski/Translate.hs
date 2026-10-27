@@ -10,6 +10,12 @@ module Lamagraph.Ski.Translate (
   stdPlus,
   stdMinus,
   stdTimes,
+  stdTrue,
+  stdFalse,
+  stdGreater,
+  stdLess,
+  stdGreaterEq,
+  stdLessEq,
 ) where
 
 import Control.Monad.Except
@@ -22,7 +28,18 @@ import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.ModuleResolver.DefaultEnv (stdPrefix)
 import Lamagraph.Compiler.Syntax.Longident (Longident (..), mkLongident)
 import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
-import Lamagraph.Ski.Church (addLam, churchLam, multLam, subLam)
+import Lamagraph.Ski.Church (
+  addLam,
+  churchLam,
+  falseLam,
+  geLam,
+  gtLam,
+  leLam,
+  ltLam,
+  multLam,
+  subLam,
+  trueLam,
+ )
 import Lamagraph.Ski.Error (SkiError (..))
 import Lamagraph.Ski.Lambda (Lam (..), freshName, subst, toSki)
 
@@ -64,6 +81,12 @@ coreExprToLam = \case
     | v == stdPlus -> lift addLam
     | v == stdMinus -> lift subLam
     | v == stdTimes -> lift multLam
+    | v == stdTrue -> lift trueLam
+    | v == stdFalse -> lift falseLam
+    | v == stdGreater -> lift gtLam
+    | v == stdLess -> lift ltLam
+    | v == stdGreaterEq -> lift geLam
+    | v == stdLessEq -> lift leLam
     | otherwise -> pure (LVar (varName v))
   Lit (LitInt n) -> lift (churchLam n)
   Lit other -> throwError (UnsupportedConstruct ("literal " <> show other))
@@ -77,6 +100,14 @@ coreExprToLam = \case
     bodyLam <- coreExprToLam body
     pure (subst (varName v) repl bodyLam)
   Let (Rec _) _ -> throwError (UnsupportedConstruct "recursive let")
+  Match scrutinee _ alts
+    | isBoolMatch alts -> do
+        scrutLam <- coreExprToLam scrutinee
+        let (trueAlt, falseAlt) = boolMatchAlts alts
+        trueBranch <- coreExprToLam (altBody trueAlt)
+        falseBranch <- coreExprToLam (altBody falseAlt)
+        pure (LApp (LApp scrutLam trueBranch) falseBranch)
+    | otherwise -> throwError (UnsupportedConstruct "match")
   other -> throwError (UnsupportedConstruct ("construct " <> show other))
 
 -- | Render a core variable as a plain string (dot-joined long identifier).
@@ -94,3 +125,52 @@ stdMinus = Id (Name (mkLongident (stdPrefix :| ["-"])))
 -- | The @#std.*@ operator variable.
 stdTimes :: Var
 stdTimes = Id (Name (mkLongident (stdPrefix :| ["*"])))
+
+-- | The @#std.true@ constructor variable.
+stdTrue :: Var
+stdTrue = Id (Name (mkLongident (stdPrefix :| ["true"])))
+
+-- | The @#std.false@ constructor variable.
+stdFalse :: Var
+stdFalse = Id (Name (mkLongident (stdPrefix :| ["false"])))
+
+-- | The @#std.>@ operator variable.
+stdGreater :: Var
+stdGreater = Id (Name (mkLongident (stdPrefix :| [">"])))
+
+-- | The @#std.<@ operator variable.
+stdLess :: Var
+stdLess = Id (Name (mkLongident (stdPrefix :| ["<"])))
+
+-- | The @#std.>=@ operator variable.
+stdGreaterEq :: Var
+stdGreaterEq = Id (Name (mkLongident (stdPrefix :| [">="])))
+
+-- | The @#std.<=@ operator variable.
+stdLessEq :: Var
+stdLessEq = Id (Name (mkLongident (stdPrefix :| ["<="])))
+
+-- | Whether a match is a boolean (if-then-else) match: exactly two @DataAlt@
+-- alternatives for @#std.true@ and @#std.false@, in that order.
+isBoolMatch :: NonEmpty CoreMatchAlt -> Bool
+isBoolMatch alts =
+  case toList alts of
+    [(DataAlt d1, _, _), (DataAlt d2, _, _)] ->
+      d1 == nameOf stdTrue && d2 == nameOf stdFalse
+    _ -> False
+
+-- | Split a boolean match into its (true, false) alternatives. The caller must
+-- ensure 'isBoolMatch' holds.
+boolMatchAlts :: NonEmpty CoreMatchAlt -> (CoreMatchAlt, CoreMatchAlt)
+boolMatchAlts alts =
+  case toList alts of
+    [t, f] -> (t, f)
+    _ -> error "boolMatchAlts: not a boolean match"
+
+-- | The body expression of a match alternative.
+altBody :: CoreMatchAlt -> CoreExpr
+altBody (_, _, body) = body
+
+-- | The Name carried by a core variable.
+nameOf :: Var -> Name
+nameOf (Id n) = n

@@ -11,6 +11,7 @@ module Lamagraph.Ski.Decode (
   tickName,
   baseName,
   decodeChurch,
+  decodeValue,
   skiEval,
 ) where
 
@@ -35,6 +36,14 @@ tickName = "__tick__"
 baseName :: String
 baseName = "__base__"
 
+-- | Marker name for the @true@ branch of a Church-boolean decode.
+tickTName :: String
+tickTName = "__tickT__"
+
+-- | Marker name for the @false@ branch of a Church-boolean decode.
+tickFName :: String
+tickFName = "__tickF__"
+
 {- | Decode a Church-encoded integer from a SKI term. The term must denote a
 Church numeral (a function of two arguments). Returns the decoded integer,
 or 'Left' with the step count at which the 'Lamagraph.Ski.Run.MaxSteps' budget
@@ -53,16 +62,46 @@ decodeChurch maxSteps term =
     V{name = n} -> n == tickName
     _ -> False
 
+{- | Decode a Church-encoded boolean from a SKI term. The term must denote a
+Church boolean (@\\t. \\f. t@ or @\\t. \\f. f@). It is applied to two distinct
+markers ('tickTName' and 'tickFName'); whichever marker survives in the normal
+form indicates the boolean value. Returns the decoded boolean, or 'Left' with
+the step count at which the 'Lamagraph.Ski.Run.MaxSteps' budget was exhausted.
+-}
+decodeBool :: MaxSteps -> Term.Expr -> Either StepOverflow Bool
+decodeBool maxSteps term =
+  let full = Term.A (Term.A term (Term.V tickTName)) (Term.V tickFName)
+   in case reduceToNormalForm maxSteps (fromTerm full) of
+         Left step -> Left step
+         Right g -> Right (countLogical (isMarker tickTName) g > 0)
+ where
+  isMarker :: String -> SKI -> Bool
+  isMarker m = \case
+    V{name = n} -> n == m
+    _ -> False
+
+{- | Decode a SKI term to a canonical value, directed by the shape (the
+structure of the expected value, taken from the LML interpreter's result). The
+shape supplies the type information the SKI normal form lacks (SKI normal forms
+are not canonical for combinator equivalence); the actual values are extracted
+from the reduced term. Returns 'Left' with the step count at which the
+'Lamagraph.Ski.Run.MaxSteps' budget was exhausted.
+-}
+decodeValue :: MaxSteps -> Value' -> Term.Expr -> Either StepOverflow Value'
+decodeValue maxSteps shape term = case shape of
+  RInt _ -> decodeChurch maxSteps term <&> RInt
+  RBool _ -> decodeBool maxSteps term <&> RBool
+  _ -> Left (StepOverflow 0)
+
 {- | Evaluate a closed LML core program to a canonical value via the SKI
-pipeline: translate to a SKI term, then decode the result with the default step
-budget. The minimal subset only produces 'RInt' (a Church numeral); the other
-'Value'' constructors are out of scope (Task C). Fails with
-'UnsupportedConstruct' if the program uses a construct outside the minimal
+pipeline: translate to a SKI term, then decode the result (directed by the
+shape, the LML interpreter's result) with the default step budget. Fails with
+'UnsupportedConstruct' if the program uses a construct outside the supported
 subset, or 'StepOverflowReached' if the reduction exhausts the budget.
 -}
-skiEval :: [CoreBind] -> CoreExpr -> Either SkiError Value'
-skiEval binds resultExpr = do
+skiEval :: Value' -> [CoreBind] -> CoreExpr -> Either SkiError Value'
+skiEval shape binds resultExpr = do
   expr <- translateCore binds resultExpr
-  case decodeChurch defaultMaxSteps expr of
+  case decodeValue defaultMaxSteps shape expr of
     Left step -> Left (StepOverflowReached step)
-    Right n -> Right (RInt n)
+    Right v -> Right v

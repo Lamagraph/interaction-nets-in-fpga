@@ -18,6 +18,13 @@ module Lamagraph.Ski.Church (
   isZeroLam,
   trueLam,
   falseLam,
+  notLam,
+  andLam,
+  orLam,
+  ltLam,
+  gtLam,
+  leLam,
+  geLam,
   intToChurch,
 ) where
 
@@ -153,6 +160,105 @@ isZeroLam = do
   x <- freshName
   falseL <- falseLam
   LLam n . LApp (LApp (LVar n) (LLam x falseL)) <$> trueLam
+
+-- | Church @not@: @\b. b false true@.
+notLam :: State Int Lam
+notLam = do
+  b <- freshName
+  falseL <- falseLam
+  LLam b . LApp (LApp (LVar b) falseL) <$> trueLam
+
+-- | Church @and@: @\a b. a b false@.
+andLam :: State Int Lam
+andLam = do
+  a <- freshName
+  b <- freshName
+  LLam a . LLam b . LApp (LApp (LVar a) (LVar b)) <$> falseLam
+
+-- | Church @or@: @\a b. a true b@.
+orLam :: State Int Lam
+orLam = do
+  a <- freshName
+  b <- freshName
+  trueL <- trueLam
+  pure $ LLam a (LLam b (LApp (LApp (LVar a) trueL) (LVar b)))
+
+{- | Church @<@ on Church numerals, returning a Church bool:
+@\m n. not (isZero (sub n m))@. Since 'subLam' saturates at 0, @sub n m /= 0@
+iff @n > m@.
+-}
+ltLam :: State Int Lam
+ltLam = do
+  m <- freshName
+  n <- freshName
+  notL <- notLam
+  isZeroL <- isZeroLam
+  subL <- subLam
+  pure $
+    LLam
+      m
+      ( LLam
+          n
+          ( LApp
+              notL
+              ( LApp
+                  isZeroL
+                  (LApp (LApp subL (LVar n)) (LVar m))
+              )
+          )
+      )
+
+-- | Church @>@ on Church numerals, returning a Church bool: @\m n. not (isZero (sub m n))@.
+gtLam :: State Int Lam
+gtLam = do
+  m <- freshName
+  n <- freshName
+  notL <- notLam
+  isZeroL <- isZeroLam
+  subL <- subLam
+  pure $
+    LLam
+      m
+      ( LLam
+          n
+          ( LApp
+              notL
+              ( LApp
+                  isZeroL
+                  (LApp (LApp subL (LVar m)) (LVar n))
+              )
+          )
+      )
+
+-- | Church @<=@ on Church numerals, returning a Church bool: @\m n. isZero (sub m n)@.
+leLam :: State Int Lam
+leLam = do
+  m <- freshName
+  n <- freshName
+  isZeroL <- isZeroLam
+  subL <- subLam
+  pure $
+    LLam
+      m
+      ( LLam
+          n
+          (LApp isZeroL (LApp (LApp subL (LVar m)) (LVar n)))
+      )
+
+-- | Church @>=@ on Church numerals, returning a Church bool: @\m n. isZero (sub n m)@.
+geLam :: State Int Lam
+geLam = do
+  m <- freshName
+  n <- freshName
+  isZeroL <- isZeroLam
+  subL <- subLam
+  pure $
+    LLam
+      m
+      ( LLam
+          n
+          (LApp isZeroL (LApp (LApp subL (LVar n)) (LVar m)))
+      )
 
 -- | The SKI term for the Church numeral @n@ (a closed term, no free @V@ nodes).
 intToChurch :: Int -> Term.Expr

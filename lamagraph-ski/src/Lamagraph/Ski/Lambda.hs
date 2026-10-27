@@ -59,26 +59,40 @@ toSki = \case
   LApp f x -> Term.A (toSki f) (toSki x)
   LLam v body -> abstractSki v (toSki body)
 
+{- | Whether @v@ occurs as a free @V@ node anywhere in a SKI term. The SKI
+constants (@S@, @K@, @I@) carry no free variables.
+-}
+freeIn :: String -> Term.Expr -> Bool
+freeIn v = \case
+  Term.V w -> w == v
+  Term.A t1 t2 -> freeIn v t1 || freeIn v t2
+  _ -> False
+
 {- | @abstractSki v t@ is the SKI term for @λv. t@, where @t@ is a SKI term
 viewed as a lambda term with the SKI combinators as constants. This is the
 standard lambda-to-SKI abstraction rule applied to SKI terms:
 
+> λv. t     = K t        (v not free in t)
 > λv. v     = I
 > λv. c     = K c        (c a constant or a free variable ≠ v)
 > λv. t1 t2 = S (λv. t1) (λv. t2)
 
-It recurses on the subterms of @t@, so it terminates. Translating the body
-first and then abstracting (rather than pattern-matching a lambda spine in
-the body) is what makes the translation correct for nested abstractions such
-as @λv. λy. (a b)@.
+The @K t@ shortcut when @v@ is not free in @t@ is essential for efficiency:
+without it the @S@ rule re-abstracts every subterm, blowing the term up
+exponentially in the nesting depth (a comparison combinator grew to ~290k SKI
+nodes); with it the translation stays linear in the term size. It recurses on
+the subterms of @t@, so it terminates. Translating the body first and then
+abstracting (rather than pattern-matching a lambda spine in the body) is what
+makes the translation correct for nested abstractions such as @λv. λy. (a b)@.
 -}
 abstractSki :: String -> Term.Expr -> Term.Expr
-abstractSki v t =
-  case t of
-    Term.V w
-      | w == v -> Term.I
-      | otherwise -> Term.A Term.K (Term.V w)
-    Term.S -> Term.A Term.K Term.S
-    Term.K -> Term.A Term.K Term.K
-    Term.I -> Term.A Term.K Term.I
-    Term.A t1 t2 -> Term.A (Term.A Term.S (abstractSki v t1)) (abstractSki v t2)
+abstractSki v t
+  | not (freeIn v t) = Term.A Term.K t
+  | otherwise = case t of
+      Term.V w
+        | w == v -> Term.I
+        | otherwise -> Term.A Term.K (Term.V w)
+      Term.S -> Term.A Term.K Term.S
+      Term.K -> Term.A Term.K Term.K
+      Term.I -> Term.A Term.K Term.I
+      Term.A t1 t2 -> Term.A (Term.A Term.S (abstractSki v t1)) (abstractSki v t2)

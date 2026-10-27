@@ -41,8 +41,9 @@ main =
       , translateTests
       , runnerTests
       , equivalenceTests
-      , skiEvalTests
-      , fixedExampleTests
+       , skiEvalTests
+       , boolTests
+       , fixedExampleTests
       , harnessTests
       , propertyTests
       , goldenTests
@@ -235,11 +236,48 @@ skiEvalTests =
         assertSkiEval [] (Lit (LitInt 2)) (RInt 2)
     ]
 
--- | Evaluate a core program via 'skiEval' and assert it equals @expected@.
+-- | Evaluate a core program via 'skiEval' and assert it equals @expected@. The
+-- expected value doubles as the decode shape (the decoder is type-directed).
 assertSkiEval :: [CoreBind] -> CoreExpr -> Value' -> IO ()
-assertSkiEval binds expr expected = case skiEval binds expr of
+assertSkiEval binds expr expected = case skiEval expected binds expr of
   Right v -> assertEqual "skiEval" expected v
   Left e -> assertFailure $ "skiEval failed: " <> show e
+
+{- | Tests for the boolean and comparison encodings: the boolean literals and
+the four comparison operators decode to the expected Church booleans, and an
+@if-then-else@ (a boolean 'Match') selects the correct branch.
+-}
+boolTests :: TestTree
+boolTests =
+  testGroup
+    "booleans and comparisons"
+    [ testCase "true literal" $ assertSkiEval [] (Var stdTrue) (RBool True)
+    , testCase "false literal" $ assertSkiEval [] (Var stdFalse) (RBool False)
+    , testCase "1 < 2" $ assertSkiEval [] (binOp stdLess 1 2) (RBool True)
+    , testCase "2 < 1" $ assertSkiEval [] (binOp stdLess 2 1) (RBool False)
+    , testCase "1 > 2" $ assertSkiEval [] (binOp stdGreater 1 2) (RBool False)
+    , testCase "2 > 1" $ assertSkiEval [] (binOp stdGreater 2 1) (RBool True)
+    , testCase "1 <= 2" $ assertSkiEval [] (binOp stdLessEq 1 2) (RBool True)
+    , testCase "2 <= 1" $ assertSkiEval [] (binOp stdLessEq 2 1) (RBool False)
+    , testCase "1 >= 2" $ assertSkiEval [] (binOp stdGreaterEq 1 2) (RBool False)
+    , testCase "2 >= 1" $ assertSkiEval [] (binOp stdGreaterEq 2 1) (RBool True)
+    , testCase "if 1 < 2 then 10 else 20" $
+        assertEqualBoth
+          []
+          (Match (binOp stdLess 1 2) scrut (boolAlt stdTrue (Lit (LitInt 10)) :| [boolAlt stdFalse (Lit (LitInt 20))]))
+          (RInt 10)
+    , testCase "if 2 < 1 then 10 else 20" $
+        assertEqualBoth
+          []
+          (Match (binOp stdLess 2 1) scrut (boolAlt stdTrue (Lit (LitInt 10)) :| [boolAlt stdFalse (Lit (LitInt 20))]))
+          (RInt 20)
+    ]
+ where
+  scrut = Id (Name (mkLongident (pure "t#a")))
+  boolAlt :: Var -> CoreExpr -> CoreMatchAlt
+  boolAlt d e = (DataAlt (nameOfVar d), [], e)
+   where
+    nameOfVar (Id n) = n
 
 {- | Fixed-example differential tests: each LML program is run through the full
 Driver pipeline (parse, resolve, typecheck, desugar) and then through
