@@ -23,6 +23,29 @@ evaluated two ways and the results compared:
 ``Lamagraph.Ski.translateAndRun`` runs both and raises ``Mismatch`` (carrying
 both values) if they disagree.
 
+Differential testing
+====================
+
+The test suite (``lamagraph-ski/test/Spec.hs``) exercises the pipeline with
+three complementary layers, all built on ``translateAndRun``:
+
+- **Harness** — ``assertEqualBoth`` runs a core program through both evaluators
+  and asserts the agreed value equals an expected one; ``intInput`` builds a
+  bounded integer input. A ``StepOverflowReached`` or any ``SkiError`` is a loud
+  failure (the reduction is bounded by ``defaultMaxSteps``, so a test never
+  hangs).
+- **Property** — a hedgehog property instantiates a fixed set of minimal-subset
+  LML programs (addition, multiplication, ``let``, lambda, higher-order
+  application; no recursion) with random bounded inputs (``0..8``) and asserts
+  LML == SKI for every (program, input).
+- **Goldens** — a small set of (program, input) triples captures the expected
+  canonical ``Value'`` in golden files (``test/golden/``); a change in either
+  interpreter's result flips the golden.
+
+Step-bound policy: every reduction is bounded by ``defaultMaxSteps``; an
+overflow is a test failure, not a hang. The input range is kept small so each
+reduction stays tractable on the worklist reducer.
+
 Translation
 ===========
 

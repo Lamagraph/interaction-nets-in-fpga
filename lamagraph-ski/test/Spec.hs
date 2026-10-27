@@ -410,7 +410,7 @@ goldenTests =
       Right (binds, resultExpr) -> do
         res <- translateAndRun binds resultExpr
         case res of
-          Right v -> return (pack (show v))
+          Right v -> return (pack (show v <> "\n"))
           Left err -> fail $ "differential failure: " <> show err
 
 -- | The fixed set of (program, input) golden triples.
