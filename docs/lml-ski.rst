@@ -73,9 +73,11 @@ match alternatives, other match forms) are reported as
    encoding is infeasible in the eager worklist reducer. The combinator parks
    its self-application in an argument that the body discards, but the eager
    reducer reduces that argument at every step — even a non-recursive
-   ``let rec`` body overflows the step budget. Recursion is to be revisited
-   with a demand-driven reducer; the encoding-variant analysis (Z, Y, thunk,
-   demand-driven) lives in the design notes on task #88.
+   ``let rec`` body overflows the step budget. The enabler — the worklist
+   reducer's eager erasure of a discarded disjoint argument (see the Runner
+   section) — is now in place, and recursion is the subject of task #91. The
+   encoding-variant analysis (Z, Y, thunk, demand-driven) lives in the design
+   notes on task #88.
 
 The abstraction rule carries one essential efficiency shortcut: ``λv. t`` is
 translated to ``K t`` when ``v`` is not free in ``t``. Without it the ``S`` rule
@@ -185,6 +187,20 @@ driver loop forever). As a safety net, whenever the worklist drains a full scan
 is performed and normal form is declared only when that scan finds no redex, so
 the driver is correct even if the incremental neighbourhood update ever misses a
 pair.
+
+The worklist reducer also **drops unevaluated arguments**. When a ``K1``
+contraction discards an argument, the discarded subgraph is normally erased by
+an eraser that propagates through it one node at a time. The reducer instead
+first checks whether the discarded subgraph is a *disjoint* component — one with
+no connection to the rest of the graph — and, if so, deletes the whole component
+at once. A component is disjoint exactly when it contains no ``D`` (duplicator)
+node: a ``D`` node's two input ports are always wired to the rest of the graph
+(the two copies created by the ``S2`` rule), so a ``D`` node marks a *shared*
+subgraph. A shared subgraph is left to the ordinary eraser propagation, which
+the ``eliminate`` rule resolves by redirecting the shared value to the surviving
+copy. The optimization changes the step count, not the result (the SKI system is
+confluent), and it is the enabler for the Z-combinator encoding of recursion
+(see the note in the Translation section).
 
 The fixed-order reference driver (``reduceStepsFixedOrder``) is kept for
 debugging and for the worklist-vs-fixed-order equivalence tests; it tries each

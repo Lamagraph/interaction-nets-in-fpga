@@ -41,6 +41,7 @@ main =
       , translateTests
       , runnerTests
       , equivalenceTests
+      , dropArgTests
       , skiEvalTests
       , boolTests
       , tupleTests
@@ -220,6 +221,40 @@ decodeTicks = countLogical isTick
   isTick = \case
     V{name = n} -> n == tickName
     _ -> False
+
+{- | Regression test for the "drop unevaluated argument" optimization. The term
+@(K 5) (add 100 100)@ reduces to @5@, discarding the argument @add 100 100@.
+
+Two things contribute to the step count. First, the discarded argument's own
+internal redexes reduce before the @K1@ contraction fires (the worklist orders
+pairs by node id, and the argument's nodes precede the @K1@ pair); that cost
+(~4100 steps for @add 100 100@) is paid with or without the optimization.
+Second, once @K1@ fires, the already-reduced argument must be erased: the
+optimization deletes the whole disjoint component at once, whereas without it
+the eraser propagates through the component one node at a time (~800 extra
+steps). The guard below sits between the two totals (5802 with the
+optimization, 6604 without), so it fails if the eager erasure regresses.
+-}
+dropArgTests :: TestTree
+dropArgTests =
+  testGroup
+    "drop unevaluated argument"
+    [ testCase "(K 5) (add 100 100) reduces within budget" $ do
+        let term = Term.A (Term.A Term.K (intToChurch 5)) (apply2 addLam 100 100)
+            (steps, _g, reachedNF) = reduceSteps maxStepsInt (fromTerm term)
+        assertBool "reached normal form" reachedNF
+        when (steps > dropArgGuard) $
+          assertFailure $ "step count " <> show steps <> " exceeds guard " <> show dropArgGuard
+        putStrLn $ "  (K 5) (add 100 100): " <> show steps <> " steps"
+    ]
+
+{- | Step-count guard for the "drop unevaluated argument" test. Measured: 5802
+steps with the eager-erasure optimization, 6604 without (the difference is the
+eraser propagation through the discarded argument). The guard sits between the
+two, with margin above the optimized count for small contraction-order shifts.
+-}
+dropArgGuard :: Int
+dropArgGuard = 6000
 
 {- | Tests for 'skiEval': distinct small integers evaluate to distinct values,
 and the decoder is stable across equivalent encodings (@1 + 1@ and the direct

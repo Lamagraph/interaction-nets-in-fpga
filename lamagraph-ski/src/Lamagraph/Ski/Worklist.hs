@@ -11,6 +11,15 @@ Correctness is guaranteed by a safety net: whenever the worklist drains, a full
 scan of the graph is performed, and normal form is declared only when that full
 scan finds no redex. The driver is therefore correct even if the incremental
 neighbourhood update ever misses a pair.
+
+The driver also drops unevaluated arguments: when a @K1@ contraction discards
+an argument, the discarded subgraph is erased eagerly (all its nodes deleted at
+once) instead of being propagated by the eraser one node at a time. This is
+sound only when the discarded subgraph is a disjoint component (it contains no
+@D@ duplicator node, whose other ports are wired to the rest of the graph); a
+shared subgraph is left to the normal erasure, which the @eliminate@ rule
+resolves. The optimization changes the step count, not the result (the SKI
+system is confluent).
 -}
 module Lamagraph.Ski.Worklist (
   reduceStepsWL,
@@ -224,7 +233,15 @@ contractActive kind u v xv yv = case (kind, xv, yv) of
     mergeEdges iA oK
     deleteNode u
     deleteNode v
-    return (aff0 ++ [n])
+    -- Drop the unevaluated argument: if the discarded subgraph is a disjoint
+    -- component, erase it eagerly (the eraser is consumed too); otherwise leave
+    -- the eraser for the normal propagation. The affected nodes must exclude
+    -- any node the erasure deleted (the argument's first node is a neighbour of
+    -- the A node, so it is in @aff0@).
+    deleted <- eagerErase n
+    if Set.null deleted
+      then return (aff0 ++ [n])
+      else return (filter (\x -> not (Set.member x deleted)) aff0)
   (RK_S0, S0{}, A{inp = iA, out2 = o2A}) -> do
     aff0 <- neighBoth u v
     n <- newNode (S1{inp = iA, out = o2A})
@@ -356,3 +373,38 @@ neighBoth u v = do
   nu <- neighbours u
   nv <- neighbours v
   return [n | n <- nu ++ nv, n /= u && n /= v]
+
+-- * Dropping unevaluated arguments
+
+{- | Eagerly erase the subgraph connected to the eraser @n@ (the argument
+discarded by a @K1@ contraction), if it is a disjoint component. A component is
+disjoint iff it contains no @D@ (duplicator) node: a @D@ node's @inp1@/@inp2@
+ports are always wired to the rest of the graph (the two copies created by the
+@S2@ rule), so a @D@ node in the component means the component is shared.
+Returns the set of deleted nodes (the component, including the eraser), or the
+empty set if the component was left for the normal erasure propagation (the
+@eliminate@ rule then redirects the shared value to the surviving copy).
+-}
+eagerErase :: Node -> Rewrite SKI (Set.Set Node)
+eagerErase start = do
+  comp <- component start
+  vals <- mapM readNode comp
+  if any isDup vals
+    then return Set.empty
+    else do
+      mapM_ deleteNode comp
+      return (Set.fromList comp)
+ where
+  isDup = \case
+    D{} -> True
+    _ -> False
+
+-- | The connected component containing the given node (breadth-first search).
+component :: Node -> Rewrite SKI [Node]
+component start = go (Set.singleton start) [start]
+ where
+  go seen [] = return (Set.elems seen)
+  go seen (n : queue) = do
+    ns <- neighbours n
+    let new = [m | m <- ns, not (Set.member m seen)]
+    go (Set.union seen (Set.fromList new)) (queue ++ new)
