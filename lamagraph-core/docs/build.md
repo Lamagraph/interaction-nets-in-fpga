@@ -25,5 +25,5 @@ Notable GHC/Clash options (from `common-options`): `NoImplicitPrelude` (uses `Cl
 - **Static sizing.** Every vector length in the pipeline (`ReduceRuleResult`, `Interface`, `Changes` map, FSM counters) is derived from the four `INet` parameters, so cycle counts per phase are known at compile time (derived in [architecture.md](architecture.md) §4.1).
 - **Address space.** 4-bit addresses, 16 cells — small enough that linear scans (`Core.Map`, bitmap free-search) are acceptable.
 - **Deprecated surface.** `Core.Loader.loadInterface`, `loadActivePair`, `writeNewNodes` are superseded by inline logic in `Core.CPU` and kept only for compatibility.
-- **Haddock + diagrams.** Rule haddocks embed the SVGs from `docs/`; design rationale for the EDSL layer is in `docs/decisions.md` and `docs/edsl.md`.
+- **Haddock + diagrams.** Rule haddocks embed the SVGs from `docs/`; the EDSL guide is [edsl.md](edsl.md), its design history — [history.md](history.md), and the rationale for each primitive lives in the Haddock of `INet.Edsl`, `INet.Edsl.Agents`, and `INet.Define`.
 - **Documentation tooling.** The import graph in `architecture.md` §5 can be regenerated with `agent-scripts/gen-module-graph.sh` → `docs/module-graph.generated.md`.

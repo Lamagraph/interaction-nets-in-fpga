@@ -2,7 +2,7 @@
 
 Interaction-net based processor written in Clash, compiled to FPGA hardware. This document describes the module layout, the reduction pipeline, the hardware topology, and the data types shared between modules.
 
-**Reading order.** Sections 2–4 give the big picture (pipeline, hardware, FSM); sections 5–7 cover the import graph, data types, and rules; sections 8–10 collect reference material (glossary, invariants, limitations). Companion file: [build.md](build.md) — build, test and cross-cutting conventions. The per-module reference lives in Haddock: build it with `cabal haddock` and start from the `Core.Core` → `Core.CPU` → `Core.Reducer` pages.
+**Reading order.** Sections 2–4 give the big picture (pipeline, hardware, FSM); sections 5–7 cover the import graph, data types, and rules; sections 8–10 collect reference material (glossary, invariants, limitations). Companion files: [build.md](build.md) — build, test and cross-cutting conventions; [edsl.md](edsl.md) — the rule-EDSL guide. The per-module reference lives in Haddock: build it with `cabal haddock` and start from the `Core.Core` → `Core.CPU` → `Core.Reducer` pages.
 
 ---
 
@@ -350,7 +350,7 @@ The synthesized rule set (`Core.Concrete.ReduceRulesLambda`, instance `INet Agen
 | Erasure propagation | `Erase >< X` | 2 (`Erase`, one per secondary of X) | 0 | `docs/eps_apply_rule.svg` |
 | Erasure meet | `Erase >< Erase` | 0 | 0 | — |
 
-The EDSL rule set (`INet.Define`, instance `INet AgentSimpleLambda 4 2 2`) implements the same three rules plus duplicator rules (`dupAnyBody`), with allocation counts beta 0, erase-any 2, dup-any 4. It is verified against the hand-written set by property and unit tests but is not yet wired into `topEntity`.
+The EDSL rule set (`INet.Define`, instance `INet AgentSimpleLambda 4 2 2`) implements the same three rules plus duplicator rules (`dupAnyBody`); design, verification, and status: [edsl.md](edsl.md).
 
 SVG net diagrams for individual interactions also live in `docs/`: `apply.svg`, `absApplyEmptyInterface.svg`, `absApplyNonEmpty.svg`, `absApplyRecInterface.svg`, `eraseEraseEmptyInterface.svg`, `idToIdReduceRes.svg`, `reduceLoopEdge.svg`.
 
@@ -392,4 +392,3 @@ Held by construction and/or checked in code; violations abort with `errorX` rath
 - **EDSL rule set not synthesized.** `INet.Define` (4 addresses per pair) is equivalent to the hand-written set per tests but `topEntity` is fixed to the 2-address set; wiring the EDSL set in is roadmap work.
 - **One reduction at a time.** The CPU picks the lowest marked active address per step (`giveActiveAddressNumber`) — sequential reduction, no parallel active-pair handling.
 - **Dead code kept out of the build.** `Core.Concrete.TypesTH` moved to `experimental/` (its Template-Haskell-generated type lacked the `NFDataX` / `ShowX` / `Default` instances Clash requires; nothing imported it) — see `experimental/README.md`.
-

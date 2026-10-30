@@ -37,6 +37,9 @@ To return it to `src/`:
 4. Use it from a real module (or test) and make `cabal build all`, `cabal test`
    and HDL generation pass.
 
-Note: `docs/edsl-requirements-2.md` envisages replacing/extending `makeAgentsType`
-with richer type declarations as part of future EDSL work; that requirement predates
-this move and refers to the same function.
+Note: the EDSL agent-set generator
+(`INet.Edsl.Agents.declareAgents`, see [`../docs/edsl.md`](../docs/edsl.md))
+replaced the idea of extending `makeAgentsType` for label declarations: it
+generates the label / kind / arity / singleton skeleton from one declaration
+list. It deliberately has no payload-constructor support, so the
+`UnsignedInt1..n` payloads of `makeAgentsType` have no counterpart there.
