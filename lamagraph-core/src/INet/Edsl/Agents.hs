@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 {- |
 Module      : INet.Edsl.Agents
 Description : Template Haskell generator for an agent-set declaration skeleton

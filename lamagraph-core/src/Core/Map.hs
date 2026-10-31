@@ -1,7 +1,5 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
 {-# HLINT ignore "Eta reduce" #-}
-
 {-# OPTIONS_HADDOCK ignore-exports #-}
 
 {- |

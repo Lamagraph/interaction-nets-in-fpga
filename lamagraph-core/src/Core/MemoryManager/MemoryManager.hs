@@ -33,20 +33,24 @@ import Core.Node
 >>> :set -fplugin GHC.TypeLits.Normalise
 -}
 
--- | The two nodes of an interaction-redex, both loaded from RAM with their addresses.
--- Their principal ports are connected to each other.
+{- | The two nodes of an interaction-redex, both loaded from RAM with their addresses.
+Their principal ports are connected to each other.
+-}
 data ActivePair (portsNumber :: Nat) agentType = ActivePair
   { _leftNode :: LoadedNode portsNumber agentType
   , _rightNode :: LoadedNode portsNumber agentType
   }
   deriving (Show, Eq, Generic, NFDataX, Bundle, ShowX)
+
 $(makeLenses ''ActivePair)
 
 -- | Occupancy state of the cell memory (see the module header).
 data MemoryManager
   = MemoryManager
-  { _busyBitMap :: Vec CellsNumber Bool -- ^ @True@ = the address is busy, nothing can be written there
-  , _activePairs :: Vec CellsNumber Bool -- ^ @True@ = the address holds the head of an active pair
+  { _busyBitMap :: Vec CellsNumber Bool
+  -- ^ @True@ = the address is busy, nothing can be written there
+  , _activePairs :: Vec CellsNumber Bool
+  -- ^ @True@ = the address holds the head of an active pair
   }
   deriving (Generic, NFDataX, Bundle, Show)
 
@@ -66,10 +70,12 @@ indexToUnsigned ::
   Unsigned m
 indexToUnsigned v = bitCoerce (resize v :: Index (2 ^ m))
 
--- | Get `Vec` of free `AddressNumber`s of given size.
--- Yields the lowest free addresses in ascending order, padded with `Nothing`;
--- when there are fewer free addresses than requested the missing slots stay
--- `Nothing` (the caller — a reduction rule — sees an exhausted pool).
+{- | Get `Vec` of free `AddressNumber`s of given size.
+Yields the lowest free addresses, front-packed in descending order (each one is
+prepended as the busy map is scanned), padded with `Nothing`; when there are
+fewer free addresses than requested the missing slots stay `Nothing` (the
+caller — a reduction rule — sees an exhausted pool).
+-}
 getFreeAddresses ::
   forall maxAddressesCount.
   (KnownNat maxAddressesCount) =>

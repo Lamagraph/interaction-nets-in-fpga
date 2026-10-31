@@ -116,8 +116,8 @@ initialEpsAppToIdNode = Just absIdNode +>> Just applyMainNode +>> Just absEraseN
      in Node prPort secPorts Abstract
   applyMainNode =
     let prPort = Connected $ Port absAddressErase Primary
-        port0 = Connected $ Port absAddressId Primary
-        port1 = NotConnected
+        port0 = NotConnected
+        port1 = Connected $ Port absAddressId Primary
         secPorts = Just port0 :> Just port1 :> Nil
      in Node prPort secPorts Apply
   absEraseNode =

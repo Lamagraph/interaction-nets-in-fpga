@@ -28,6 +28,8 @@ import Core.Loader (loadActivePair, loadInterface)
 import Core.MemoryManager.MemoryManager
 import Core.MemoryManager.NodeChanges
 import Core.Node
+import qualified Data.Foldable as DF
+import qualified Data.Maybe as DM
 import Tests.Core.Unit.Common.Assert (assertDump)
 import Tests.Core.Unit.Common.Fixtures (
   mkActivePair,
@@ -37,6 +39,10 @@ import Tests.Core.Unit.Common.Fixtures (
   pairIdErase,
  )
 import Tests.Core.Unit.Common.Sim (netRam, sampleSystemN)
+import Tests.Core.Unit.Common.Symmetry (
+  assertSymmetricActivePair,
+  assertSymmetricFixtureNet,
+ )
 import qualified Prelude as P
 
 activePairGettingTemplate ::
@@ -53,7 +59,12 @@ activePairGettingTemplate ::
   Maybe (ActivePair portsNumber agentType) ->
   TestTree
 activePairGettingTemplate testName initialMM initialNet expectedActivePair =
-  testCase ("load active pair: " P.++ testName) $
+  testCase ("load active pair: " P.++ testName) $ do
+    assertSymmetricFixtureNet testName initialNet
+    P.mapM_
+      (assertSymmetricActivePair (testName P.++ " result"))
+      (DM.catMaybes systemActualAnswer)
+    DF.for_ expectedActivePair (assertSymmetricActivePair (testName P.++ " expected"))
     assertDump (show expectedActivePair) (showX systemActualAnswer) answersAreEqual
  where
   systemActualAnswer =
@@ -91,6 +102,11 @@ activePairGettingComplexTemplate testName initialNet activeAddresses expectedAct
       )
   answersAreEqual = P.all (`elem` systemActualAnswer) expectedActivePairs
 
+{- | Interface vectors are both read results and write payloads: the tests
+inject arbitrary nodes there (including erase nodes whose primary points at a
+padding slot), so they are not nets and are not symmetry-checked. Only the
+input fixture and loaded active pairs are.
+-}
 interfaceReadWriteTemplate ::
   forall agentType portsNumber externalNodesNumber.
   ( KnownNat portsNumber
@@ -107,7 +123,8 @@ interfaceReadWriteTemplate ::
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   TestTree
 interfaceReadWriteTemplate testName initialNet interface changedExNodes expectedNotWrittenInterface =
-  testCase ("load interface: " P.++ testName) $
+  testCase ("load interface: " P.++ testName) $ do
+    assertSymmetricFixtureNet testName initialNet
     assertDump expectedDump (showX systemActualAnswer) answersAreEqual
  where
   expectedDump = show expectedNotWrittenInterface P.++ "\n" P.++ show changedExNodes
@@ -137,7 +154,8 @@ interfaceReadWriteComplexTemplate ::
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   TestTree
 interfaceReadWriteComplexTemplate testName initialNet interface changedExNodes expectedNotWrittenInterface =
-  testCase ("load interface: " P.++ testName) $
+  testCase ("load interface: " P.++ testName) $ do
+    assertSymmetricFixtureNet testName initialNet
     assertDump expectedDump (showX systemActualAnswer) answersAreEqual
  where
   expectedDump = show expectedNotWrittenInterface P.++ "\n" P.++ show changedExNodes
@@ -176,9 +194,14 @@ combinationComplexTemplate ::
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   TestTree
 combinationComplexTemplate testName initialNet activeAddresses interfaces changedExNodes expectedActivePairs expectedNotWrittenInterface =
-  testCase ("load interface and active pair: " P.++ testName) $
+  testCase ("load interface and active pair: " P.++ testName) $ do
+    assertSymmetricFixtureNet testName initialNet
+    P.mapM_ checkPair (fst <$> systemActualAnswer)
+    P.mapM_ checkPair expectedActivePairs
     assertDump expectedDump (show systemActualAnswer) answersAreEqual
  where
+  checkPair maybePair =
+    DF.for_ maybePair (assertSymmetricActivePair (testName P.++ " result pair"))
   expectedDump =
     show expectedNotWrittenInterface
       P.++ "\n"

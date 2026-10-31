@@ -19,7 +19,34 @@ import INet.Net
 import Test.Tasty
 import Test.Tasty.HUnit
 import Tests.Core.Unit.Common.Assert (assertDump)
+import Tests.Core.Unit.Common.Symmetry (assertSymmetricFixtureNet)
 import Prelude as P
+
+-- | Root-address stream of the closed CPU loop for @cycleCount@ cycles.
+mealyCoreRoots ::
+  forall agentType nodesNumber edgesNumber portsNumber.
+  ( KnownNat portsNumber
+  , KnownNat nodesNumber
+  , KnownNat edgesNumber
+  , nodesNumber <= CellsNumber
+  , INet agentType nodesNumber edgesNumber portsNumber
+  , NFDataX agentType
+  , Show agentType
+  , Eq agentType
+  ) =>
+  Vec CellsNumber (Maybe (Node portsNumber agentType)) ->
+  MemoryManager ->
+  Int ->
+  AddressNumber ->
+  [AddressNumber]
+mealyCoreRoots initNet initMemoryManager cycleCount rootNodeAddress =
+  sampleN
+    cycleCount
+    ( (logicBroad @portsNumber @nodesNumber @edgesNumber @agentType @System)
+        initNet
+        rootNodeAddress
+        initMemoryManager
+    )
 
 mealyCoreTestTemplate ::
   forall agentType nodesNumber edgesNumber portsNumber.
@@ -41,17 +68,16 @@ mealyCoreTestTemplate ::
   TestName ->
   TestTree
 mealyCoreTestTemplate initNet initMemoryManager expectedAnswer cycleCount rootNodeAddress testName =
-  testCase testName $
+  testCase testName $ do
+    assertSymmetricFixtureNet testName initNet
     assertDump (show expectedAnswer) (showX systemActualAnswer) answersAreEqual
  where
   systemActualAnswer =
-    sampleN
+    mealyCoreRoots @agentType @nodesNumber @edgesNumber @portsNumber
+      initNet
+      initMemoryManager
       cycleCount
-      ( (logicBroad @portsNumber @nodesNumber @edgesNumber @agentType @System)
-          initNet
-          rootNodeAddress
-          initMemoryManager
-      )
+      rootNodeAddress
   answersAreEqual = P.all (`elem` systemActualAnswer) expectedAnswer
 
 idApplyToIdMealyCore :: TestTree
@@ -79,10 +105,28 @@ epsApplyToIdMealyCore =
   mealyCoreTestTemplate @AgentSimpleLambda @2 @2
     initialEpsAppToIdNode
     initialEpsAppToIdMM
-    [1, 3, 2]
+    -- Roots 1 (start) and 3 (after beta), then 1 again: the free eraser is
+    -- allocated at address 1. The old malformed wiring produced root 2 here.
+    [1, 3]
     50
     1
     "id apply to eps core ( (λx.(ϵ x))(λy.y) )"
+
+{- | Pin the corrected `initialEpsAppToIdNode`: the malformed wiring used to
+allocate the free eraser at address 2, so the root 2 appeared.
+-}
+epsApplyToIdRoots :: TestTree
+epsApplyToIdRoots =
+  testCase "eps fixture roots: no root 2, final root 1" $ do
+    assertBool "root 2 must not appear" (2 `notElem` systemActualAnswer)
+    assertEqual "final root" 1 (P.last systemActualAnswer)
+ where
+  systemActualAnswer =
+    mealyCoreRoots @AgentSimpleLambda @2 @2 @2
+      initialEpsAppToIdNode
+      initialEpsAppToIdMM
+      50
+      1
 
 mealyCoreUnitTests :: TestTree
 mealyCoreUnitTests =
@@ -91,4 +135,5 @@ mealyCoreUnitTests =
     [ idApplyToIdMealyCore
     , epsApplyToIdSimpleMealyCore
     , epsApplyToIdMealyCore
+    , epsApplyToIdRoots
     ]

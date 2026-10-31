@@ -2,8 +2,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -233,7 +231,7 @@ slotByAddr ::
   (KnownNat nodesNumber) =>
   AddressNumber ->
   RuleBuilder edgesNumber nodesNumber portsNumber l (Maybe (Index nodesNumber))
-slotByAddr a = findIndex isAddr <$> gets _agents
+slotByAddr a = gets (findIndex isAddr . _agents)
  where
   isAddr (Just (addr, _, _)) = addr == a
   isAddr Nothing = False
@@ -383,8 +381,9 @@ fresh agent = do
 -- Materialization
 -- ====================
 
--- | Attach the runtime label to an accumulator and build the `Node`; the
--- address is added by `materialize`.
+{- | Attach the runtime label to an accumulator and build the `Node`; the
+address is added by `materialize`.
+-}
 accToNode :: l -> NodeAccumulator portsNumber -> Node portsNumber l
 accToNode lbl NodeAccumulator{..} =
   Node

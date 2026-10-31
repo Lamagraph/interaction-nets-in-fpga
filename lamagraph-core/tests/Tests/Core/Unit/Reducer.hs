@@ -30,6 +30,7 @@ import Tests.Core.Unit.Common.Fixtures (
   pairIdErase,
   pairLoopEdge,
  )
+import Tests.Core.Unit.Common.Symmetry (assertSymmetricAfterDelta, loadedNet)
 import Prelude
 
 -- | <<docs/eraseEraseEmptyInterface.svg>>
@@ -80,8 +81,9 @@ nonEmptyRecursiveInterface =
 -- | <<docs/idToIdReduceRes.svg>>
 reduceIdAppId :: TestTree
 reduceIdAppId =
-  testCase "reduce Id apply to Id" $
+  testCase "reduce Id apply to Id" $ do
     assertEqualShow expectedDelta systemActualDelta
+    assertSymmetricAfterDelta "reduce Id apply to Id" initialIdApplyToIdNode systemActualDelta
  where
   acPair = mkActivePair pairIdApplyToId
   expectedEdges =
@@ -95,8 +97,12 @@ reduceIdAppId =
 -- | <<docs/reduceLoopEdge.svg>>
 reduceLoopEdge :: TestTree
 reduceLoopEdge =
-  testCase "reduce closed lambda and closed apply agents" $
+  testCase "reduce closed lambda and closed apply agents" $ do
     assertEqualShow expectedDelta systemActualDelta
+    assertSymmetricAfterDelta
+      "reduce closed lambda and closed apply agents"
+      (loadedNet initialLoopEdge)
+      systemActualDelta
  where
   acPair = mkActivePair pairLoopEdge
   expectedEdges =
@@ -109,8 +115,12 @@ reduceLoopEdge =
 
 reduceEpsAppId :: TestTree
 reduceEpsAppId =
-  testCase "reduce Id apply to Eps" $
+  testCase "reduce Id apply to Eps" $ do
     assertEqualShow expectedDelta systemActualDelta
+    assertSymmetricAfterDelta
+      "reduce Id apply to Eps"
+      initialEpsAppToIdNode
+      systemActualDelta
  where
   acPair = mkActivePair pairEpsAppToId
   expectedEdges = C.def
@@ -140,8 +150,12 @@ reduceEpsAppId =
 
 reduceEpsAppIdSimple :: TestTree
 reduceEpsAppIdSimple =
-  testCase "reduce Id apply to Eps Simple" $
+  testCase "reduce Id apply to Eps Simple" $ do
     assertEqualShow expectedDelta systemActualDelta
+    assertSymmetricAfterDelta
+      "reduce Id apply to Eps Simple"
+      initialEpsAppToIdSimpleNode
+      systemActualDelta
  where
   acPair = mkActivePair pairEpsAppToIdSimple
   expectedEdges = C.def
@@ -171,8 +185,12 @@ reduceEpsAppIdSimple =
 
 reduceEraseId :: TestTree
 reduceEraseId =
-  testCase "reduce Erase Id" $
+  testCase "reduce Erase Id" $ do
     assertEqualShow expectedDelta systemActualDelta
+    assertSymmetricAfterDelta
+      "reduce Erase Id"
+      initialIdEraseNode
+      systemActualDelta
  where
   acPair = mkActivePair pairIdErase
   expectedEdges = C.def

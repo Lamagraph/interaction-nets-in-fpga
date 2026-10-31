@@ -107,11 +107,16 @@ data Phase (externalNodesNumber :: Nat) (newNodesNumber :: Nat)
 data CPUState portsNumber nodesNumber edgesNumber agentType = CPUState
   { _phase :: Phase ((*) 2 portsNumber) nodesNumber
   , _memoryManager :: MemoryManager
-  , _previousLoadedNode :: Maybe (LoadedNode portsNumber agentType) -- ^ Left node of the pair, held while the right one is fetched
-  , _previousRamForm :: Maybe (RamForm portsNumber agentType) -- ^ Pending request re-driven by the @Delay*@ phases
-  , _changes :: Map ((*) 2 portsNumber) (Changes portsNumber) -- ^ Accumulated updates for the external nodes of the current pair
-  , _interface :: Interface ((*) 2 portsNumber) -- ^ Addresses of the external nodes of the current pair
-  , _nodesToWrite :: Vec nodesNumber (Maybe (LoadedNode portsNumber agentType)) -- ^ Fresh nodes of the current @Delta@
+  , _previousLoadedNode :: Maybe (LoadedNode portsNumber agentType)
+  -- ^ Left node of the pair, held while the right one is fetched
+  , _previousRamForm :: Maybe (RamForm portsNumber agentType)
+  -- ^ Pending request re-driven by the @Delay*@ phases
+  , _changes :: Map ((*) 2 portsNumber) (Changes portsNumber)
+  -- ^ Accumulated updates for the external nodes of the current pair
+  , _interface :: Interface ((*) 2 portsNumber)
+  -- ^ Addresses of the external nodes of the current pair
+  , _nodesToWrite :: Vec nodesNumber (Maybe (LoadedNode portsNumber agentType))
+  -- ^ Fresh nodes of the current @Delta@
   , _rootNodeAddress :: AddressNumber
   }
   deriving (Generic, NFDataX)

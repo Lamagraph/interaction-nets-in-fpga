@@ -146,6 +146,7 @@ test-suite test-library
     Tests.Core.Unit.Common.Normalize
     Tests.Core.Unit.Common.Rule
     Tests.Core.Unit.Common.Sim
+    Tests.Core.Unit.Common.Symmetry
     Tests.Core.Unit.CPU
     Tests.Core.Unit.CycleBudget
     Tests.Core.Unit.EdslAgents
@@ -158,6 +159,7 @@ test-suite test-library
     Tests.Core.Unit.Loader
     Tests.Core.Unit.MemoryManager
     Tests.Core.Unit.Reducer
+    Tests.Core.Unit.Symmetry
   build-depends:
     lamagraph-core,
     QuickCheck,

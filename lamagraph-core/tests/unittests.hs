@@ -10,6 +10,7 @@ import Tests.Core.Unit.EdslRulesUnit (allocationCountTests, edslRulesUnitTests)
 import Tests.Core.Unit.Loader
 import Tests.Core.Unit.MemoryManager
 import Tests.Core.Unit.Reducer
+import Tests.Core.Unit.Symmetry (symmetryTests)
 
 main :: IO ()
 main =
@@ -26,4 +27,5 @@ main =
       , mealyCoreUnitTests
       , cycleBudgetTests
       , loaderUnitTests
+      , symmetryTests
       ]

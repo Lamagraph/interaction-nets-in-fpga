@@ -28,8 +28,9 @@ fresh `Erase` nodes at the first two pool addresses.
 -}
 reduceEpsAppToId :: TestTree
 reduceEpsAppToId =
-  testCase "erase on (λx.(ε x))(λy.y): two fresh erasers" $
-    (actNodes @?= expectedNodes) >> (actEdges @?= [])
+  testCase "erase on (λx.(ε x))(λy.y): two fresh erasers" $ do
+    actNodes @?= expectedNodes
+    actEdges @?= []
  where
   (lN, rN) = pairEpsAppToId
   (actEdges, actNodes) = edsOf (freeVec4 6 5) (lN, rN)
@@ -44,8 +45,9 @@ first fresh eraser's primary stays `NotConnected`.
 -}
 reduceEpsAppToIdSimple :: TestTree
 reduceEpsAppToIdSimple =
-  testCase "erase on (ε)(λy.y): one free eraser primary" $
-    (actNodes @?= expectedNodes) >> (actEdges @?= [])
+  testCase "erase on (ε)(λy.y): one free eraser primary" $ do
+    actNodes @?= expectedNodes
+    actEdges @?= []
  where
   (lN, rN) = pairEpsAppToIdSimple
   (actEdges, actNodes) = edsOf (freeVec4 4 3) (lN, rN)
@@ -58,8 +60,9 @@ reduceEpsAppToIdSimple =
 -- | \(\lambda x.x\) against an eraser: both copies reference the abstract's secondaries.
 reduceIdErase :: TestTree
 reduceIdErase =
-  testCase "erase on λx.x: two fresh erasers on the abstract's children" $
-    (actNodes @?= expectedNodes) >> (actEdges @?= [])
+  testCase "erase on λx.x: two fresh erasers on the abstract's children" $ do
+    actNodes @?= expectedNodes
+    actEdges @?= []
  where
   (lN, rN) = pairIdErase
   (actEdges, actNodes) = edsOf (freeVec4 3 2) (lN, rN)

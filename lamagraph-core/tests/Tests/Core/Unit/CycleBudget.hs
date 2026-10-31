@@ -21,6 +21,7 @@ import Core.Concrete.Initial
 import Test.Tasty
 import Test.Tasty.HUnit
 import Tests.Core.Unit.Common.Sim (phases)
+import Tests.Core.Unit.Common.Symmetry (assertSymmetricFixtureNet)
 import Prelude as P
 
 {- | Cycle indices where a new search starts (@FetchLeftActiveAddress@) plus the
@@ -37,6 +38,7 @@ searchWindows ph = P.zipWith (-) (P.drop 1 marks) marks
 betaReductionBudget :: TestTree
 betaReductionBudget =
   testCase "beta: fetch 5, k=1 interface walk, no fresh nodes" $ do
+    assertSymmetricFixtureNet "beta budget" initialIdApplyToIdNode
     let ph = phases 30 initialIdApplyToIdNode 0 initialIdApplyToIdMM
         expected =
           [ "Init"
@@ -66,6 +68,7 @@ betaReductionBudget =
 erasePropagationBudget :: TestTree
 erasePropagationBudget =
   testCase "erasure propagation: write-back = nodesNumber (2)" $ do
+    assertSymmetricFixtureNet "erasure propagation budget" initialEpsAppToIdSimpleNode
     let ph = phases 20 initialEpsAppToIdSimpleNode 1 initialEpsAppToIdSimpleMM
         expected =
           [ "Init"
@@ -99,6 +102,7 @@ erasePropagationBudget =
 multiReductionBudget :: TestTree
 multiReductionBudget =
   testCase "four reductions: k=2/k=1/def walks and terminal search" $ do
+    assertSymmetricFixtureNet "multi-reduction budget" initialEpsAppToIdNode
     let ph = phases 50 initialEpsAppToIdNode 1 initialEpsAppToIdMM
         expected =
           [ "Init"

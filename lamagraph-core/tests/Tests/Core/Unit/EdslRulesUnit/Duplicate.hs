@@ -16,10 +16,23 @@ import Core.Node
 import qualified INet.Define as Def
 import INet.Net (INet (makeReduction), ReduceRuleResult)
 import Test.Tasty
-import Test.Tasty.HUnit (testCase, (@?=))
+import Test.Tasty.HUnit (Assertion, testCase, (@?=))
 import Prelude
 
 import Tests.Core.Unit.Common.Normalize (freeVec4, freeVec4Full, mkNode, normEdges, normNodesDef)
+import Tests.Core.Unit.Common.Symmetry (assertSymmetricSubnet)
+
+-- | Compare a rule result and assert that its fresh-node subnet is symmetric.
+assertRuleResult ::
+  [LoadedNode 2 Def.AgentSimpleLambda] ->
+  [LoadedNode 2 Def.AgentSimpleLambda] ->
+  [Edge 2] ->
+  [Edge 2] ->
+  Assertion
+assertRuleResult actNodes expectedNodes actEdges expectedEdges = do
+  assertSymmetricSubnet "rule result" actNodes
+  actNodes @?= expectedNodes
+  actEdges @?= expectedEdges
 
 {- | Fixtures for the `Duplicate >< X` rules. The `Duplicate` actor has arity 2
 but no arguments, so both its slots are padding `Nothing` (see
@@ -136,7 +149,7 @@ are emitted.
 reduceDuplicateAbstract :: TestTree
 reduceDuplicateAbstract =
   testCase "Duplicate >< Abstract: two copies, two fans" $
-    (actNodes @?= expectedNodes) >> (actEdges @?= expectedEdges)
+    assertRuleResult actNodes expectedNodes actEdges expectedEdges
  where
   res :: ReduceRuleResult 4 2 2 Def.AgentSimpleLambda
   res = makeReduction (freeVec4Full 10 11 12 13) (dupNode 0 1) (dupPartner Def.AbstractLabel 1 0 dupTargetSecs)
@@ -152,7 +165,7 @@ chosen by the pair's right-hand label and both `Apply` and `Abstract` have arity
 reduceDuplicateApply :: TestTree
 reduceDuplicateApply =
   testCase "Duplicate >< Apply: two apply copies, two fans" $
-    (actNodes @?= expectedNodes) >> (actEdges @?= expectedEdges)
+    assertRuleResult actNodes expectedNodes actEdges expectedEdges
  where
   res :: ReduceRuleResult 4 2 2 Def.AgentSimpleLambda
   res = makeReduction (freeVec4Full 10 11 12 13) (dupNode 0 1) (dupPartner Def.ApplyLabel 1 0 dupTargetSecs)
@@ -168,7 +181,7 @@ is unchanged.
 reduceApplyDuplicate :: TestTree
 reduceApplyDuplicate =
   testCase "Apply >< Duplicate: two apply copies, two fans" $
-    (actNodes @?= expectedNodes) >> (actEdges @?= expectedEdges)
+    assertRuleResult actNodes expectedNodes actEdges expectedEdges
  where
   res :: ReduceRuleResult 4 2 2 Def.AgentSimpleLambda
   res = makeReduction (freeVec4Full 10 11 12 13) (dupPartner Def.ApplyLabel 0 1 dupTargetSecs) (dupNode 1 0)
@@ -181,7 +194,7 @@ reduceApplyDuplicate =
 reduceAbstractDuplicate :: TestTree
 reduceAbstractDuplicate =
   testCase "Abstract >< Duplicate: two copies, two fans" $
-    (actNodes @?= expectedNodes) >> (actEdges @?= expectedEdges)
+    assertRuleResult actNodes expectedNodes actEdges expectedEdges
  where
   res :: ReduceRuleResult 4 2 2 Def.AgentSimpleLambda
   res = makeReduction (freeVec4Full 10 11 12 13) (dupPartner Def.AbstractLabel 0 1 dupTargetSecs) (dupNode 1 0)
@@ -197,7 +210,7 @@ so every primary stays `NotConnected` and the copies become unreachable.
 reduceDuplicateAbstractEmpty :: TestTree
 reduceDuplicateAbstractEmpty =
   testCase "Duplicate >< Abstract with no arguments: unreachable copies and fans" $
-    (actNodes @?= expectedNodes) >> (actEdges @?= expectedEdges)
+    assertRuleResult actNodes expectedNodes actEdges expectedEdges
  where
   res :: ReduceRuleResult 4 2 2 Def.AgentSimpleLambda
   res = makeReduction (freeVec4Full 10 11 12 13) (dupNode 0 1) (dupPartner Def.AbstractLabel 1 0 emptySecs)
@@ -209,8 +222,11 @@ reduceDuplicateAbstractEmpty =
 -- | Erase rules fired by a `Duplicate`: both its slots are padding, so two fresh erasers are allocated with unconnected primaries.
 reduceEraseDuplicate :: TestTree
 reduceEraseDuplicate =
-  testCase "Erase >< Duplicate: two unreachable fresh erasers" $
-    (actNodes @?= expectedNodes) >> (actEdges @?= expectedEdges)
+  testCase "Erase >< Duplicate: two unreachable fresh erasers" $ do
+    -- Both results are free erasers with padding slots: no internal wire exists
+    -- to check, so only the literal comparison applies.
+    actNodes @?= expectedNodes
+    actEdges @?= expectedEdges
  where
   res :: ReduceRuleResult 4 2 2 Def.AgentSimpleLambda
   res = makeReduction (freeVec4 10 11) (dupNode 0 1) (eraseNode 1 0)
@@ -225,8 +241,11 @@ reduceEraseDuplicate =
 -- | Mirrored dispatch (`Duplicate >< Erase`).
 reduceDuplicateErase :: TestTree
 reduceDuplicateErase =
-  testCase "Duplicate >< Erase: two unreachable fresh erasers" $
-    (actNodes @?= expectedNodes) >> (actEdges @?= expectedEdges)
+  testCase "Duplicate >< Erase: two unreachable fresh erasers" $ do
+    -- Both results are free erasers with padding slots: no internal wire exists
+    -- to check, so only the literal comparison applies.
+    actNodes @?= expectedNodes
+    actEdges @?= expectedEdges
  where
   res :: ReduceRuleResult 4 2 2 Def.AgentSimpleLambda
   res = makeReduction (freeVec4 10 11) (eraseNode 0 1) (dupNode 1 0)

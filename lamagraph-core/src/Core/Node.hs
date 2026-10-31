@@ -21,6 +21,7 @@ module Core.Node where
 
 import Clash.Prelude
 import Control.Lens (makeLenses, (^.))
+import qualified Prelude as P
 
 {- | Type alias for `Maybe Port` with aliased constructors too.
 This can be useful for distinguish connected to something @Port@, free @Port@ that is not connected and void @Port@.
@@ -67,7 +68,8 @@ principal port is wired to another principal port (@nodeIsActive@).
 data Node portsNumber agentType = Node
   { _primaryPort :: Connection portsNumber
   , _secondaryPorts :: Vec portsNumber (Maybe (Connection portsNumber))
-  , _nodeType :: agentType -- ^ Agent label; the reduction rules are selected by it
+  , _nodeType :: agentType
+  -- ^ Agent label; the reduction rules are selected by it
   }
   deriving (NFDataX, Generic, Show, Eq, ShowX)
 
@@ -112,6 +114,16 @@ getAllConnections ::
   Vec (portsNumber + 1) (Maybe (Connection portsNumber))
 getAllConnections node = Just (node ^. primaryPort) :> (node ^. secondaryPorts)
 
+-- | The connection a node stores at one of its ports; @Nothing@ is an absent slot.
+connectionAt ::
+  (KnownNat portsNumber) =>
+  Node portsNumber agentType ->
+  IdOfPort portsNumber ->
+  Maybe (Connection portsNumber)
+connectionAt (Node primPort secPorts _) = \case
+  Primary -> Just primPort
+  Id i -> secPorts !! i
+
 {- | Look up the port a given `Connection` points at and return the connection stored there.
 
 `NotConnected` input yields `Nothing`. An out-of-range `Id` index is a programming
@@ -122,9 +134,104 @@ findConnection ::
   Node portsNumber agentType ->
   Connection portsNumber ->
   Maybe (Connection portsNumber)
-findConnection (Node primPort secPorts _) = \case
+findConnection node = \case
   NotConnected -> Nothing
-  Connected (Port _ portId) ->
-    case portId of
-      Primary -> Just primPort
-      Id i -> secPorts !! i
+  Connected (Port _ portId) -> connectionAt node portId
+
+{- | One side of a wire that is not mirrored back.
+
+`_errorSourcePort` holds the referencing port, `_errorTargetPort` the port it
+points at. `_errorTargetConnection` is what that target port actually contains:
+`Nothing` when the target is not a live cell or the slot is padding,
+`Just connection` when it holds a different connection.
+-}
+data SymmetryError (portsNumber :: Nat) = SymmetryError
+  { _errorSourcePort :: Port portsNumber
+  , _errorTargetPort :: Port portsNumber
+  , _errorTargetConnection :: Maybe (Connection portsNumber)
+  }
+  deriving (Show, Eq, Generic)
+
+{- | Look a referenced address up in the set being checked: @Nothing@ = outside the
+set (external, skipped), @Just Nothing@ = inside the universe but holds no node.
+-}
+type TargetLookup portsNumber agentType =
+  AddressNumber -> Maybe (Maybe (Node portsNumber agentType))
+
+-- | Check every connection of one node against the mirror stored on the other side.
+checkNodeSymmetry ::
+  forall portsNumber agentType.
+  (KnownNat portsNumber) =>
+  TargetLookup portsNumber agentType ->
+  AddressNumber ->
+  Node portsNumber agentType ->
+  [SymmetryError portsNumber]
+checkNodeSymmetry lookupTarget sourceAddress node = primaryErrors P.++ secondaryErrors
+ where
+  checkConnection sourcePortId = \case
+    NotConnected -> []
+    Connected targetPort -> case lookupTarget (targetPort ^. nodeAddress) of
+      Nothing -> [] -- external to the checked set
+      Just maybeTargetNode ->
+        let mirror = maybeTargetNode >>= (`connectionAt` (targetPort ^. portConnectedToId))
+            expected = Connected $ Port sourceAddress sourcePortId
+            sourcePort = Port sourceAddress sourcePortId
+         in [SymmetryError sourcePort targetPort mirror | mirror /= Just expected]
+  primaryErrors = checkConnection Primary (node ^. primaryPort)
+  secondaryErrors =
+    ifoldl
+      ( \errors i maybeConnection -> case maybeConnection of
+          Nothing -> errors
+          Just connection -> checkConnection (Id i) connection P.++ errors
+      )
+      []
+      (node ^. secondaryPorts)
+
+{- | Wiring-symmetry violations of a whole net: every @Connected@ reference from a
+live cell (busy bit set) must point at a live cell, and the target port must hold
+exactly the mirror connection back.
+
+The busy map is authoritative for liveness: freed cells may still contain stale
+nodes in RAM, and those are not part of the net.
+-}
+netSymmetryErrors ::
+  forall portsNumber agentType.
+  (KnownNat portsNumber) =>
+  Vec CellsNumber Bool ->
+  Vec CellsNumber (Maybe (Node portsNumber agentType)) ->
+  [SymmetryError portsNumber]
+netSymmetryErrors busyBitMap net =
+  ifoldl
+    ( \errors i isBusy ->
+        if isBusy
+          then case net !! i of
+            Nothing -> errors -- busy without payload: occupancy defect, not wiring
+            Just node -> checkNodeSymmetry lookupTarget (fromIntegral i) node P.++ errors
+          else errors
+    )
+    []
+    busyBitMap
+ where
+  lookupTarget address =
+    if busyBitMap !! address
+      then Just (net !! address)
+      else Just Nothing -- every address is inside a whole net; a freed one is dead
+
+{- | Wiring-symmetry violations of a subnet given as `LoadedNode`s. References to
+addresses outside the set are external and skipped, so a pair, an interface or a
+rule result can be checked against its own members only.
+-}
+subnetSymmetryErrors ::
+  forall portsNumber agentType.
+  (KnownNat portsNumber) =>
+  [LoadedNode portsNumber agentType] ->
+  [SymmetryError portsNumber]
+subnetSymmetryErrors nodes = P.concatMap checkNode nodes
+ where
+  checkNode (LoadedNode node address) = checkNodeSymmetry lookupTarget address node
+  lookupTarget address = go nodes
+   where
+    go [] = Nothing
+    go (LoadedNode node nodeAddress : rest)
+      | nodeAddress == address = Just (Just node)
+      | otherwise = go rest

@@ -1,8 +1,6 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
 {-# HLINT ignore "Eta reduce" #-}
 {-# HLINT ignore "Functor law" #-}
-
 {-# OPTIONS_HADDOCK ignore-exports #-}
 
 {- |

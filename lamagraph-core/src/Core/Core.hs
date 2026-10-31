@@ -88,4 +88,5 @@ topEntity =
         initialIdApplyToIdMM
     )
 {-# NOINLINE topEntity #-}
+
 makeTopEntity 'topEntity
