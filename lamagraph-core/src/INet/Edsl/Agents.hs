@@ -16,8 +16,9 @@ An agent set needs five declarations, all determined by the same
 Hand-writing them means repeating each tuple five times and letting the copies
 drift; one splice from a single declaration list keeps that list the only
 source of truth. Template Haskell is used /only/ for this mechanical skeleton:
-rule bodies and the @INet@ instance stay hand-written because they carry the
-actual reduction semantics.
+rule bodies and the rule table stay hand-written because they carry the actual
+reduction semantics. The dispatch table and `INet` instance are generated
+separately by "INet.Edsl.Dispatch".
 
 Per-agent names are derived by suffix: the pair @(\"Apply\", 2)@ yields the
 singleton constructor @Apply@, the promoted tag @ApplyKind@, and the runtime

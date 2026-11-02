@@ -98,7 +98,9 @@ keeps the `|><|` spelling.
 
 The `|><|` spelling survived the requirements but not the implementation: a
 rule is a plain function, and the pair orientation is the dispatch arm's
-choice.
+choice. The later `INet.Edsl.Dispatch` generator removed that choice from the
+source: R3 and R4 are now derived from the declarative rule table plus the
+rule's type-level node count.
 
 ## Rejected or deferred alternatives
 
@@ -110,7 +112,10 @@ Recorded so they are not re-proposed without context:
 - deriving every type name from a set prefix (`LambdaKind`, `LambdaArity`, …)
   — rejected as churn in every documented signature;
 - Template Haskell emitting whole `INet` instances rather than helper
-  declarations — bodies and dispatch carry semantics and stay hand-written;
+  declarations — originally rejected because bodies and dispatch carry
+  semantics and stayed hand-written; superseded by `INet.Edsl.Dispatch`, where
+  the user still writes the rule bodies and the declarative rule table and only
+  the mechanical dispatch/instance wrapper is generated;
 - an indexed monad with per-body type-level counts — rejected in favour of one
   ceiling per agent set;
 - a quasiquoter for Inpla-like syntax — plain Haskell plus TH was chosen;

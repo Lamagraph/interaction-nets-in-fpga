@@ -232,6 +232,6 @@ subnetSymmetryErrors nodes = P.concatMap checkNode nodes
   lookupTarget address = go nodes
    where
     go [] = Nothing
-    go (LoadedNode node nodeAddress : rest)
-      | nodeAddress == address = Just (Just node)
+    go (LoadedNode node loadedAddress : rest)
+      | loadedAddress == address = Just (Just node)
       | otherwise = go rest

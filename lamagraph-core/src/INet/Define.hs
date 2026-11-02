@@ -79,15 +79,16 @@ from the rule's @freshNodesNumber@ type parameter, not maintained separately.
   edges.
 * @Duplicate >< Duplicate@ has no rule on purpose — duplicating a duplicator
   needs a different theory — and dispatch rejects it with @errorX@ before any
-  allocation. Erase arms are checked before duplicate arms, so any pair
-  containing @Erase@ is an erasure: @Duplicate >< Erase@ erases the
-  duplicator's side (its padding slots yield dangling erasers, as the unit
-  tests pin) rather than copying an eraser.
+  allocation. Every pair containing @Erase@ is an erasure: the table lists the
+  canonical @Erase >< X@ orientation, and @Duplicate >< Erase@ resolves to it
+  through the mirrored lookup in @ruleFor@ (its padding slots yield dangling
+  erasers, as the unit tests pin) rather than copying an eraser.
 
-__Why the instance is hand-written.__ The generator emits only the declaration
-skeleton; dispatch and bodies carry the semantics. Dispatch therefore spells
-out every pair, including deliberate holes, and calls one body twice for
-symmetric pairs.
+__Why the instance is generated.__ The generator emits the declaration
+skeleton; the rule bodies and the @(pair, rule)@ table carry the semantics.
+`INet.Edsl.Dispatch.declareINet` expands the table into @canonicalRule@,
+@ruleFor@, and the @INet@ instance, so no dispatch arm or allocation-count
+method is written by hand.
 
 == Pinned by tests
 
@@ -102,12 +103,10 @@ module INet.Define where
 import Clash.Prelude hiding (Index, imap, (:>))
 import Clash.Sized.Index (Index)
 import qualified Clash.Sized.Vector as Vec
-import Control.Lens hiding (Index, imap, (:>))
 import Control.Monad.State (runState, state)
-import Core.Node
 import INet.Edsl
 import INet.Edsl.Agents (declareAgents)
-import INet.Net (INet (..), ReduceRuleResult)
+import INet.Edsl.Dispatch (declareINet, rule)
 
 -- ====================
 -- Agent set: {Apply, Abstract, Erase, Duplicate}
@@ -149,7 +148,7 @@ sec2Port1 = 1
 Connects the two connections leaving the applied function's secondary slots to
 the two leaving the abstraction's, pairwise; nothing is created, so the free
 pool goes unused. The body only zips the two port vectors, which is why the
-mirrored orientation in the instance reuses it with the arguments swapped.
+mirrored orientation in `ruleFor` reuses it with the arguments swapped.
 -}
 betaBody :: Vec 2 PortPointer -> Vec 2 PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
 betaBody leftPorts rightPorts = do
@@ -271,74 +270,22 @@ duplicateAgainstRight copiedAgent = Rule $ \leftNode rightNode ->
     (nodeSecondaries leftNode)
     (nodeSecondaries rightNode)
 
-{- | Canonical, unordered dispatch table: every rule pair is listed once.
-
-The order encodes the semantics: @Erase@ arms precede @Duplicate@ arms, so
-@Duplicate >< Erase@ resolves to the erase rule through the mirrored lookup in
-`ruleFor`. @Nothing@ means the pair has no rule.
+{- | Declarative rule table: every unordered pair appears once.
+`declareINet` expands this list into `canonicalRule`, `ruleFor`, and the
+`INet` instance. The reverse orientation is derived by `ruleFor`; a pair with
+no entry remains a runtime `errorX`.
 -}
-canonicalRule ::
-  AgentSimpleLambda ->
-  AgentSimpleLambda ->
-  Maybe (SomeRule 2 4 2 AgentSimpleLambda)
-canonicalRule left right = case (left, right) of
-  (ApplyLabel, AbstractLabel) -> Just (SomeRule betaRule)
-  (EraseLabel, EraseLabel) -> Just (SomeRule eraseEraseRule)
-  (EraseLabel, ApplyLabel) -> Just (SomeRule (eraseAgainstRight Apply))
-  (EraseLabel, AbstractLabel) -> Just (SomeRule (eraseAgainstRight Abstract))
-  (EraseLabel, DuplicateLabel) -> Just (SomeRule (eraseAgainstRight Duplicate))
-  (DuplicateLabel, ApplyLabel) -> Just (SomeRule (duplicateAgainstRight Apply))
-  (DuplicateLabel, AbstractLabel) -> Just (SomeRule (duplicateAgainstRight Abstract))
-  _ -> Nothing
-
-{- | Look up a rule in either orientation.
-
-A direct hit uses the canonical rule; a miss retries with the labels swapped
-and mirrors the result. Mirrored rules therefore never need their own body or
-their own table entry.
--}
-ruleFor ::
-  AgentSimpleLambda ->
-  AgentSimpleLambda ->
-  Maybe (SomeRule 2 4 2 AgentSimpleLambda)
-ruleFor left right =
-  case canonicalRule left right of
-    Just rule -> Just rule
-    Nothing -> mirrorSomeRule <$> canonicalRule right left
-
--- ====================
--- INet instance
--- ====================
-
-{- | Dispatch for the four-agent set.
-
-Symmetric arms call the same body with swapped arguments; arms for a pair with
-no rule abort with @errorX@ before allocating. The allocation count must equal
-the number of addresses the body consumes — the @INet@ law asserted by the
-test suite.
-
-The order matters: the @Erase@ arms come before the @Duplicate@ arms, so
-@Duplicate >< Erase@ is an erasure (see the module header).
--}
-instance INet AgentSimpleLambda 4 2 2 where
-  getAddressesAllocationCount ::
-    AgentSimpleLambda ->
-    AgentSimpleLambda ->
-    Index CellsNumber
-  getAddressesAllocationCount left right =
-    case ruleFor left right of
-      Just (SomeRule rule) -> ruleAllocationCount rule
-      Nothing -> errorX "No rule for this pair"
-
-  makeReduction ::
-    Vec 4 (Maybe AddressNumber) ->
-    LoadedNode 2 AgentSimpleLambda ->
-    LoadedNode 2 AgentSimpleLambda ->
-    ReduceRuleResult 4 2 2 AgentSimpleLambda
-  makeReduction freeAddrs leftNode rightNode =
-    case ruleFor (nodeTypeOf leftNode) (nodeTypeOf rightNode) of
-      Just (SomeRule rule) -> runRule freeAddrs rule leftNode rightNode
-      Nothing -> errorX "No rule for this pair"
-   where
-    nodeTypeOf :: LoadedNode 2 AgentSimpleLambda -> AgentSimpleLambda
-    nodeTypeOf = view (containedNode . nodeType)
+$( declareINet
+     "AgentSimpleLambda"
+     4
+     2
+     2
+     [ rule "Apply" "Abstract" [|betaRule|]
+     , rule "Erase" "Erase" [|eraseEraseRule|]
+     , rule "Erase" "Apply" [|eraseAgainstRight Apply|]
+     , rule "Erase" "Abstract" [|eraseAgainstRight Abstract|]
+     , rule "Erase" "Duplicate" [|eraseAgainstRight Duplicate|]
+     , rule "Duplicate" "Apply" [|duplicateAgainstRight Apply|]
+     , rule "Duplicate" "Abstract" [|duplicateAgainstRight Abstract|]
+     ]
+ )

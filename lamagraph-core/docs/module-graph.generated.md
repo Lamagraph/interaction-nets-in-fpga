@@ -37,10 +37,12 @@ flowchart TD
     Core.MemoryManager.NodeChanges --> Core.Reducer
     Core.Node --> Core.Reducer
     INet.Net --> Core.Reducer
-    Core.Node --> INet.Define
     INet.Edsl --> INet.Define
     INet.Edsl.Agents --> INet.Define
-    INet.Net --> INet.Define
+    INet.Edsl.Dispatch --> INet.Define
+    Core.Node --> INet.Edsl.Dispatch
+    INet.Edsl --> INet.Edsl.Dispatch
+    INet.Net --> INet.Edsl.Dispatch
     Core.Node --> INet.Edsl
     INet.Net --> INet.Edsl
     Core.Node --> INet.Net
