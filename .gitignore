@@ -69,9 +69,12 @@ cabal.project.local~
 node_modules/
 
 # HDL directories often created during development cycle
-/vhdl
-/verilog
-/systemverilog
+*/vhdl
+*/verilog
+*/systemverilog
+
+# Working memory records and work artifacts (core-protocol Memory section)
+/tmp/
 
 lamagraph-compiler/src/Lamagraph/Compiler/Parser.info
 lamagraph-compiler/src/Lamagraph/Compiler/Parser.hs
@@ -83,3 +86,5 @@ lamagraph-compiler/src/Lamagraph/Compiler/Parser/Lexer.hs
 
 # Local session planning notes (durable agent plans), never committed.
 .opencode/plans/
+*/tmp
+*/hdl

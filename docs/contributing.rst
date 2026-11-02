@@ -8,6 +8,15 @@ The contribution model: how branches, commits, and merges work. This page is
 the single source of truth for the contribution guidelines that the
 ``git-workflow`` and ``planning`` skills read before doing git operations.
 
+Language
+========
+
+The project language is English. Every published artifact is written in
+English: issue and pull-request titles, bodies and comments, commit messages,
+documentation, code comments, and Haddock. Task text supplied in another
+language is translated faithfully when it is recorded in an issue. Local
+working notes and session files need not be English.
+
 Integration branch
 ==================
 

@@ -1,21 +1,36 @@
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
+{- | Unit tests: the hand-written-rule reduction pipeline ("Core.Reducer").
+
+Fixed fixtures from "Core.Concrete.Initial" (via
+"Tests.Core.Unit.Common.Fixtures") are reduced with `reduce`, and the resulting
+`Delta` is compared against a literal. The `getInterface` tests pin the external
+neighbour collection on hand-built pairs.
+-}
 module Tests.Core.Unit.Reducer where
 
 import qualified Clash.Prelude as C
+import Core.Concrete.Initial
+import Core.Concrete.ReduceRulesLambda
+import Core.MemoryManager.MemoryManager
 import Core.MemoryManager.NodeChanges
+import Core.Node
 import Core.Reducer
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Core.Concrete.Initial
-import Core.Concrete.ReduceRulesLambda
-import Core.MemoryManager.MemoryManager
-import Core.Node
-
+import Tests.Core.Unit.Common.Assert (assertEqualShow)
+import Tests.Core.Unit.Common.Fixtures (
+  mkActivePair,
+  pairEpsAppToId,
+  pairEpsAppToIdSimple,
+  pairIdApplyToId,
+  pairIdErase,
+  pairLoopEdge,
+ )
+import Tests.Core.Unit.Common.Symmetry (assertSymmetricAfterDelta, loadedNet)
 import Prelude
 
 -- | <<docs/eraseEraseEmptyInterface.svg>>
@@ -66,13 +81,11 @@ nonEmptyRecursiveInterface =
 -- | <<docs/idToIdReduceRes.svg>>
 reduceIdAppId :: TestTree
 reduceIdAppId =
-  testCase "reduce Id apply to Id" $
-    assertBool
-      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show systemActualDelta)
-      deltasAreEqual
+  testCase "reduce Id apply to Id" $ do
+    assertEqualShow expectedDelta systemActualDelta
+    assertSymmetricAfterDelta "reduce Id apply to Id" initialIdApplyToIdNode systemActualDelta
  where
-  (Just applyNode C.:> Just _ C.:> Just abs2Node C.:> _) = initialIdApplyToId
-  acPair = ActivePair applyNode abs2Node
+  acPair = mkActivePair pairIdApplyToId
   expectedEdges =
     Just (Edge (Connected $ Port 1 Primary) NotConnected)
       C.:> Nothing
@@ -80,18 +93,18 @@ reduceIdAppId =
   expectedDelta = Delta (C.def :: C.Vec 2 _) expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
     reduce initialIdApplyToIdMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
-  deltasAreEqual = systemActualDelta == expectedDelta
 
 -- | <<docs/reduceLoopEdge.svg>>
 reduceLoopEdge :: TestTree
 reduceLoopEdge =
-  testCase "reduce closed lambda and closed apply agents" $
-    assertBool
-      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show systemActualDelta)
-      deltasAreEqual
+  testCase "reduce closed lambda and closed apply agents" $ do
+    assertEqualShow expectedDelta systemActualDelta
+    assertSymmetricAfterDelta
+      "reduce closed lambda and closed apply agents"
+      (loadedNet initialLoopEdge)
+      systemActualDelta
  where
-  (Just applyNode C.:> Just absNode C.:> _) = initialLoopEdge
-  acPair = ActivePair applyNode absNode
+  acPair = mkActivePair pairLoopEdge
   expectedEdges =
     Nothing
       C.:> Nothing
@@ -99,17 +112,17 @@ reduceLoopEdge =
   expectedDelta = Delta (C.def :: C.Vec 2 _) expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
     reduce initialLoopEdgeMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
-  deltasAreEqual = systemActualDelta == expectedDelta
 
 reduceEpsAppId :: TestTree
 reduceEpsAppId =
-  testCase "reduce Id apply to Eps" $
-    assertBool
-      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show systemActualDelta)
-      deltasAreEqual
+  testCase "reduce Id apply to Eps" $ do
+    assertEqualShow expectedDelta systemActualDelta
+    assertSymmetricAfterDelta
+      "reduce Id apply to Eps"
+      initialEpsAppToIdNode
+      systemActualDelta
  where
-  (_ C.:> _ C.:> _ C.:> Just applyEraseNode C.:> Just eraseNode C.:> _) = initialEpsAppToId
-  acPair = ActivePair applyEraseNode eraseNode
+  acPair = mkActivePair pairEpsAppToId
   expectedEdges = C.def
   expectedNodes =
     Just
@@ -134,17 +147,17 @@ reduceEpsAppId =
   expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
     reduce initialEpsAppToIdMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
-  deltasAreEqual = systemActualDelta == expectedDelta
 
 reduceEpsAppIdSimple :: TestTree
 reduceEpsAppIdSimple =
-  testCase "reduce Id apply to Eps Simple" $
-    assertBool
-      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show systemActualDelta)
-      deltasAreEqual
+  testCase "reduce Id apply to Eps Simple" $ do
+    assertEqualShow expectedDelta systemActualDelta
+    assertSymmetricAfterDelta
+      "reduce Id apply to Eps Simple"
+      initialEpsAppToIdSimpleNode
+      systemActualDelta
  where
-  (_ C.:> Just applyEraseNode C.:> Just eraseNode C.:> _) = initialEpsAppToIdSimple
-  acPair = ActivePair applyEraseNode eraseNode
+  acPair = mkActivePair pairEpsAppToIdSimple
   expectedEdges = C.def
   expectedNodes =
     Just
@@ -169,17 +182,17 @@ reduceEpsAppIdSimple =
   expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
     reduce initialEpsAppToIdSimpleMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
-  deltasAreEqual = systemActualDelta == expectedDelta
 
 reduceEraseId :: TestTree
 reduceEraseId =
-  testCase "reduce Erase Id" $
-    assertBool
-      ("expected:\n" ++ show expectedDelta ++ "\nactual:\n" ++ show systemActualDelta)
-      deltasAreEqual
+  testCase "reduce Erase Id" $ do
+    assertEqualShow expectedDelta systemActualDelta
+    assertSymmetricAfterDelta
+      "reduce Erase Id"
+      initialIdEraseNode
+      systemActualDelta
  where
-  (Just idNode C.:> Just eraseNode C.:> _) = initialIdErase
-  acPair = ActivePair idNode eraseNode
+  acPair = mkActivePair pairIdErase
   expectedEdges = C.def
   expectedNodes =
     Just
@@ -204,7 +217,6 @@ reduceEraseId =
   expectedDelta = Delta expectedNodes expectedEdges acPair :: Delta 2 2 2 AgentSimpleLambda
   (systemActualDelta, _) =
     reduce initialIdEraseMM acPair :: (Delta 2 2 2 AgentSimpleLambda, _)
-  deltasAreEqual = systemActualDelta == expectedDelta
 
 reducerUnitTests :: TestTree
 reducerUnitTests =
