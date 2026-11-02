@@ -119,7 +119,25 @@ arm or class method is written by hand. Naming rules and validation: Haddock of
 | `nodeSecondaries` | Read a pair node's secondary slots as pointers — these are the rule head binders |
 | `fresh` | Allocate the next free address, create a node accumulator, return its address and secondary pointers |
 | `wire` | Connect two ends; free↔free is a no-op, free↔external becomes a dangling `Edge`, external↔external becomes an `Edge`, anything involving a fresh node is written into that node's accumulator, fresh↔fresh writes both sides |
+| `mapPorts` | Run a builder action for every element of a fixed-size vector, threading the builder state left to right; the synthesizable replacement for `mapM` over a `Vec` |
+| `ruleFromSecondaries` | Package a body that consumes both pair members' secondary-port vectors into a typed `Rule`; the caller's signature fixes `freshNodesNumber` |
 | `runReduce` | Run a body over the free-address vector and materialize the result |
+
+### Rule bodies and typed wrappers
+
+A rule implementation has two layers:
+
+- the /body/ (`eraseAnyBody`, `dupAnyBody`, `betaBody` in `INet.Define`) is the
+  graph rewrite: which fresh nodes and wires the reduction produces;
+- the /wrapper/ (`eraseRule`, `duplicateRule`, `betaRule`) is a `Rule` value
+  that fixes the type-level `freshNodesNumber` and instantiates the concrete
+  agent singleton.
+
+The wrapper is necessary because `Rule` carries the allocation count in its
+type. A plain `RuleBuilder` body cannot provide that count; `ruleFromSecondaries`
+only feeds the two nodes' secondary vectors to the body and keeps the wrapper
+thin. The reversed orientation is derived by `ruleFor` mirroring, so mirrored
+pairs need no second body or wrapper.
 
 Full signatures, the endpoint cases, and the state layout are in the Haddock
 of `INet.Edsl`; the `INet` laws are in `INet.Net`; the meaning of

@@ -67,9 +67,9 @@ from the rule's @freshNodesNumber@ type parameter, not maintained separately.
   secondary slots the body raises a fresh @Erase@ whose principal port takes
   over the connection when the slot is connected; an unconnected slot yields an
   unconnected eraser. @Erase >< Erase@ has nothing to preserve and annihilates.
-  The traversal is generic over the partner arity and threads the builder
-  state with 'Vec.mapAccumL', so it stays synthesizable (no lists, no monadic
-  folds).
+  The traversal is generic over the partner arity and uses `mapPorts`, which
+  threads the builder state through 'Vec.mapAccumL', so it stays synthesizable
+  (no lists, no monadic folds).
 * /Duplicate/ copies the other agent twice and, for every secondary slot, adds
   a @Duplicate@ fan: the fan's principal takes over the slot's connection when
   there is one (otherwise it stays unconnected), and its two secondary ports
@@ -90,6 +90,24 @@ skeleton; the rule bodies and the @(pair, rule)@ table carry the semantics.
 @ruleFor@, and the @INet@ instance, so no dispatch arm or allocation-count
 method is written by hand.
 
+== Rule bodies and typed wrappers
+
+The rule implementation is split deliberately:
+
+* `eraseAnyBody`, `dupAnyBody`, and `betaBody` are the /graph rewrites/ — they
+  describe which fresh nodes and wires a reduction produces.
+* `eraseRule` and `duplicateRule` are /type-level wrappers/. `Rule`'s
+  @freshNodesNumber@ is a type parameter, so a plain `RuleBuilder` body cannot
+  carry the allocation count. The wrapper fixes that count, instantiates the
+  agent singleton (for example @eraseRule Apply@), and passes both pair nodes'
+  secondary vectors to the body through `ruleFromSecondaries`.
+* `ruleFor` derives the reversed orientation by mirroring; there are no
+  @eraseAgainstLeft@ / @duplicateAgainstLeft@ duplicates.
+
+The wrapper carries no graph semantics. Keeping it thin means the body remains
+a named, testable rewrite while the type-level bookkeeping stays next to the
+`Rule` constructor.
+
 == Pinned by tests
 
 The exact output shapes are fixed by the unit tests under
@@ -103,7 +121,6 @@ module INet.Define where
 import Clash.Prelude hiding (Index, imap, (:>))
 import Clash.Sized.Index (Index)
 import qualified Clash.Sized.Vector as Vec
-import Control.Monad.State (runState, state)
 import INet.Edsl
 import INet.Edsl.Agents (declareAgents)
 import INet.Edsl.Dispatch (declareINet, rule)
@@ -161,23 +178,16 @@ One fresh @Erase@ per secondary port of @X@: its principal port takes over the
 wire the dying @X@ held, so erasure propagates along every connection instead
 of leaving dangling ends; a free or void slot yields a fresh eraser whose
 principal stays unconnected. The traversal is generic over the partner arity
-and threads the builder state purely with 'Vec.mapAccumL' — no lists, no
-monadic folds — so the body stays synthesizable.
+and uses `mapPorts`, which threads the builder state through 'Vec.mapAccumL'
+without lists or monadic folds, so the body stays synthesizable.
 -}
 eraseAnyBody ::
   forall partnerArity.
   Vec partnerArity PortPointer ->
   RuleBuilder 2 4 2 AgentSimpleLambda ()
-eraseAnyBody ports = state $ \initState ->
-  let st' = fst (Vec.mapAccumL step initState ports)
-   in ((), st')
- where
-  step :: RuleState 2 4 2 AgentSimpleLambda -> PortPointer -> (RuleState 2 4 2 AgentSimpleLambda, ())
-  step st port = let (a, st') = runState (fan port) st in (st', a)
-  fan :: PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
-  fan port = do
-    (addr, _) <- fresh Erase
-    wire port (Main addr)
+eraseAnyBody ports = mapPorts ports $ \port -> do
+  (addr, _) <- fresh Erase
+  wire port (Main addr)
 
 {- | @Erase >< Erase@: two erasers annihilate. No nodes, no wires, no pool
 addresses; both agents have arity 0, so there is nothing to traverse.
@@ -193,7 +203,9 @@ from the original slot (a free or void slot leaves it unconnected), and its
 two secondary ports reach the matching slots of the two copies. Everything is
 wired inside the accumulators, so the rule emits no external edges. The body
 is generic in the copied agent's arity; for this set it takes four pool
-addresses: two copies plus two fans.
+addresses: two copies plus two fans. The per-port fan traversal goes through
+`mapPorts`, keeping the body in the same synthesizable fixed-vector style as
+the erasure body.
 -}
 dupAnyBody ::
   forall copiedAgentKind.
@@ -207,17 +219,7 @@ dupAnyBody copyAgent branchPorts xPorts = do
   (primB, copyB) <- fresh copyAgent
   wire (branchPorts !! sec2Port0) (Main primA)
   wire (branchPorts !! sec2Port1) (Main primB)
-  state $ \initState ->
-    let st' = fst (Vec.mapAccumL step initState (Vec.zip3 xPorts copyA copyB))
-     in ((), st')
- where
-  step ::
-    RuleState 2 4 2 AgentSimpleLambda ->
-    (PortPointer, PortPointer, PortPointer) ->
-    (RuleState 2 4 2 AgentSimpleLambda, ())
-  step st (xp, ca, cb) = let (a, st') = runState (fan xp ca cb) st in (st', a)
-  fan :: PortPointer -> PortPointer -> PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
-  fan xp ca cb = do
+  mapPorts (Vec.zip3 xPorts copyA copyB) $ \(xp, ca, cb) -> do
     (primF, fanP) <- fresh Duplicate
     wire xp (Main primF)
     wire (fanP !! sec2Port0) ca
@@ -229,46 +231,52 @@ dupAnyBody copyAgent branchPorts xPorts = do
 
 {- | Beta creates no nodes: the body only connects the two port vectors.
 The mirrored orientation is derived by `mirrorSomeRule`; edge order follows the
-body's argument order.
+body's argument order. `ruleFromSecondaries` only feeds the two secondary-port
+vectors into the body; the type-level count @0@ is fixed by this signature.
 -}
 betaRule :: Rule 0 2 4 2 AgentSimpleLambda
-betaRule = Rule $ \leftNode rightNode ->
-  betaBody (nodeSecondaries leftNode) (nodeSecondaries rightNode)
+betaRule = ruleFromSecondaries betaBody
 
 -- | Two erasers annihilate without creating or wiring anything.
 eraseEraseRule :: Rule 0 2 4 2 AgentSimpleLambda
 eraseEraseRule = Rule $ \_ _ -> eraseEraseBody
 
-{- | Erase the partner on the right: one fresh eraser per partner secondary
-port, hence @AgentArityOf (Agent partnerKind)@ nodes. The equality pins the
-partner arity to the node's port width (2 in this set).
+{- | Package the erasure body as a canonical @Erase >< X@ rule.
+
+This is the type-level wrapper around `eraseAnyBody`, not a second graph
+rewrite. The body is polymorphic in the partner arity and has no 'Rule' type,
+so it cannot carry @freshNodesNumber@; this signature fixes the count to
+@AgentArityOf (Agent partnerKind)@ and supplies the concrete singleton. The
+reversed pair @X >< Erase@ is derived by `ruleFor` mirroring, so there is no
+@eraseAgainstLeft@.
 -}
-eraseAgainstRight ::
+eraseRule ::
   forall partnerKind.
   ( AgentLabel (Agent partnerKind) AgentSimpleLambda
   , AgentArityOf (Agent partnerKind) ~ 2
   ) =>
   Agent partnerKind ->
   Rule (AgentArityOf (Agent partnerKind)) 2 4 2 AgentSimpleLambda
-eraseAgainstRight _ = Rule $ \_ rightNode ->
-  eraseAnyBody (nodeSecondaries rightNode)
+eraseRule _ = ruleFromSecondaries $ \_ rightPorts ->
+  eraseAnyBody rightPorts
 
-{- | Duplicate the agent on the right: two copies plus one fan per secondary
-port of the copied agent, hence @2 + AgentArityOf (Agent copiedAgentKind)@
-fresh nodes. The duplicate itself is on the left.
+{- | Package the duplication body as a canonical @Duplicate >< X@ rule.
+
+`dupAnyBody` is the graph rewrite; this wrapper fixes the type-level allocation
+count @2 + AgentArityOf (Agent copiedAgentKind)@, instantiates the copied agent
+singleton, and hands both nodes' secondary vectors to the body. The wrapper is
+intentionally thin: `Rule` needs the type-level count, and the body cannot
+provide it. @X >< Duplicate@ is derived by `ruleFor` mirroring.
 -}
-duplicateAgainstRight ::
+duplicateRule ::
   forall copiedAgentKind.
   ( AgentLabel (Agent copiedAgentKind) AgentSimpleLambda
   , AgentArityOf (Agent copiedAgentKind) ~ 2
   ) =>
   Agent copiedAgentKind ->
   Rule (2 + AgentArityOf (Agent copiedAgentKind)) 2 4 2 AgentSimpleLambda
-duplicateAgainstRight copiedAgent = Rule $ \leftNode rightNode ->
-  dupAnyBody
-    copiedAgent
-    (nodeSecondaries leftNode)
-    (nodeSecondaries rightNode)
+duplicateRule copiedAgent =
+  ruleFromSecondaries (dupAnyBody copiedAgent)
 
 {- | Declarative rule table: every unordered pair appears once.
 `declareINet` expands this list into `canonicalRule`, `ruleFor`, and the
@@ -282,10 +290,10 @@ $( declareINet
      2
      [ rule "Apply" "Abstract" [|betaRule|]
      , rule "Erase" "Erase" [|eraseEraseRule|]
-     , rule "Erase" "Apply" [|eraseAgainstRight Apply|]
-     , rule "Erase" "Abstract" [|eraseAgainstRight Abstract|]
-     , rule "Erase" "Duplicate" [|eraseAgainstRight Duplicate|]
-     , rule "Duplicate" "Apply" [|duplicateAgainstRight Apply|]
-     , rule "Duplicate" "Abstract" [|duplicateAgainstRight Abstract|]
+     , rule "Erase" "Apply" [|eraseRule Apply|]
+     , rule "Erase" "Abstract" [|eraseRule Abstract|]
+     , rule "Erase" "Duplicate" [|eraseRule Duplicate|]
+     , rule "Duplicate" "Apply" [|duplicateRule Apply|]
+     , rule "Duplicate" "Abstract" [|duplicateRule Abstract|]
      ]
  )

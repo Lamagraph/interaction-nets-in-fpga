@@ -62,6 +62,7 @@ module INet.Edsl (
   -- * Rules
   Rule (..),
   SomeRule (..),
+  ruleFromSecondaries,
   mirrorSomeRule,
   ruleAllocationCount,
   runRule,
@@ -72,6 +73,7 @@ module INet.Edsl (
   resolveEnd,
 
   -- * Primitives
+  mapPorts,
   writeAcc,
   addWire,
   wire,
@@ -84,7 +86,8 @@ module INet.Edsl (
 ) where
 
 import Clash.Prelude
-import Control.Monad.State (State, execState, get, gets, modify, put)
+import qualified Clash.Sized.Vector as Vec
+import Control.Monad.State (State, execState, get, gets, modify, put, runState, state)
 import Core.Node
 import INet.Net
 
@@ -226,7 +229,9 @@ though the builder reserves room for four.
 
 The body receives the two loaded nodes of the active pair. The constructor
 carries @KnownNat freshNodesNumber@ so `ruleAllocationCount` can recover the
-number from the type without scanning the produced state.
+number from the type without scanning the produced state. `ruleFromSecondaries`
+is the common smart constructor for bodies that work on the pair's two
+secondary-port vectors; the caller's signature still fixes the count.
 -}
 data
   Rule
@@ -249,6 +254,36 @@ data SomeRule edgesNumber nodesNumber portsNumber agentType where
   SomeRule ::
     Rule freshNodesNumber edgesNumber nodesNumber portsNumber agentType ->
     SomeRule edgesNumber nodesNumber portsNumber agentType
+
+{- | Package a rule body as a typed 'Rule' that consumes the pair's secondary
+port vectors.
+
+This is the /type-level wrapper layer/, not the graph rewrite. `Rule`'s
+@freshNodesNumber@ is a type parameter, so a plain 'RuleBuilder' body cannot
+carry the allocation count; the caller's signature fixes it (for example
+@Rule 2 ...@ when an erasure allocates one cell per secondary port of an
+arity-2 partner). This helper only feeds `nodeSecondaries` of the left and
+right pair members to the body.
+
+Keeping the body separate from this wrapper is deliberate:
+
+* the body is the named, testable graph rewrite (@eraseAnyBody@,
+  @dupAnyBody@, @betaBody@ in "INet.Define");
+* the wrapper fixes the type-level count and instantiates the agent singleton;
+* the reversed orientation is derived by 'mirrorSomeRule', so no mirrored
+  wrapper is needed.
+-}
+ruleFromSecondaries ::
+  ( KnownNat freshNodesNumber
+  , KnownNat portsNumber
+  ) =>
+  ( Vec portsNumber PortPointer ->
+    Vec portsNumber PortPointer ->
+    RuleBuilder edgesNumber nodesNumber portsNumber agentType ()
+  ) ->
+  Rule freshNodesNumber edgesNumber nodesNumber portsNumber agentType
+ruleFromSecondaries body = Rule $ \leftNode rightNode ->
+  body (nodeSecondaries leftNode) (nodeSecondaries rightNode)
 
 {- | Mirror a rule: run its body with the pair's nodes swapped.
 
@@ -305,6 +340,26 @@ the arity itself is a type-level declaration, not a runtime field.
 initSecAcc :: forall portsNumber. (KnownNat portsNumber) => Integer -> Vec portsNumber (Maybe (Connection portsNumber))
 initSecAcc arity =
   imap (\j _ -> if j < fromInteger arity then Just NotConnected else Nothing) (repeat Nothing)
+
+{- | Run a builder action for every element of a fixed-size vector, threading
+the builder state left to right.
+
+This is the synthesizable replacement for @mapM@ over a @Vec@: it uses
+'Vec.mapAccumL' internally, so a rule body does not need to spell out the
+@state@ / @runState@ boilerplate or introduce lists and monadic folds. The
+per-element action may allocate nodes, wire ports, or both.
+-}
+mapPorts ::
+  Vec n a ->
+  (a -> RuleBuilder edgesNumber nodesNumber portsNumber agentType ()) ->
+  RuleBuilder edgesNumber nodesNumber portsNumber agentType ()
+mapPorts elements action = state $ \initState ->
+  let (finalState, _) = Vec.mapAccumL step initState elements
+   in ((), finalState)
+ where
+  step currentState element =
+    let ((), nextState) = runState (action element) currentState
+     in (nextState, ())
 
 {- | A `PortPointer` resolved against the builder state.
 
