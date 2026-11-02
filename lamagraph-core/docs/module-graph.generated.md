@@ -9,10 +9,10 @@ flowchart TD
     INet.Net --> Core.Concrete.ReduceRulesLambda
     Core.CPU --> Core.Core
     Core.Concrete.Initial --> Core.Core
-    Core.Concrete.ReduceRulesLambda --> Core.Core
     Core.Loader --> Core.Core
     Core.MemoryManager.MemoryManager --> Core.Core
     Core.Node --> Core.Core
+    INet.Define --> Core.Core
     INet.Net --> Core.Core
     Core.Loader --> Core.CPU
     Core.Map --> Core.CPU

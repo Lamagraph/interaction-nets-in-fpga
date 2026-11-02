@@ -13,7 +13,7 @@ lamagraph-core implements a graph reducer. A program is represented as an intera
 - **Language / toolchain.** Haskell compiled by Clash into SystemVerilog/VHDL (`clash-prelude >= 1.8.1 && < 1.10`).
 - **Memory model.** A fixed 16-cell RAM (`CellsNumber = 16`), addresses are `Unsigned 4` (`AddressNumber`). Wiring is by `(address, portId)` pointers — no direct references.
 - **No front-end.** There is no parser; initial nets are hand-built `Vec` fixtures in `Core.Concrete.Initial`.
-- **Rule sets.** Two parallel agent sets exist: the hand-written set used for synthesis (`Core.Concrete.ReduceRulesLambda`) and the EDSL-written set used by tests (`INet.Define`).
+- **Rule sets.** Two parallel agent sets exist: the EDSL-written set used for synthesis (`INet.Define`, wired into `topEntity`) and the hand-written set kept as the reference implementation for tests (`Core.Concrete.ReduceRulesLambda`).
 
 ---
 
@@ -66,7 +66,7 @@ flowchart TD
             direction TB
             REG["register<br/>initialCPUIn"]
             MC["mealyCore<br/>(initialMemoryManager, rootNodeAddress = 0)"]
-            RAM["blockRam<br/>initialIdApplyToIdNode"]
+            RAM["blockRam<br/>initialIdApplyToIdNodeWith (EDSL labels)"]
             DMR["delayedMaybeRam"]
             REG -->|"CPUIn"| MC
             MC -->|"CPUOut._ramForm"| DMR
@@ -82,7 +82,7 @@ Key points:
 
 - **Loop closure.** In `logicBroad` the register sits on the CPU *input*, not on its output: `i = register initialCPUIn nextInput`, `o = mealyCore … i`. `CPUOut._ramForm` drives `blockRam` directly through `delayedMaybeRam` (read address + write data in one `RamForm`); the RAM node output, echoed together with the write-back `RamForm`, becomes `nextInput` for the next cycle. The register breaks the combinational path from `mealyCore` output back to its input; `delayedMaybeRam` gates the RAM with a one-cycle-delayed copy of the command (`delay Nothing inputRamForm`) so reads land one cycle after the address.
 - **Ports.** `makeTopEntity 'topEntity` generates the auto-named ports `clk`, `rst`, `en`, `rootNodeAddress`.
-- **Genericity.** `topEntity` fixes the parameters: `logicBroad @2 @2 @2 @AgentSimpleLambda initialIdApplyToIdNode 0 initialIdApplyToIdMM` — 2 secondary ports, 2 fresh nodes and 2 edges per rule step, hand-written lambda agent set.
+- **Genericity.** `topEntity` fixes the parameters: `logicBroad @2 @4 @2 @AgentSimpleLambda (initialIdApplyToIdNodeWith ApplyLabel AbstractLabel EraseLabel) 0 initialIdApplyToIdMM` — 2 secondary ports, 4 fresh nodes and 2 edges per rule step, EDSL lambda agent set from `INet.Define`.
 - **Observation.** The result of reduction is visible as the address trace of the root node; there is no separate output bus.
 
 ---
@@ -157,7 +157,7 @@ sequenceDiagram
     Note over F: → FetchLeftActiveAddress for next pair, or Done when bitmap empty
 ```
 
-Static cycle counts, derived from `step` (for `topEntity`: `portsNumber = 2` → interface slots ≤ 4, `nodesNumber = 2`):
+Static cycle counts, derived from `step` (for `topEntity`: `portsNumber = 2` → interface slots ≤ 4, `nodesNumber = 4`):
 
 | Visit | Cycles | Condition |
 |---|---|---|
@@ -167,9 +167,9 @@ Static cycle counts, derived from `step` (for `topEntity`: `portsNumber = 2` →
 | one empty interface slot | 1 | slot = `Nothing`, counter + 1 |
 | one wired interface slot | 3 | `ReadExternal → DelayWrite → WriteChange` |
 | `WriteNewNodes` | 1 | no fresh nodes (`_nodesToWrite == def` — e.g. beta) |
-| `WriteNewNodes` | `nodesNumber` (2) | ≥ 1 fresh node: the vector is walked to `maxBound` |
+| `WriteNewNodes` | `nodesNumber` (4) | ≥ 1 fresh node: the vector is walked to `maxBound` |
 
-Total per active pair for `topEntity`: 5 + interface walk (1, or `3k + (4−k)` for `k` wired slots) + write-back (1 or 2) → worst case 19 cycles. Counts are exact because every vector involved is sized at the type level (see [build.md](build.md), Cross-Cutting Conventions).
+Total per active pair for `topEntity`: 5 + interface walk (1, or `3k + (4−k)` for `k` wired slots) + write-back (1 or 4) → worst case 21 cycles. Counts are exact because every vector involved is sized at the type level (see [build.md](build.md), Cross-Cutting Conventions). The cycle-budget tests in `Tests.Core.Unit.CycleBudget` pin the older 2-node reference wiring (`nodesNumber = 2`, worst case 19); the EDSL `topEntity` walk is two slots longer whenever a rule creates fresh nodes.
 
 ---
 
@@ -188,7 +188,7 @@ flowchart TD
     subgraph L2["Contract"]
         Net["INet.Net"]
     end
-    subgraph L3["EDSL (exercised by tests only)"]
+    subgraph L3["EDSL (synthesized rule set)"]
         Edsl["INet.Edsl"]
         EdslAgents["INet.Edsl.Agents"]
         Define["INet.Define"]
@@ -238,7 +238,7 @@ Layer summary:
 |---|---|
 | Foundations | `Core.Node`, `Core.Map` |
 | Contract | `INet.Net` |
-| EDSL (tests only) | `INet.Edsl`, `INet.Edsl.Agents`, `INet.Define` |
+| EDSL (synthesized) | `INet.Edsl`, `INet.Edsl.Agents`, `INet.Define` |
 | Memory management | `Core.MemoryManager.MemoryManager`, `…NodeChanges`, `…ChangesAccumulator` |
 | Reduction core (generic) | `Core.Reducer` |
 | Concrete instances / fixtures | `Core.Concrete.ReduceRulesLambda`, `Core.Concrete.Initial` |
@@ -255,7 +255,7 @@ All 15 exposed modules; the per-module reference (exports, contracts, invariants
 | `INet.Net` | Agent-set interface: `ReduceRuleResult`, `INet` class. | Contract |
 | `INet.Edsl` | Builder DSL for reduction-rule bodies; generic `AgentLabel` class. | EDSL |
 | `INet.Edsl.Agents` | Template Haskell generator for an agent-set declaration skeleton. | EDSL |
-| `INet.Define` | Lambda agent set wired through the EDSL (tests only). | EDSL |
+| `INet.Define` | Lambda agent set wired through the EDSL; synthesized by `topEntity`. | EDSL |
 | `Core.MemoryManager.MemoryManager` | Busy/active-pair bitmaps, free-address allocation. | Memory management |
 | `Core.MemoryManager.NodeChanges` | `Delta` / `Interface` / `Changes` types; applying patches. | Memory management |
 | `Core.MemoryManager.ChangesAccumulator` | `Delta` → per-external-node `Changes` map. | Memory management |
@@ -342,15 +342,15 @@ Conventions:
 
 ## 7. Reduction Rules
 
-The synthesized rule set (`Core.Concrete.ReduceRulesLambda`, instance `INet AgentSimpleLambda 2 2 2`):
+The reference hand-written rule set (`Core.Concrete.ReduceRulesLambda`, instance `INet AgentSimpleLambda 2 2 2`), kept for the processor-level tests:
 
 | Rule | Active pair | Fresh nodes | Fresh edges | Diagram |
 |---|---|---|---|---|
-| Beta | `Apply >< Abstract` | 0 | 2 (secondary ports zipped) | `docs/apply_to_lambda_rule.svg` |
+| Beta | `Apply >< Abstract` | 0 | 2 (secondary ports zipped; a free slot becomes a dangling edge) | `docs/apply_to_lambda_rule.svg` |
 | Erasure propagation | `Erase >< X` | 2 (`Erase`, one per secondary of X) | 0 | `docs/eps_apply_rule.svg` |
 | Erasure meet | `Erase >< Erase` | 0 | 0 | — |
 
-The EDSL rule set (`INet.Define`, instance `INet AgentSimpleLambda 4 2 2`) implements the same three rules plus duplicator rules (`dupAnyBody`); design, verification, and status: [edsl.md](edsl.md).
+The synthesized rule set (`INet.Define`, instance `INet AgentSimpleLambda 4 2 2`) implements the same three rules plus duplicator rules (`dupAnyBody`); `topEntity` is wired to it. Design and verification: [edsl.md](edsl.md).
 
 SVG net diagrams for individual interactions also live in `docs/`: `apply.svg`, `absApplyEmptyInterface.svg`, `absApplyNonEmpty.svg`, `absApplyRecInterface.svg`, `eraseEraseEmptyInterface.svg`, `idToIdReduceRes.svg`, `reduceLoopEdge.svg`.
 
@@ -389,6 +389,6 @@ Held by construction and/or checked in code; violations abort with `errorX` rath
 
 - **16 cells, no collection.** `AddressBitSize = 4` fixes memory at 16 nodes and there is no garbage collector or paging. When fewer free cells remain than a rule needs, `getFreeAddresses` returns a `Nothing`-padded pool and the rule body aborts (`errorX "fresh: free address pool exhausted"` in `INet.Edsl`, pattern-match failure in `eraseToAbstractOrApplyRule`). Widening the address/busy-bitmap pair or adding collection is a roadmap item.
 - **No front-end.** There is no parser; nets enter as hand-built fixtures (`Core.Concrete.Initial`) or as Haskell code in the EDSL (`INet.Define`). A generator for the initial fixtures is planned (noted in the `Initial` module header).
-- **EDSL rule set not synthesized.** `INet.Define` (4 addresses per pair) is equivalent to the hand-written set per tests but `topEntity` is fixed to the 2-address set; wiring the EDSL set in is roadmap work.
+- **Two rule sets to keep aligned.** `INet.Define` is the synthesized set; `Core.Concrete.ReduceRulesLambda` is the hand-written reference used by the processor-level tests. They use different label types and no conversion exists; the property suite compares their reductions on generated nets.
 - **One reduction at a time.** The CPU picks the lowest marked active address per step (`giveActiveAddressNumber`) — sequential reduction, no parallel active-pair handling.
 - **Dead code kept out of the build.** `Core.Concrete.TypesTH` moved to `experimental/` (its Template-Haskell-generated type lacked the `NFDataX` / `ShowX` / `Default` instances Clash requires; nothing imported it) — see `experimental/README.md`.

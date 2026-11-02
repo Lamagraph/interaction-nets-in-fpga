@@ -45,7 +45,10 @@ sampleSystemN :: (NFDataX a) => Int -> ((HiddenClockResetEnable System) => Signa
 sampleSystemN = sampleWithResetN @System d1
 
 {- | "Core.Core".@logicBroad@ with the FSM phase exposed alongside the root
-address, for the fixed @topEntity@ parameters (2 ports, 2 nodes, 2 edges).
+address, for the 2-node hand-written reference wiring (2 ports, 2 nodes,
+2 edges). The synthesized `topEntity` uses the EDSL set with `nodesNumber = 4`;
+the phase trace is kept on the reference wiring because the cycle-budget
+tests pin its exact sequence.
 -}
 traceBroad ::
   (HiddenClockResetEnable System) =>

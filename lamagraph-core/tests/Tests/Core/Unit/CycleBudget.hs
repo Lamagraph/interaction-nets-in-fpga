@@ -13,7 +13,9 @@ observable:
 * interface walk: 3 per wired slot (@ReadExternal -> DelayWrite ->
   WriteChange@), 1 per empty slot, 1 total when @\_interface == def@;
 * @WriteNewNodes@ = 1 with no fresh nodes, = @nodesNumber@ otherwise;
-* per-search window <= 19 for the topEntity parameters.
+* per-search window <= 19 for the 2-node hand-written reference wiring
+  (the synthesized EDSL `topEntity` uses `nodesNumber = 4`; its fresh-node
+  write-back is two slots longer, worst case 21).
 -}
 module Tests.Core.Unit.CycleBudget (cycleBudgetTests) where
 
@@ -63,7 +65,7 @@ betaReductionBudget =
       "window = 5 + (3*1 + (4-1)) + 1 = 12; final search = 1"
       [12, 1]
       (searchWindows ph)
-    assertBool "every window <= 19 (4.1 worst case)" (P.all (<= 19) (searchWindows ph))
+    assertBool "every window <= 19 for the 2-node reference wiring" (P.all (<= 19) (searchWindows ph))
 
 erasePropagationBudget :: TestTree
 erasePropagationBudget =
@@ -97,7 +99,7 @@ erasePropagationBudget =
       "window = 5 + (3*1 + (4-1)) + 2 = 13"
       [13]
       (searchWindows ph)
-    assertBool "every window <= 19 (4.1 worst case)" (P.all (<= 19) (searchWindows ph))
+    assertBool "every window <= 19 for the 2-node reference wiring" (P.all (<= 19) (searchWindows ph))
 
 multiReductionBudget :: TestTree
 multiReductionBudget =
@@ -158,7 +160,7 @@ multiReductionBudget =
       "windows: 5+(3*2+(4-2))+1 = 14, 5+6+2 = 13, 5+1+2 = 8, 5+1+1 = 7, final search = 1"
       [14, 13, 8, 7, 1]
       (searchWindows ph)
-    assertBool "every window <= 19 (4.1 worst case)" (P.all (<= 19) (searchWindows ph))
+    assertBool "every window <= 19 for the 2-node reference wiring" (P.all (<= 19) (searchWindows ph))
 
 cycleBudgetTests :: TestTree
 cycleBudgetTests =

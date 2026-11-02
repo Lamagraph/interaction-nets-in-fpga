@@ -58,6 +58,13 @@ module INet.Edsl (
   RuleBuilder,
   initSecAcc,
 
+  -- * Rules
+  Rule (..),
+  SomeRule (..),
+  mirrorSomeRule,
+  ruleAllocationCount,
+  runRule,
+
   -- * Endpoints and port resolution
   EndPoint (..),
   slotByAddr,
@@ -91,16 +98,21 @@ Indexing by the singleton type (rather than by the promoted tag) keeps this
 module free of any concrete agent set: the generator in "INet.Edsl.Agents"
 emits one instance per agent, bridging @AgentArityOf@ to the kind-indexed
 arity family of that set (e.g. @AgentArityOf (Agent 'ApplyKind) = AgentArity
-'ApplyKind@). The functional dependency @s -> l@ fixes one runtime label type
-per set. Keeping the arity in the type is what lets `fresh` size the returned
-port vector from the declaration instead of trusting a term-level number.
+'ApplyKind@). The functional dependency @agentSingleton -> agentType@ fixes one
+runtime label type per set. Keeping the arity in the type is what lets `fresh`
+size the returned port vector from the declaration instead of trusting a
+term-level number.
 -}
-class (KnownNat (AgentArityOf s)) => AgentLabel (s :: Type) l | s -> l where
+class
+  (KnownNat (AgentArityOf agentSingleton)) =>
+  AgentLabel (agentSingleton :: Type) agentType
+    | agentSingleton -> agentType
+  where
   -- | Type-level secondary-port arity of the agent singleton
-  type AgentArityOf s :: Nat
+  type AgentArityOf agentSingleton :: Nat
 
   -- | Convert singleton to runtime label
-  agentLabel :: s -> l
+  agentLabel :: agentSingleton -> agentType
 
 -- ====================
 -- Port references
@@ -143,7 +155,10 @@ and free slot to `Free`, @Connected (Port a Primary)@ to @Main a@,
 @Connected (Port a (Id j))@ to @Pointer a j@. The pointers name the /far/
 ends of the pair's wires, not the pair's own slots.
 -}
-nodeSecondaries :: (KnownNat portsNumber) => LoadedNode portsNumber l -> Vec portsNumber PortPointer
+nodeSecondaries ::
+  (KnownNat portsNumber) =>
+  LoadedNode portsNumber agentType ->
+  Vec portsNumber PortPointer
 nodeSecondaries (LoadedNode Node{..} _) = map (maybe Free connectionToPointer) _secondaryPorts
 
 -- ====================
@@ -178,9 +193,15 @@ pads with `Nothing`. Stating the maximum once at the instance avoids
 type-level count arithmetic inside @do@ blocks; the price is that a body
 overflowing the ceiling is caught at runtime, not at compile time.
 -}
-data RuleState (edgesNumber :: Nat) (nodesNumber :: Nat) (portsNumber :: Nat) (l :: Type) = RuleState
+data
+  RuleState
+    (edgesNumber :: Nat)
+    (nodesNumber :: Nat)
+    (portsNumber :: Nat)
+    (agentType :: Type)
+  = RuleState
   { _wires :: Vec edgesNumber (Maybe (Edge portsNumber))
-  , _agents :: Vec nodesNumber (Maybe (AddressNumber, l, NodeAccumulator portsNumber))
+  , _agents :: Vec nodesNumber (Maybe (AddressNumber, agentType, NodeAccumulator portsNumber))
   , _freeAddrs :: Vec nodesNumber (Maybe AddressNumber)
   , _nextWire :: Index edgesNumber
   , _nextAgent :: Index nodesNumber
@@ -191,8 +212,85 @@ point — the produced graph is the state. Most bodies need only `fresh` and
 `wire`, plus pure `Vec` traversals when a rule fans out over all secondary
 ports of an agent.
 -}
-type RuleBuilder edgesNumber nodesNumber portsNumber l =
-  State (RuleState edgesNumber nodesNumber portsNumber l)
+type RuleBuilder edgesNumber nodesNumber portsNumber agentType =
+  State (RuleState edgesNumber nodesNumber portsNumber agentType)
+
+{- | One reduction rule: its body plus the exact number of fresh nodes it
+creates.
+
+@freshNodesNumber@ is the number of addresses the rule consumes, i.e. the value
+`INet.getAddressesAllocationCount` must return for the pair. It is deliberately
+separate from the builder's @nodesNumber@ ceiling: beta creates zero nodes even
+though the builder reserves room for four.
+
+The body receives the two loaded nodes of the active pair. The constructor
+carries @KnownNat freshNodesNumber@ so `ruleAllocationCount` can recover the
+number from the type without scanning the produced state.
+-}
+data
+  Rule
+    (freshNodesNumber :: Nat)
+    (edgesNumber :: Nat)
+    (nodesNumber :: Nat)
+    (portsNumber :: Nat)
+    (agentType :: Type)
+  where
+  Rule ::
+    (KnownNat freshNodesNumber) =>
+    ( LoadedNode portsNumber agentType ->
+      LoadedNode portsNumber agentType ->
+      RuleBuilder edgesNumber nodesNumber portsNumber agentType ()
+    ) ->
+    Rule freshNodesNumber edgesNumber nodesNumber portsNumber agentType
+
+-- | A rule with its exact node count hidden, for dispatch on runtime labels.
+data SomeRule edgesNumber nodesNumber portsNumber agentType where
+  SomeRule ::
+    Rule freshNodesNumber edgesNumber nodesNumber portsNumber agentType ->
+    SomeRule edgesNumber nodesNumber portsNumber agentType
+
+{- | Mirror a rule: run its body with the pair's nodes swapped.
+
+The node count is unchanged, so the allocation count is unchanged too. This is
+the only operation needed to derive @Abstract >< Apply@ from
+@Apply >< Abstract@ (and every other reversed pair); edge order follows the
+body's argument order, which is exactly what the mirrored rule must produce.
+-}
+mirrorSomeRule ::
+  forall edgesNumber nodesNumber portsNumber agentType.
+  SomeRule edgesNumber nodesNumber portsNumber agentType ->
+  SomeRule edgesNumber nodesNumber portsNumber agentType
+mirrorSomeRule
+  (SomeRule (rule :: Rule freshNodesNumber edgesNumber nodesNumber portsNumber agentType)) =
+    SomeRule (mirror rule)
+   where
+    mirror ::
+      Rule freshNodesNumber edgesNumber nodesNumber portsNumber agentType ->
+      Rule freshNodesNumber edgesNumber nodesNumber portsNumber agentType
+    mirror (Rule body) =
+      Rule $ \leftNode rightNode -> body rightNode leftNode
+
+{- | Number of addresses a rule consumes, read from its type-level
+@freshNodesNumber@. This is what `INet.getAddressesAllocationCount` returns.
+-}
+ruleAllocationCount ::
+  forall freshNodesNumber edgesNumber nodesNumber portsNumber agentType.
+  Rule freshNodesNumber edgesNumber nodesNumber portsNumber agentType ->
+  Index CellsNumber
+ruleAllocationCount (Rule _) =
+  fromIntegral (natVal (SNat @freshNodesNumber))
+
+-- | Apply a rule body to an active pair and materialize its result.
+runRule ::
+  forall freshNodesNumber edgesNumber nodesNumber portsNumber agentType.
+  (KnownNat edgesNumber, KnownNat nodesNumber, KnownNat portsNumber) =>
+  Vec nodesNumber (Maybe AddressNumber) ->
+  Rule freshNodesNumber edgesNumber nodesNumber portsNumber agentType ->
+  LoadedNode portsNumber agentType ->
+  LoadedNode portsNumber agentType ->
+  ReduceRuleResult nodesNumber edgesNumber portsNumber agentType
+runRule freeAddresses (Rule body) leftNode rightNode =
+  runReduce freeAddresses (body leftNode rightNode)
 
 -- ====================
 -- Primitives
@@ -200,7 +298,7 @@ type RuleBuilder edgesNumber nodesNumber portsNumber l =
 
 {- | Secondary slots of a fresh node: the first @arity@ slots are real and
 start @Just NotConnected@, the rest are padding `Nothing`. @arity@ is an
-'Integer' because callers pass @natVal (SNat \@(AgentArityOf s))@ directly;
+'Integer' because callers pass @natVal (SNat \@(AgentArityOf agentSingleton))@ directly;
 the arity itself is a type-level declaration, not a runtime field.
 -}
 initSecAcc :: forall portsNumber. (KnownNat portsNumber) => Integer -> Vec portsNumber (Maybe (Connection portsNumber))
@@ -227,10 +325,10 @@ a pointer and a node created earlier in the same body. It scans the
 @nodesNumber@ node slots (bounded by the instance; four in "INet.Define").
 -}
 slotByAddr ::
-  forall edgesNumber nodesNumber portsNumber l.
+  forall edgesNumber nodesNumber portsNumber agentType.
   (KnownNat nodesNumber) =>
   AddressNumber ->
-  RuleBuilder edgesNumber nodesNumber portsNumber l (Maybe (Index nodesNumber))
+  RuleBuilder edgesNumber nodesNumber portsNumber agentType (Maybe (Index nodesNumber))
 slotByAddr a = gets (findIndex isAddr . _agents)
  where
   isAddr (Just (addr, _, _)) = addr == a
@@ -241,10 +339,10 @@ address already claimed by a node created in this body becomes `EndFresh`;
 every other address is an external end — an open port of the surrounding net.
 -}
 resolveEnd ::
-  forall edgesNumber nodesNumber portsNumber l.
+  forall edgesNumber nodesNumber portsNumber agentType.
   (KnownNat nodesNumber, KnownNat portsNumber) =>
   PortPointer ->
-  RuleBuilder edgesNumber nodesNumber portsNumber l (EndPoint portsNumber nodesNumber)
+  RuleBuilder edgesNumber nodesNumber portsNumber agentType (EndPoint portsNumber nodesNumber)
 resolveEnd Free = pure EndFree
 resolveEnd (Main a) = do
   mSlot <- slotByAddr a
@@ -263,12 +361,12 @@ whenever an end belongs to a fresh node; a `Nothing` slot here means the body
 never created that node.
 -}
 writeAcc ::
-  forall edgesNumber nodesNumber portsNumber l.
+  forall edgesNumber nodesNumber portsNumber agentType.
   (KnownNat portsNumber, KnownNat nodesNumber) =>
   Index nodesNumber ->
   IdOfPort portsNumber ->
   Connection portsNumber ->
-  RuleBuilder edgesNumber nodesNumber portsNumber l ()
+  RuleBuilder edgesNumber nodesNumber portsNumber agentType ()
 writeAcc slot pid conn = modify $ \s ->
   case _agents s !! slot of
     Nothing -> errorX "writeAcc: no fresh agent at slot"
@@ -285,24 +383,33 @@ so tests pin it. Overflow of the fixed vector is an explicit `errorX`, never
 silent truncation.
 -}
 addWire ::
-  forall edgesNumber nodesNumber portsNumber l.
+  forall edgesNumber nodesNumber portsNumber agentType.
   (KnownNat edgesNumber) =>
   Edge portsNumber ->
-  RuleBuilder edgesNumber nodesNumber portsNumber l ()
-addWire e = do
-  s <- get
-  let i = _nextWire s
-  case _wires s !! i of
+  RuleBuilder edgesNumber nodesNumber portsNumber agentType ()
+addWire edge = do
+  builderState <- get
+  let i = _nextWire builderState
+  case _wires builderState !! i of
     Just _ -> errorX "addWire: too many wires for the fixed Vec"
-    Nothing -> put s{_wires = replace i (Just e) (_wires s), _nextWire = i + 1}
+    Nothing ->
+      put
+        builderState
+          { _wires = replace i (Just edge) (_wires builderState)
+          , _nextWire = i + 1
+          }
 
 {- | Connect two port ends.
 
 The effect follows from the resolved endpoints, and the two ends are not
 symmetric in how they are recorded:
 
-* free with free, or free with an external end — no-op; a missing end is
-  elided rather than turned into a dangling `Edge`;
+* free with free — no-op;
+* free with an external end — append a dangling `Edge` whose free end stays
+  `NotConnected`; the external port becomes free. This matters to the reducer:
+  `Core.Reducer.edgesReduction` rewires the edge through the dying pair and
+  `changeRootNode` can then use the surviving one-ended edge to find the new
+  root when the old root was a pair member;
 * free with a fresh node's port — mark that fresh port @NotConnected@; the
   node still materializes, but the end stays unwired (this is how an empty
   partner slot leaves a fresh eraser or fan unconnected);
@@ -318,19 +425,19 @@ pointers produces an external edge, as beta does; a well-formed input net
 never points a pair slot back into the pair.
 -}
 wire ::
-  forall edgesNumber nodesNumber portsNumber l.
+  forall edgesNumber nodesNumber portsNumber agentType.
   (KnownNat edgesNumber, KnownNat nodesNumber, KnownNat portsNumber) =>
   PortPointer ->
   PortPointer ->
-  RuleBuilder edgesNumber nodesNumber portsNumber l ()
+  RuleBuilder edgesNumber nodesNumber portsNumber agentType ()
 wire p1 p2 = do
   e1 <- resolveEnd p1
   e2 <- resolveEnd p2
   case (e1, e2) of
     (EndFree, EndFree) -> pure ()
-    (EndFree, EndExternal _) -> pure ()
+    (EndFree, EndExternal c) -> addWire (Edge NotConnected c)
     (EndFree, EndFresh slot pid _) -> writeAcc slot pid NotConnected
-    (EndExternal _, EndFree) -> pure ()
+    (EndExternal c, EndFree) -> addWire (Edge c NotConnected)
     (EndFresh slot pid _, EndFree) -> writeAcc slot pid NotConnected
     (EndExternal c1, EndExternal c2) -> addWire (Edge c1 c2)
     (EndExternal c, EndFresh slot pid _) -> writeAcc slot pid c
@@ -346,7 +453,8 @@ address assignment), claims the next node slot, initializes the accumulator
 (principal @NotConnected@, secondary slots from `initSecAcc`), and returns the
 address together with the node's secondary ports. The address is needed to
 attach a principal port (@Main addr@); the returned vector is arity-typed
-(@AgentArityOf s@), so fan-out code derives its length from the declaration.
+(@AgentArityOf agentSingleton@), so fan-out code derives its length from the
+declaration.
 
 Creation is deliberately separate from connection: `fresh` only allocates and
 returns handles, while `wire` connects them. One node can therefore be wired
@@ -357,24 +465,37 @@ Aborts with `errorX` when the fixed node vector is full or when the pool has
 no address left for this slot.
 -}
 fresh ::
-  forall s l e n p.
-  (AgentLabel s l, KnownNat (AgentArityOf s), KnownNat p, KnownNat n) =>
-  s ->
-  RuleBuilder e n p l (AddressNumber, Vec (AgentArityOf s) PortPointer)
+  forall agentSingleton agentType edgesNumber nodesNumber portsNumber.
+  ( AgentLabel agentSingleton agentType
+  , KnownNat (AgentArityOf agentSingleton)
+  , KnownNat portsNumber
+  , KnownNat nodesNumber
+  ) =>
+  agentSingleton ->
+  RuleBuilder
+    edgesNumber
+    nodesNumber
+    portsNumber
+    agentType
+    (AddressNumber, Vec (AgentArityOf agentSingleton) PortPointer)
 fresh agent = do
-  s <- get
-  let i = _nextAgent s
-  case _agents s !! i of
+  builderState <- get
+  let i = _nextAgent builderState
+  case _agents builderState !! i of
     Just _ -> errorX "fresh: too many fresh agents for the fixed Vec"
     Nothing -> do
-      let addr = case _freeAddrs s !! i of
+      let addr = case _freeAddrs builderState !! i of
             Just freeAddr -> freeAddr
             Nothing -> errorX "fresh: free address pool exhausted"
-          lbl = agentLabel agent
-          arity = natVal (SNat @(AgentArityOf s))
+          label = agentLabel agent
+          arity = natVal (SNat @(AgentArityOf agentSingleton))
           acc = NodeAccumulator NotConnected (initSecAcc arity)
           ports = imap (\j _ -> Pointer addr (fromIntegral j)) (repeat ())
-      put s{_agents = replace i (Just (addr, lbl, acc)) (_agents s), _nextAgent = i + 1}
+      put
+        builderState
+          { _agents = replace i (Just (addr, label, acc)) (_agents builderState)
+          , _nextAgent = i + 1
+          }
       pure (addr, ports)
 
 -- ====================
@@ -384,7 +505,10 @@ fresh agent = do
 {- | Attach the runtime label to an accumulator and build the `Node`; the
 address is added by `materialize`.
 -}
-accToNode :: l -> NodeAccumulator portsNumber -> Node portsNumber l
+accToNode ::
+  agentType ->
+  NodeAccumulator portsNumber ->
+  Node portsNumber agentType
 accToNode lbl NodeAccumulator{..} =
   Node
     { _nodeType = lbl
@@ -397,8 +521,8 @@ node slot into a `LoadedNode` carrying its address. Unused slots stay
 `Nothing`, as the fixed-size interface requires.
 -}
 materialize ::
-  RuleState edgesNumber nodesNumber portsNumber l ->
-  ReduceRuleResult nodesNumber edgesNumber portsNumber l
+  RuleState edgesNumber nodesNumber portsNumber agentType ->
+  ReduceRuleResult nodesNumber edgesNumber portsNumber agentType
 materialize RuleState{..} = ReduceRuleResult _wires createdNodes
  where
   createdNodes = map (\case Nothing -> Nothing; Just (addr, lbl, acc) -> Just (LoadedNode (accToNode lbl acc) addr)) _agents
@@ -414,14 +538,14 @@ check the body against the ceiling — the fixed vectors do, with `errorX` on
 the first write past capacity.
 -}
 runReduce ::
-  forall edgesNumber nodesNumber portsNumber l.
+  forall edgesNumber nodesNumber portsNumber agentType.
   (KnownNat edgesNumber, KnownNat nodesNumber, KnownNat portsNumber) =>
   Vec nodesNumber (Maybe AddressNumber) ->
-  RuleBuilder edgesNumber nodesNumber portsNumber l () ->
-  ReduceRuleResult nodesNumber edgesNumber portsNumber l
+  RuleBuilder edgesNumber nodesNumber portsNumber agentType () ->
+  ReduceRuleResult nodesNumber edgesNumber portsNumber agentType
 runReduce freeAddrs body = materialize (execState body initState)
  where
-  initState :: RuleState edgesNumber nodesNumber portsNumber l
+  initState :: RuleState edgesNumber nodesNumber portsNumber agentType
   initState =
     RuleState
       { _wires = repeat Nothing

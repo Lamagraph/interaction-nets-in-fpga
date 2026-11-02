@@ -2,12 +2,14 @@
 Module      : Core.Concrete.Initial
 Description : Hand-built initial nets and their @MemoryManager@s
 
-Fixtures for the 3-agent rule set of "Core.Concrete.ReduceRulesLambda": a
-net given as `Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda))` (cells 0..n
-occupied, the rest free) plus the matching @MemoryManager@ with the busy and
-active-pairs maps. @topEntity@ is fixed to `initialIdApplyToIdNode` with
-`initialIdApplyToIdMM` and root address 0 (\"Core.Core\"; @docs/architecture.md\"
-describes the fixture).
+Fixtures for the 3-agent lambda set: a net given as
+`Vec CellsNumber (Maybe (Node 2 agentType))` (cells 0..n occupied, the rest
+free) plus the matching @MemoryManager@ with the busy and active-pairs maps.
+The nets are label-parametric where the synthesized and reference sets share
+the same wiring: @topEntity@ builds `initialIdApplyToIdNodeWith` with the EDSL
+labels of "INet.Define", while the rest of the fixtures use the hand-written
+labels of "Core.Concrete.ReduceRulesLambda". @topEntity@ uses root address 0
+(\"Core.Core\"; @docs/architecture.md\" describes the fixture).
 
 Port wiring follows the mirror convention: a secondary port @Port a (Id j)@
 always meets the mirror @Port a (Id (1 - j))@ on the other side, so the two
@@ -34,12 +36,25 @@ initialNodeToLoadedNode =
           <$> maybeNode
     )
 
-{- | Initial Net view of \((\lambda x. x)(\lambda y. y)\)
+{- | Initial Net view of \((\lambda x. x)(\lambda y. y)\), parameterized by the
+runtime labels of the three-agent lambda set.
+
+The net is identical for the hand-written set of
+"Core.Concrete.ReduceRulesLambda" and the EDSL set of "INet.Define"; only the
+label constructors differ, so the wiring is written once here and the labels
+are supplied by the caller. The fixture has no `Erase` node, so the eraser
+label is accepted for symmetry with the three-agent set but unused.
+@topEntity@ uses the EDSL labels.
 
 <<docs/apply.svg>>
 -}
-initialIdApplyToIdNode :: Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda))
-initialIdApplyToIdNode = Just applyNode +>> Just abstract1Node +>> Just abstract2Node +>> def
+initialIdApplyToIdNodeWith ::
+  agentType ->
+  agentType ->
+  agentType ->
+  Vec CellsNumber (Maybe (Node 2 agentType))
+initialIdApplyToIdNodeWith applyLabel abstractLabel _eraseLabel =
+  Just applyNode +>> Just abstract1Node +>> Just abstract2Node +>> def
  where
   applyAddressNumber = 0
   abstract1AddressNumber = 1
@@ -48,19 +63,24 @@ initialIdApplyToIdNode = Just applyNode +>> Just abstract1Node +>> Just abstract
     let prPort = Port abstract2AddressNumber Primary
         port1 = Port abstract1AddressNumber Primary
         secPorts = Just NotConnected :> Just (Connected port1) :> Nil
-     in Node (Just prPort) secPorts Apply
+     in Node (Just prPort) secPorts applyLabel
   abstract1Node =
     let prPort = Port applyAddressNumber (Id 1)
         port0 = Port abstract1AddressNumber (Id 1)
         port1 = Port abstract1AddressNumber (Id 0)
         secPorts = Just (Connected port0) :> Just (Connected port1) :> Nil
-     in Node (Just prPort) secPorts Abstract
+     in Node (Just prPort) secPorts abstractLabel
   abstract2Node =
     let prPort = Port applyAddressNumber Primary
         port0 = Port abstract2AddressNumber (Id 1)
         port1 = Port abstract2AddressNumber (Id 0)
         secPorts = Just (Connected port0) :> Just (Connected port1) :> Nil
-     in Node (Just prPort) secPorts Abstract
+     in Node (Just prPort) secPorts abstractLabel
+
+-- | The fixture net with the hand-written set's labels.
+initialIdApplyToIdNode :: Vec CellsNumber (Maybe (Node 2 AgentSimpleLambda))
+initialIdApplyToIdNode =
+  initialIdApplyToIdNodeWith Apply Abstract Erase
 
 -- | @LoadedNode@ view of `initialIdApplyToIdNode`.
 initialIdApplyToId :: Vec CellsNumber (Maybe (LoadedNode 2 AgentSimpleLambda))

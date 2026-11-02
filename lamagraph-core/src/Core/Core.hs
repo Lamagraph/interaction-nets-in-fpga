@@ -7,10 +7,10 @@ Description : Top-level wiring of CPU and RAM; the `topEntity` fixture
 Closes the hardware loop: `logicBroad` instantiates the CPU FSM ("Core.CPU")
 together with a @blockRam@ holding the net, and feeds each cycle's RAM read
 data back as the next cycle's CPU input. @topEntity@ fixes all parameters —
-2 secondary ports, 2 nodes, 2 edges, `AgentSimpleLambda` from
-"Core.Concrete.ReduceRulesLambda" — the initial net
-(`initialIdApplyToIdNode`, the fixture \((\lambda x. x)(\lambda y. y)\)),
-its @MemoryManager@ and root node address 0.
+2 secondary ports, 4 nodes (the EDSL rule set's ceiling), 2 edges, the
+`AgentSimpleLambda` label set generated in "INet.Define" — the initial net
+(`initialIdApplyToIdNodeWith` with the EDSL labels, the fixture
+\((\lambda x. x)(\lambda y. y)\)), its @MemoryManager@ and root node address 0.
 
 Timing: the RAM answers in one cycle and the CPU input is registered, so the
 node fetched for an address issued in cycle @t@ is processed in cycle @t + 2@.
@@ -23,11 +23,11 @@ module Core.Core where
 import Clash.Annotations.TH
 import Clash.Prelude
 import Core.CPU
-import Core.Concrete.Initial (initialIdApplyToIdMM, initialIdApplyToIdNode)
-import Core.Concrete.ReduceRulesLambda
+import Core.Concrete.Initial (initialIdApplyToIdMM, initialIdApplyToIdNodeWith)
 import Core.Loader
 import Core.MemoryManager.MemoryManager
 import Core.Node
+import qualified INet.Define as Edsl
 import INet.Net
 
 {- | One reduction processor: CPU FSM plus the RAM with the net.
@@ -72,8 +72,11 @@ logicBroad initialNet initialRootNodeAddress initialMemoryManager = _nextRootNod
   makeLoadedNodeFromRamForm n ramForm = LoadedNode <$> n <*> (fst <$> ramForm)
 
 {- | Synthesizable top level: net \((\lambda x. x)(\lambda y. y)\) on the
-2-port @AgentSimpleLambda@ rule set. Returns the root node address stream
-(fixed at 0 during the initial cycles of the FSM).
+EDSL-generated @AgentSimpleLambda@ rule set from "INet.Define". Returns the
+root node address stream (fixed at 0 during the initial cycles of the FSM).
+
+The node ceiling is 4 because the EDSL set's duplicator rules allocate up to
+two copies plus two fans; the hand-written set only needed 2.
 -}
 topEntity ::
   "clk" ::: Clock System ->
@@ -82,8 +85,12 @@ topEntity ::
   "rootNodeAddress" ::: Signal System AddressNumber
 topEntity =
   exposeClockResetEnable
-    ( (logicBroad @2 @2 @2 @AgentSimpleLambda)
-        initialIdApplyToIdNode
+    ( (logicBroad @2 @4 @2 @Edsl.AgentSimpleLambda)
+        ( initialIdApplyToIdNodeWith
+            Edsl.ApplyLabel
+            Edsl.AbstractLabel
+            Edsl.EraseLabel
+        )
         0
         initialIdApplyToIdMM
     )

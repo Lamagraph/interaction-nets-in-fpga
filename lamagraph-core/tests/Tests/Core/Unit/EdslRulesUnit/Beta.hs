@@ -7,8 +7,10 @@ the same semantics at rule level the result is additionally pinned against
 "Core.Concrete.ReduceRulesLambda".
 
 A wire whose pair-slot end is `NotConnected` (e.g. an abstract whose secondary
-is empty) is elided by the EDSL (`EndFree, EndExternal -> pure ()`) instead of
-producing `Edge NotConnected _` — see `reduceIdAppIdBeta` below.
+is empty) becomes a dangling `Edge NotConnected _` on the other side: the
+external port is now free. That edge is what `Core.Reducer.changeRootNode`
+uses to find the successor root when the old root was a pair member — see
+`reduceIdAppIdBeta` below.
 -}
 module Tests.Core.Unit.EdslRulesUnit.Beta (
   betaTests,
@@ -35,16 +37,19 @@ fixtureBetaFull =
   lSecs = Just (Connected (Port 4 Primary)) C.:> Just (Connected (Port 5 (Id 1))) C.:> C.Nil
   rSecs = Just (Connected (Port 6 (Id 1))) C.:> Just (Connected (Port 7 (Id 0))) C.:> C.Nil
 
-{- | β on \((\lambda x.x)(\lambda y.y)\): only the argument wire leaves the pair;
-the empty `Apply` secondary is elided (see module header).
+{- | β on \((\lambda x.x)(\lambda y.y)\): the argument wire plus the dangling
+edge for the empty `Apply` secondary (see module header).
 -}
 reduceIdAppIdBeta :: TestTree
 reduceIdAppIdBeta =
-  testCase "beta on id-apply-to-id: single argument wire" $
+  testCase "beta on id-apply-to-id: argument wire plus dangling edge" $
     (actEdges @?= expectedEdges) >> (actNodes @?= [])
  where
   (actEdges, actNodes) = edsOf (freeVec4 3 4) pairIdApplyToId
-  expectedEdges = [Edge (Connected (Port 1 Primary)) (Connected (Port 2 (Id 0)))]
+  expectedEdges =
+    [ Edge NotConnected (Connected (Port 2 (Id 1)))
+    , Edge (Connected (Port 1 Primary)) (Connected (Port 2 (Id 0)))
+    ]
 
 {- | Same net mirrored: `Abstract >< Apply` dispatch path. The dispatch
 normalizes pair orientation (`betaBody rp lp`), so the resulting wire list is
@@ -57,7 +62,10 @@ reduceIdAppIdBetaMirrored =
  where
   (rN, lN) = pairIdApplyToId
   (actEdges, actNodes) = edsOf (freeVec4 3 4) (lN, rN)
-  expectedEdges = [Edge (Connected (Port 1 Primary)) (Connected (Port 2 (Id 0)))]
+  expectedEdges =
+    [ Edge NotConnected (Connected (Port 2 (Id 1)))
+    , Edge (Connected (Port 1 Primary)) (Connected (Port 2 (Id 0)))
+    ]
 
 {- | Both secondaries self-looped: both pairs become external wires.
 Pinned against the hand-written rule: identical result.

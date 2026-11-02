@@ -10,9 +10,10 @@ Description : Agent-set interface: reduction-rule result and the `INet` class
 Defines what a concrete agent set must provide to drive the generic reducer
 in "Core.Reducer": how many free cell addresses a rule pair will consume and
 how to build the reduction result for an active pair. Two rule sets exist:
-the hand-written instance @INet AgentSimpleLambda 2 2 2@ in
-"Core.Concrete.ReduceRulesLambda" (used by @topEntity@ and most tests) and
-the EDSL-generated instance @INet AgentSimpleLambda 4 2 2@ in "INet.Define".
+the EDSL-generated instance @INet AgentSimpleLambda 4 2 2@ in "INet.Define"
+(used by @topEntity@) and the hand-written instance
+@INet AgentSimpleLambda 2 2 2@ in "Core.Concrete.ReduceRulesLambda" (kept as
+the reference for the processor-level tests).
 -}
 module INet.Net where
 

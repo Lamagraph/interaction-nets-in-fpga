@@ -17,15 +17,16 @@ Description : Worked example: the lambda-calculus agent set written with the EDS
 This module is the example for "INet.Edsl": it declares the agent set
 @{Apply, Abstract, Erase, Duplicate}@ with one 'declareAgents' splice, writes
 the rules as builder bodies, and wires them into the
-@INet AgentSimpleLambda 4 2 2@ instance. Current status, limits, and the
-relation to the synthesized rule set: @docs/edsl.md@.
+@INet AgentSimpleLambda 4 2 2@ instance. That instance is what @topEntity@
+synthesizes; design, limits, and the relation to the hand-written reference
+set: @docs/edsl.md@.
 
 __Name collision.__ @AgentSimpleLambda@ here is the four-constructor type
 (@ApplyLabel@ … @DuplicateLabel@) of the four-address instance. The module
 "Core.Concrete.ReduceRulesLambda" declares a /different/ three-constructor
-@AgentSimpleLambda@ (@Apply@, @Abstract@, @Erase@) for the two-address instance
-used by @topEntity@; the two are unrelated and there is no conversion between
-them.
+@AgentSimpleLambda@ (@Apply@, @Abstract@, @Erase@) for the two-address
+reference instance kept for tests; the two are unrelated and there is no
+conversion between them.
 
 == Why this agent set
 
@@ -43,16 +44,18 @@ The class order is @INet agentType nodesNumber edgesNumber portsNumber@.
 * /4 nodes/ — @dupAnyBody@ creates two copies plus one fan per secondary port
   of the copied agent; the widest copied agent has two secondary ports, so
   @2 + 2 = 4@. Every other rule creates at most two nodes.
-* /2 edges/ — an 'Edge' is produced only by an external-to-external wire. Only
-  beta does that, at most twice (a free pair slot elides one edge); erase and
-  duplicate write into fresh-node accumulators and emit no edges.
+* /2 edges/ — an 'Edge' is produced only by an external-to-external wire or a
+  free-to-external wire (the latter stays dangling); only beta does that, at
+  most twice; erase and duplicate write into fresh-node accumulators and emit
+  no edges.
 * /2 ports/ — the maximum secondary arity of the set (@Apply@, @Abstract@,
   @Duplicate@); @Erase@ pads both slots with @Nothing@.
 
-The per-pair allocation counts live in `getAddressesAllocationCount`: beta 0,
+The per-pair allocation counts live in the `Rule` types: beta 0,
 erase/erase 0, erase-vs-non-erase 2 (one eraser per secondary port of the
 other agent), duplicate-vs-@Apply@/@Abstract@ 4. Each count is the number of
-addresses the corresponding body actually takes from the pool.
+addresses the corresponding body actually takes from the pool; it is extracted
+from the rule's @freshNodesNumber@ type parameter, not maintained separately.
 
 == Why the rules look the way they do
 
@@ -162,7 +165,10 @@ principal stays unconnected. The traversal is generic over the partner arity
 and threads the builder state purely with 'Vec.mapAccumL' — no lists, no
 monadic folds — so the body stays synthesizable.
 -}
-eraseAnyBody :: forall n. Vec n PortPointer -> RuleBuilder 2 4 2 AgentSimpleLambda ()
+eraseAnyBody ::
+  forall partnerArity.
+  Vec partnerArity PortPointer ->
+  RuleBuilder 2 4 2 AgentSimpleLambda ()
 eraseAnyBody ports = state $ \initState ->
   let st' = fst (Vec.mapAccumL step initState ports)
    in ((), st')
@@ -191,11 +197,11 @@ is generic in the copied agent's arity; for this set it takes four pool
 addresses: two copies plus two fans.
 -}
 dupAnyBody ::
-  forall a.
-  (AgentLabel (Agent a) AgentSimpleLambda) =>
-  Agent a ->
+  forall copiedAgentKind.
+  (AgentLabel (Agent copiedAgentKind) AgentSimpleLambda) =>
+  Agent copiedAgentKind ->
   Vec 2 PortPointer ->
-  Vec (AgentArityOf (Agent a)) PortPointer ->
+  Vec (AgentArityOf (Agent copiedAgentKind)) PortPointer ->
   RuleBuilder 2 4 2 AgentSimpleLambda ()
 dupAnyBody copyAgent branchPorts xPorts = do
   (primA, copyA) <- fresh copyAgent
@@ -219,6 +225,88 @@ dupAnyBody copyAgent branchPorts xPorts = do
     wire (fanP !! sec2Port1) cb
 
 -- ====================
+-- Rules with their exact allocation counts
+-- ====================
+
+{- | Beta creates no nodes: the body only connects the two port vectors.
+The mirrored orientation is derived by `mirrorSomeRule`; edge order follows the
+body's argument order.
+-}
+betaRule :: Rule 0 2 4 2 AgentSimpleLambda
+betaRule = Rule $ \leftNode rightNode ->
+  betaBody (nodeSecondaries leftNode) (nodeSecondaries rightNode)
+
+-- | Two erasers annihilate without creating or wiring anything.
+eraseEraseRule :: Rule 0 2 4 2 AgentSimpleLambda
+eraseEraseRule = Rule $ \_ _ -> eraseEraseBody
+
+{- | Erase the partner on the right: one fresh eraser per partner secondary
+port, hence @AgentArityOf (Agent partnerKind)@ nodes. The equality pins the
+partner arity to the node's port width (2 in this set).
+-}
+eraseAgainstRight ::
+  forall partnerKind.
+  ( AgentLabel (Agent partnerKind) AgentSimpleLambda
+  , AgentArityOf (Agent partnerKind) ~ 2
+  ) =>
+  Agent partnerKind ->
+  Rule (AgentArityOf (Agent partnerKind)) 2 4 2 AgentSimpleLambda
+eraseAgainstRight _ = Rule $ \_ rightNode ->
+  eraseAnyBody (nodeSecondaries rightNode)
+
+{- | Duplicate the agent on the right: two copies plus one fan per secondary
+port of the copied agent, hence @2 + AgentArityOf (Agent copiedAgentKind)@
+fresh nodes. The duplicate itself is on the left.
+-}
+duplicateAgainstRight ::
+  forall copiedAgentKind.
+  ( AgentLabel (Agent copiedAgentKind) AgentSimpleLambda
+  , AgentArityOf (Agent copiedAgentKind) ~ 2
+  ) =>
+  Agent copiedAgentKind ->
+  Rule (2 + AgentArityOf (Agent copiedAgentKind)) 2 4 2 AgentSimpleLambda
+duplicateAgainstRight copiedAgent = Rule $ \leftNode rightNode ->
+  dupAnyBody
+    copiedAgent
+    (nodeSecondaries leftNode)
+    (nodeSecondaries rightNode)
+
+{- | Canonical, unordered dispatch table: every rule pair is listed once.
+
+The order encodes the semantics: @Erase@ arms precede @Duplicate@ arms, so
+@Duplicate >< Erase@ resolves to the erase rule through the mirrored lookup in
+`ruleFor`. @Nothing@ means the pair has no rule.
+-}
+canonicalRule ::
+  AgentSimpleLambda ->
+  AgentSimpleLambda ->
+  Maybe (SomeRule 2 4 2 AgentSimpleLambda)
+canonicalRule left right = case (left, right) of
+  (ApplyLabel, AbstractLabel) -> Just (SomeRule betaRule)
+  (EraseLabel, EraseLabel) -> Just (SomeRule eraseEraseRule)
+  (EraseLabel, ApplyLabel) -> Just (SomeRule (eraseAgainstRight Apply))
+  (EraseLabel, AbstractLabel) -> Just (SomeRule (eraseAgainstRight Abstract))
+  (EraseLabel, DuplicateLabel) -> Just (SomeRule (eraseAgainstRight Duplicate))
+  (DuplicateLabel, ApplyLabel) -> Just (SomeRule (duplicateAgainstRight Apply))
+  (DuplicateLabel, AbstractLabel) -> Just (SomeRule (duplicateAgainstRight Abstract))
+  _ -> Nothing
+
+{- | Look up a rule in either orientation.
+
+A direct hit uses the canonical rule; a miss retries with the labels swapped
+and mirrors the result. Mirrored rules therefore never need their own body or
+their own table entry.
+-}
+ruleFor ::
+  AgentSimpleLambda ->
+  AgentSimpleLambda ->
+  Maybe (SomeRule 2 4 2 AgentSimpleLambda)
+ruleFor left right =
+  case canonicalRule left right of
+    Just rule -> Just rule
+    Nothing -> mirrorSomeRule <$> canonicalRule right left
+
+-- ====================
 -- INet instance
 -- ====================
 
@@ -233,37 +321,24 @@ The order matters: the @Erase@ arms come before the @Duplicate@ arms, so
 @Duplicate >< Erase@ is an erasure (see the module header).
 -}
 instance INet AgentSimpleLambda 4 2 2 where
-  getAddressesAllocationCount :: AgentSimpleLambda -> AgentSimpleLambda -> Index CellsNumber
-  getAddressesAllocationCount left right = case (left, right) of
-    (ApplyLabel, AbstractLabel) -> 0
-    (AbstractLabel, ApplyLabel) -> 0
-    (EraseLabel, EraseLabel) -> 0
-    (EraseLabel, _) -> 2
-    (_, EraseLabel) -> 2
-    (DuplicateLabel, DuplicateLabel) -> errorX "No rule for this pair"
-    (DuplicateLabel, _) -> 4
-    (_, DuplicateLabel) -> 4
-    _ -> errorX "No rule for this pair"
+  getAddressesAllocationCount ::
+    AgentSimpleLambda ->
+    AgentSimpleLambda ->
+    Index CellsNumber
+  getAddressesAllocationCount left right =
+    case ruleFor left right of
+      Just (SomeRule rule) -> ruleAllocationCount rule
+      Nothing -> errorX "No rule for this pair"
 
   makeReduction ::
     Vec 4 (Maybe AddressNumber) ->
     LoadedNode 2 AgentSimpleLambda ->
     LoadedNode 2 AgentSimpleLambda ->
     ReduceRuleResult 4 2 2 AgentSimpleLambda
-  makeReduction freeAddrs lN rN = case (lType, rType) of
-    (ApplyLabel, AbstractLabel) -> runReduce freeAddrs (betaBody lp rp)
-    (AbstractLabel, ApplyLabel) -> runReduce freeAddrs (betaBody rp lp)
-    (EraseLabel, EraseLabel) -> runReduce freeAddrs eraseEraseBody
-    (EraseLabel, _) -> runReduce freeAddrs (eraseAnyBody rp)
-    (_, EraseLabel) -> runReduce freeAddrs (eraseAnyBody lp)
-    (DuplicateLabel, DuplicateLabel) -> errorX "No rule for this pair"
-    (DuplicateLabel, ApplyLabel) -> runReduce freeAddrs (dupAnyBody Apply lp rp)
-    (ApplyLabel, DuplicateLabel) -> runReduce freeAddrs (dupAnyBody Apply rp lp)
-    (DuplicateLabel, AbstractLabel) -> runReduce freeAddrs (dupAnyBody Abstract lp rp)
-    (AbstractLabel, DuplicateLabel) -> runReduce freeAddrs (dupAnyBody Abstract rp lp)
-    _ -> errorX "No rule for this pair"
+  makeReduction freeAddrs leftNode rightNode =
+    case ruleFor (nodeTypeOf leftNode) (nodeTypeOf rightNode) of
+      Just (SomeRule rule) -> runRule freeAddrs rule leftNode rightNode
+      Nothing -> errorX "No rule for this pair"
    where
-    lType = lN ^. containedNode . nodeType
-    rType = rN ^. containedNode . nodeType
-    lp = nodeSecondaries lN
-    rp = nodeSecondaries rN
+    nodeTypeOf :: LoadedNode 2 AgentSimpleLambda -> AgentSimpleLambda
+    nodeTypeOf = view (containedNode . nodeType)

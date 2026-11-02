@@ -15,6 +15,7 @@ import Core.Concrete.ReduceRulesLambda
 import Core.Core
 import Core.MemoryManager.MemoryManager
 import Core.Node
+import qualified INet.Define as Def
 import INet.Net
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -90,6 +91,45 @@ idApplyToIdMealyCore =
     0
     "id apply to id core ( (λx. x)(λy. y) )"
 
+{- | The same fixture and wiring as `idApplyToIdMealyCore`, but through the
+EDSL rule set of "INet.Define" (4-node ceiling), which is what `topEntity`
+synthesizes. This pins the processor-level behaviour of the EDSL rules, not
+only the rule bodies compared by "Tests.Core.Unit.EdslRules".
+-}
+idApplyToIdMealyCoreEdsl :: TestTree
+idApplyToIdMealyCoreEdsl =
+  mealyCoreTestTemplate @Def.AgentSimpleLambda @4 @2
+    ( initialIdApplyToIdNodeWith
+        Def.ApplyLabel
+        Def.AbstractLabel
+        Def.EraseLabel
+    )
+    initialIdApplyToIdMM
+    [0, 1]
+    30
+    0
+    "id apply to id core with EDSL rules ( (λx. x)(λy. y) )"
+
+{- | The EDSL wiring must actually finish on the same root as the reference
+wiring. `mealyCoreTestTemplate` only checks that the expected addresses appear
+somewhere in the trace; this pins the terminal address the board wrapper prints.
+-}
+idApplyToIdEdslRoot :: TestTree
+idApplyToIdEdslRoot =
+  testCase "EDSL topEntity reaches root 1" $
+    assertEqual "final root" 1 (P.last roots)
+ where
+  roots =
+    mealyCoreRoots @Def.AgentSimpleLambda @4 @2 @2
+      ( initialIdApplyToIdNodeWith
+          Def.ApplyLabel
+          Def.AbstractLabel
+          Def.EraseLabel
+      )
+      initialIdApplyToIdMM
+      40
+      0
+
 epsApplyToIdSimpleMealyCore :: TestTree
 epsApplyToIdSimpleMealyCore =
   mealyCoreTestTemplate @AgentSimpleLambda @2 @2
@@ -133,6 +173,8 @@ mealyCoreUnitTests =
   testGroup
     "mealy Core"
     [ idApplyToIdMealyCore
+    , idApplyToIdMealyCoreEdsl
+    , idApplyToIdEdslRoot
     , epsApplyToIdSimpleMealyCore
     , epsApplyToIdMealyCore
     , epsApplyToIdRoots

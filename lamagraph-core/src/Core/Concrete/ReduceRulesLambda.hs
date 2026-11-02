@@ -5,15 +5,17 @@
 Module      : Core.Concrete.ReduceRulesLambda
 Description : Hand-written reduction rules for the 3-agent lambda set
 
-The concrete agent set used by @topEntity@ and most tests: the label type
-`AgentSimpleLambda` with three constructors and the instance
-@INet AgentSimpleLambda 2 2 2@ — beta, erasure and erase-erase rules written
-by hand, each allocating at most 2 fresh cells.
+The concrete agent set kept as the reference implementation for the
+processor-level tests: the label type `AgentSimpleLambda` with three
+constructors and the instance @INet AgentSimpleLambda 2 2 2@ — beta, erasure
+and erase-erase rules written by hand, each allocating at most 2 fresh cells.
+@topEntity@ synthesizes the EDSL set of "INet.Define" instead; this module is
+the independent reference its reductions are compared against.
 
 __Note__ the name @AgentSimpleLambda@ is used twice in the project for two
 /different/ types: this module's three-constructor type (@Apply@, @Abstract@,
 @Erase@) and the four-constructor type of the same name in "INet.Define".
-@topEntity@ is fixed to the type declared here.
+@topEntity@ uses the "INet.Define" type.
 -}
 module Core.Concrete.ReduceRulesLambda where
 

@@ -9,10 +9,11 @@ generic machinery materializes it into the `ReduceRuleResult` that
 overview.
 
 **Current status.** The λ-calculus instance `INet AgentSimpleLambda 4 2 2` in
-`INet.Define` is exercised by the test suite only. `topEntity` still uses the
-hand-written `INet AgentSimpleLambda 2 2 2` of
-`Core.Concrete.ReduceRulesLambda`. Wiring the EDSL set into the processor is
-roadmap work.
+`INet.Define` is synthesized by `topEntity` in `Core.Core`; the hand-written
+`INet AgentSimpleLambda 2 2 2` of `Core.Concrete.ReduceRulesLambda` is kept as
+the reference implementation for the processor-level tests. The rule bodies
+are still checked against that reference by the property suite, and
+`topEntity` has its own processor-level simulation test.
 
 ## 1. What task it solves
 
@@ -73,7 +74,7 @@ ordinary Haskell function over the pair's secondary-port vectors, and the
 |---|---|
 | `Core.Node` | Net vocabulary: `Node`, `LoadedNode`, `Port`, `Connection`, `Edge`, address space |
 | `INet.Net` | Contract: `INet` class (`getAddressesAllocationCount`, `makeReduction`) and `ReduceRuleResult` |
-| `INet.Edsl` | Generic rule-body machinery: `RuleBuilder`, `PortPointer`, `fresh`, `wire`, `runReduce`, `AgentLabel` |
+| `INet.Edsl` | Generic rule machinery: `Rule`, `SomeRule`, `RuleBuilder`, `PortPointer`, `fresh`, `wire`, `runReduce`, `ruleAllocationCount`, `AgentLabel` |
 | `INet.Edsl.Agents` | Template Haskell generator for an agent set's declaration skeleton |
 | `INet.Define` | Worked example: the λ-calculus set `{Apply, Abstract, Erase, Duplicate}` |
 
@@ -96,7 +97,7 @@ rules and validation: Haddock of `INet.Edsl.Agents`.
 | `PortPointer` | A wire end: `Free` (no end), `Main a` (principal port of node `a`), `Pointer a i` (secondary port `i` of node `a`) |
 | `nodeSecondaries` | Read a pair node's secondary slots as pointers — these are the rule head binders |
 | `fresh` | Allocate the next free address, create a node accumulator, return its address and secondary pointers |
-| `wire` | Connect two ends; a free end contributes no connection, external↔external becomes an `Edge`, anything else is written into a fresh node's accumulator, fresh↔fresh writes both sides |
+| `wire` | Connect two ends; free↔free is a no-op, free↔external becomes a dangling `Edge`, external↔external becomes an `Edge`, anything involving a fresh node is written into that node's accumulator, fresh↔fresh writes both sides |
 | `runReduce` | Run a body over the free-address vector and materialize the result |
 
 Full signatures, the endpoint cases, and the state layout are in the Haddock
@@ -112,9 +113,11 @@ Each is explained where it is enforced or relied upon:
 - outer `Nothing` means the slot is absent from the node's interface
   (padding); `Just NotConnected` is a real free port; neither can be wired;
 - pointers from `nodeSecondaries` name the far ends of the pair's wires, so
-  wiring two non-`Free` pointers produces an external `Edge`; the input net
-  must not point a pair slot back into the pair (the pair's own ports are the
-  reducer's interface);
+  wiring two non-`Free` pointers produces an external `Edge`; a `Free` pointer
+  paired with an external one produces a dangling `Edge` (the external port
+  becomes free). `Core.Reducer.changeRootNode` relies on that one-ended edge
+  when the old root was a pair member. The input net must not point a pair
+  slot back into the pair (the pair's own ports are the reducer's interface);
 - pool addresses must be disjoint from every live address and used at most
   once;
 - keep the body synthesizable: traverse `Vec`s with `Vec.mapAccumL` /
@@ -126,13 +129,15 @@ Each is explained where it is enforced or relied upon:
 
 - Express the β rule, erasure propagation, and a general duplicator in a few
   statements each; duplicated rules (erase-vs-any, duplicate-vs-any) are
-  written once and dispatched in both orientations.
+  written once, and `mirrorSomeRule` derives the reversed orientation instead of a
+  second body or dispatch entry.
 - Wire any combination of pair ports, fresh-node ports, and fresh-to-fresh
   links, including fan-out over all secondary ports of an agent of arbitrary
   declared arity.
-- Declare the per-pair allocation count in `getAddressesAllocationCount` and
-  let tests assert that it equals the number of addresses the body takes from
-  the pool.
+- Declare the exact number of fresh nodes in the rule's `freshNodesNumber` type
+  parameter; `getAddressesAllocationCount` extracts it with
+  `ruleAllocationCount`, and tests assert that it equals the number of addresses
+  the body takes from the pool.
 - Declare another agent set without touching the generic machinery; the
   generator is covered by its own test against a second set.
 
@@ -144,8 +149,9 @@ shape.
 
 **Limits:** the free pool comes from a 16-cell RAM with no collector; there
 are no guards or data payloads; every vector is fixed at the instance ceiling;
-and the EDSL set is not yet synthesized. Overflow and pool exhaustion abort
-with `errorX`.
+the EDSL set is synthesized with a 4-node ceiling, so a rule that creates no
+fresh nodes still walks four write-back slots. Overflow and pool exhaustion
+abort with `errorX`.
 
 ## 5. Why the design looks like this
 
