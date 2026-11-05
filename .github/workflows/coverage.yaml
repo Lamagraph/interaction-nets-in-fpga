@@ -29,6 +29,11 @@ jobs:
           restore-keys: |
             coverage-
 
+      - name: Install GL
+        run: |
+          sudo apt-get update
+          sudo apt-get install libgl-dev libglu1-mesa-dev libopengl-dev
+
       - name: Build with coverage enabled
         run: stack build --coverage
 

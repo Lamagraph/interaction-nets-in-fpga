@@ -132,3 +132,12 @@ zipInterfaceUpdatedToRamForm =
         (Just address, Nothing) -> Just (address, def)
         (Nothing, Just _) -> errorX " interfaced address is Nothing and external node is not "
     )
+
+iterateOverRamForm ::
+  forall portsNumber agentType dom.
+  (KnownDomain dom, HiddenClockResetEnable dom, KnownNat portsNumber) =>
+  Signal dom (Maybe (RamForm portsNumber agentType))
+iterateOverRamForm = mux (not <$> isMax) (Just <$> bundle (toEnum <$> idx, def)) def
+ where
+  idx = register 0 ((+ 1) <$> idx)
+  isMax = idx .>. pure (fromEnum (maxBound :: Index CellsNumber))
