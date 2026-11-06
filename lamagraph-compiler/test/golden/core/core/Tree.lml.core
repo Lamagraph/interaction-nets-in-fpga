@@ -1,0 +1,14 @@
+let Tree.Leaf = Tree.Leaf
+let Tree.Node = Tree.Node
+let rec Tree.sum_tree = fun Tree.t -> match Tree.t as t#a with ( Tree.Leaf
+                                      , [Tree.v]
+                                      , Tree.v )
+                                      | ( Tree.Node
+                                      , [Tree.v, Tree.left, Tree.right]
+                                      , (#std.+ Tree.v) ((#std.+ (Tree.sum_tree Tree.left)) (Tree.sum_tree Tree.right)) )
+let t#b = #std.print_int (Tree.sum_tree (Tree.Node ((10), (Tree.Node ((5),
+          (Tree.Leaf 0), (Tree.Leaf 0))), (Tree.Node ((15), (Tree.Leaf 0),
+          (Tree.Leaf 0))))))
+let t#c = #std.print_int (Tree.sum_tree (Tree.Node ((4), (Tree.Node ((2),
+          (Tree.Leaf 1), (Tree.Leaf 3))), (Tree.Node ((6), (Tree.Leaf 5),
+          (Tree.Leaf 7))))))

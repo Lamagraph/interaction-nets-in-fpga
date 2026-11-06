@@ -1,0 +1,10 @@
+module Tree
+
+type 'a tree = Leaf of 'a | Node of 'a * 'a tree * 'a tree
+
+let rec sum_tree t = match t with
+  | Leaf v -> v
+  | Node (v, left, right) -> v + (sum_tree left) + (sum_tree right)
+
+let _ = print_int (sum_tree (Node (10, (Node (5, (Leaf 0), (Leaf 0))), (Node (15, (Leaf 0), (Leaf 0))))))
+let _ = print_int (sum_tree (Node (4, (Node (2, (Leaf 1), (Leaf 3))), (Node (6, (Leaf 5), (Leaf 7))))))

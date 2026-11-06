@@ -13,7 +13,7 @@ import Lamagraph.Compiler.Typechecker.TcTypes
 
 data UnaryPrim = UPMinus | UPPrintInt deriving (Show)
 
-data BinaryPrim = BPPlus | BPMinus | BPTimes | BPLess deriving (Show)
+data BinaryPrim = BPPlus | BPMinus | BPTimes | BPGreater | BPLess | BPGreaterEq | BPLessEq deriving (Show)
 
 data Value
   = VInt Int
@@ -103,8 +103,17 @@ evalBinaryPrim :: (MonadEval m) => BinaryPrim -> Value -> Value -> m Value
 evalBinaryPrim BPPlus (VInt arg1) (VInt arg2) = pure $ VInt $ arg1 + arg2
 evalBinaryPrim BPMinus (VInt arg1) (VInt arg2) = pure $ VInt $ arg1 - arg2
 evalBinaryPrim BPTimes (VInt arg1) (VInt arg2) = pure $ VInt $ arg1 * arg2
+evalBinaryPrim BPGreater (VInt arg1) (VInt arg2) =
+  let val = if arg1 > arg2 then "true" else "false"
+   in pure $ VAdt (Name $ mkLongident $ stdPrefix :| [val]) []
 evalBinaryPrim BPLess (VInt arg1) (VInt arg2) =
   let val = if arg1 < arg2 then "true" else "false"
+   in pure $ VAdt (Name $ mkLongident $ stdPrefix :| [val]) []
+evalBinaryPrim BPGreaterEq (VInt arg1) (VInt arg2) =
+  let val = if arg1 >= arg2 then "true" else "false"
+   in pure $ VAdt (Name $ mkLongident $ stdPrefix :| [val]) []
+evalBinaryPrim BPLessEq (VInt arg1) (VInt arg2) =
+  let val = if arg1 <= arg2 then "true" else "false"
    in pure $ VAdt (Name $ mkLongident $ stdPrefix :| [val]) []
 evalBinaryPrim prim arg1 arg2 = throwIO $ EInvalidBinaryApply prim arg1 arg2
 
@@ -161,16 +170,22 @@ matchAlts eEnv val = \case
 evalCoreBind :: (MonadEval m) => EvalEnv -> CoreBind -> m EvalEnv
 evalCoreBind eEnv = \case
   NonRec var expr -> do
-    value <- evalCoreExpr eEnv expr
+    value <- case expr of
+      Var var' | var == var' ->
+        case var of
+          Id (Name (Longident ne)) ->
+            pure $ VAdt (Name (Longident ne)) []
+      _ -> evalCoreExpr eEnv expr
     pure $ coerce $ HashMap.insert var value (coerce eEnv)
-  Rec (bind :| []) ->
-    let (funVar, lamVar, lamExpr) = case bind of
-          (var, Lam lamVar' lamExpr') -> (var, lamVar', lamExpr')
-          _ -> impureThrow ENonLambdaUnderLetRec
-        recEnv = coerce $ HashMap.insert funVar (VClosure lamVar lamExpr recEnv) (coerce eEnv)
-        value = VClosure lamVar lamExpr recEnv
-     in pure $ coerce $ HashMap.insert funVar value (coerce eEnv)
-  Rec (_ :| _) -> throwIO EManyLetRecs
+  Rec binds ->
+    let extractLambda (var, Lam lamVar' lamExpr') = (var, lamVar', lamExpr')
+        extractLambda _ = impureThrow ENonLambdaUnderLetRec
+        lamInfos = fmap extractLambda binds
+        buildRecEnv :: EvalEnv
+        buildRecEnv = coerce $ foldr insertClosure (coerce eEnv) lamInfos
+         where
+          insertClosure (funVar, lamVar, lamExpr) = HashMap.insert funVar (VClosure lamVar lamExpr buildRecEnv)
+     in pure buildRecEnv
 
 evalCoreBinds :: (MonadEval m) => EvalEnv -> [CoreBind] -> m EvalEnv
 evalCoreBinds = foldlM evalCoreBind
@@ -183,11 +198,16 @@ defEvalEnv =
       , (Id $ Name $ mkLongident $ stdPrefix :| ["+"], VBinaryPrim1 BPPlus)
       , (Id $ Name $ mkLongident $ stdPrefix :| ["-"], VBinaryPrim1 BPMinus)
       , (Id $ Name $ mkLongident $ stdPrefix :| ["*"], VBinaryPrim1 BPTimes)
+      , (Id $ Name $ mkLongident $ stdPrefix :| [">"], VBinaryPrim1 BPGreater)
       , (Id $ Name $ mkLongident $ stdPrefix :| ["<"], VBinaryPrim1 BPLess)
+      , (Id $ Name $ mkLongident $ stdPrefix :| [">="], VBinaryPrim1 BPGreaterEq)
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["<="], VBinaryPrim1 BPLessEq)
       , (Id $ Name $ mkLongident $ stdPrefix :| ["[]"], VAdt (Name $ mkLongident $ stdPrefix :| ["[]"]) [])
       , (Id $ Name $ mkLongident $ stdPrefix :| ["::"], VAdt (Name $ mkLongident $ stdPrefix :| ["::"]) [])
       , (Id $ Name $ mkLongident $ stdPrefix :| ["Some"], VAdt (Name $ mkLongident $ stdPrefix :| ["Some"]) [])
       , (Id $ Name $ mkLongident $ stdPrefix :| ["None"], VAdt (Name $ mkLongident $ stdPrefix :| ["None"]) [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["true"], VAdt (Name $ mkLongident $ stdPrefix :| ["true"]) [])
+      , (Id $ Name $ mkLongident $ stdPrefix :| ["false"], VAdt (Name $ mkLongident $ stdPrefix :| ["false"]) [])
       , (Id $ Name $ mkLongident $ stdPrefix :| ["print_int"], VUnaryPrim UPPrintInt)
       ]
 
