@@ -6,6 +6,7 @@ import Common.Term qualified as Term
 import Data.ByteString.Lazy.Char8 (pack)
 import Data.HashMap.Lazy qualified as HashMap
 import Data.List (lookup)
+import Data.Set qualified as Set
 import Data.Text qualified as T
 import GraphRewriting (Graph)
 import Hedgehog hiding (Var)
@@ -39,6 +40,8 @@ main =
       [ valueTests
       , churchTests
       , translateTests
+      , recIrTests
+      , translateLamTests
       , runnerTests
       , equivalenceTests
       , dropArgTests
@@ -128,6 +131,127 @@ translateTests =
     , testCase "end-to-end: 2 * 3 = 6" $ checkDecode "translate(2*3)" (mustTranslate [] (binOp stdTimes 2 3)) 6
     ]
 
+{- | Unit tests for 'fv' and 'subst' over the recursion constructors
+('LSelfRef', 'LRec', 'LMutRec'): a self-reference contributes no free
+variable, group names are bound in a mutual group, and substitution respects
+the binders (a bound name is not substituted; a group name is protected).
+-}
+recIrTests :: TestTree
+recIrTests =
+  testGroup
+    "recursion IR (fv/subst)"
+    [ testCase "fv LSelfRef = empty" $ assertEqual "fv LSelfRef" Set.empty (fv LSelfRef)
+    , testCase "fv LRec: binder is bound, self-ref is not free" $
+        assertEqual
+          "fv (LRec (LLam f (self x)))"
+          (Set.fromList ["x"])
+          (fv (LRec (LLam "f" (LApp LSelfRef (LVar "x")))))
+    , testCase "fv LMutRec: group names are bound" $
+        assertEqual
+          "fv (LMutRec [(even, ...), (odd, ...)] (even z))"
+          (Set.fromList ["z"])
+          (fv (LMutRec mutualGroups (LApp (LVar "even") (LVar "z"))))
+    , testCase "subst: bound name is not substituted in an LRec body" $
+        assertEqual
+          "subst f g (LRec (LLam f (self f)))"
+          (LRec (LLam "f" (LApp LSelfRef (LVar "f"))))
+          (subst "f" (LVar "g") (LRec (LLam "f" (LApp LSelfRef (LVar "f")))))
+    , testCase "subst: free name is substituted around an LRec" $
+        assertEqual
+          "subst f g (f (LRec (LLam f (self f))))"
+          (LApp (LVar "g") (LRec (LLam "f" (LApp LSelfRef (LVar "f")))))
+          (subst "f" (LVar "g") (LApp (LVar "f") (LRec (LLam "f" (LApp LSelfRef (LVar "f"))))))
+    , testCase "subst: a group name is protected in an LMutRec" $
+        assertEqual
+          "subst even w (LMutRec groups (even z))"
+          (LMutRec mutualGroups (LApp (LVar "even") (LVar "z")))
+          (subst "even" (LVar "w") (LMutRec mutualGroups (LApp (LVar "even") (LVar "z"))))
+    , testCase "subst: an external name recurses into an LMutRec" $
+        assertEqual
+          "subst z w (LMutRec groups z)"
+          (LMutRec mutualGroups (LVar "w"))
+          (subst "z" (LVar "w") (LMutRec mutualGroups (LVar "z")))
+    ]
+ where
+  -- \| A mutual-recursion group: @even@ and @odd@ call each other.
+  mutualGroups :: [(String, Lam)]
+  mutualGroups =
+    [ ("even", LLam "n" (LApp (LVar "odd") (LVar "n")))
+    , ("odd", LLam "n" (LApp (LVar "even") (LVar "n")))
+    ]
+
+{- | Tests for 'translateLam': 'let rec' produces an 'LRec' with an 'LSelfRef'
+self-reference, mutual 'let rec' produces an 'LMutRec', a non-recursive program
+carries no recursion markers, and 'translateCore' rejects recursive bindings
+(the SKI backend is non-recursive-only).
+-}
+translateLamTests :: TestTree
+translateLamTests =
+  testGroup
+    "translateLam"
+    [ testCase "let rec -> LRec with LSelfRef" $
+        case compileLml "module M\nlet rec f n = if n < 1 then 1 else n * f (n - 1)\nlet result = f 2" of
+          Left e -> assertFailure $ "compileLml failed: " <> e
+          Right (binds, resultExpr) -> case translateLam binds resultExpr of
+            Left e -> assertFailure $ "translateLam failed: " <> show e
+            Right lam -> do
+              assertBool "contains LRec" (containsRecMarker lam)
+              assertBool "contains LSelfRef" (containsLSelfRef lam)
+              assertLamClosed lam
+    , testCase "mutual let rec -> LMutRec" $
+        case compileLml
+          "module M\nlet rec even n = if n < 1 then true else odd (n - 1) and odd n = if n < 1 then false else even (n - 1)\nlet result = even 4" of
+          Left e -> assertFailure $ "compileLml failed: " <> e
+          Right (binds, resultExpr) -> case translateLam binds resultExpr of
+            Left e -> assertFailure $ "translateLam failed: " <> show e
+            Right lam -> do
+              assertBool "top level is LMutRec" (isLMutRec lam)
+              assertLamClosed lam
+    , testCase "non-recursive program carries no recursion markers" $
+        case compileLml "module M\nlet double = fun x -> x + x\nlet result = double 3" of
+          Left e -> assertFailure $ "compileLml failed: " <> e
+          Right (binds, resultExpr) -> case translateLam binds resultExpr of
+            Left e -> assertFailure $ "translateLam failed: " <> show e
+            Right lam -> assertBool "no recursion markers" (not (containsRecMarker lam))
+    , testCase "translateCore rejects recursive bindings" $
+        case compileLml "module M\nlet rec f n = n\nlet result = f 5" of
+          Left e -> assertFailure $ "compileLml failed: " <> e
+          Right (binds, resultExpr) -> case translateCore binds resultExpr of
+            Left (UnsupportedConstruct "recursive let") -> return ()
+            other -> assertFailure $ "expected Left (UnsupportedConstruct \"recursive let\"), got " <> show other
+    ]
+
+-- | Whether a lambda term is an 'LMutRec' at the top level.
+isLMutRec :: Lam -> Bool
+isLMutRec (LMutRec _ _) = True
+isLMutRec _ = False
+
+{- | Whether a lambda term contains a recursion marker ('LRec', 'LMutRec', or
+'LSelfRef') anywhere.
+-}
+containsRecMarker :: Lam -> Bool
+containsRecMarker = \case
+  LRec _ -> True
+  LMutRec _ _ -> True
+  LSelfRef -> True
+  LVar _ -> False
+  LApp f x -> containsRecMarker f || containsRecMarker x
+  LLam _ b -> containsRecMarker b
+
+-- | Whether a lambda term contains an 'LSelfRef' anywhere.
+containsLSelfRef :: Lam -> Bool
+containsLSelfRef = \case
+  LSelfRef -> True
+  LVar _ -> False
+  LApp f x -> containsLSelfRef f || containsLSelfRef x
+  LLam _ b -> containsLSelfRef b
+  LRec l -> containsLSelfRef l
+  LMutRec groups body -> any (containsLSelfRef . snd) groups || containsLSelfRef body
+
+-- | Assert that a lambda term is closed (no free variables).
+assertLamClosed :: Lam -> Assertion
+assertLamClosed lam = assertEqual "free variables" Set.empty (fv lam)
+
 -- | Build a core binary-operator application @(op a b)@.
 binOp :: Var -> Int -> Int -> CoreExpr
 binOp op a b = App (App (Var op) (Lit (LitInt a))) (Lit (LitInt b))
@@ -199,7 +323,7 @@ equivalenceTests =
     ]
  where
   equiv :: String -> Term.Expr -> TestTree
-  equiv label term = testCase label $ do
+  equiv lbl term = testCase lbl $ do
     let g = fromTerm (wrapDecoder term)
         (_sw, gw, nw) = reduceSteps maxStepsInt g
         (_sf, gf, nf) = reduceStepsFixedOrder maxStepsInt g
@@ -546,11 +670,44 @@ propDifferential = withTests 100 . property $ do
         Right _ -> Hedgehog.assert True
         Left err -> fail $ "differential failure for " <> name <> " " <> show n <> ": " <> show err
 
+{- | The closedness property: for every program in the S1 corpus,
+'translateLam' yields a closed 'Lam' (no free variables).
+-}
+propTranslateLamClosed :: Property
+propTranslateLamClosed = withTests 100 . property $ do
+  n <- forAll (Gen.element [0 .. 8])
+  (name, template) <- forAll (Gen.element programTemplates)
+  let src = substituteTemplate n template
+  case compileLml src of
+    Left e -> fail $ "compileLml failed for " <> name <> " " <> show n <> ": " <> e
+    Right (binds, resultExpr) -> case translateLam binds resultExpr of
+      Left err -> fail $ "translateLam failed for " <> name <> " " <> show n <> ": " <> show err
+      Right lam -> Hedgehog.assert (Set.null (fv lam))
+
+{- | The SKI-projection property: for a non-recursive program, 'toSki' of
+'translateLam' equals 'translateCore' (the SKI backend is a projection of the
+shared lambda IR).
+-}
+propTranslateLamIsSkiProjection :: Property
+propTranslateLamIsSkiProjection = withTests 100 . property $ do
+  n <- forAll (Gen.element [0 .. 8])
+  (name, template) <- forAll (Gen.element programTemplates)
+  let src = substituteTemplate n template
+  case compileLml src of
+    Left e -> fail $ "compileLml failed for " <> name <> " " <> show n <> ": " <> e
+    Right (binds, resultExpr) ->
+      case (translateLam binds resultExpr, translateCore binds resultExpr) of
+        (Right lam, Right ski) -> Hedgehog.assert (toSki lam == ski)
+        (Left err, _) -> fail $ "translateLam failed for " <> name <> " " <> show n <> ": " <> show err
+        (_, Left err) -> fail $ "translateCore failed for " <> name <> " " <> show n <> ": " <> show err
+
 propertyTests :: TestTree
 propertyTests =
   testGroup
     "differential property (minimal subset)"
     [ testProperty "lml == ski for all (program, input)" propDifferential
+    , testProperty "translateLam is closed for all (program, input)" propTranslateLamClosed
+    , testProperty "toSki (translateLam p) == translateCore p (non-recursive)" propTranslateLamIsSkiProjection
     ]
 
 -- * Golden regression triples
@@ -614,7 +771,7 @@ benchmarkTests =
     ]
  where
   bench :: String -> Text -> TestTree
-  bench label src = testCase label $ do
+  bench lbl src = testCase lbl $ do
     case compileLml src of
       Left e -> assertFailure $ "compileLml failed: " <> e
       Right (binds, resultExpr) -> do
@@ -624,7 +781,7 @@ benchmarkTests =
             (steps, _g, reachedNF) = reduceSteps maxStepsInt (fromTerm full)
         unless reachedNF $ assertFailure "did not reach normal form"
         when (steps > stepGuard) $ assertFailure $ "step count " <> show steps <> " exceeds guard " <> show stepGuard
-        putStrLn $ "  " <> label <> ": " <> show steps <> " steps"
+        putStrLn $ "  " <> lbl <> ": " <> show steps <> " steps"
 
 -- | The step budget as a plain 'Int' (for 'reduceSteps'); must match 'maxSteps'.
 maxStepsInt :: Int
@@ -677,11 +834,11 @@ spikeTest = testCase "spike: let x = 2 + 3 in x decodes to 5 (lml and ski agree)
 
 -- | Decode a SKI term to an integer and assert it equals @expected@.
 checkDecode :: String -> Term.Expr -> Int -> IO ()
-checkDecode label term expected = do
+checkDecode lbl term expected = do
   let r = decodeChurch maxSteps term
   case r of
-    Left (StepOverflow step) -> assertFailure $ label <> ": reduction did not reach normal form within " <> show step <> " steps"
-    Right n -> assertEqual (label <> " decoded value") expected n
+    Left (StepOverflow step) -> assertFailure $ lbl <> ": reduction did not reach normal form within " <> show step <> " steps"
+    Right n -> assertEqual (lbl <> " decoded value") expected n
 
 {- | Evaluate a core expression (with its enclosing bindings) with the LML
 interpreter by binding the result expression to a fresh variable and reading it

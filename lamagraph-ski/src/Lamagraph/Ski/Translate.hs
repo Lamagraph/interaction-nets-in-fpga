@@ -1,12 +1,18 @@
-{- | Translation from the LML core language to the SKI combinator calculus.
-The core term is expanded to a lambda term (inlining non-recursive lets and
-swapping the standard arithmetic operators for their Church encodings), then
-converted to SKI via the standard lambda-to-SKI rule. All binders are given
-fresh, unique names (via a 'State' counter) so that composing terms never
-introduces a name clash.
+{- | Translation from the LML core language to the lambda intermediate
+representation, and from there to the SKI combinator calculus. The core term
+is expanded to a lambda term (inlining non-recursive lets, converting
+recursive bindings to 'LRec'\/'LMutRec' markers, and swapping the standard
+arithmetic operators for their Church encodings). 'translateCore' converts the
+lambda term to SKI via the standard lambda-to-SKI rule (the SKI backend is
+non-recursive-only and rejects recursive bindings); 'translateLam' returns the
+lambda term with the recursion markers intact, for the YALE net builder
+('Lamagraph.Ski.YaleNet.buildYaleNet'). All binders are given fresh, unique
+names (via a 'State' counter) so that composing terms never introduces a name
+clash.
 -}
 module Lamagraph.Ski.Translate (
   translateCore,
+  translateLam,
   stdPlus,
   stdMinus,
   stdTimes,
@@ -58,11 +64,43 @@ type TranslateM = ExceptT SkiError (State Int)
 {- | Translate a closed LML core program (top-level bindings + result
 expression) to a closed SKI term (no free @V@ nodes). Minimal subset: integer
 literals, '+', '-', '*', let, lambda, application. Constructs outside the
-subset are reported via 'UnsupportedConstruct'.
+subset are reported via 'UnsupportedConstruct'. Recursive bindings are
+rejected: the SKI backend is non-recursive-only (translating a recursive
+program would leave a free 'Lamagraph.Ski.Lambda.selfRefName' variable in the
+SKI term).
 -}
 translateCore :: [CoreBind] -> CoreExpr -> Either SkiError Term.Expr
 translateCore binds resultExpr =
-  fmap toSki (evalState (runExceptT (buildLam binds resultExpr)) 0)
+  fmap toSki (evalState (runExceptT (rejectRec binds resultExpr >> buildLam binds resultExpr)) 0)
+
+{- | Translate a closed LML core program to a 'Lam' term (the intermediate
+representation), keeping the 'LRec'\/'LMutRec' markers that the YALE net
+builder ('Lamagraph.Ski.YaleNet.buildYaleNet') needs to splice self-references
+into cycles. For a non-recursive program, 'toSki' of the result equals
+'translateCore'.
+-}
+translateLam :: [CoreBind] -> CoreExpr -> Either SkiError Lam
+translateLam binds resultExpr =
+  evalState (runExceptT (buildLam binds resultExpr)) 0
+
+{- | Reject recursive bindings before translation: the SKI backend is
+non-recursive-only, and translating a recursive program would leave a free
+'selfRefName' variable in the SKI term.
+-}
+rejectRec :: [CoreBind] -> CoreExpr -> TranslateM ()
+rejectRec binds resultExpr =
+  mapM_ rejectBind binds >> rejectRecExpr resultExpr
+ where
+  rejectBind (Rec _) = throwError (UnsupportedConstruct "recursive let")
+  rejectBind (NonRec _ e) = rejectRecExpr e
+  rejectRecExpr = \case
+    Let (Rec _) _ -> throwError (UnsupportedConstruct "recursive let")
+    Let (NonRec _ e) body -> rejectRecExpr e >> rejectRecExpr body
+    App f x -> rejectRecExpr f >> rejectRecExpr x
+    Lam _ body -> rejectRecExpr body
+    Match s _ alts -> rejectRecExpr s >> mapM_ (rejectRecExpr . altBody) alts
+    Tuple hd tl -> rejectRecExpr hd >> mapM_ rejectRecExpr (toList tl)
+    _ -> pure ()
 
 {- | Build the lambda term for a program: convert the result expression, then
 inline the top-level (non-recursive) bindings. The bindings are inlined in
@@ -86,7 +124,47 @@ inlineBinds tags (NonRec v (Var w) : bs) lam
 inlineBinds tags (NonRec v e : bs) lam = do
   repl <- coreExprToLam tags e
   inlineBinds tags bs (subst (varName v) repl lam)
-inlineBinds _ (Rec _ : _) _ = throwError (UnsupportedConstruct "recursive let")
+inlineBinds tags (Rec recs : bs) lam = do
+  lam' <- recBindsToLam tags recs lam
+  inlineBinds tags bs lam'
+
+{- | Inline a group of recursive bindings into the surrounding term @bodyLam@,
+returning the result.
+
+For a single recursive function @f@, the body is translated with each
+self-reference @f@ replaced by 'LSelfRef', and the whole function is wrapped in
+'LRec' and inlined into @bodyLam@ (the body's references to @f@ become the
+'LRec'). The net builder ('Lamagraph.Ski.YaleNet.buildYaleNet') compiles the
+'LRec' to the paper's tie-the-knot cycle (Mackie 1998, §6).
+
+For mutual recursion (more than one binding in the group), each function's body
+is translated with its own self-references as 'LSelfRef' and cross-references
+to the other functions as 'LVar' (by name); the whole group and @bodyLam@ are
+wrapped in 'LMutRec'. The net builder compiles each function to its own output
+edge and wires the self- and cross-references back to those edges (a cycle
+through 'Lamagraph.Ski.YaleNet.Copy' agents).
+-}
+recBindsToLam :: ConTags -> NonEmpty (Var, CoreExpr) -> Lam -> TranslateM Lam
+recBindsToLam tags recs bodyLam = case toList recs of
+  [(f, e)] -> do
+    innerLam <- coreExprToLam tags e
+    let innerLam' = subst (varName f) LSelfRef innerLam
+    pure (subst (varName f) (LRec innerLam') bodyLam)
+  _ -> do
+    groups <- recGroupsLam tags recs
+    pure (LMutRec groups bodyLam)
+
+{- | Translate the bodies of a mutual-recursion group to @(name, body)@ pairs,
+where each body has its own self-references as 'LSelfRef' and cross-references
+to the other functions as 'LVar' (by name).
+-}
+recGroupsLam :: ConTags -> NonEmpty (Var, CoreExpr) -> TranslateM [(String, Lam)]
+recGroupsLam tags recs = mapM go (toList recs)
+ where
+  go (f, e) = do
+    bodyLam <- coreExprToLam tags e
+    let bodyLam' = subst (varName f) LSelfRef bodyLam
+    pure (varName f, bodyLam')
 
 coreExprToLam :: ConTags -> CoreExpr -> TranslateM Lam
 coreExprToLam tags = \case
@@ -121,7 +199,9 @@ coreExprToLam tags = \case
     repl <- coreExprToLam tags e
     bodyLam <- coreExprToLam tags body
     pure (subst (varName v) repl bodyLam)
-  Let (Rec _) _ -> throwError (UnsupportedConstruct "recursive let")
+  Let (Rec recs) body -> do
+    bodyLam <- coreExprToLam tags body
+    recBindsToLam tags recs bodyLam
   Match scrutinee _ alts
     | isBoolMatch alts -> do
         scrutLam <- coreExprToLam tags scrutinee
