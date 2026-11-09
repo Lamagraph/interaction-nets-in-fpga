@@ -244,7 +244,8 @@ dropArgTests =
             (steps, _g, reachedNF) = reduceSteps maxStepsInt (fromTerm term)
         assertBool "reached normal form" reachedNF
         when (steps > dropArgGuard) $
-          assertFailure $ "step count " <> show steps <> " exceeds guard " <> show dropArgGuard
+          assertFailure $
+            "step count " <> show steps <> " exceeds guard " <> show dropArgGuard
         putStrLn $ "  (K 5) (add 100 100): " <> show steps <> " steps"
     ]
 

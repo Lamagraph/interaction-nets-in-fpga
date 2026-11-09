@@ -32,6 +32,9 @@ library
       Lamagraph.Ski.Translate
       Lamagraph.Ski.Value
       Lamagraph.Ski.Worklist
+      Lamagraph.Ski.YaleDecode
+      Lamagraph.Ski.YaleNet
+      Lamagraph.Ski.YaleReduce
   other-modules:
       Paths_lamagraph_ski
   hs-source-dirs:

@@ -4,11 +4,11 @@ import Relude hiding (show)
 
 import Data.Hashable (hash)
 import Data.Text qualified as T
-import Prelude (show)
 import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
 import Test.Tasty.HUnit
+import Prelude (show)
 
 import Lamagraph.Compiler.Core
 import Lamagraph.Compiler.GoldenCommon
@@ -58,12 +58,12 @@ matchExpr =
     (Var someVar)
     otherVar
     ( (DataAlt someDataCon, [otherVar], Var otherVar)
-      :| [ (LitAlt litInt, [], Lit litInt)
-            , (LitAlt litChar, [], Lit litChar)
-            , (LitAlt litString, [], Lit litString)
-            , (TupleAlt, [someVar, otherVar], Tuple (Lit litInt) (Lit litInt :| []))
-            , (DEFAULT, [], Lit litInt)
-        ]
+        :| [ (LitAlt litInt, [], Lit litInt)
+           , (LitAlt litChar, [], Lit litChar)
+           , (LitAlt litString, [], Lit litString)
+           , (TupleAlt, [someVar, otherVar], Tuple (Lit litInt) (Lit litInt :| []))
+           , (DEFAULT, [], Lit litInt)
+           ]
     )
 
 letExpr :: CoreExpr
@@ -76,7 +76,7 @@ recBind :: CoreBind
 recBind =
   Rec
     ( (someVar, Lam someVar (Var someVar))
-      :| [(otherVar, Lam otherVar (App (Var otherVar) (Lit litInt)))]
+        :| [(otherVar, Lam otherVar (App (Var otherVar) (Lit litInt)))]
     )
 
 showGoldens :: TestTree
@@ -90,15 +90,15 @@ showGoldens =
   goldenCases :: [(TestName, String)]
   goldenCases =
     [ ("literal_int", show litInt)
-      , ("literal_char", show litChar)
-      , ("literal_string", show litString)
-      , ("var", show someVar)
-      , ("expr_tree", show exprTree)
-      , ("match", show matchExpr)
-      , ("let", show letExpr)
-      , ("bind_nonrec", show nonRecBind)
-      , ("bind_rec", show recBind)
-      ]
+    , ("literal_char", show litChar)
+    , ("literal_string", show litString)
+    , ("var", show someVar)
+    , ("expr_tree", show exprTree)
+    , ("match", show matchExpr)
+    , ("let", show letExpr)
+    , ("bind_nonrec", show nonRecBind)
+    , ("bind_rec", show recBind)
+    ]
 
 derivedInstanceTests :: TestTree
 derivedInstanceTests =

@@ -372,11 +372,12 @@ isSimpleVarOrWildcard (L _ (LmlPatAny _)) = True
 isSimpleVarOrWildcard (L _ (LmlPatConstraint _ lPat _)) = isSimpleVarOrWildcard lPat
 isSimpleVarOrWildcard _ = False
 
--- | Desugars an arbitrary (possibly nested) pattern 'pat' matched against the
--- scrutinee 'scrutineeVar', producing a core expression for the case body
--- 'bodyExpr' with the pattern's variables bound. This is the general case for
--- nested constructor patterns and or-patterns (which are already flattened by
--- 'expandOrPatterns' before reaching here).
+{- | Desugars an arbitrary (possibly nested) pattern 'pat' matched against the
+scrutinee 'scrutineeVar', producing a core expression for the case body
+'bodyExpr' with the pattern's variables bound. This is the general case for
+nested constructor patterns and or-patterns (which are already flattened by
+'expandOrPatterns' before reaching here).
+-}
 desugarComplexPattern ::
   Var ->
   LLmlPat LmlcTc ->
@@ -410,18 +411,18 @@ desugarComplexPattern scrutineeVar (L _ pat) bodyExpr = case pat of
               subVar <- freshVar
               nested <- desugarComplexPattern subVar (L generatedSrcSpan single) bodyExpr
               pure $
-                 Match
-                   (Var scrutineeVar)
-                   scrutineeVar
-                   ((DataAlt (Name constructorName), [subVar], nested) :| [])
-  where
-   desugarComplexPatternFields ::
-     Var ->
-     [LLmlPat LmlcTc] ->
-     AltCon ->
-     CoreExpr ->
-     MonadDesugar CoreExpr
-   desugarComplexPatternFields fieldScrutineeVar lPats altCon fieldBody = do
+                Match
+                  (Var scrutineeVar)
+                  scrutineeVar
+                  ((DataAlt (Name constructorName), [subVar], nested) :| [])
+ where
+  desugarComplexPatternFields ::
+    Var ->
+    [LLmlPat LmlcTc] ->
+    AltCon ->
+    CoreExpr ->
+    MonadDesugar CoreExpr
+  desugarComplexPatternFields fieldScrutineeVar lPats altCon fieldBody = do
     -- Each field is bound to a variable: simple patterns bind their own
     -- identifier (via 'desugarNestedPatHelper'); complex patterns bind a fresh
     -- var (via 'desugarComplexPattern'). Collect the bound vars and the
@@ -432,25 +433,26 @@ desugarComplexPattern scrutineeVar (L _ pat) bodyExpr = case pat of
         (Var fieldScrutineeVar)
         fieldScrutineeVar
         ((altCon, boundVars, bound) :| [])
-    where
-     bindField ::
-       LLmlPat LmlcTc ->
-       ([Var], CoreExpr) ->
-       MonadDesugar ([Var], CoreExpr)
-     bindField lPat (vs, body) =
-       if isSimpleVarOrWildcard lPat
-         then do
-           (v, wrapper) <- desugarNestedPatHelper lPat
-           pure (v : vs, wrapper v body)
-         else do
-           v <- freshVar
-           nested <- desugarComplexPattern v lPat body
-           pure (v : vs, nested)
+   where
+    bindField ::
+      LLmlPat LmlcTc ->
+      ([Var], CoreExpr) ->
+      MonadDesugar ([Var], CoreExpr)
+    bindField lPat (vs, body) =
+      if isSimpleVarOrWildcard lPat
+        then do
+          (v, wrapper) <- desugarNestedPatHelper lPat
+          pure (v : vs, wrapper v body)
+        else do
+          v <- freshVar
+          nested <- desugarComplexPattern v lPat body
+          pure (v : vs, nested)
 
--- | Bind a list of field patterns (each against its own fresh variable) into a
--- case body, composing the per-field bindings. Simple patterns bind directly
--- (via 'desugarNestedPatHelper'); nested constructor / or patterns are
--- desugared via 'desugarComplexPattern'.
+{- | Bind a list of field patterns (each against its own fresh variable) into a
+case body, composing the per-field bindings. Simple patterns bind directly
+(via 'desugarNestedPatHelper'); nested constructor / or patterns are
+desugared via 'desugarComplexPattern'.
+-}
 desugarComplexFields ::
   [Var] ->
   [LLmlPat LmlcTc] ->
@@ -493,34 +495,34 @@ desugarLmlCase scrutineeVar (LmlCase ty (L _ pat) Nothing lExpr) = do
       pure (TupleAlt, vars, exprWithMatches)
     LmlPatConstruct _ (L _ longident) maybeLPat ->
       let constuctorName = Name longident
-        in case maybeLPat of
-          Nothing -> pure (DataAlt constuctorName, [], expr)
-          Just (L _ args) ->
-            case args of
-              LmlPatVar (FullName n, _) _ ->
-                pure (DataAlt constuctorName, [Id $ Name n], expr)
-              LmlPatAny _ -> do
-                freshV <- freshVar
-                pure (DataAlt constuctorName, [freshV], expr)
-              LmlPatTuple _ lPat lPats ->
-                let pats = lPat : toList lPats
-                    allSimple = all isSimpleVarOrWildcard pats
-                 in if allSimple
-                      then do
-                        (vars, wrappers) <- mapAndUnzipM desugarNestedPatHelper pats
-                        let exprWithMatches = foldr (\(var, wrapper) acc -> wrapper var acc) expr (zip vars wrappers)
-                        pure (DataAlt constuctorName, vars, exprWithMatches)
-                      else do
-                        -- Complex constructor: bind each field var and desugar
-                        -- the field patterns against those vars via
-                        -- 'desugarComplexFields' (which uses
-                        -- 'desugarComplexPattern' for nested patterns).
-                        argVars <- replicateM (length pats) freshVar
-                        (boundVars, body) <- desugarComplexFields argVars pats expr
-                        pure (DataAlt constuctorName, boundVars, body)
-              _ -> do
-                freshV <- freshVar
-                pure (DataAlt constuctorName, [freshV], expr)
+       in case maybeLPat of
+            Nothing -> pure (DataAlt constuctorName, [], expr)
+            Just (L _ args) ->
+              case args of
+                LmlPatVar (FullName n, _) _ ->
+                  pure (DataAlt constuctorName, [Id $ Name n], expr)
+                LmlPatAny _ -> do
+                  freshV <- freshVar
+                  pure (DataAlt constuctorName, [freshV], expr)
+                LmlPatTuple _ lPat lPats ->
+                  let pats = lPat : toList lPats
+                      allSimple = all isSimpleVarOrWildcard pats
+                   in if allSimple
+                        then do
+                          (vars, wrappers) <- mapAndUnzipM desugarNestedPatHelper pats
+                          let exprWithMatches = foldr (\(var, wrapper) acc -> wrapper var acc) expr (zip vars wrappers)
+                          pure (DataAlt constuctorName, vars, exprWithMatches)
+                        else do
+                          -- Complex constructor: bind each field var and desugar
+                          -- the field patterns against those vars via
+                          -- 'desugarComplexFields' (which uses
+                          -- 'desugarComplexPattern' for nested patterns).
+                          argVars <- replicateM (length pats) freshVar
+                          (boundVars, body) <- desugarComplexFields argVars pats expr
+                          pure (DataAlt constuctorName, boundVars, body)
+                _ -> do
+                  freshV <- freshVar
+                  pure (DataAlt constuctorName, [freshV], expr)
     LmlPatConstraint _ lPat _ -> desugarLmlCase scrutineeVar (LmlCase ty lPat Nothing lExpr)
     -- Or-patterns are flattened by 'expandOrPatterns' before reaching here; a
     -- residual one is a safety net (match any, use the case body).

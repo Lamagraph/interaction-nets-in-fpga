@@ -1,7 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
 
--- | Hedgehog generators for the LML AST. Single source of truth: reused by the
--- parser roundtrip property and by the AST instance tests.
+{- | Hedgehog generators for the LML AST. Single source of truth: reused by the
+parser roundtrip property and by the AST instance tests.
+-}
 module Lamagraph.Compiler.Syntax.TestGen (
   genModule,
   genLmlDecl,

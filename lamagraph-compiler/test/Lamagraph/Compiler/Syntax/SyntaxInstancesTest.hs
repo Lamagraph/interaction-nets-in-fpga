@@ -3,11 +3,11 @@ module Lamagraph.Compiler.Syntax.SyntaxInstancesTest (syntaxInstancesTests) wher
 import Relude hiding (show)
 
 import Data.Hashable (hash)
-import Prelude (show)
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Test.Tasty
 import Test.Tasty.Hedgehog
+import Prelude (show)
 
 import Lamagraph.Compiler.Syntax
 import Lamagraph.Compiler.Syntax.TestGen
@@ -80,8 +80,9 @@ prop_conDeclFields = withTests 50 . property $ do
   assert (length (_cdArgs c) == length (_cdArgs c))
 
 prop_showNoExtField :: Property
-prop_showNoExtField = property $
-  assert (show noExtField == show noExtField && noExtField == noExtField)
+prop_showNoExtField =
+  property $
+    assert (show noExtField == show noExtField && noExtField == noExtField)
 
 syntaxInstanceProperties :: TestTree
 syntaxInstanceProperties =

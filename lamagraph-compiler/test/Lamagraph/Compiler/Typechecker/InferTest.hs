@@ -2,9 +2,9 @@ module Lamagraph.Compiler.Typechecker.InferTest (inferUnitTests) where
 
 import Relude hiding (show)
 
-import Prelude (show)
 import Test.Tasty
 import Test.Tasty.HUnit
+import Prelude (show)
 
 import Lamagraph.Compiler.Extension
 import Lamagraph.Compiler.ModuleResolver.Types (FullName (..))
@@ -58,24 +58,24 @@ inferUnitTests =
     [ expectError
         "ConstructorDoesntExist on unknown constructor"
         (modOf (nonRecVald (patVar "x") (constructExpr (Longident (pure "NoSuchConstr")))))
-        (\case
-          ConstructorDoesntExist (Name (Longident ("NoSuchConstr" :| []))) -> True
-          _ -> False
+        ( \case
+            ConstructorDoesntExist (Name (Longident ("NoSuchConstr" :| []))) -> True
+            _ -> False
         )
     , expectError
         "NonVariableInLetRec on constant pattern in rec group"
         (modOf (recVald (LmlPatConstant noExtField (LmlInt noExtField 5)) constantExpr))
-        (\case
-          NonVariableInLetRec -> True
-          _ -> False
+        ( \case
+            NonVariableInLetRec -> True
+            _ -> False
         )
     , let badAliasParam = l_ (LmlTyConstr noExtField (l_ (Longident (pure "int"))) (pure (l_ (LmlTyVar noExtField (l_ "a")))))
           badAlias = l_ (AliasDecl noExtField (l_ "badparam") (pure badAliasParam) (l_ (LmlTyVar noExtField (l_ "a"))))
-      in expectError
-        "InvalidTypeParameter on non-variable type parameter"
-        (modOf (tyd badAlias))
-        (\case
-          InvalidTypeParameter -> True
-          _ -> False
-        )
+       in expectError
+            "InvalidTypeParameter on non-variable type parameter"
+            (modOf (tyd badAlias))
+            ( \case
+                InvalidTypeParameter -> True
+                _ -> False
+            )
     ]
