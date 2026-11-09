@@ -16,5 +16,6 @@ main =
       , reducerUnitTests
       , memoryManagerUnitTests
       , mealyCoreUnitTests
+      , cycleCountUnitTests
       , loaderUnitTests
       ]
