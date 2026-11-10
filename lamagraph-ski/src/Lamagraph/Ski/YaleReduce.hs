@@ -375,7 +375,7 @@ interacts va vb =
  where
   isBeta x y = (isApp x && isLam y) || (isLam x && isApp y)
   isCopyPair x y = (isCopy x && isTerm y) || (isTerm x && isCopy y)
-  isSubstPair x y = (isSubst x && isTerm y) || (isTerm x && isSubst y)
+  isSubstPair x y = (isSubst x && isSubstTarget y) || (isSubstTarget x && isSubst y)
   isErasePair x y =
     (isErase x && (isEnd y || isFreeV y || isFVB y))
       || ((isEnd x || isFreeV x || isFVB x) && isErase y)
@@ -396,6 +396,12 @@ interacts va vb =
   isCopy _ = False
   isSubst (Subst{}) = True
   isSubst _ = False
+  -- The s agent only propagates into term nodes (not list elements).
+  isSubstTarget = \case
+    YaleLam{} -> True
+    YaleApp{} -> True
+    Constant{} -> True
+    _ -> False
   isErase (Erase{}) = True
   isErase _ = False
   isEnd (EndList{}) = True

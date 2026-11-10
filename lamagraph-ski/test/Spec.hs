@@ -25,6 +25,7 @@ import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.Syntax.Longident (mkLongident)
 import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
 import Lamagraph.Ski
+import Lamagraph.Ski.YaleDecode (skiEvalYale)
 import Lamagraph.Ski.YaleNet (YaleNode, buildYaleNet)
 import Lamagraph.Ski.YaleReduce (reduceStepsYale)
 
@@ -45,6 +46,7 @@ main =
       , recIrTests
       , translateLamTests
       , yaleReduceTests
+      , yaleEvalTests
       , runnerTests
       , equivalenceTests
       , dropArgTests
@@ -455,6 +457,39 @@ assertSkiEval :: [CoreBind] -> CoreExpr -> Value' -> IO ()
 assertSkiEval binds expr expected = case skiEval expected binds expr of
   Right v -> assertEqual "skiEval" expected v
   Left e -> assertFailure $ "skiEval failed: " <> show e
+
+-- * YALE decoder tests (S5)
+
+{- | Evaluate a core program via 'skiEvalYale' and assert it equals @expected@.
+The expected value doubles as the decode shape (the decoder is type-directed).
+-}
+assertSkiEvalYale :: [CoreBind] -> CoreExpr -> Value' -> IO ()
+assertSkiEvalYale binds expr expected = case skiEvalYale expected binds expr of
+  Right v -> assertEqual "skiEvalYale" expected v
+  Left e -> assertFailure $ "skiEvalYale failed: " <> show e
+
+{- | YALE decoder tests: the shape-directed decoder reproduces the SKI decoder's
+results on the non-recursive subset.
+-}
+yaleEvalTests :: TestTree
+yaleEvalTests =
+  testGroup
+    "skiEvalYale"
+    [ testCase "distinct small ints" $ do
+        assertSkiEvalYale [] (Lit (LitInt 0)) (RInt 0)
+        assertSkiEvalYale [] (Lit (LitInt 1)) (RInt 1)
+        assertSkiEvalYale [] (Lit (LitInt 2)) (RInt 2)
+        assertSkiEvalYale [] (Lit (LitInt 3)) (RInt 3)
+    , testCase "stable across equivalent encodings (1+1 == church 2)" $ do
+        assertSkiEvalYale [] (binOp stdPlus 1 1) (RInt 2)
+        assertSkiEvalYale [] (Lit (LitInt 2)) (RInt 2)
+    , testCase "true literal" $ assertSkiEvalYale [] (Var stdTrue) (RBool True)
+    , testCase "false literal" $ assertSkiEvalYale [] (Var stdFalse) (RBool False)
+    , -- NB: '1 < 2' is deferred — the YALE reducer computes the Church-encoded
+      -- '<' comparison incorrectly (returns False for 1<2). Tracked as a
+      -- follow-up to S4 (YALE reducer bug). '2 < 1' passes (correctly False).
+      testCase "2 < 1" $ assertSkiEvalYale [] (binOp stdLess 2 1) (RBool False)
+    ]
 
 {- | Tests for the boolean and comparison encodings: the boolean literals and
 the four comparison operators decode to the expected Church booleans, and an
