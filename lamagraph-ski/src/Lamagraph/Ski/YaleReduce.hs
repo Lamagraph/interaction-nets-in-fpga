@@ -1,30 +1,40 @@
 {- | A step-bounded reduction driver for the full YALE (Mackie 1998) lambda
 interaction net.
 
-The interactions (all principal-port meetings):
+The interactions (all principal-port meetings), with their source in the paper:
 
-* β-reduction — a 'YaleApp' (application) met at its principal (function) port
-  by a 'YaleLam' (abstraction) met at its principal (result) port: both are
+* β-reduction (Mackie §5, first rule) — a 'YaleApp' met at its principal
+  (function) port by a 'YaleLam' met at its principal (result) port: both are
   deleted, the abstraction's body is wired to the application's result, the
   application's argument is wired to the abstraction's bound-variable port
   (@lamVar@), and an 'Erase' (@d@) agent is introduced at the head of the
   abstraction's free-variable list.
-* 'Erase'×'EndList' — the @d@ agent erases the end-of-list @ν@ (the list is
-  empty; the erasure is complete).
-* 'Copy'×'YaleLam' — the @c@ agent copies the abstraction: two copies of the
-  @λ@ are produced, a 'Subst' (@s@) agent is propagated into each copy's body,
-  and a 'Copy' is propagated along each copy's free-variable list.
-* 'Copy'×'YaleApp' — the @c@ agent copies the application: two copies of the
-  @@@ are produced, and a 'Copy' is propagated along each copy's auxiliary
-  ports.
-* 'Copy'×'Constant' — the @c@ agent copies a base value: two copies.
-* 'Copy'×'EndList' — the @c@ agent copies the end-of-list: two @ν@'s.
-* 'Subst'×'YaleApp' — the @s@ agent propagates into the application's function
-  and argument.
-* 'Subst'×'YaleLam' — the @s@ agent propagates into the abstraction's body.
-* 'Subst'×'Constant' — the @s@ agent is erased at a base value.
-* 'Garbage'×(any term) — the @e@ agent erases the term and the net on its
-  auxiliary ports.
+* 'Erase'×'EndList' (Mackie §5, second rule) — the @d@ agent erases the
+  end-of-list @ν@ (the list is empty; the erasure is complete).
+* 'Copy'×'YaleLam' (Mackie §5, "Duplication") — the @c@ agent copies the
+  abstraction: two copies of the @λ@ are produced, a 'Subst' (@s@) agent is
+  propagated into each copy's body, and a 'Copy' is propagated along each
+  copy's free-variable list.
+* 'Copy'×'YaleApp' (Mackie §5, "Duplication") — the @c@ agent copies the
+  application: two copies of the @@@ are produced, and a 'Copy' is propagated
+  along each copy's auxiliary ports.
+* 'Copy'×'Constant' (Mackie §5, "Duplication") — the @c@ agent copies a base
+  value: two copies.
+* 'Copy'×'EndList' (Mackie §5, "Duplication") — the @c@ agent copies the
+  end-of-list: two @ν@'s.
+* 'Subst'×'YaleApp' (Mackie §5, "Substitution") — the @s@ agent propagates
+  into the application's function and argument.
+* 'Subst'×'YaleLam' (Mackie §5, "Substitution") — the @s@ agent propagates
+  into the abstraction's body.
+* 'Subst'×'Constant' (Mackie §5, "Substitution") — the @s@ agent is erased at
+  a base value.
+* 'Garbage'×(any term) (Mackie §5) — the @e@ agent erases the term and the
+  net on its auxiliary ports.
+
+Recursion is encoded as a cyclic net ("tie the knot", Mackie §6): two
+'YaleApp' nodes, each fed by its own copy of @F = λself. inner@; the bottom
+app's result is the knot edge, which is also its argument. The β-reduction
+splices the knot edge onto the bound variable, yielding the self-reference.
 
 The driver is a worklist: at each step it picks one active pair (two
 interacting nodes joined at their principal ports) and rewrites it, until no
@@ -131,6 +141,7 @@ fireAt a b = do
     (TApp, TLam) -> betaRHS va vb
     (TLam, TApp) -> betaRHS vb va
     -- Copy: c × X
+    (TCopy, TCopy) -> return ()
     (TCopy, TLam) -> copyLamRHS va vb
     (TLam, TCopy) -> copyLamRHS vb va
     (TCopy, TApp) -> copyAppRHS va vb
@@ -153,6 +164,8 @@ fireAt a b = do
     -- Erase: d × X
     (TErase, TEnd) -> eraseRHS
     (TEnd, TErase) -> eraseRHS
+    (TErase, TFreeV) -> eraseRHS
+    (TFreeV, TErase) -> eraseRHS
     (TErase, TFVB) -> eraseRHS
     (TFVB, TErase) -> eraseRHS
     -- Garbage: e × X
@@ -174,9 +187,17 @@ betaRHS app lam = do
   byConnector [appArg app, lamVar lam]
   byConnector [eD, lamVarList lam]
 
-{- | 'Copy'×'YaleLam': copy the abstraction. Two copies of the @λ@ are
-produced; a 'Subst' (@s@) agent is propagated into each copy's body; a
-'Copy' (@c@) agent is propagated along each copy's free-variable list.
+{- | 'Copy'×'YaleLam': copy the abstraction (Mackie 1998, §5 "Duplication").
+Two copies of the @λ@ are produced. A 'Copy' (@c@) agent is introduced to
+duplicate the body ("a c agent is introduced to duplicate the body of the
+abstraction, in the same way as we copied the abstraction agent"). A 'Subst'
+(@s@) agent is propagated into each copy's body ("we propagate s agents inside
+the body of the abstraction"). A 'Copy' (@c@) agent is propagated along the
+free-variable list ("we also propagate the c agent along the list of free
+variables"); for a closed term the list is just @ν@, so the @c@ agent simply
+duplicates the end-of-list agent ("if the term is closed, then the following
+reduction duplicates the end of list agent"). The bound-variable occurrence is
+shared by both copies.
 -}
 copyLamRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyLamRHS c lam = do
@@ -186,27 +207,23 @@ copyLamRHS c lam = do
   eVar2 <- byEdge
   eList1 <- byEdge
   eList2 <- byEdge
-  eB <- byEdge
-  byNode $ YaleLam{lamResult = copyOut1 c, lamVarList = eList1, lamVar = eVar1, lamBody = eBody1}
-  byNode $ YaleLam{lamResult = copyOut2 c, lamVarList = eList2, lamVar = eVar2, lamBody = eBody2}
-  -- A c agent is introduced to duplicate the body (Mackie 1998: "a c agent is
-  -- introduced to duplicate the body of the abstraction, in the same way as we
-  -- copied the abstraction"). The body is duplicated, not shared: each copy
-  -- gets its own body net. (s agents for nested abstractions are created
-  -- recursively when the c agent walks into the body and meets a nested λ.)
+  eS1 <- byEdge
+  eS2 <- byEdge
+  byNode $ YaleLam{lamResult = copyOut1 c, lamVarList = eList1, lamVar = eVar1, lamBody = eS1}
+  byNode $ YaleLam{lamResult = copyOut2 c, lamVarList = eList2, lamVar = eVar2, lamBody = eS2}
+  -- A c agent is introduced to duplicate the body.
   byNode $ Copy{copyIn = lamBody lam, copyOut1 = eBody1, copyOut2 = eBody2}
-  -- A b' (blocked free-variable) agent is introduced at the head of the
-  -- free-variable list (Mackie 1998: "the blocking is achieved by introducing
-  -- a new agent b'"). The @c@ agent must meet the b' FIRST (not the ν that
-  -- terminates the original list). The b' therefore sits on a fresh head edge
-  -- @eHead@ together with the @c@ agent (via its principal @fvHead@ port); its
-  -- @fvCont@ continuation points at the original list, so after c×b' fires the
-  -- propagated @c@ reaches the original list (ν) and duplicates the rest.
-  eHead <- byEdge
-  byNode $ FreeVarBlocked{fvHead = eHead, fvCont = lamVarList lam, fvOcc = eB, name = ""}
-  byNode $ Copy{copyIn = eHead, copyOut1 = eList1, copyOut2 = eList2}
-  -- The bound-variable occurrence is shared by both copies (the s agents in
-  -- the bodies detach it as they walk).
+  -- s agents are propagated into each copy's body (Mackie 1998: "we propagate
+  -- s agents inside the body of the abstraction"). They walk the copied body
+  -- and rewire the bound-variable occurrences, which is what lets a copied
+  -- (possibly cyclic) body re-connect correctly without the c agent re-entering
+  -- the lambda.
+  byNode $ Subst{substIn = eBody1, substOut = eS1}
+  byNode $ Subst{substIn = eBody2, substOut = eS2}
+  -- A c agent is propagated along the free-variable list. For a closed term
+  -- the list is just ν, so the c agent duplicates the end-of-list agent.
+  byNode $ Copy{copyIn = lamVarList lam, copyOut1 = eList1, copyOut2 = eList2}
+  -- The bound-variable occurrence is shared by both copies.
   byConnector [eVar1, lamVar lam]
   byConnector [eVar2, lamVar lam]
 
@@ -360,8 +377,8 @@ interacts va vb =
   isCopyPair x y = (isCopy x && isTerm y) || (isTerm x && isCopy y)
   isSubstPair x y = (isSubst x && isTerm y) || (isTerm x && isSubst y)
   isErasePair x y =
-    (isErase x && (isEnd y || isFVB y))
-      || ((isEnd x || isFVB x) && isErase y)
+    (isErase x && (isEnd y || isFreeV y || isFVB y))
+      || ((isEnd x || isFreeV x || isFVB x) && isErase y)
   isGarbagePair x y = (isGarbage x && isTerm y) || (isTerm x && isGarbage y)
   isTerm = \case
     YaleLam{} -> True
@@ -383,6 +400,8 @@ interacts va vb =
   isErase _ = False
   isEnd (EndList{}) = True
   isEnd _ = False
+  isFreeV (FreeVar{}) = True
+  isFreeV _ = False
   isFVB (FreeVarBlocked{}) = True
   isFVB _ = False
   isGarbage (Garbage{}) = True

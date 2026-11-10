@@ -8,7 +8,7 @@ import Data.HashMap.Lazy qualified as HashMap
 import Data.List (lookup)
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import GraphRewriting (Graph)
+import GraphRewriting (Graph, evalGraph, readNodeList)
 import Hedgehog hiding (Var)
 import Hedgehog.Gen qualified as Gen
 import INet.Graph (SKI (..), fromTerm)
@@ -25,6 +25,8 @@ import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.Syntax.Longident (mkLongident)
 import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
 import Lamagraph.Ski
+import Lamagraph.Ski.YaleNet (YaleNode, buildYaleNet)
+import Lamagraph.Ski.YaleReduce (reduceStepsYale)
 
 {- | Step budget for reducing a decoded term to normal form. Generous because
 the naive SKI translation is verbose and the fixed-order reducer is slow.
@@ -42,6 +44,7 @@ main =
       , translateTests
       , recIrTests
       , translateLamTests
+      , yaleReduceTests
       , runnerTests
       , equivalenceTests
       , dropArgTests
@@ -274,6 +277,52 @@ countV = \case
   Term.V _ -> 1
   Term.A f x -> countV f + countV x
   _ -> 0
+
+-- * YALE reducer tests (S4)
+
+-- | Count the number of nodes in a YALE net.
+yaleNodeCount :: Graph YaleNode -> Int
+yaleNodeCount = evalGraph (length <$> readNodeList)
+
+{- | Build a YALE net from an LML source, reduce it for at most @budget@
+steps, and return (step count, node count, reached normal form).
+-}
+yaleReduceSrc :: Text -> Int -> IO (Int, Int, Bool)
+yaleReduceSrc src budget = case compileLml src of
+  Left e -> assertFailure $ "compileLml failed: " <> e
+  Right (binds, resultExpr) -> case translateLam binds resultExpr of
+    Left e -> assertFailure $ "translateLam failed: " <> show e
+    Right lam ->
+      let g = buildYaleNet lam
+          (steps, g2, nf) = reduceStepsYale budget g
+       in return (steps, yaleNodeCount g2, nf)
+
+-- | Assert that an LML source reduces to normal form within the step budget.
+assertYaleNF :: Text -> Int -> IO ()
+assertYaleNF src budget = do
+  (steps, _nodes, nf) <- yaleReduceSrc src budget
+  assertBool
+    ("expected NF within " <> show budget <> " steps, got " <> show steps)
+    nf
+
+{- | YALE reducer regression tests: each source must reach normal form within
+the step budget. These exercise the full YALE dynamics (β-reduction,
+duplication, erasure, and the knot encoding for recursion).
+-}
+yaleReduceTests :: TestTree
+yaleReduceTests =
+  testGroup
+    "yale-reduce"
+    [ testCase "2 + 3" $ assertYaleNF "module M\nlet result = 2 + 3" 20000
+    , testCase "3 + 3" $ assertYaleNF "module M\nlet result = 3 + 3" 20000
+    , testCase "2 - 1" $ assertYaleNF "module M\nlet result = 2 - 1" 5000
+    , testCase "2 * 3" $ assertYaleNF "module M\nlet result = 2 * 3" 5000
+    , testCase "2 < 3" $ assertYaleNF "module M\nlet result = 2 < 3" 5000
+    , testCase "if 2 < 3 then 10 else 20" $ assertYaleNF "module M\nlet result = if 2 < 3 then 10 else 20" 5000
+    , testCase "rec identity" $ assertYaleNF "module M\nlet rec f n = n\nlet result = f 5" 5000
+    , testCase "fact 2" $
+        assertYaleNF "module M\nlet rec fact n = if n < 1 then 1 else n * fact (n - 1)\nlet result = fact 2" 10000
+    ]
 
 {- | Tests for the step-bounded SKI runner: a well-behaved term (the Church
 numeral 5) reduces to normal form within the budget, while the non-terminating

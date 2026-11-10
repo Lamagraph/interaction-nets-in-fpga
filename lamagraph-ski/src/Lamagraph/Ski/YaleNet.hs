@@ -323,24 +323,24 @@ compile env p term = case term of
     compile (name : env) b body
   LVar v -> compileVar env p v
   LSelfRef -> compileVar env p selfRefName
-  LRec inner ->
-    -- YALE "tie the knot" (Mackie 1998, Fig. p.9): @Y(F)@ where
-    -- @F = λself. inner@. Two application nodes, each fed by its own copy of
-    -- the net for @F@: the top @ applies @F@ to the knot edge @eK@, producing
-    -- the output @p@; the bottom @ applies @F@ to @eK@, producing @eK@ itself
-    -- (its result port loops back to the knot — the self-loop). The knot edge
-    -- @eK@ is the cyclic fixed point.
+  LRec (LLam v body) ->
+    -- YALE "tie the knot" (Mackie 1998, §6 "Recursion"): @Y(F)@ where
+    -- @F = λv. body@. Two 'YaleApp' nodes, each fed by its own copy of the
+    -- net for @F@: the top app applies @F@ to the knot edge, producing the
+    -- output; the bottom app applies @F@ to the knot edge, producing the
+    -- knot edge itself (the self-loop). When the β-rule fires, the knot edge
+    -- is spliced onto the bound variable, so the body's use of @v@ becomes
+    -- the knot edge — the recursive self-reference.
     do
-      eK <- newEdge
+      let body' = replaceSelfRef v body
       eF1 <- newEdge
+      compile env eF1 (LLam v body')
       eF2 <- newEdge
-      let fTerm = LLam selfRefName inner
-      compile env eF1 fTerm
-      compile env eF2 fTerm
-      -- Top @: func = N1 (eF1), arg = eK (the knot), result = p (the output).
-      void $ newNode YaleApp{appFunc = eF1, appArg = eK, appResult = p}
-      -- Bottom @: func = N2 (eF2), arg = eK, result = eK (the knot).
-      void $ newNode YaleApp{appFunc = eF2, appArg = eK, appResult = eK}
+      compile env eF2 (LLam v body')
+      eK <- newEdge
+      void $ newNode YaleApp{appResult = p, appFunc = eF1, appArg = eK}
+      void $ newNode YaleApp{appResult = eK, appFunc = eF2, appArg = eK}
+  LRec _ -> error "LRec: expected a lambda"
   LMutRec groups body ->
     -- Mutual recursion: one 'Multiplexer' per function; each body is compiled
     -- to its own output (self-references wired to it, cross-references by
