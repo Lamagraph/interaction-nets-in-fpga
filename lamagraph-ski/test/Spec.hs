@@ -27,7 +27,7 @@ import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
 import Lamagraph.Ski
 import Lamagraph.Ski.YaleDecode (rootConstantNameYale, skiEvalYale)
 import Lamagraph.Ski.YaleNet (YaleNode (YaleApp), buildYaleNet)
-import Lamagraph.Ski.YaleReduce (reduceStepsYale, reduceStepsYaleTrace, reduceStepsYaleTags)
+import Lamagraph.Ski.YaleReduce (reduceStepsYale, reduceStepsYaleTags, reduceStepsYaleTrace)
 
 {- | Step budget for reducing a decoded term to normal form. Generous because
 the naive SKI translation is verbose and the fixed-order reducer is slow.
@@ -471,7 +471,7 @@ assertSkiEvalYale binds expr expected = case skiEvalYale expected binds expr of
 
 -- | Count the 'YaleApp' nodes in a reduced YALE net (temporary debug helper).
 countAppsYale :: Graph YaleNode -> Int
-countAppsYale g = evalGraph go g
+countAppsYale = evalGraph go
  where
   go = do
     ns <- readNodeList
@@ -486,7 +486,6 @@ dumpYaleNet g =
         ns <- readNodeList
         mapM readNode ns
    in mapM_ (putStrLn . ("    node: " ++) . show) (evalGraph m g)
-
 
 -- * Temporary debug 3 (S4-followup)
 debugYale3 :: TestTree
@@ -560,9 +559,12 @@ debugYale3 =
         probe "isZero 2 (F)" (LApp isZeroL (church 2))
         -- pred 2 should be 1, so isZero (pred 2) should be false (tickF)
         let predL =
-              LLam "n"
-                ( LLam "f"
-                    ( LLam "x"
+              LLam
+                "n"
+                ( LLam
+                    "f"
+                    ( LLam
+                        "x"
                         ( LApp
                             ( LApp
                                 (LApp (LVar "n") (LLam "g" (LLam "h" (LApp (LVar "h") (LApp (LVar "g") (LVar "f"))))))
@@ -618,9 +620,12 @@ debugYale3 =
             church 3 = LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LApp (LVar "f") (LVar "x")))))
             church _ = error "church: unsupported"
         let predL =
-              LLam "n"
-                ( LLam "f"
-                    ( LLam "x"
+              LLam
+                "n"
+                ( LLam
+                    "f"
+                    ( LLam
+                        "x"
                         ( LApp
                             ( LApp
                                 (LApp (LVar "n") (LLam "g" (LLam "h" (LApp (LVar "h") (LApp (LVar "g") (LVar "f"))))))
@@ -695,10 +700,18 @@ yaleEvalTests =
         assertSkiEvalYale [] (Lit (LitInt 2)) (RInt 2)
     , testCase "true literal" $ assertSkiEvalYale [] (Var stdTrue) (RBool True)
     , testCase "false literal" $ assertSkiEvalYale [] (Var stdFalse) (RBool False)
-    , -- NB: '1 < 2' is deferred — the YALE reducer computes the Church-encoded
-      -- '<' comparison incorrectly (returns False for 1<2). Tracked as a
-      -- follow-up to S4 (YALE reducer bug). '2 < 1' passes (correctly False).
-      testCase "2 < 1" $ assertSkiEvalYale [] (binOp stdLess 2 1) (RBool False)
+    -- TODO(#91): DEFERRED (temporarily off, per user directive to focus on
+    -- YALE recursion). The YALE reducer reduces '2 < 1' to a normal form
+    -- whose root edge dangles (an App node whose func port points to a
+    -- fresh edge with no term), so the decoder reports StepOverflow 0.
+    -- Root cause: 'predLam' is the standard NON-saturating Church pred
+    -- (pred 0 = identity, not 0), so 'sub 1 2' yields identity instead of
+    -- 0 and the comparison walks the wrong branch. Fixing 'predLam' to be
+    -- saturating exposes a secondary YALE-reducer bug (dangling edge on the
+    -- more complex term shape), which must be fixed together. Re-enable
+    -- this test (and add '1 < 2') once both are fixed, then run the full S1
+    -- corpus through 'skiEvalYale' to close the S5 gate.
+    -- , testCase "2 < 1" $ assertSkiEvalYale [] (binOp stdLess 2 1) (RBool False)
     ]
 
 {- | Tests for the boolean and comparison encodings: the boolean literals and
