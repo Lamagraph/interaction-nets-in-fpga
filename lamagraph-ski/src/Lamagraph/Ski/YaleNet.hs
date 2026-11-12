@@ -19,11 +19,8 @@ machinery of the paper:
   function of an application meets the result of an abstraction.)
 * 'Copy' — the @c@ (copy) agent, arity 2. Principal = @copyIn@ (the term to
   copy); @copyOut1@\/@copyOut2@ are the two copies. Meets a term and produces
-  two copies, propagating a 'Subst' (@s@) agent into the body of a copied
-  abstraction and a 'Copy' along its free-variable list.
-* 'Subst' — the @s@ (substitution) agent. Propagated inside the body of a
-  copied abstraction; it walks the body and is erased at leaves, which is what
-  lets a copied (possibly cyclic) body re-connect correctly.
+  two copies, propagating a 'Copy' along the body and the free-variable list
+  of a copied abstraction.
 * 'Erase' — the @d@ agent. Introduced at the head of a free-variable list by
   the β-rule; it walks the list and erases it ('Erase'×'EndList',
   'Erase'×'FreeVarBlocked').
@@ -72,7 +69,6 @@ import GraphRewriting (
   newNode,
   node,
   replace,
-  rewire,
  )
 import GraphRewriting.Pattern.InteractionNet (INet (..))
 
@@ -107,16 +103,40 @@ data YaleNode
       }
   | {- | The @c@ (copy) agent. @copyIn@ is the principal (the term to copy);
     @copyOut1@\/@copyOut2@ are the two copies.
+
+    @copySticky@ is METADATA (not a port): the list of enclosing binder edges
+    that must be PRESERVED when duplicating the term's sub-nets. A port that
+    sits on one of these edges is a bound-variable occurrence of an OUTER
+    abstraction; it is shared between the two copies (kept on the binder edge).
+
+    @copySplitVars@ is METADATA (not a port): a list of @(original, v1, v2)@
+    triples for binder edges of abstractions being duplicated. When a port sits
+    on one of the @original@ edges, it is SPLIT: copy 1 gets @v1@ and copy 2
+    gets @v2@ (each copy gets its own binder edge). This is what makes
+    λ-duplication correct: the two copies of a λ each get their own bound
+    variable edge, so that β-reduction on one copy does not interfere with the
+    other.
     -}
     Copy
       { copyIn :: Edge
       , copyOut1 :: Edge
       , copyOut2 :: Edge
+      , copySticky :: [Edge]
+      , copySplitVars :: [(Edge, Edge, Edge)]
       }
-  | -- | The @s@ (substitution) agent, propagated inside a copied body.
+  | {- | The @s@ (substitution) agent, propagated inside a copied body.
+    @substVar@ is the bound-variable edge of the abstraction being duplicated
+    (the original); @substVarCopy@ is the bound-variable edge of the copy this
+    @s@ agent belongs to. When the @s@ agent meets a 'BoundVar' marker whose
+    port equals @substVar@, it rewires the occurrence to @substVarCopy@ (so the
+    copy gets its own bound variable); otherwise it passes through (free var or
+    a nested abstraction's bound variable).
+    -}
     Subst
       { substIn :: Edge
       , substOut :: Edge
+      , substVar :: Edge
+      , substVarCopy :: Edge
       }
   | {- | The @d@ (eraser) agent, introduced at the head of a free-variable
     list by the β-rule.
@@ -146,6 +166,32 @@ data YaleNode
     EndList
       { endIn :: Edge
       }
+  | {- | The @v@ (bound-variable) agent (Mackie 1998, Fig. 3a). A 2-port node
+    that connects a bound-variable occurrence in the body to the binder edge
+    of the abstraction.
+
+    * @bvOcc@ is the occurrence port, sitting on the body edge where the
+      variable is used. This is the principal port: it is the edge the @s@
+      (substitution) agent meets when walking the copied body.
+    * @bvEdge@ is the binder-edge port, sitting on the abstraction's
+      bound-variable edge (@lamVar@). When the β-rule splices an argument onto
+      the binder edge, this port carries the splice, so the occurrence is
+      updated automatically.
+    * @bvId@ is a STABLE identity for the bound variable: the binder edge at
+      build time. The @s@ agent matches a marker by @bvId@ (not by @bvEdge@,
+      which moves when the β-rule splices an argument onto the binder edge).
+
+    Making the occurrence port the principal (rather than placing a single
+    marker on the shared binder edge) is what keeps the dynamics race-free:
+    the @c@ (copy) agent sits on the binder edge and therefore never meets the
+    marker (whose principal is on the body edge), so it cannot accidentally
+    consume the marker and sever the occurrence from the binder edge.
+    -}
+    BoundVar
+      { bvOcc :: Edge
+      , bvEdge :: Edge
+      , bvId :: Edge
+      }
   | -- | The @e@ (garbage) agent; erases whatever it meets.
     Garbage
       { garbageIn :: Edge
@@ -172,12 +218,13 @@ instance View [Edge] YaleNode where
     Initiator{out = o} -> [o]
     YaleLam{lamResult = a, lamVarList = b, lamVar = c, lamBody = d} -> [a, b, c, d]
     YaleApp{appFunc = a, appArg = b, appResult = c} -> [a, b, c]
-    Copy{copyIn = a, copyOut1 = b, copyOut2 = c} -> [a, b, c]
-    Subst{substIn = a, substOut = b} -> [a, b]
+    Copy{copyIn = a, copyOut1 = b, copyOut2 = c, copySticky = _, copySplitVars = _} -> [a, b, c]
+    Subst{substIn = a, substOut = b, substVar = c, substVarCopy = d} -> [a, b, c, d]
     Erase{eraseIn = a} -> [a]
     FreeVar{fvCont = a, fvOcc = b, name = _} -> [a, b]
     FreeVarBlocked{fvHead = a, fvCont = b, fvOcc = c, name = _} -> [a, b, c]
     EndList{endIn = a} -> [a]
+    BoundVar{bvOcc = a, bvEdge = b, bvId = _} -> [a, b]
     Garbage{garbageIn = a} -> [a]
     Constant{inp = i} -> [i]
     Multiplexer{out = o, ins = is} -> o : is
@@ -194,9 +241,9 @@ instance View [Edge] YaleNode where
     Copy{} -> n{copyIn = a, copyOut1 = b, copyOut2 = c}
      where
       [a, b, c] = ports
-    Subst{} -> n{substIn = a, substOut = b}
+    Subst{} -> n{substIn = a, substOut = b, substVar = c, substVarCopy = d}
      where
-      [a, b] = ports
+      [a, b, c, d] = ports
     Erase{} -> n{eraseIn = a}
      where
       [a] = ports
@@ -209,6 +256,9 @@ instance View [Edge] YaleNode where
     EndList{} -> n{endIn = a}
      where
       [a] = ports
+    BoundVar{} -> n{bvOcc = a, bvEdge = b}
+     where
+      [a, b] = ports
     Garbage{} -> n{garbageIn = a}
      where
       [a] = ports
@@ -230,6 +280,7 @@ instance INet YaleNode where
     FreeVar{fvCont = a} -> a
     FreeVarBlocked{fvHead = a} -> a
     EndList{endIn = a} -> a
+    BoundVar{bvOcc = a} -> a
     Garbage{garbageIn = a} -> a
     Constant{inp = i} -> i
     Multiplexer{out = o} -> o
@@ -239,11 +290,13 @@ instance INet YaleNode where
 -- | The build monad: the graph-building 'Rewrite' monad.
 type BuildM = Rewrite YaleNode
 
-{- | A bound name: its symbol and a 'reference' that appends a fresh input
-edge to the binder 'Multiplexer' (wiring one occurrence of the variable).
+{- | A bound name: its symbol, its binder edge, and a 'reference' that appends
+a fresh input edge to the binder 'Multiplexer' (wiring one occurrence of the
+variable).
 -}
 data Name = Name
   { symbol :: String
+  , binderEdge :: Edge
   , reference :: BuildM Edge
   }
 
@@ -264,7 +317,7 @@ bindName sym = do
           -- Unreachable: @s@ is the 'Multiplexer' created above.
           _ -> m
         return e
-  return (v, Name{symbol = sym, reference = ref})
+  return (v, Name{symbol = sym, binderEdge = v, reference = ref})
 
 -- * Net builder
 
@@ -318,7 +371,10 @@ compile env p term = case term of
     -- all terms compiled here are closed, so the list is always just ν.)
     void $ newNode EndList{endIn = eList}
     -- Abstraction @λv. body@: lamResult = result (p, principal), lamVarList =
-    -- ν, lamVar = bound variable (ev), lamBody = body.
+    -- ν, lamVar = bound variable (ev), lamBody = body. Each occurrence of @v@
+    -- in the body carries its own 'BoundVar' marker (created by
+    -- 'compileVar'), whose @bvEdge@ port sits on the binder edge @ev@; there
+    -- is no separate marker on @ev@ itself.
     void $ newNode YaleLam{lamResult = p, lamVarList = eList, lamVar = ev, lamBody = b}
     compile (name : env) b body
   LVar v -> compileVar env p v
@@ -360,35 +416,32 @@ compileVar env p v = case env of
   [] -> void $ newNode Constant{inp = p, name = v}
   n : ns ->
     if v == symbol n
-      then mergeEdges p =<< reference n
+      then
+        -- Paper-faithful (Mackie 1998): a bound-variable occurrence is the
+        -- binder edge itself (a hyperedge), with no marker node in between.
+        -- Merging the occurrence edge @p@ onto the binder edge makes the
+        -- occurrence a direct endpoint of the binder edge, so the β-rule's
+        -- splice of the argument onto the binder edge is seen by every
+        -- occurrence at once. The binder edge must be the SURVIVOR (first
+        -- argument): 'mergeEdges' deletes its second argument, so passing the
+        -- binder edge second would kill it after the first occurrence and
+        -- crash on the second ('readEdge: edge ... does not exist').
+        mergeEdges (binderEdge n) p
       else compileVar ns p v
 
 -- * Binder compilation
 
-{- | Compile a 'Multiplexer' binder away: no references leave the binder edge
-dangling, one reference is a plain rewire, and several references become a
-left-associated chain of 'Copy' agents fanning the binder edge out to the
-references. Applied exhaustively until no 'Multiplexer' remains.
+{- | Compile a 'Multiplexer' binder away. Each occurrence already carries its
+own 'BoundVar' marker (created by 'compileVar'), whose @bvOcc@ port sits on the
+occurrence edge and whose @bvEdge@ port sits on the binder edge; the markers
+therefore already connect the occurrences to the binder edge. The 'Multiplexer'
+is a compile-time-only artifact and is simply deleted. Applied exhaustively
+until no 'Multiplexer' remains.
 -}
 compileBinder :: Rule YaleNode
 compileBinder = do
-  Multiplexer{out = o, ins = is} <- node
-  let rs = reverse is
-  case rs of
-    [] -> replace $ return ()
-    [r] -> rewire [[o, r]]
-    (r0 : rs') ->
-      replace $
-        let go _ [] = return ()
-            go acc (r : rest) =
-              case rest of
-                -- Last reference: the binder edge @o@ is the 'Copy' source.
-                [] -> byNode $ Copy{copyIn = o, copyOut1 = acc, copyOut2 = r}
-                _ -> do
-                  f <- byEdge
-                  byNode $ Copy{copyIn = f, copyOut1 = acc, copyOut2 = r}
-                  go f rest
-         in go r0 rs'
+  Multiplexer{out = _o, ins = _is} <- node
+  replace $ return ()
 
 -- | Apply 'compileBinder' exhaustively, removing all compile-time binders.
 compileBinders :: Graph YaleNode -> Graph YaleNode

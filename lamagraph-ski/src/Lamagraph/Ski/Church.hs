@@ -104,7 +104,10 @@ multLam = do
           )
       )
 
--- | Church predecessor, saturating at 0: @\n f x. n (\g h. h (g f)) (\u. x) (\u. u)@.
+-- | Church predecessor: @\n f x. n (\g h. h (g f)) (\u. x) (\u. u)@.
+-- NOTE: this is the standard (non-saturating) Church pred; @pred 0 = identity@.
+-- The 'subLam' function relies on saturation at 0, which this does NOT provide;
+-- see the known issue with @2 < 1@ (task #91).
 predLam :: State Int Lam
 predLam = do
   n <- freshName

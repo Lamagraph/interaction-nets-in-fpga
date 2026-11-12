@@ -107,7 +107,7 @@ mutually connected).
 dupNeighbors :: [YaleNode] -> Edge -> [Edge]
 dupNeighbors ns e =
   [ tgt
-  | Copy{copyIn = p, copyOut1 = a1, copyOut2 = a2} <- ns
+  | Copy{copyIn = p, copyOut1 = a1, copyOut2 = a2, copySticky = _, copySplitVars = _} <- ns
   , let ports = [p, a1, a2]
   , e `elem` ports
   , tgt <- ports

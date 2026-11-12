@@ -8,7 +8,7 @@ import Data.HashMap.Lazy qualified as HashMap
 import Data.List (lookup)
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import GraphRewriting (Graph, evalGraph, readNodeList)
+import GraphRewriting (Graph, evalGraph, readNode, readNodeList)
 import Hedgehog hiding (Var)
 import Hedgehog.Gen qualified as Gen
 import INet.Graph (SKI (..), fromTerm)
@@ -25,9 +25,9 @@ import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.Syntax.Longident (mkLongident)
 import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
 import Lamagraph.Ski
-import Lamagraph.Ski.YaleDecode (skiEvalYale)
-import Lamagraph.Ski.YaleNet (YaleNode, buildYaleNet)
-import Lamagraph.Ski.YaleReduce (reduceStepsYale)
+import Lamagraph.Ski.YaleDecode (rootConstantNameYale, skiEvalYale)
+import Lamagraph.Ski.YaleNet (YaleNode (YaleApp), buildYaleNet)
+import Lamagraph.Ski.YaleReduce (reduceStepsYale, reduceStepsYaleTrace, reduceStepsYaleTags)
 
 {- | Step budget for reducing a decoded term to normal form. Generous because
 the naive SKI translation is verbose and the fixed-order reducer is slow.
@@ -47,6 +47,7 @@ main =
       , translateLamTests
       , yaleReduceTests
       , yaleEvalTests
+      , debugYale3
       , runnerTests
       , equivalenceTests
       , dropArgTests
@@ -467,6 +468,215 @@ assertSkiEvalYale :: [CoreBind] -> CoreExpr -> Value' -> IO ()
 assertSkiEvalYale binds expr expected = case skiEvalYale expected binds expr of
   Right v -> assertEqual "skiEvalYale" expected v
   Left e -> assertFailure $ "skiEvalYale failed: " <> show e
+
+-- | Count the 'YaleApp' nodes in a reduced YALE net (temporary debug helper).
+countAppsYale :: Graph YaleNode -> Int
+countAppsYale g = evalGraph go g
+ where
+  go = do
+    ns <- readNodeList
+    mapM readNode ns
+      <&> length
+      . filter (\case YaleApp{} -> True; _ -> False)
+
+-- | Dump all nodes of a YALE net (temporary debug helper).
+dumpYaleNet :: Graph YaleNode -> IO ()
+dumpYaleNet g =
+  let m = do
+        ns <- readNodeList
+        mapM readNode ns
+   in mapM_ (putStrLn . ("    node: " ++) . show) (evalGraph m g)
+
+
+-- * Temporary debug 3 (S4-followup)
+debugYale3 :: TestTree
+debugYale3 =
+  testGroup
+    "yale-debug3"
+    [ testCase "probe terms" $ do
+        let church 0 = LLam "f" (LLam "x" (LVar "x"))
+            church 1 = LLam "f" (LLam "x" (LApp (LVar "f") (LVar "x")))
+            church 2 = LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LVar "x"))))
+            church 3 = LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LApp (LVar "f") (LVar "x")))))
+            church _ = error "church: unsupported"
+        let probe label term = do
+              putStrLn $ "  [probe] " <> label
+              let full = LApp (LApp term (LVar "__tickT__")) (LVar "__tickF__")
+              let g = buildYaleNet full
+              let (steps, g2, nf) = reduceStepsYale 10000 g
+              let root = rootConstantNameYale g2
+              putStrLn $ "  " <> label <> ": steps=" <> show steps <> " nf=" <> show nf <> " root=" <> show root
+        -- (\x. \y. x) 1 2  => 1
+        let t1 = LApp (LApp (LLam "x" (LLam "y" (LVar "x"))) (church 1)) (church 2)
+        -- (\x. \y. y) 1 2  => 2
+        let t2 = LApp (LApp (LLam "x" (LLam "y" (LVar "y"))) (church 1)) (church 2)
+        -- (\x. x x) (\y. y)  => (\y. y)  [duplication]
+        let t3 = LApp (LLam "x" (LApp (LVar "x") (LVar "x"))) (LLam "y" (LVar "y"))
+        -- (\f. \x. f (f x)) (\x. x)  => (\x. x)  [duplication of f]
+        let t4 = LApp (LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LVar "x"))))) (LLam "x" (LVar "x"))
+        -- Trace K12 step by step to find the dangling edge.
+        let fullK12 = LApp (LApp t1 (LVar "__tickT__")) (LVar "__tickF__")
+        let gK12 = buildYaleNet fullK12
+        (sK12, _, nfK12) <- reduceStepsYaleTrace 30 gK12
+        putStrLn $ "  K12 trace done: steps=" <> show sK12 <> " nf=" <> show nfK12
+        probe "K12 -> 1" t1
+        probe "K22 -> 2" t2
+        -- Tag trace for twice-id to see if a Copy interaction ever fires.
+        let fullT4 = LApp (LApp t4 (LVar "__tickT__")) (LVar "__tickF__")
+        let gT4 = buildYaleNet fullT4
+        (sT4, _, nfT4) <- reduceStepsYaleTags 40 gT4
+        putStrLn $ "  twice-id tag-trace done: steps=" <> show sT4 <> " nf=" <> show nfT4
+        probe "twice-id" t4
+        -- Tag trace for dup-id to diagnose non-termination.
+        let fullT3 = LApp (LApp t3 (LVar "__tickT__")) (LVar "__tickF__")
+        let gT3 = buildYaleNet fullT3
+        (sT3, _, nfT3) <- reduceStepsYaleTags 40 gT3
+        putStrLn $ "  dup-id tag-trace done: steps=" <> show sT3 <> " nf=" <> show nfT3
+        probe "dup-id" t3
+        -- Minimal failing case: duplicate a lambda whose body is an application.
+        -- (\x. x x) (\y. y y)  =>  (\y. y y)  [duplication of a lambda with an app body]
+        let t5 = LApp (LLam "x" (LApp (LVar "x") (LVar "x"))) (LLam "y" (LApp (LVar "y") (LVar "y")))
+        probe "dup-app (expect id)" t5
+        -- Trace the minimal failing case step by step.
+        let full5 = LApp (LApp t5 (LVar "__tickT__")) (LVar "__tickF__")
+        let g5 = buildYaleNet full5
+        (s5, _, nf5) <- reduceStepsYaleTrace 30 g5
+        putStrLn $ "  dup-app trace done: steps=" <> show s5 <> " nf=" <> show nf5
+        -- TEMPORARY: trace dup-id step by step with net dumps
+        let full3 = LApp (LApp t3 (LVar "__tickT__")) (LVar "__tickF__")
+        let g3 = buildYaleNet full3
+        (s3, _, nf3) <- reduceStepsYaleTrace 25 g3
+        putStrLn $ "  dup-id trace done: steps=" <> show s3 <> " nf=" <> show nf3
+        -- Simple boolean probes (expect tickT / tickF)
+        let trueL = LLam "a" (LLam "b" (LVar "a"))
+        let falseL = LLam "a" (LLam "b" (LVar "b"))
+        let isZeroL = LLam "n" (LApp (LApp (LVar "n") (LLam "x" falseL)) trueL)
+        probe "id true (T)" (LApp (LLam "x" (LVar "x")) trueL)
+        probe "id false (F)" (LApp (LLam "x" (LVar "x")) falseL)
+        probe "K T F (T)" (LApp (LApp (LLam "x" (LLam "y" (LVar "x"))) trueL) falseL)
+        probe "K' T F (F)" (LApp (LApp (LLam "x" (LLam "y" (LVar "y"))) trueL) falseL)
+        probe "isZero 0 (T)" (LApp isZeroL (church 0))
+        probe "isZero 1 (F)" (LApp isZeroL (church 1))
+        probe "isZero 2 (F)" (LApp isZeroL (church 2))
+        -- pred 2 should be 1, so isZero (pred 2) should be false (tickF)
+        let predL =
+              LLam "n"
+                ( LLam "f"
+                    ( LLam "x"
+                        ( LApp
+                            ( LApp
+                                (LApp (LVar "n") (LLam "g" (LLam "h" (LApp (LVar "h") (LApp (LVar "g") (LVar "f"))))))
+                                (LLam "u1" (LVar "x"))
+                            )
+                            (LLam "u2" (LVar "u2"))
+                        )
+                    )
+                )
+        probe "isZero(pred 1) (T)" (LApp isZeroL (LApp predL (church 1)))
+        probe "isZero(pred 2) (F)" (LApp isZeroL (LApp predL (church 2)))
+        probe "isZero(pred 3) (F)" (LApp isZeroL (LApp predL (church 3)))
+        -- check 1 < 2 and 2 < 1
+        let src12 = "module M\nlet result = 1 < 2"
+        let src21 = "module M\nlet result = 2 < 1"
+        case compileLml src12 of
+          Left e -> assertFailure $ "compile 1<2: " <> e
+          Right (b12, e12) ->
+            case translateLam b12 e12 of
+              Left e -> assertFailure $ "translateLam 1<2: " <> show e
+              Right lam12 -> do
+                probe "1<2 (expect tickT)" lam12
+                let full12 = LApp (LApp lam12 (LVar "__tickT__")) (LVar "__tickF__")
+                let g12 = buildYaleNet full12
+                (s12, g12b, nf12) <- reduceStepsYaleTrace 200 g12
+                putStrLn $ "  1<2 trace done: steps=" <> show s12 <> " nf=" <> show nf12
+                let mDump12 = do
+                      ns <- readNodeList
+                      mapM readNode ns
+                    dump12 = evalGraph mDump12 g12b
+                mapM_ (putStrLn . ("    1<2 node: " ++) . show) dump12
+        case compileLml src21 of
+          Left e -> assertFailure $ "compile 2<1: " <> e
+          Right (b21, e21) ->
+            case translateLam b21 e21 of
+              Left e -> assertFailure $ "translateLam 2<1: " <> show e
+              Right lam21 -> do
+                probe "2<1 (expect tickF)" lam21
+                -- dump the reduced net structure
+                let full21 = LApp (LApp lam21 (LVar "__tickT__")) (LVar "__tickF__")
+                let g21 = buildYaleNet full21
+                let (s21, g21b, nf21) = reduceStepsYale 10000 g21
+                putStrLn $ "  2<1 net: steps=" <> show s21 <> " nf=" <> show nf21
+                let mDump = do
+                      ns <- readNodeList
+                      mapM readNode ns
+                    dump = evalGraph mDump g21b
+                mapM_ (putStrLn . ("    node: " ++) . show) dump
+    , testCase "pred differential (YALE church decode)" $ do
+        let church 0 = LLam "f" (LLam "x" (LVar "x"))
+            church 1 = LLam "f" (LLam "x" (LApp (LVar "f") (LVar "x")))
+            church 2 = LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LVar "x"))))
+            church 3 = LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LApp (LVar "f") (LVar "x")))))
+            church _ = error "church: unsupported"
+        let predL =
+              LLam "n"
+                ( LLam "f"
+                    ( LLam "x"
+                        ( LApp
+                            ( LApp
+                                (LApp (LVar "n") (LLam "g" (LLam "h" (LApp (LVar "h") (LApp (LVar "g") (LVar "f"))))))
+                                (LLam "u1" (LVar "x"))
+                            )
+                            (LLam "u2" (LVar "u2"))
+                        )
+                    )
+                )
+        let decodeChurch label term = do
+              let full = LApp (LApp term (LVar "__tick__")) (LVar "__base__")
+              let g = buildYaleNet full
+              let (steps, g2, nf) = reduceStepsYale 20000 g
+              let apps = countAppsYale g2
+              putStrLn $ "  " <> label <> ": steps=" <> show steps <> " nf=" <> show nf <> " apps=" <> show apps
+        decodeChurch "pred 0 (expect 0)" (LApp predL (church 0))
+        decodeChurch "pred 1 (expect 0)" (LApp predL (church 1))
+        decodeChurch "pred 2 (expect 1)" (LApp predL (church 2))
+        decodeChurch "pred 3 (expect 2)" (LApp predL (church 3))
+        -- Lightweight tag trace for pred 2 to detect a loop.
+        let fullP2 = LApp (LApp (LApp predL (church 2)) (LVar "__tick__")) (LVar "__base__")
+        let gP2 = buildYaleNet fullP2
+        (sP2, _, nfP2) <- reduceStepsYaleTags 400 gP2
+        putStrLn $ "  pred 2 tag-trace done: steps=" <> show sP2 <> " nf=" <> show nfP2
+        -- Dump the net at step 12 (when the c x @ loop starts) to find the cycle.
+        let (_, gP2s12, _) = reduceStepsYale 12 gP2
+        putStrLn "  --- pred 2 net at step 12 ---"
+        dumpYaleNet gP2s12
+        let (_, gP2s13, _) = reduceStepsYale 13 gP2
+        putStrLn "  --- pred 2 net at step 13 ---"
+        dumpYaleNet gP2s13
+        let (_, gP2s14, _) = reduceStepsYale 14 gP2
+        putStrLn "  --- pred 2 net at step 14 ---"
+        dumpYaleNet gP2s14
+        let (_, gP2s15, _) = reduceStepsYale 15 gP2
+        putStrLn "  --- pred 2 net at step 15 ---"
+        dumpYaleNet gP2s15
+        let (_, gP2s16, _) = reduceStepsYale 16 gP2
+        putStrLn "  --- pred 2 net at step 16 ---"
+        dumpYaleNet gP2s16
+        -- Coarse-grained dumps to track the divergence.
+        let dumpAt n = do
+              let (_, gN, _) = reduceStepsYale n gP2
+              putStrLn $ "  --- pred 2 net at step " <> show n <> " ---"
+              dumpYaleNet gN
+        mapM_ dumpAt [16, 17, 18, 19, 20, 21, 22, 23, 24]
+        -- Dump the reduced net for pred 2 to inspect the interference.
+        let full2 = LApp (LApp (LApp predL (church 2)) (LVar "__tick__")) (LVar "__base__")
+        let g2 = buildYaleNet full2
+        let (_, g2c, _) = reduceStepsYale 0 g2
+        putStrLn "  --- pred 2 INITIAL net (post-compileBinders) ---"
+        dumpYaleNet g2c
+        let (_, g2r, _) = reduceStepsYale 20000 g2
+        putStrLn "  --- pred 2 reduced net ---"
+        dumpYaleNet g2r
+    ]
 
 {- | YALE decoder tests: the shape-directed decoder reproduces the SKI decoder's
 results on the non-recursive subset.
