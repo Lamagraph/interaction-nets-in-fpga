@@ -216,6 +216,8 @@ coreExprToLam tags = \case
         let (trueAlt, falseAlt) = boolMatchAlts alts
         trueBranch <- coreExprToLam tags (altBody trueAlt)
         falseBranch <- coreExprToLam tags (altBody falseAlt)
+        -- Church-encoded conditional: @scrutLam trueBranch falseBranch@. A
+        -- plain generic lambda term; the YALE net reduces it like any other.
         pure (LApp (LApp scrutLam trueBranch) falseBranch)
     | isAdtMatch alts -> adtMatchLam tags scrutinee alts
     | isLitMatch alts -> litMatchLam tags scrutinee alts

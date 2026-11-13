@@ -43,8 +43,6 @@ order is arbitrary (the first active pair in node order).
 -}
 module Lamagraph.Ski.YaleReduce (
   reduceStepsYale,
-  reduceStepsYaleTrace,
-  reduceStepsYaleTags,
 ) where
 
 import Relude
@@ -58,7 +56,6 @@ import GraphRewriting (
   Rule,
   apply',
   attachedNodes,
-  byConnector,
   byEdge,
   byNode,
   deleteEdge,
@@ -103,57 +100,6 @@ reduceStepsYale maxSteps g0 =
         [] -> (step, g, True)
         (a, b) : _ -> go (step + 1) (fireInteraction g a b) (remaining - 1)
 
--- TEMPORARY DEBUG: trace the tag pair of each fired interaction and dump the net.
-reduceStepsYaleTrace :: Int -> Graph YaleNode -> IO (Int, Graph YaleNode, Bool)
-reduceStepsYaleTrace maxSteps g0 = do
-  let g1 = compileBinders g0
-  go 0 g1 maxSteps
- where
-  go step g remaining
-    | remaining <= 0 = return (step, g, False)
-    | otherwise = case findActivePairs g of
-        [] -> return (step, g, True)
-        (a, b) : _ ->
-          let tags = readTags g a b
-           in do
-                putStrLn $ "  step " <> show step <> ": " <> show tags
-                dumpNet g
-                go (step + 1) (fireInteraction g a b) (remaining - 1)
-
--- TEMPORARY DEBUG: print only the tag pair of each fired interaction (no net dump).
-reduceStepsYaleTags :: Int -> Graph YaleNode -> IO (Int, Graph YaleNode, Bool)
-reduceStepsYaleTags maxSteps g0 = do
-  let g1 = compileBinders g0
-  go 0 g1 maxSteps
- where
-  go step g remaining
-    | remaining <= 0 = return (step, g, False)
-    | otherwise = case findActivePairs g of
-        [] -> return (step, g, True)
-        (a, b) : _ ->
-          let tags = readTags g a b
-           in do
-                putStrLn $ "  step " <> show step <> ": " <> show tags
-                go (step + 1) (fireInteraction g a b) (remaining - 1)
-
-dumpNet :: Graph YaleNode -> IO ()
-dumpNet g =
-  let readPair n = do
-        v <- readNode n
-        return (n, v)
-      m = do
-        ns <- readNodeList
-        mapM readPair ns
-   in mapM_ (\(n, v) -> putStrLn $ "      n" <> show n <> ": " <> show v) (evalGraph m g)
-
-readTags :: Graph YaleNode -> Node -> Node -> (Tag, Tag)
-readTags g a b =
-  let m = do
-        x <- readNode a
-        y <- readNode b
-        return (tag x, tag y)
-   in runReader m g
-
 {- | All active pairs of the net: unordered pairs of distinct interacting nodes
 joined at their principal (port 0) edge, where the pair actually interacts.
 The order is deterministic: pairs involving a 'Copy' agent come first (so that
@@ -165,6 +111,7 @@ findActivePairs = runReader go
  where
   go :: Reader (Graph YaleNode) [(Node, Node)]
   go = do
+    g <- ask
     ns <- readNodeList
     vs <- mapM readNode ns
     let tagged = [(a, va) | (a, va) <- zip ns vs, interacting va]
@@ -175,6 +122,15 @@ findActivePairs = runReader go
           , b > a
           , canMeet va vb
           , interacts va vb
+          -- Paper-faithful β precondition (Mackie 1998, Fig. 2): β-reduction
+          -- fires only when the abstraction's free variables are all
+          -- substituted. A 'FreeVar' whose @fvOcc@ sits on a SHARED edge
+          -- (the tie-the-knot loop) is already wired to its value (the knot),
+          -- so it counts as substituted. A 'FreeVar' on a plain edge is not
+          -- yet substituted; firing β early would let the @d@ agent erase it
+          -- and the @Garbage@ walk into shared structure (over-erasure).
+          , betaAllowed g va vb
+          , betaAllowed g vb va
           ]
     -- Prioritize pairs involving a Copy agent: duplication must happen before
     -- β-reduction can consume the term being copied.
@@ -186,6 +142,34 @@ findActivePairs = runReader go
    where
     isCopy (Copy{}) = True
     isCopy _ = False
+    -- β is allowed when the λ's free variables are all substituted: either
+    -- the list is empty (no 'FreeVar' agents) or every 'FreeVar' points to a
+    -- SHARED edge (the tie-the-knot loop), meaning it is already wired to its
+    -- value. See the precondition comment in the pairs comprehension above.
+    betaAllowed gg (YaleApp{}) (YaleLam{lamVarList = eList}) =
+      allFvSubstituted gg eList
+    betaAllowed gg (YaleLam{lamVarList = eList}) (YaleApp{}) =
+      allFvSubstituted gg eList
+    betaAllowed _ _ _ = True
+
+{- | Whether every 'FreeVar' on the free-variable list edge @eList@ is
+substituted, i.e. its @fvOcc@ port sits on a SHARED edge (more than two
+ports — the tie-the-knot loop, where the value is already wired in). An empty
+list (no 'FreeVar' agents) is trivially all-substituted. This is the net-level
+form of the paper's β precondition @fv(t) = {x}@ (Mackie 1998, Fig. 2): the
+body has no unsubstituted free variables, so the @d@ agent introduced by β
+meets the 'EndList' (ν) or a knot-wired 'FreeVar' rather than draining an
+unsubstituted free variable out of a shared net.
+-}
+allFvSubstituted :: Graph YaleNode -> Edge -> Bool
+allFvSubstituted g eList =
+  let m = do
+        ns <- attachedNodes eList
+        vs <- mapM readNode ns
+        let fvEdges = [e | FreeVar{fvOcc = e} <- vs]
+        shared <- mapM countEdgePorts fvEdges
+        return (all (> 2) shared)
+   in evalGraph m g
 
 {- | Whether two agents can meet: they share an edge and at least one of them
  is on its principal port (standard interaction-net semantics, Mackie 1998).
@@ -206,6 +190,9 @@ canMeet va vb =
  where
   agentAtAppResult a@(Copy{}) (YaleApp{appResult = r}) = principalPort a == r
   agentAtAppResult a@(Subst{}) (YaleApp{appResult = r}) = principalPort a == r
+  -- The forcing agent sits on the (free) result edge and must meet the
+  -- application there to walk into the function's net.
+  agentAtAppResult a@(Forcing{}) (YaleApp{appResult = r}) = principalPort a == r
   agentAtAppResult _ _ = False
 
 -- * Firing a specific interaction
@@ -268,6 +255,15 @@ fireAt a b = do
         -- Garbage: e × X
         (TGarbage, _) -> garbageRHS va vb
         (_, TGarbage) -> garbageRHS vb va
+        -- Forcing: 4 × X (the Garbage cases above already matched
+        -- (Forcing, Garbage) and (Garbage, Forcing))
+        (TForce, TForce) -> forcingCancelRHS
+        (TForce, TFreeV) -> forcingFreeVarRHS va vb
+        (TFreeV, TForce) -> forcingFreeVarRHS vb va
+        (TForce, TFVB) -> forcingFreeVarBlockedRHS va vb
+        (TFVB, TForce) -> forcingFreeVarBlockedRHS vb va
+        (TForce, _) -> forcingPassRHS va vb
+        (_, TForce) -> forcingPassRHS vb va
         _ -> return ()
 
 -- * Rule right-hand sides
@@ -298,6 +294,25 @@ betaRHS app lam appNode lamNode = do
   -- for extra occurrences, spawning a spurious 'Copy' chain. Counting first
   -- sees only the genuine occurrences.
   let v = lamVar lam
+  -- Erase cross-lambda 'FreeVar' (b) agents whose @fvOcc@ sits on the binder
+  -- edge @v@ (Mackie 1998 §5: "the b agent is erased when the variable is
+  -- substituted"). Such a b agent is a free variable of a NESTED abstraction
+  -- that is bound by the current λ; its @fvOcc@ was merged onto @v@ at compile
+  -- time. If it were left in place, the argument spliced onto @v@ below would
+  -- inherit the stale @fvOcc@, and the nested λ's later drain would erase the
+  -- b agent with its @fvOcc@ now attached to the argument — over-erasing the
+  -- argument (e.g. corrupting Church 2 into Church 1). Erasing it HERE, before
+  -- the splice, detaches @fvOcc@ from @v@ so the argument arrives intact. All
+  -- b agents of a list share one edge, so deleting the node removes it from
+  -- the list cleanly (its @fvCont@ dangles harmlessly).
+  fvNs <- attachedNodes v
+  fvVs <- mapM readNode fvNs
+  mapM_
+    ( \(n, nv) -> case nv of
+        FreeVar {} -> deleteNode n
+        _ -> return ()
+    )
+    (zip fvNs fvVs)
   ns <- attachedNodes v
   fullPorts <- concat <$> mapM (portsOn v) ns
   -- Determine which ports are actual occurrences of the bound variable in the
@@ -310,6 +325,9 @@ betaRHS app lam appNode lamNode = do
   -- \* All other ports on v are genuine body occurrences.
   isOcc <- mapM (isOccPort v lamNode) fullPorts
   let occPorts = [(n, i) | ((n, i), True) <- zip fullPorts isOcc]
+  -- Tie-the-knot guard (Mackie 1998 §6): count the argument edge's ports so
+  -- the unused-variable case below can detect a SHARED edge (the knot loop).
+  nArgPorts <- countEdgePorts (appArg app)
   case occPorts of
     [] ->
       -- The bound variable is UNUSED: the argument is discarded. Attach a
@@ -319,7 +337,14 @@ betaRHS app lam appNode lamNode = do
       -- so the argument edge is NOT deleted: in the tie-the-knot the argument
       -- edge is shared with the sibling app's ports, and deleting it would
       -- leave those ports' owner holding a stale edge reference.
-      void $ newNode (Garbage{garbageIn = appArg app})
+      --
+      -- EXCEPTION (tie-the-knot, Mackie 1998 §6): if the argument edge is a
+      -- SHARED edge (more than two ports — the knot loop, which is also the
+      -- 'Copy' agent's @copyOut2@), spawning a 'Garbage' here would walk into
+      -- the shared structure and over-erase the knot (and everything reachable
+      -- from it). The argument is discarded by simply NOT splicing it onto the
+      -- binder edge; the shared edge is left intact so the knot survives.
+      when (nArgPorts <= 2) $ void $ newNode (Garbage{garbageIn = appArg app})
     -- Linear: one occurrence. Which edge survives the merge depends on the
     -- case, because 'mergeEdges' deletes its second argument and the loser's
     -- owner may hold a stale reference:
@@ -357,6 +382,18 @@ portsOn :: Edge -> Node -> Rewrite YaleNode [(Node, Int)]
 portsOn e n = do
   ports <- inspectNode n
   return [(n, i) | (i, p) <- zip [0 ..] ports, p == e]
+
+{- | The total number of ports on edge @e@ (summed over all attached nodes).
+A plain (binary) edge has exactly two ports; a SHARED edge (hyperedge — e.g.
+the tie-the-knot loop, or a binder edge with multiple bound-variable
+occurrences) has more than two. Used to detect shared edges that must not be
+erased by a 'Garbage' agent (see the unused-variable case in 'betaRHS').
+-}
+countEdgePorts :: Edge -> Rewrite YaleNode Int
+countEdgePorts e = do
+  ns <- attachedNodes e
+  ps <- concat <$> mapM (portsOn e) ns
+  return (length ps)
 
 {- | Whether port @(n, i)@ on binder edge @v@ is an actual occurrence of the
 bound variable in the body of the λ at @lamNode@:
@@ -457,6 +494,17 @@ copyLamRHS c lam = do
   byNode $
     Copy{copyIn = lamVarList lam, copyOut1 = eList1, copyOut2 = eList2, copySticky = sticky, copySplitVars = splitVars}
 
+{- | Look up an @original@ binder edge in the split-vars, returning the
+@(v1, v2)@ split edges if found. Shared by the port-allocation helpers
+('byEdgeOrSticky', 'needsCopyAgent') and the FreeVar occurrence routing
+('routeFvOcc').
+-}
+lookupSplitEdge :: [(Edge, Edge, Edge)] -> Edge -> Maybe (Edge, Edge)
+lookupSplitEdge [] _ = Nothing
+lookupSplitEdge ((orig, v1, v2) : rest) p
+  | p == orig = Just (v1, v2)
+  | otherwise = lookupSplitEdge rest p
+
 {- | Port allocation when duplicating a node. Each auxiliary port is either:
 (a) a bound-variable occurrence of an abstraction being duplicated — it sits on
 one of the @original@ edges in @splitVars@ — in which case it is SPLIT: copy 1
@@ -471,28 +519,32 @@ Returns @(edge1, edge2, needCopyAgent)@.
 -}
 byEdgeOrSticky :: [Edge] -> [(Edge, Edge, Edge)] -> Edge -> Replace YaleNode (Edge, Edge, Bool)
 byEdgeOrSticky sticky splitVars port
-  | Just (v1, v2) <- lookupSplit splitVars port = return (v1, v2, False)
+  | Just (v1, v2) <- lookupSplitEdge splitVars port = return (v1, v2, False)
   | port `elem` sticky = return (port, port, False)
   | otherwise = do
       e1 <- byEdge
       e2 <- byEdge
       return (e1, e2, True)
- where
-  lookupSplit [] _ = Nothing
-  lookupSplit ((orig, v1, v2) : rest) p
-    | p == orig = Just (v1, v2)
-    | otherwise = lookupSplit rest p
 
--- | Whether a port needs a 'Copy' agent (it is neither split nor sticky).
-needsCopyAgent :: [Edge] -> [(Edge, Edge, Edge)] -> Edge -> Bool
-needsCopyAgent sticky splitVars port
-  | port `elem` sticky = False
-  | otherwise = isNothing (lookupSplit splitVars port)
- where
-  lookupSplit [] _ = Nothing
-  lookupSplit ((orig, _, _) : rest) p
-    | p == orig = Just ()
-    | otherwise = lookupSplit rest p
+{- | Route a 'FreeVar''s @fvOcc@ edge through the split-vars when the
+abstraction that binds the variable is itself being duplicated. The @fvOcc@ is
+a passive receiver of the enclosing β-splice (the value flows in when the
+enclosing abstraction is applied), so — exactly like a bound-variable
+occurrence handled by 'byEdgeOrSticky' — it must be SPLIT when the enclosing
+binder edge is in the split-vars: copy 1 gets @v1@ and copy 2 gets @v2@, so
+each copy's 'FreeVar' points to its own copy's binder edge. If the enclosing
+abstraction is NOT being duplicated (the @fvOcc@ is not an @original@ edge in
+the split-vars), the @fvOcc@ is SHARED (both copies point to the same binder
+edge). Sharing it in the duplicated case would leave both copies' 'FreeVar's
+pointing at the original binder edge, which is drained when one copy is
+β-applied (the argument splices onto the copy's split edge, not the original),
+so the value never reaches the other copy and its redex deadlocks.
+-}
+routeFvOcc :: [(Edge, Edge, Edge)] -> Edge -> (Edge, Edge)
+routeFvOcc splitVars fvOcc =
+  case lookupSplitEdge splitVars fvOcc of
+    Just (v1, v2) -> (v1, v2)
+    Nothing -> (fvOcc, fvOcc)
 
 {- | Create a chain of 'Copy' agents (in the 'Replace' monad) to duplicate the
 term on edge @eIn@ into one copy per edge in @eTargets@. For @k@ target edges
@@ -562,13 +614,17 @@ copyEndRHS c = do
   byNode $ EndList{endIn = copyOut2 c}
 
 {- | 'Copy'×'FreeVar': duplicate the @b@ agent (a free-variable list element).
-Two @b@ copies are produced (sharing the variable occurrence), and a @c@
-agent is propagated along the list continuation (the tail).
+Two @b@ copies are produced, and a @c@ agent is propagated along the list
+continuation (the tail). The variable occurrence (@fvOcc@) is routed through
+the split-vars by 'routeFvOcc': if the abstraction that binds the variable is
+being duplicated, each copy's @fvOcc@ points to its own copy's binder edge;
+otherwise the @fvOcc@ is shared.
 -}
 copyFreeVarRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyFreeVarRHS c b = do
-  byNode $ FreeVar{fvCont = copyOut1 c, fvOcc = fvOcc b, name = name b}
-  byNode $ FreeVar{fvCont = copyOut2 c, fvOcc = fvOcc b, name = name b}
+  let (fvOcc1, fvOcc2) = routeFvOcc (copySplitVars c) (fvOcc b)
+  byNode $ FreeVar{fvCont = copyOut1 c, fvOcc = fvOcc1, name = name b}
+  byNode $ FreeVar{fvCont = copyOut2 c, fvOcc = fvOcc2, name = name b}
   byNode $
     Copy
       { copyIn = fvCont b
@@ -580,14 +636,15 @@ copyFreeVarRHS c b = do
 
 {- | 'Copy'×'FreeVarBlocked': the blocking rule. A @c@ agent meeting a @b'@
 agent converts the @b'@ back to a @b@ (Mackie 1998: "in the process of
-duplication we also convert the b' agent back to a b agent"), duplicates
-it (two @b@ copies sharing the variable occurrence), and propagates a @c@
-agent along the list continuation (the tail).
+duplication we also convert the b' agent back to a b agent"), duplicates it
+(two @b@ copies, each with its @fvOcc@ routed by 'routeFvOcc'), and propagates
+a @c@ agent along the list continuation (the tail).
 -}
 copyFreeVarBlockedRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyFreeVarBlockedRHS c b = do
-  byNode $ FreeVar{fvCont = copyOut1 c, fvOcc = fvOcc b, name = name b}
-  byNode $ FreeVar{fvCont = copyOut2 c, fvOcc = fvOcc b, name = name b}
+  let (fvOcc1, fvOcc2) = routeFvOcc (copySplitVars c) (fvOcc b)
+  byNode $ FreeVar{fvCont = copyOut1 c, fvOcc = fvOcc1, name = name b}
+  byNode $ FreeVar{fvCont = copyOut2 c, fvOcc = fvOcc2, name = name b}
   byNode $
     Copy
       { copyIn = fvCont b
@@ -675,11 +732,20 @@ garbageRHS _ x = case x of
   Subst{} -> spawnGarbageOn [substOut x]
   FreeVar{} -> spawnGarbageOn [fvOcc x]
   FreeVarBlocked{} -> spawnGarbageOn [fvCont x, fvOcc x]
-  BoundVar{} -> spawnGarbageOn [bvEdge x]
+  -- The binder edge (bvEdge) is a hyperedge shared with the body's
+  -- bound-variable occurrences (and, in the tie-the-knot, with the sibling
+  -- app's ports), so it drains naturally as its ports are deleted — the same
+  -- exemption as the YaleLam binder edge (see the note above). Spawning a
+  -- Garbage here could strand it on the shared edge with no partner.
+  BoundVar{} -> return ()
   -- Single-port agents with no auxiliary sub-net: just cancel.
   Erase{} -> return ()
   EndList{} -> return ()
   Constant{} -> return ()
+  Forcing{} -> return ()
+  -- e × e: the interaction marks the end of the erasing process (Mackie §5);
+  -- both agents cancel, leaving the empty net.
+  Garbage{} -> return ()
   Multiplexer{} -> return ()
   Initiator{} -> error "Garbage met the Initiator (root is not collectable)"
 
@@ -688,6 +754,66 @@ garbageRHS _ x = case x of
 -}
 spawnGarbageOn :: [Edge] -> Replace YaleNode ()
 spawnGarbageOn = mapM_ (byNode . \e -> Garbage{garbageIn = e})
+
+-- * Forcing agent (Mackie §5.1, "Strong Reduction", Fig. 4)
+
+{- | The "body" edge of an agent: the edge the forcing agent moves to when it
+passes through the agent. For a 'YaleLam' it is the body; for a 'YaleApp' it
+is the result; for a 'Copy'\/'Subst'\/'Erase'\/'Garbage' it is the input; for
+a 'BoundVar' it is the occurrence. Leaves (a 'Constant' or 'EndList' with no
+auxiliary sub-net) have no body edge: the forcing agent is absorbed.
+-}
+forcingBody :: YaleNode -> Maybe Edge
+-- The forcing agent walks into the FREE-VARIABLE LIST of the abstraction:
+-- that is where the @b@ agents live, and they are the ones that must be
+-- toggled to @b'@ to allow blocked reductions to complete.
+forcingBody (YaleLam{lamVarList = l}) = Just l
+-- The forcing agent walks into the FUNCTION's net (the computation continues
+-- there); the argument is a value, not a continuation.
+forcingBody (YaleApp{appFunc = f}) = Just f
+forcingBody (Copy{copyIn = c}) = Just c
+forcingBody (Subst{substIn = s}) = Just s
+forcingBody (Erase{eraseIn = e}) = Just e
+forcingBody (BoundVar{bvOcc = o}) = Just o
+forcingBody (Garbage{garbageIn = g}) = Just g
+forcingBody (Constant{}) = Nothing
+forcingBody (EndList{}) = Nothing
+forcingBody _ = Nothing
+
+{- | 'Forcing'×'Forcing': the two forcing agents cancel (the forcing is
+complete).
+-}
+forcingCancelRHS :: Replace YaleNode ()
+forcingCancelRHS = return ()
+
+{- | 'Forcing'×'FreeVar': convert the @b@ agent into a @b'@ (blocked
+free-variable) agent, which allows other reductions to complete. The forcing
+agent is absorbed; the @b'@ agent's new principal port (@fvHead@) is wired to
+the interaction edge (the forcing agent's former port).
+-}
+forcingFreeVarRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
+forcingFreeVarRHS f b =
+  byNode $ FreeVarBlocked{fvHead = forcingIn f, fvCont = fvCont b, fvOcc = fvOcc b, name = name b}
+
+{- | 'Forcing'×'FreeVarBlocked': convert the @b'@ agent back to a @b@ agent.
+The forcing agent is absorbed.
+-}
+forcingFreeVarBlockedRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
+forcingFreeVarBlockedRHS _ b =
+  byNode $ FreeVar{fvCont = fvCont b, fvOcc = fvOcc b, name = name b}
+
+{- | 'Forcing'×(other agent): pass-through. The partner is recreated
+unchanged; the forcing agent moves to the partner's body edge. If the partner
+is a leaf (no body edge), the forcing agent is absorbed.
+-}
+forcingPassRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
+forcingPassRHS _ x = case forcingBody x of
+  Just e -> do
+    byNode x
+    byNode $ Forcing{forcingIn = e}
+  Nothing -> do
+    byNode x
+    return ()
 
 -- * Helpers
 
@@ -704,9 +830,11 @@ data Tag
   | TConst
   | TBV
   | TGarbage
+  | TForce
   deriving (Show)
 
 -- | The tag of a node.
+tag :: YaleNode -> Tag
 tag = \case
   YaleApp{} -> TApp
   YaleLam{} -> TLam
@@ -719,6 +847,7 @@ tag = \case
   Constant{} -> TConst
   BoundVar{} -> TBV
   Garbage{} -> TGarbage
+  Forcing{} -> TForce
   _ -> error "tag: unexpected node"
 
 -- | Whether a node participates in the YALE interactions.
@@ -735,6 +864,7 @@ interacting = \case
   BoundVar{} -> True
   Garbage{} -> True
   Constant{} -> True
+  Forcing{} -> True
   _ -> False
 
 -- | Whether two interacting nodes form a valid interaction pair.
@@ -745,6 +875,7 @@ interacts va vb =
     || isSubstPair va vb
     || isErasePair va vb
     || isGarbagePair va vb
+    || isForcingPair va vb
  where
   isBeta x y = (isApp x && isLam y) || (isLam x && isApp y)
   -- A 'Copy' meets a term. The bound-variable marker is NOT a copy partner:
@@ -755,7 +886,17 @@ interacts va vb =
   isErasePair x y =
     (isErase x && (isEnd y || isFreeV y || isFVB y))
       || ((isEnd x || isFreeV x || isFVB x) && isErase y)
-  isGarbagePair x y = (isGarbage x && isTerm y) || (isTerm x && isGarbage y)
+  -- Garbage meets ANY interacting agent (Mackie §5: "E interacting with
+  -- anything simply erases the agent, and then erases all the net connected
+  -- to the auxiliary ports"). 'interacting' (not 'isTerm') is the partner
+  -- predicate so that e can also collect Copy/Subst/Erase/BoundVar agents
+  -- that sit on an edge mid-collection; Multiplexer/Initiator are excluded
+  -- automatically because 'interacting' is False for them.
+  isGarbagePair x y = (isGarbage x && interacting y) || (interacting x && isGarbage y)
+  -- The forcing agent (4) meets any interacting agent: it passes over terms
+  -- without effect, cancels with another forcing agent, and toggles
+  -- FreeVar <-> FreeVarBlocked (Mackie §5.1, Fig. 4).
+  isForcingPair x y = (isForcing x && interacting y) || (interacting x && isForcing y)
   -- NB: 'BoundVar' is deliberately NOT a term: it is a passive marker on the
   -- bound-variable edge that the @c@ (copy) agent passes through (so the copy
   -- duplicates the actual argument term, not the marker) but that the @s@
@@ -793,3 +934,5 @@ interacts va vb =
   isFVB _ = False
   isGarbage (Garbage{}) = True
   isGarbage _ = False
+  isForcing (Forcing{}) = True
+  isForcing _ = False

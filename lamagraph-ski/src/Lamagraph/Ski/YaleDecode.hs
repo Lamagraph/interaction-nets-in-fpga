@@ -197,23 +197,8 @@ decodeYaleValue maxSteps shape lam = case shape of
   RTuple vs -> decodeYaleTuple maxSteps vs lam
   RAdt con vs -> decodeYaleAdt maxSteps con vs lam
 
--- | Count the 'YaleApp' nodes in a reduced YALE net.
-countAppsYale :: Graph YaleNode -> Int
-countAppsYale = evalGraph go
- where
-  go = do
-    ns <- readNodeList
-    mapM readNode ns
-      <&> length
-      . filter
-        ( \case
-            YaleApp{} -> True
-            _ -> False
-        )
-
 {- | Count the 'YaleApp' nodes in the @tick^n(base)@ chain reachable from the
-root's output edge. Unlike 'countAppsYale' (which counts EVERY app in the net),
-this follows only the result chain: from an edge, find the app whose
+root's output edge. This follows only the result chain: from an edge, find the app whose
 @appResult@ sits on it, count it, and continue on its @appArg@ edge (which is
 the next app's @appResult@), until an edge carries no such app (the @base@
 constant). This ignores remnant apps left behind by recursive (Y-combinator)

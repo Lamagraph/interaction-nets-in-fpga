@@ -8,7 +8,7 @@ import Data.HashMap.Lazy qualified as HashMap
 import Data.List (lookup)
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import GraphRewriting (Graph, evalGraph, readNode, readNodeList)
+import GraphRewriting (Graph, evalGraph, readNodeList)
 import Hedgehog hiding (Var)
 import Hedgehog.Gen qualified as Gen
 import INet.Graph (SKI (..), fromTerm)
@@ -26,8 +26,8 @@ import Lamagraph.Compiler.Syntax.Longident (mkLongident)
 import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
 import Lamagraph.Ski
 import Lamagraph.Ski.YaleDecode (rootConstantNameYale, skiEvalYale)
-import Lamagraph.Ski.YaleNet (YaleNode (YaleApp), buildYaleNet)
-import Lamagraph.Ski.YaleReduce (reduceStepsYale, reduceStepsYaleTags, reduceStepsYaleTrace)
+import Lamagraph.Ski.YaleNet (YaleNode, buildYaleNet)
+import Lamagraph.Ski.YaleReduce (reduceStepsYale)
 
 {- | Step budget for reducing a decoded term to normal form. Generous because
 the naive SKI translation is verbose and the fixed-order reducer is slow.
@@ -49,7 +49,8 @@ main =
       , recursionTests
       , mutualRecTests
       , yaleEvalTests
-      , debugYale3
+      , churchIfTests
+      , yaleComplexTests
       , runnerTests
       , equivalenceTests
       , dropArgTests
@@ -382,7 +383,11 @@ recursionTests =
     ]
  where
   factSrc n = "module M\nlet rec fact k = if k < 1 then 1 else k * fact (k - 1)\nlet result = fact " <> show n
-  fibSrc n = "module M\nlet rec fib k = if k < 2 then 1 else fib (k - 1) + fib (k - 2)\nlet result = fib " <> show n
+  -- NB: the LML grammar requires the left operand of an infix operator to be a
+  -- 'simple_expr' (Parser.y: 'simple_expr infix_op compound_expr'); a bare
+  -- application like 'fib (k - 1)' is only a 'compound_expr', so it must be
+  -- parenthesized to sit on the left of '+'.
+  fibSrc n = "module M\nlet rec fib k = if k < 2 then 1 else (fib (k - 1)) + fib (k - 2)\nlet result = fib " <> show n
   countdownSrc n = "module M\nlet rec countdown k = if k < 1 then 0 else k + countdown (k - 1)\nlet result = countdown " <> show n
 
 {- | Mutual-recursion tests: exercise the 'LMutRec' cycle (one binder per
@@ -548,233 +553,6 @@ assertSkiEvalYale binds expr expected = case skiEvalYale expected binds expr of
   Right v -> assertEqual "skiEvalYale" expected v
   Left e -> assertFailure $ "skiEvalYale failed: " <> show e
 
--- | Count the 'YaleApp' nodes in a reduced YALE net (temporary debug helper).
-countAppsYale :: Graph YaleNode -> Int
-countAppsYale = evalGraph go
- where
-  go = do
-    ns <- readNodeList
-    mapM readNode ns
-      <&> length
-      . filter (\case YaleApp{} -> True; _ -> False)
-
--- | Dump all nodes of a YALE net (temporary debug helper).
-dumpYaleNet :: Graph YaleNode -> IO ()
-dumpYaleNet g =
-  let m = do
-        ns <- readNodeList
-        mapM readNode ns
-   in mapM_ (putStrLn . ("    node: " ++) . show) (evalGraph m g)
-
--- * Temporary debug 3 (S4-followup)
-debugYale3 :: TestTree
-debugYale3 =
-  testGroup
-    "yale-debug3"
-    [ testCase "probe terms" $ do
-        let church 0 = LLam "f" (LLam "x" (LVar "x"))
-            church 1 = LLam "f" (LLam "x" (LApp (LVar "f") (LVar "x")))
-            church 2 = LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LVar "x"))))
-            church 3 = LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LApp (LVar "f") (LVar "x")))))
-            church _ = error "church: unsupported"
-        let probe label term = do
-              putStrLn $ "  [probe] " <> label
-              let full = LApp (LApp term (LVar "__tickT__")) (LVar "__tickF__")
-              let g = buildYaleNet full
-              let (steps, g2, nf) = reduceStepsYale 10000 g
-              let root = rootConstantNameYale g2
-              putStrLn $ "  " <> label <> ": steps=" <> show steps <> " nf=" <> show nf <> " root=" <> show root
-        -- (\x. \y. x) 1 2  => 1
-        let t1 = LApp (LApp (LLam "x" (LLam "y" (LVar "x"))) (church 1)) (church 2)
-        -- (\x. \y. y) 1 2  => 2
-        let t2 = LApp (LApp (LLam "x" (LLam "y" (LVar "y"))) (church 1)) (church 2)
-        -- (\x. x x) (\y. y)  => (\y. y)  [duplication]
-        let t3 = LApp (LLam "x" (LApp (LVar "x") (LVar "x"))) (LLam "y" (LVar "y"))
-        -- (\f. \x. f (f x)) (\x. x)  => (\x. x)  [duplication of f]
-        let t4 = LApp (LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LVar "x"))))) (LLam "x" (LVar "x"))
-        -- Trace K12 step by step to find the dangling edge.
-        let fullK12 = LApp (LApp t1 (LVar "__tickT__")) (LVar "__tickF__")
-        let gK12 = buildYaleNet fullK12
-        (sK12, _, nfK12) <- reduceStepsYaleTrace 30 gK12
-        putStrLn $ "  K12 trace done: steps=" <> show sK12 <> " nf=" <> show nfK12
-        probe "K12 -> 1" t1
-        probe "K22 -> 2" t2
-        -- Tag trace for twice-id to see if a Copy interaction ever fires.
-        let fullT4 = LApp (LApp t4 (LVar "__tickT__")) (LVar "__tickF__")
-        let gT4 = buildYaleNet fullT4
-        (sT4, _, nfT4) <- reduceStepsYaleTags 40 gT4
-        putStrLn $ "  twice-id tag-trace done: steps=" <> show sT4 <> " nf=" <> show nfT4
-        probe "twice-id" t4
-        -- Tag trace for dup-id to diagnose non-termination.
-        let fullT3 = LApp (LApp t3 (LVar "__tickT__")) (LVar "__tickF__")
-        let gT3 = buildYaleNet fullT3
-        (sT3, _, nfT3) <- reduceStepsYaleTags 40 gT3
-        putStrLn $ "  dup-id tag-trace done: steps=" <> show sT3 <> " nf=" <> show nfT3
-        probe "dup-id" t3
-        -- Minimal failing case: duplicate a lambda whose body is an application.
-        -- (\x. x x) (\y. y y)  =>  (\y. y y)  [duplication of a lambda with an app body]
-        let t5 = LApp (LLam "x" (LApp (LVar "x") (LVar "x"))) (LLam "y" (LApp (LVar "y") (LVar "y")))
-        probe "dup-app (expect id)" t5
-        -- Trace the minimal failing case step by step.
-        let full5 = LApp (LApp t5 (LVar "__tickT__")) (LVar "__tickF__")
-        let g5 = buildYaleNet full5
-        (s5, _, nf5) <- reduceStepsYaleTrace 30 g5
-        putStrLn $ "  dup-app trace done: steps=" <> show s5 <> " nf=" <> show nf5
-        -- TEMPORARY: trace dup-id step by step with net dumps
-        let full3 = LApp (LApp t3 (LVar "__tickT__")) (LVar "__tickF__")
-        let g3 = buildYaleNet full3
-        (s3, _, nf3) <- reduceStepsYaleTrace 25 g3
-        putStrLn $ "  dup-id trace done: steps=" <> show s3 <> " nf=" <> show nf3
-        -- Simple boolean probes (expect tickT / tickF)
-        let trueL = LLam "a" (LLam "b" (LVar "a"))
-        let falseL = LLam "a" (LLam "b" (LVar "b"))
-        let isZeroL = LLam "n" (LApp (LApp (LVar "n") (LLam "x" falseL)) trueL)
-        probe "id true (T)" (LApp (LLam "x" (LVar "x")) trueL)
-        probe "id false (F)" (LApp (LLam "x" (LVar "x")) falseL)
-        probe "K T F (T)" (LApp (LApp (LLam "x" (LLam "y" (LVar "x"))) trueL) falseL)
-        probe "K' T F (F)" (LApp (LApp (LLam "x" (LLam "y" (LVar "y"))) trueL) falseL)
-        probe "isZero 0 (T)" (LApp isZeroL (church 0))
-        probe "isZero 1 (F)" (LApp isZeroL (church 1))
-        probe "isZero 2 (F)" (LApp isZeroL (church 2))
-        -- pred 2 should be 1, so isZero (pred 2) should be false (tickF)
-        let predL =
-              LLam
-                "n"
-                ( LLam
-                    "f"
-                    ( LLam
-                        "x"
-                        ( LApp
-                            ( LApp
-                                (LApp (LVar "n") (LLam "g" (LLam "h" (LApp (LVar "h") (LApp (LVar "g") (LVar "f"))))))
-                                (LLam "u1" (LVar "x"))
-                            )
-                            (LLam "u2" (LVar "u2"))
-                        )
-                    )
-                )
-        probe "isZero(pred 1) (T)" (LApp isZeroL (LApp predL (church 1)))
-        probe "isZero(pred 2) (F)" (LApp isZeroL (LApp predL (church 2)))
-        probe "isZero(pred 3) (F)" (LApp isZeroL (LApp predL (church 3)))
-        -- check 1 < 2 and 2 < 1
-        let src12 = "module M\nlet result = 1 < 2"
-        let src21 = "module M\nlet result = 2 < 1"
-        case compileLml src12 of
-          Left e -> assertFailure $ "compile 1<2: " <> e
-          Right (b12, e12) ->
-            case translateLam b12 e12 of
-              Left e -> assertFailure $ "translateLam 1<2: " <> show e
-              Right lam12 -> do
-                probe "1<2 (expect tickT)" lam12
-                let full12 = LApp (LApp lam12 (LVar "__tickT__")) (LVar "__tickF__")
-                let g12 = buildYaleNet full12
-                (s12, g12b, nf12) <- reduceStepsYaleTrace 200 g12
-                putStrLn $ "  1<2 trace done: steps=" <> show s12 <> " nf=" <> show nf12
-                let mDump12 = do
-                      ns <- readNodeList
-                      mapM readNode ns
-                    dump12 = evalGraph mDump12 g12b
-                mapM_ (putStrLn . ("    1<2 node: " ++) . show) dump12
-        case compileLml src21 of
-          Left e -> assertFailure $ "compile 2<1: " <> e
-          Right (b21, e21) ->
-            case translateLam b21 e21 of
-              Left e -> assertFailure $ "translateLam 2<1: " <> show e
-              Right lam21 -> do
-                probe "2<1 (expect tickF)" lam21
-                -- dump the reduced net structure
-                let full21 = LApp (LApp lam21 (LVar "__tickT__")) (LVar "__tickF__")
-                let g21 = buildYaleNet full21
-                let (s21, g21b, nf21) = reduceStepsYale 10000 g21
-                putStrLn $ "  2<1 net: steps=" <> show s21 <> " nf=" <> show nf21
-                let mDump = do
-                      ns <- readNodeList
-                      mapM readNode ns
-                    dump = evalGraph mDump g21b
-                mapM_ (putStrLn . ("    node: " ++) . show) dump
-    , testCase "pred differential (YALE church decode)" $ do
-        let church 0 = LLam "f" (LLam "x" (LVar "x"))
-            church 1 = LLam "f" (LLam "x" (LApp (LVar "f") (LVar "x")))
-            church 2 = LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LVar "x"))))
-            church 3 = LLam "f" (LLam "x" (LApp (LVar "f") (LApp (LVar "f") (LApp (LVar "f") (LVar "x")))))
-            church _ = error "church: unsupported"
-        let predL =
-              LLam
-                "n"
-                ( LLam
-                    "f"
-                    ( LLam
-                        "x"
-                        ( LApp
-                            ( LApp
-                                (LApp (LVar "n") (LLam "g" (LLam "h" (LApp (LVar "h") (LApp (LVar "g") (LVar "f"))))))
-                                (LLam "u1" (LVar "x"))
-                            )
-                            (LLam "u2" (LVar "u2"))
-                        )
-                    )
-                )
-        let decodeChurch label term = do
-              let full = LApp (LApp term (LVar "__tick__")) (LVar "__base__")
-              let g = buildYaleNet full
-              let (steps, g2, nf) = reduceStepsYale 20000 g
-              let apps = countAppsYale g2
-              putStrLn $ "  " <> label <> ": steps=" <> show steps <> " nf=" <> show nf <> " apps=" <> show apps
-        decodeChurch "pred 0 (expect 0)" (LApp predL (church 0))
-        decodeChurch "pred 1 (expect 0)" (LApp predL (church 1))
-        decodeChurch "pred 2 (expect 1)" (LApp predL (church 2))
-        decodeChurch "pred 3 (expect 2)" (LApp predL (church 3))
-        -- Lightweight tag trace for pred 2 to detect a loop.
-        let fullP2 = LApp (LApp (LApp predL (church 2)) (LVar "__tick__")) (LVar "__base__")
-        let gP2 = buildYaleNet fullP2
-        (sP2, _, nfP2) <- reduceStepsYaleTags 400 gP2
-        putStrLn $ "  pred 2 tag-trace done: steps=" <> show sP2 <> " nf=" <> show nfP2
-        -- Dump the net at step 12 (when the c x @ loop starts) to find the cycle.
-        let (_, gP2s12, _) = reduceStepsYale 12 gP2
-        putStrLn "  --- pred 2 net at step 12 ---"
-        dumpYaleNet gP2s12
-        let (_, gP2s13, _) = reduceStepsYale 13 gP2
-        putStrLn "  --- pred 2 net at step 13 ---"
-        dumpYaleNet gP2s13
-        let (_, gP2s14, _) = reduceStepsYale 14 gP2
-        putStrLn "  --- pred 2 net at step 14 ---"
-        dumpYaleNet gP2s14
-        let (_, gP2s15, _) = reduceStepsYale 15 gP2
-        putStrLn "  --- pred 2 net at step 15 ---"
-        dumpYaleNet gP2s15
-        let (_, gP2s16, _) = reduceStepsYale 16 gP2
-        putStrLn "  --- pred 2 net at step 16 ---"
-        dumpYaleNet gP2s16
-        -- Coarse-grained dumps to track the divergence.
-        let dumpAt n = do
-              let (_, gN, _) = reduceStepsYale n gP2
-              putStrLn $ "  --- pred 2 net at step " <> show n <> " ---"
-              dumpYaleNet gN
-        mapM_ dumpAt [16, 17, 18, 19, 20, 21, 22, 23, 24]
-        -- Dump the reduced net for pred 2 to inspect the interference.
-        let full2 = LApp (LApp (LApp predL (church 2)) (LVar "__tick__")) (LVar "__base__")
-        let g2 = buildYaleNet full2
-        let (_, g2c, _) = reduceStepsYale 0 g2
-        putStrLn "  --- pred 2 INITIAL net (post-compileBinders) ---"
-        dumpYaleNet g2c
-        let (_, g2r, _) = reduceStepsYale 20000 g2
-        putStrLn "  --- pred 2 reduced net ---"
-        dumpYaleNet g2r
-    , testCase "rec identity net dump" $ do
-        case compileLml "module M\nlet rec fact k = if k < 1 then 1 else k * fact (k - 1)\nlet result = fact 2" of
-          Left e -> assertFailure $ "compileLml failed: " <> e
-          Right (b, e) ->
-            case translateLam b e of
-              Left err -> assertFailure $ "translateLam failed: " <> show err
-              Right lam -> do
-                putStrLn $ "  LAM: " <> show lam
-                let g = buildYaleNet lam
-                (steps, g2, nf) <- reduceStepsYaleTags 10000 g
-                putStrLn $ "  rec identity: steps=" <> show steps <> " nf=" <> show nf <> " apps=" <> show (countAppsYale g2)
-                putStrLn "  --- rec identity reduced net ---"
-                dumpYaleNet g2
-    ]
-
 {- | YALE decoder tests: the shape-directed decoder reproduces the SKI decoder's
 results on the non-recursive subset.
 -}
@@ -792,16 +570,143 @@ yaleEvalTests =
         assertSkiEvalYale [] (Lit (LitInt 2)) (RInt 2)
     , testCase "true literal" $ assertSkiEvalYale [] (Var stdTrue) (RBool True)
     , testCase "false literal" $ assertSkiEvalYale [] (Var stdFalse) (RBool False)
-    -- TODO(#91): DEFERRED. 'predLam' is now saturating (see Church.hs), which
-    -- fixes '1 < 2'. But '2 < 1' still fails: the saturating pred's more
-    -- complex term shape exposes a secondary YALE-reducer bug — a 'Copy' agent
-    -- deadlocks on an edge whose term is being garbage-collected (Copy and
-    -- Garbage share the edge but cannot interact). Fix the reducer's
-    -- Copy/Garbage handling, then re-enable '2 < 1' (and add '1 < 2') and run
-    -- the full S1 corpus through 'skiEvalYale' to close the S5 gate.
-    -- , testCase "1 < 2" $ assertSkiEvalYale [] (binOp stdLess 1 2) (RBool True)
-    -- , testCase "2 < 1" $ assertSkiEvalYale [] (binOp stdLess 2 1) (RBool False)
+    , testCase "1 < 2" $ assertSkiEvalYale [] (binOp stdLess 1 2) (RBool True)
+    , testCase "2 < 1" $ assertSkiEvalYale [] (binOp stdLess 2 1) (RBool False)
     ]
+
+{- | Church-encoded @if-then-else@ tests for the YALE pipeline. A boolean
+'Match' compiles to the Church encoding @scrutLam trueBranch falseBranch@ — a
+plain generic lambda term with no special @if@ agent — and the YALE reducer must
+select the correct branch. This is the intermediate checkpoint that the Church
+encoding of @if@ reduces correctly (literal conditions first, then the
+comparison conditions that drive the recursive programs).
+-}
+churchIfTests :: TestTree
+churchIfTests =
+  testGroup
+    "church-encoded if (YALE)"
+    [ testCase "if true then 10 else 20 = 10" $
+        assertSkiEvalYale
+          []
+          (Match (Var stdTrue) scrut (boolAlt stdTrue (Lit (LitInt 10)) :| [boolAlt stdFalse (Lit (LitInt 20))]))
+          (RInt 10)
+    , testCase "if false then 10 else 20 = 20" $
+        assertSkiEvalYale
+          []
+          (Match (Var stdFalse) scrut (boolAlt stdTrue (Lit (LitInt 10)) :| [boolAlt stdFalse (Lit (LitInt 20))]))
+          (RInt 20)
+    , testCase "if 2 < 3 then 10 else 20 = 10" $
+        assertSkiEvalYale
+          []
+          (Match (binOp stdLess 2 3) scrut (boolAlt stdTrue (Lit (LitInt 10)) :| [boolAlt stdFalse (Lit (LitInt 20))]))
+          (RInt 10)
+    , testCase "if 2 < 1 then 10 else 20 = 20" $
+        assertSkiEvalYale
+          []
+          (Match (binOp stdLess 2 1) scrut (boolAlt stdTrue (Lit (LitInt 10)) :| [boolAlt stdFalse (Lit (LitInt 20))]))
+          (RInt 20)
+    ]
+
+{- | Non-recursive complex-case tests for the YALE pipeline: algebraic types with
+pattern matching, branched non-recursive functions, and higher-order function
+calls. Each case runs BOTH the LML interpreter and the YALE pipeline and asserts
+they agree on the expected value (differential). These exercise the generic
+Church-encoded lambda terms (no special @if@ agent) that the YALE reducer must
+reduce correctly, including the cross-lambda free-variable dynamics that the
+over-erasure fix addresses.
+-}
+yaleComplexTests :: TestTree
+yaleComplexTests =
+  testGroup
+    "YALE non-recursive complex cases"
+    [ testCase "ADT match: unwrap (Some 5) = 6" $
+        assertYaleAgrees
+          "module M\ntype 'a opt = None | Some of 'a\nlet unwrap = fun v -> match v with\n  | None -> 0\n  | Some x -> x + 1\nlet result = unwrap (Some 5)"
+          (RInt 6)
+    , testCase "ADT match: unwrap None = 0" $
+        assertYaleAgrees
+          "module M\ntype 'a opt = None | Some of 'a\nlet unwrap = fun v -> match v with\n  | None -> 0\n  | Some x -> x + 1\nlet result = unwrap None"
+          (RInt 0)
+    , testCase "ADT match: 2-arg ctor, sum fields = 7" $
+        assertYaleAgrees
+          "module M\ntype 'a pair = Pair of 'a * 'a\nlet sumFields = fun p -> match p with\n  | Pair (a, b) -> a + b\nlet result = sumFields (Pair (3, 4))"
+          (RInt 7)
+    , testCase "branched: clamp 15 = 10" $
+        assertYaleAgrees
+          "module M\nlet clamp = fun n -> if n < 0 then 0 else if n > 10 then 10 else n\nlet result = clamp 15"
+          (RInt 10)
+    , testCase "branched: clamp 5 = 5" $
+        assertYaleAgrees
+          "module M\nlet clamp = fun n -> if n < 0 then 0 else if n > 10 then 10 else n\nlet result = clamp 5"
+          (RInt 5)
+    , testCase "branched: clamp 0 = 0" $
+        assertYaleAgrees
+          "module M\nlet clamp = fun n -> if n < 0 then 0 else if n > 10 then 10 else n\nlet result = clamp 0"
+          (RInt 0)
+    , testCase "function call: apply double 5 = 10" $
+        assertYaleAgrees
+          "module M\nlet apply = fun f x -> f x\nlet double = fun x -> x * 2\nlet result = apply double 5"
+          (RInt 10)
+    , testCase "composition: compose double inc 3 = 8" $
+        assertYaleAgrees
+          "module M\nlet compose = fun f g x -> f (g x)\nlet double = fun x -> x * 2\nlet inc = fun x -> x + 1\nlet result = compose double inc 3"
+          (RInt 8)
+    , testCase "nested call: applyTwice (fun x -> x + 1) 10 = 12" $
+        assertYaleAgrees
+          "module M\nlet applyTwice = fun f x -> f (f x)\nlet result = applyTwice (fun x -> x + 1) 10"
+          (RInt 12)
+    -- Top-level @let@ bindings that ARE functions (multi-argument, curried),
+    -- using the @let name args = body@ form (no explicit @fun@).
+    , testCase "top-level fn: max 3 5 = 5" $
+        assertYaleAgrees
+          "module M\nlet max x y = if x < y then y else x\nlet result = max 3 5"
+          (RInt 5)
+    , testCase "top-level fn: max 5 3 = 5" $
+        assertYaleAgrees
+          "module M\nlet max x y = if x < y then y else x\nlet result = max 5 3"
+          (RInt 5)
+    , testCase "top-level fn: max 7 7 = 7" $
+        assertYaleAgrees
+          "module M\nlet max x y = if x < y then y else x\nlet result = max 7 7"
+          (RInt 7)
+    , testCase "top-level fn: max3 1 2 3 = 3" $
+        assertYaleAgrees
+          "module M\nlet max x y = if x < y then y else x\nlet max3 x y z = max x (max y z)\nlet result = max3 1 2 3"
+          (RInt 3)
+    , testCase "top-level fn: max3 9 2 4 = 9" $
+        assertYaleAgrees
+          "module M\nlet max x y = if x < y then y else x\nlet max3 x y z = max x (max y z)\nlet result = max3 9 2 4"
+          (RInt 9)
+    -- Associativity property: @max x (max y z) == max (max x y) z@. Both sides
+    -- are evaluated independently and must agree with the expected value.
+    , testCase "assoc: max 1 (max 2 3) = 3" $
+        assertYaleAgrees
+          "module M\nlet max x y = if x < y then y else x\nlet result = max 1 (max 2 3)"
+          (RInt 3)
+    , testCase "assoc: max (max 1 2) 3 = 3" $
+        assertYaleAgrees
+          "module M\nlet max x y = if x < y then y else x\nlet result = max (max 1 2) 3"
+          (RInt 3)
+    , testCase "assoc: max 5 (max 1 3) = 5" $
+        assertYaleAgrees
+          "module M\nlet max x y = if x < y then y else x\nlet result = max 5 (max 1 3)"
+          (RInt 5)
+    , testCase "assoc: max (max 5 1) 3 = 5" $
+        assertYaleAgrees
+          "module M\nlet max x y = if x < y then y else x\nlet result = max (max 5 1) 3"
+          (RInt 5)
+    ]
+
+-- | The boolean-match scrutinee binder (the desugared @if@ binds the condition
+-- to this name).
+scrut :: Var
+scrut = Id (Name (mkLongident (pure "t#a")))
+
+-- | A boolean-match alternative for the constructor @d@ with body @e@.
+boolAlt :: Var -> CoreExpr -> CoreMatchAlt
+boolAlt d e = (DataAlt (nameOfVar d), [], e)
+ where
+  nameOfVar (Id n) = n
 
 {- | Tests for the boolean and comparison encodings: the boolean literals and
 the four comparison operators decode to the expected Church booleans, and an
@@ -832,12 +737,6 @@ boolTests =
           (Match (binOp stdLess 2 1) scrut (boolAlt stdTrue (Lit (LitInt 10)) :| [boolAlt stdFalse (Lit (LitInt 20))]))
           (RInt 20)
     ]
- where
-  scrut = Id (Name (mkLongident (pure "t#a")))
-  boolAlt :: Var -> CoreExpr -> CoreMatchAlt
-  boolAlt d e = (DataAlt (nameOfVar d), [], e)
-   where
-    nameOfVar (Id n) = n
 
 {- | Tests for the tuple (nested Church pair) encoding: a Core tuple decodes to
 the expected 'RTuple' (2-, 3-, and mixed-element), and a tuple program agrees

@@ -59,8 +59,6 @@ import GraphRewriting (
   Rewrite,
   Rule,
   apply,
-  byEdge,
-  byNode,
   emptyGraph,
   execGraph,
   exhaustive,
@@ -197,6 +195,20 @@ data YaleNode
     Garbage
       { garbageIn :: Edge
       }
+  | {- | The @4@ (forcing) agent (Mackie 1998, §5.1 "Strong Reduction", Fig. 4).
+    Introduced at the free edges of the net to supply dummy arguments so that
+    blocked computations complete (strong reduction). It behaves like an
+    identity agent: it passes over every agent without effect, EXCEPT:
+    * @4@×@4@ — the two cancel (the forcing is complete);
+    * @4@×@b@ — converts the @b@ (free-variable) agent into a @b'@
+      (blocked free-variable) agent, which allows other reductions to complete;
+    * @4@×@b'@ — converts the @b'@ agent back to a @b@ agent.
+    The intuition: "when no further substitutions can be done, the free
+    variables of an abstraction are allowed to be duplicated and erased."
+    -}
+    Forcing
+      { forcingIn :: Edge
+      }
   | -- | A base value \/ named marker (arity 0).
     Constant
       { inp :: Edge
@@ -227,6 +239,7 @@ instance View [Edge] YaleNode where
     EndList{endIn = a} -> [a]
     BoundVar{bvOcc = a, bvEdge = b, bvId = _} -> [a, b]
     Garbage{garbageIn = a} -> [a]
+    Forcing{forcingIn = a} -> [a]
     Constant{inp = i} -> [i]
     Multiplexer{out = o, ins = is} -> o : is
   update ports n = case n of
@@ -263,6 +276,9 @@ instance View [Edge] YaleNode where
     Garbage{} -> n{garbageIn = a}
      where
       [a] = ports
+    Forcing{} -> n{forcingIn = a}
+     where
+      [a] = ports
     Constant{} -> n{inp = i}
      where
       [i] = ports
@@ -283,6 +299,7 @@ instance INet YaleNode where
     EndList{endIn = a} -> a
     BoundVar{bvOcc = a} -> a
     Garbage{garbageIn = a} -> a
+    Forcing{forcingIn = a} -> a
     Constant{inp = i} -> i
     Multiplexer{out = o} -> o
 
@@ -340,9 +357,9 @@ buildFvNode env w eList = do
   -- THEN merge @eOcc@ onto the enclosing binder edge (moving the port). The
   -- node's @fvOcc@ field still names @eOcc@ afterwards, so patch it to the
   -- survivor to avoid a stale edge reference.
-  fv <- newNode FreeVar{fvCont = eList, fvOcc = eOcc, name = w}
+  fvNode <- newNode FreeVar{fvCont = eList, fvOcc = eOcc, name = w}
   mergeEdges binderEdge eOcc
-  modifyNode fv $ \n -> case n of
+  modifyNode fvNode $ \n -> case n of
     FreeVar{fvCont = a, name = c} -> FreeVar{fvCont = a, fvOcc = binderEdge, name = c}
     _ -> n
 
@@ -376,6 +393,11 @@ buildYaleNetK proj lam = execGraph build emptyGraph
     eOut <- newEdge
     void $ newNode Initiator{out = eOut}
     compile [] eOut lam
+    -- Introduce the forcing agent (4) at the free output edge to drive
+    -- strong reduction (Mackie §5.1): it supplies dummy arguments so that
+    -- blocked computations complete, and toggles FreeVar <-> FreeVarBlocked
+    -- as it walks the net.
+    void $ newNode Forcing{forcingIn = eOut}
     void $ proj eOut
 
 -- | Compile a 'Lam' term to the edge @p@ under the binder environment @env@.
