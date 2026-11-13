@@ -5,6 +5,26 @@
 
 {-# HLINT ignore "Avoid lambda" #-}
 
+{- |
+Module      : Core.Reducer
+Description : Generic reduction step: rule application plus net rewiring
+
+Implements one interaction-net reduction independent of the concrete agent
+set: `reduce` takes the current @MemoryManager@ and the active pair, asks the
+`INet` instance how many cells the rule needs, hands out free addresses,
+applies the rule and post-processes its result so that no remaining connection
+points into the dying pair. The result is a @Delta@ plus the updated
+@MemoryManager@.
+
+Step order inside `reduce` (see the function's own documentation for details):
+`getAddressesAllocationCount` → `giveAddresses` → `makeReduction` → `toDelta`
+→ `writeNewActives`. The CPU FSM ("Core.CPU") calls it once per reduction,
+in the @Reduce@ phase, after having fetched both nodes of the pair from RAM.
+
+Also collects the `Interface` of external neighbours (@getInterface@, used by
+the CPU to rewrite them) and finds the successor root node
+(`changeRootNode`).
+-}
 module Core.Reducer where
 
 import Clash.Prelude
@@ -17,6 +37,11 @@ import Data.Maybe (fromMaybe, isNothing)
 import INet.Net
 import qualified Prelude as P
 
+{- | Post-process a rule result into a @Delta@: redirect, in the fresh nodes
+(`nodesActiveReflexivityReduction`) and among the new edges
+(`edgesReduction`), every connection that still leads to a node of the
+reduced pair, and attach the pair itself.
+-}
 toDelta ::
   (KnownNat portsNumber, KnownNat edgesNumber, KnownNat nodesNumber) =>
   ActivePair portsNumber agentType ->
@@ -28,7 +53,16 @@ toDelta acPair (ReduceRuleResult resultEdges resultNodes) =
     (edgesReduction acPair resultEdges)
     acPair
 
--- | Make transitive reduction of `Edge`s
+{- | Make transitive reduction of the @Edge@s of a rule result.
+
+An edge end that points at a node of the reduced pair is stepped over: the
+edge is rewired to whatever the dying node's port led to. Chains through both
+pair nodes are followed step by step (@counter@ guards against cycles), ends
+stepped over more than once are detected via the @acc@ index vector and
+merged; an edge whose both ends die without a successor disappears, and a
+surviving dangling end stays as @NotConnected@. Edges already processed (or
+absorbed into another edge) are marked in @excludeEdges@ and skipped.
+-}
 edgesReduction ::
   forall portsNumber edgesNumber agentType.
   (KnownNat portsNumber, KnownNat edgesNumber) =>
@@ -112,7 +146,7 @@ edgesReduction
       isActive a = a == leftActiveAddress || a == rightActiveAddress
     edgeProcessing Nothing _ _ = (repeat False, Nothing)
 
--- | Find adjacent `Connection` and index of it in `Vec` among `Edge`s
+-- | Find adjacent `Connection` and index of it in `Vec` among @Edge@s: the other end of the first edge attached to the node addressed by the given connection.
 findNextEnd ::
   forall n portsNumber.
   (KnownNat n) =>
@@ -145,6 +179,13 @@ findNextEnd fullEdges connection =
           Just (Edge NotConnected NotConnected) -> helper otherEdges end (indexCounter + 1)
   helper _ NotConnected _ = undefined
 
+{- | Redirect, inside the vector of fresh nodes, every connection that points
+at a node of the reduced pair: it is replaced by the connection on the far
+side of the dying node (`findAdjacentConnection` searches the fresh nodes for
+it). Fresh nodes not touching the pair are returned unchanged. Missing
+counterparts abort with `errorX` — a well-formed rule result never leaves a
+connection pointing into the pair without a successor.
+-}
 nodesActiveReflexivityReduction ::
   forall portsNumber nodesNumber agentType.
   (KnownNat portsNumber, KnownNat nodesNumber) =>
@@ -181,6 +222,7 @@ nodesActiveReflexivityReduction
           def
           _secondaryPorts
 
+-- | Search the fresh nodes for the one carrying the given connection (on its principal or a secondary port) and return the port it occupies there.
 findAdjacentConnection ::
   forall n portsNumber agentType.
   (KnownNat n, KnownNat portsNumber) =>
@@ -203,14 +245,18 @@ findAdjacentConnection fullNodes end = case fullNodes of
 
 -- findAdjacentConnection _ NotConnected = Nothing
 
-{- | Get all `AddressNumber`s of external `Node`s of `ActivePair`, i.e. collect addresses of connected to active pair nodes
+{- | Get all `AddressNumber`s of external @Node@s of the @ActivePair@, i.e. the
+addresses connected to the pair nodes via any port. The pair's own addresses
+are excluded and duplicates are dropped; result order is unspecified.
 
-__Note__ maxNumOfChangedNodes has to be specified
+__Note__ @externalNodesNumber@ has to be specified: the caller fixes the
+`Interface` size (the CPU uses @2 * portsNumber@, one slot per port of the
+pair).
 -}
 getInterface ::
-  (KnownNat portsNumber, KnownNat maxNumOfChangedNodes) =>
+  (KnownNat portsNumber, KnownNat externalNodesNumber) =>
   ActivePair portsNumber agentType ->
-  Interface maxNumOfChangedNodes
+  Interface externalNodesNumber
 getInterface (ActivePair (LoadedNode lNode leftAddress) (LoadedNode rNode rightAddress)) =
   foldl
     (\oldInterface maybeConnection -> maybe oldInterface (updateInterfaceByConnection oldInterface) maybeConnection)
@@ -224,10 +270,15 @@ getInterface (ActivePair (LoadedNode lNode leftAddress) (LoadedNode rNode rightA
     Connected (Port address _) -> if isExternal address && Just address `notElem` interface then Just address +>> interface else interface
     NotConnected -> interface
 
-{- | Give the next root `Node` after reduction that
-1) Contains exactly one `NotConnected` `Port`
+{- | Give the next root @Node@ after reduction that
+1) Contains exactly one `NotConnected` @Port@
 1) Is the only one
 3) Is contained in one and only component of connectivity
+
+Only consulted when the reduced pair contained the current root; otherwise the
+root address passes through unchanged. If the root died and no successor with a
+free port exists among the fresh nodes or the one-ended edges, aborts with
+`errorX`.
 -}
 changeRootNode ::
   forall portsNumber nodesNumber edgesNumber agentType.
@@ -266,7 +317,16 @@ changeRootNode (ActivePair (LoadedNode _ leftAddress) (LoadedNode _ rightAddress
       (Connected _, Connected _) -> findInMaybeEdges es
     Cons Nothing es -> findInMaybeEdges es
 
--- | Apply reduction rule by `ActivePair` and allocate necessary amount of memory
+{- | Apply the reduction rule of the `INet` instance to the @ActivePair@ and allocate the memory the rule needs.
+
+Steps, all inside this function: `getAddressesAllocationCount` for the pair's
+agent types → `giveAddresses` from the @MemoryManager@ (the returned manager
+already marks them busy) → `makeReduction` with those addresses → `toDelta`
+to rewire the result past the dying pair → `writeNewActives` to mark the
+newly created pairs. The pair's own cells are expected to have been freed by
+the caller beforehand (`removeActivePair` in the CPU FSM); the rule may
+reallocate them for fresh nodes.
+-}
 reduce ::
   forall portsNumber nodesNumber edgesNumber agentType.
   ( KnownNat portsNumber

@@ -60,7 +60,8 @@ Clash-based hardware description of the interaction-net processor.
      - Memory manager. ``MemoryManager.hs``, ``ChangesAccumulator.hs``,
        ``NodeChanges.hs``.
    * - ``src/INet/``
-     - Interaction-net data structures. ``Net.hs``.
+     - Interaction-net data structures and the rule EDSL. ``Net.hs``,
+       ``Edsl.hs``, ``Edsl/Agents.hs``, ``Edsl/Dispatch.hs``, ``Define.hs``.
    * - ``tests/``
      - Test suites: ``unittests.hs`` (test-library, HUnit/Hedgehog),
        ``doctests.hs`` (doctest-parallel), ``NodeGenerate.hs`` (helper).

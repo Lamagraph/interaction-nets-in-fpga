@@ -1,13 +1,21 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-{- | All modules from Concrete are
+{- |
+Module      : Core.Concrete.ReduceRulesLambda
+Description : Hand-written reduction rules for the 3-agent lambda set
 
-1. Compiled from some dsl in separate file
+The concrete agent set kept as the reference implementation for the
+processor-level tests: the label type `AgentSimpleLambda` with three
+constructors and the instance @INet AgentSimpleLambda 2 2 2@ — beta, erasure
+and erase-erase rules written by hand, each allocating at most 2 fresh cells.
+@topEntity@ synthesizes the EDSL set of "INet.Define" instead; this module is
+the independent reference its reductions are compared against.
 
-2. Compiled from embedded dsl in `INet.Net` module
-
-3. Written by hands for tests
+__Note__ the name @AgentSimpleLambda@ is used twice in the project for two
+/different/ types: this module's three-constructor type (@Apply@, @Abstract@,
+@Erase@) and the four-constructor type of the same name in "INet.Define".
+@topEntity@ uses the "INet.Define" type.
 -}
 module Core.Concrete.ReduceRulesLambda where
 
@@ -23,7 +31,8 @@ data AgentSimpleLambda
   | Erase
   deriving (NFDataX, Generic, Show, Eq, ShowX)
 
-{- | Reduce rule for `Apply` and `Abs`
+{- | Reduce rule for `Apply` and `Abstract` (beta): the two secondary ports are
+wired pairwise, no fresh nodes arise (the free-address vector is ignored).
 
 <<docs/apply_to_lambda_rule.svg>>
 -}
@@ -40,7 +49,11 @@ applyToLambdaRule _ loadedNodeLeft loadedNodeRight =
       arisingEdges = zipWith (\l r -> Just $ Edge l r) lE rE
    in ReduceRuleResult arisingEdges arisingNodes
 
-{- | Reduce rule fot `Erase` and `Abstract` or `Apply`
+{- | Reduce rule for `Erase` and `Abstract` or `Apply`: the eraser is replaced
+by one fresh eraser per secondary port of the surviving agent, taking over
+its connections; the surviving node itself is not copied. Requires exactly
+two free addresses — fewer aborts with an error, more is not checked (the
+instance's `getAddressesAllocationCount` supplies exactly two).
 
 <<docs/eps_apply_rule.svg>>
 
