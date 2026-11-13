@@ -46,6 +46,8 @@ main =
       , recIrTests
       , translateLamTests
       , yaleReduceTests
+      , recursionTests
+      , mutualRecTests
       , yaleEvalTests
       , debugYale3
       , runnerTests
@@ -146,7 +148,7 @@ recIrTests :: TestTree
 recIrTests =
   testGroup
     "recursion IR (fv/subst)"
-    [ testCase "fv LSelfRef = empty" $ assertEqual "fv LSelfRef" Set.empty (fv LSelfRef)
+    [ testCase "fv LSelfRef = {selfRefName}" $ assertEqual "fv LSelfRef" (Set.singleton selfRefName) (fv LSelfRef)
     , testCase "fv LRec: binder is bound, self-ref is not free" $
         assertEqual
           "fv (LRec (LLam f (self x)))"
@@ -326,6 +328,83 @@ yaleReduceTests =
     , testCase "fact 2" $
         assertYaleNF "module M\nlet rec fact n = if n < 1 then 1 else n * fact (n - 1)\nlet result = fact 2" 10000
     ]
+
+-- * Recursion tests (S7)
+
+{- | Assert that the LML interpreter and the YALE pipeline agree on the program,
+and that the agreed value equals @expected@. This is the YALE analogue of
+'assertEqualBoth' (which uses the SKI backend): it runs the LML interpreter and
+'skiEvalYale' directly, so it exercises recursion (which the SKI backend cannot
+handle). A 'StepOverflowReached' or any other 'SkiError' is a loud failure
+(never a hang): the reduction is bounded by 'defaultMaxSteps'.
+-}
+assertYaleAgrees :: Text -> Value' -> IO ()
+assertYaleAgrees src expected = case compileLml src of
+  Left e -> assertFailure $ "compileLml failed: " <> e
+  Right (binds, resultExpr) -> do
+    lmlRes <- lmlValue binds resultExpr
+    case lmlRes of
+      Left e -> assertFailure $ "LML evaluation failed: " <> show e
+      Right a ->
+        case skiEvalYale expected binds resultExpr of
+          Left e -> assertFailure $ "skiEvalYale failed: " <> show e
+          Right b
+            | a == b -> assertEqual "LML and YALE agree" expected b
+            | otherwise ->
+                assertFailure $ "LML/YALE disagreement: LML=" <> show a <> " YALE=" <> show b
+
+{- | Assert that an LML source reduces to a YALE normal form whose node count is
+below @maxNodes@ (guards against net explosion on recursive programs).
+-}
+assertYaleNodeBound :: Text -> Int -> IO ()
+assertYaleNodeBound src maxNodes = do
+  (steps, nodes, nf) <- yaleReduceSrc src 100000
+  assertBool ("expected NF within budget, stopped at " <> show steps <> " steps") nf
+  assertBool ("node count " <> show nodes <> " exceeds bound " <> show maxNodes) (nodes < maxNodes)
+
+{- | Recursion tests (tie-the-knot cyclic nets). Each case runs BOTH the LML
+interpreter and the YALE pipeline and asserts they agree on the expected value.
+The SKI backend does not participate (it cannot handle recursion). Reductions
+are bounded by 'defaultMaxSteps' (a loud failure, never a hang).
+-}
+recursionTests :: TestTree
+recursionTests =
+  testGroup
+    "recursion (cyclic net)"
+    [ testCase "rec identity: f 5 = 5" $
+        assertYaleAgrees "module M\nlet rec f n = n\nlet result = f 5" (RInt 5)
+    , testCase "fact 0 = 1" $ assertYaleAgrees (factSrc 0) (RInt 1)
+    , testCase "fact 2 = 2" $ assertYaleAgrees (factSrc 2) (RInt 2)
+    , testCase "fact 5 = 120" $ assertYaleAgrees (factSrc 5) (RInt 120)
+    , testCase "fact 5: < 1000 nodes" $ assertYaleNodeBound (factSrc 5) 1000
+    , testCase "fib 10 = 55" $ assertYaleAgrees (fibSrc 10) (RInt 55)
+    , testCase "countdown 4 = 10" $ assertYaleAgrees (countdownSrc 4) (RInt 10)
+    ]
+ where
+  factSrc n = "module M\nlet rec fact k = if k < 1 then 1 else k * fact (k - 1)\nlet result = fact " <> show n
+  fibSrc n = "module M\nlet rec fib k = if k < 2 then 1 else fib (k - 1) + fib (k - 2)\nlet result = fib " <> show n
+  countdownSrc n = "module M\nlet rec countdown k = if k < 1 then 0 else k + countdown (k - 1)\nlet result = countdown " <> show n
+
+{- | Mutual-recursion tests: exercise the 'LMutRec' cycle (one binder per
+function, cross-references by name). Each case runs BOTH the LML interpreter and
+the YALE pipeline and asserts they agree.
+-}
+mutualRecTests :: TestTree
+mutualRecTests =
+  testGroup
+    "mutual recursion"
+    [ testCase "even 0 = true" $ assertYaleAgrees (evenOddSrc "even" 0) (RBool True)
+    , testCase "even 4 = true" $ assertYaleAgrees (evenOddSrc "even" 4) (RBool True)
+    , testCase "odd 0 = false" $ assertYaleAgrees (evenOddSrc "odd" 0) (RBool False)
+    , testCase "odd 3 = true" $ assertYaleAgrees (evenOddSrc "odd" 3) (RBool True)
+    , testCase "odd 7 = true" $ assertYaleAgrees (evenOddSrc "odd" 7) (RBool True)
+    ]
+ where
+  evenOddSrc fn n =
+    "module M\nlet rec even k = if k < 1 then true else odd (k - 1) and odd k = if k < 1 then false else even (k - 1)\nlet result = "
+      <> fn
+      <> " "
+      <> show n
 
 {- | Tests for the step-bounded SKI runner: a well-behaved term (the Church
 numeral 5) reduces to normal form within the budget, while the non-terminating
@@ -681,6 +760,19 @@ debugYale3 =
         let (_, g2r, _) = reduceStepsYale 20000 g2
         putStrLn "  --- pred 2 reduced net ---"
         dumpYaleNet g2r
+    , testCase "rec identity net dump" $ do
+        case compileLml "module M\nlet rec fact k = if k < 1 then 1 else k * fact (k - 1)\nlet result = fact 2" of
+          Left e -> assertFailure $ "compileLml failed: " <> e
+          Right (b, e) ->
+            case translateLam b e of
+              Left err -> assertFailure $ "translateLam failed: " <> show err
+              Right lam -> do
+                putStrLn $ "  LAM: " <> show lam
+                let g = buildYaleNet lam
+                (steps, g2, nf) <- reduceStepsYaleTags 10000 g
+                putStrLn $ "  rec identity: steps=" <> show steps <> " nf=" <> show nf <> " apps=" <> show (countAppsYale g2)
+                putStrLn "  --- rec identity reduced net ---"
+                dumpYaleNet g2
     ]
 
 {- | YALE decoder tests: the shape-directed decoder reproduces the SKI decoder's
@@ -700,17 +792,14 @@ yaleEvalTests =
         assertSkiEvalYale [] (Lit (LitInt 2)) (RInt 2)
     , testCase "true literal" $ assertSkiEvalYale [] (Var stdTrue) (RBool True)
     , testCase "false literal" $ assertSkiEvalYale [] (Var stdFalse) (RBool False)
-    -- TODO(#91): DEFERRED (temporarily off, per user directive to focus on
-    -- YALE recursion). The YALE reducer reduces '2 < 1' to a normal form
-    -- whose root edge dangles (an App node whose func port points to a
-    -- fresh edge with no term), so the decoder reports StepOverflow 0.
-    -- Root cause: 'predLam' is the standard NON-saturating Church pred
-    -- (pred 0 = identity, not 0), so 'sub 1 2' yields identity instead of
-    -- 0 and the comparison walks the wrong branch. Fixing 'predLam' to be
-    -- saturating exposes a secondary YALE-reducer bug (dangling edge on the
-    -- more complex term shape), which must be fixed together. Re-enable
-    -- this test (and add '1 < 2') once both are fixed, then run the full S1
-    -- corpus through 'skiEvalYale' to close the S5 gate.
+    -- TODO(#91): DEFERRED. 'predLam' is now saturating (see Church.hs), which
+    -- fixes '1 < 2'. But '2 < 1' still fails: the saturating pred's more
+    -- complex term shape exposes a secondary YALE-reducer bug — a 'Copy' agent
+    -- deadlocks on an edge whose term is being garbage-collected (Copy and
+    -- Garbage share the edge but cannot interact). Fix the reducer's
+    -- Copy/Garbage handling, then re-enable '2 < 1' (and add '1 < 2') and run
+    -- the full S1 corpus through 'skiEvalYale' to close the S5 gate.
+    -- , testCase "1 < 2" $ assertSkiEvalYale [] (binOp stdLess 1 2) (RBool True)
     -- , testCase "2 < 1" $ assertSkiEvalYale [] (binOp stdLess 2 1) (RBool False)
     ]
 
