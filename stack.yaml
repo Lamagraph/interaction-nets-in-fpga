@@ -41,7 +41,14 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 
-# extra-deps:
+# Style tools, pinned to the exact versions the CI workflows use
+# (fourmolu: .github/workflows/fourmolu.yaml; hlint: the version
+# haskell-actions/hlint-setup@v2 resolves `latest` to). The local
+# pre-commit hooks invoke these via `stack exec`, so local formatting
+# and linting match CI bit-for-bit.
+extra-deps:
+  - fourmolu-0.18.0.0
+  - hlint-3.10
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
