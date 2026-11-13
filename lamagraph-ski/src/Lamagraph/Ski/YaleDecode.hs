@@ -211,16 +211,38 @@ countAppsYale = evalGraph go
             _ -> False
         )
 
+{- | Count the 'YaleApp' nodes in the @tick^n(base)@ chain reachable from the
+root's output edge. Unlike 'countAppsYale' (which counts EVERY app in the net),
+this follows only the result chain: from an edge, find the app whose
+@appResult@ sits on it, count it, and continue on its @appArg@ edge (which is
+the next app's @appResult@), until an edge carries no such app (the @base@
+constant). This ignores remnant apps left behind by recursive (Y-combinator)
+reductions, which are not part of the result chain.
+-}
+countRootAppsYale :: Graph YaleNode -> Int
+countRootAppsYale g = evalGraph go g
+ where
+  go = do
+    r <- findRoot g
+    e0 <- rootOut r
+    countFrom e0 0
+  countFrom e acc = do
+    ns <- nodesOn e
+    case [ag | YaleApp{appResult = r, appArg = ag} <- ns, r == e] of
+      [ag] -> countFrom ag (acc + 1)
+      _ -> return acc
+
 {- | Decode a Church-encoded integer: apply the result to the @tick@ constant
 and the @base@ constant directly (no intermediate lambda, avoiding the
 unused-argument problem). The result is a chain of @n@ 'YaleApp' nodes
-(@tick^n(base)@); count them.
+(@tick^n(base)@); count the chain from the root (ignoring remnant apps from
+recursive reductions).
 -}
 decodeYaleChurch :: MaxSteps -> Lam -> Either SkiError Int
 decodeYaleChurch maxSteps lam = do
   let full = LApp (LApp lam (LVar tickName)) (LVar baseName)
   g <- buildAndReduce maxSteps full
-  pure (countAppsYale g)
+  pure (countRootAppsYale g)
 
 {- | Decode a Church-encoded boolean: apply the result to two distinct markers;
 whichever survives at the root indicates the value.

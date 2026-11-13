@@ -116,9 +116,9 @@ reduceStepsYaleTrace maxSteps g0 = do
         (a, b) : _ ->
           let tags = readTags g a b
            in do
-             putStrLn $ "  step " <> show step <> ": " <> show tags
-             dumpNet g
-             go (step + 1) (fireInteraction g a b) (remaining - 1)
+                putStrLn $ "  step " <> show step <> ": " <> show tags
+                dumpNet g
+                go (step + 1) (fireInteraction g a b) (remaining - 1)
 
 -- TEMPORARY DEBUG: print only the tag pair of each fired interaction (no net dump).
 reduceStepsYaleTags :: Int -> Graph YaleNode -> IO (Int, Graph YaleNode, Bool)
@@ -133,8 +133,8 @@ reduceStepsYaleTags maxSteps g0 = do
         (a, b) : _ ->
           let tags = readTags g a b
            in do
-             putStrLn $ "  step " <> show step <> ": " <> show tags
-             go (step + 1) (fireInteraction g a b) (remaining - 1)
+                putStrLn $ "  step " <> show step <> ": " <> show tags
+                go (step + 1) (fireInteraction g a b) (remaining - 1)
 
 dumpNet :: Graph YaleNode -> IO ()
 dumpNet g =
@@ -170,11 +170,11 @@ findActivePairs = runReader go
     let tagged = [(a, va) | (a, va) <- zip ns vs, interacting va]
     let pairs =
           [ (a, b)
-           | (a, va) <- tagged
-           , (b, vb) <- tagged
-           , b > a
-           , canMeet va vb
-           , interacts va vb
+          | (a, va) <- tagged
+          , (b, vb) <- tagged
+          , b > a
+          , canMeet va vb
+          , interacts va vb
           ]
     -- Prioritize pairs involving a Copy agent: duplication must happen before
     -- β-reduction can consume the term being copied.
@@ -197,7 +197,7 @@ findActivePairs = runReader go
  body edge, which is exactly the body application's result port, while the @@@'s
  principal is its function port. Under a strict "both on their principal" rule
  the two could never meet and the duplication would deadlock.
- -}
+-}
 canMeet :: YaleNode -> YaleNode -> Bool
 canMeet va vb =
   principalPort va == principalPort vb
@@ -284,34 +284,66 @@ betaRHS :: YaleNode -> YaleNode -> Node -> Node -> Rewrite YaleNode ()
 betaRHS app lam appNode lamNode = do
   eD <- newEdge
   _ <- newNode Erase{eraseIn = eD}
-  mergeEdges (lamBody lam) (appResult app)
   -- Fan-out (Mackie 1998, duplication): if the binder edge carries more than
   -- one bound-variable occurrence, the argument is used non-linearly and must
   -- be DUPLICATED. Split the binder edge into per-occurrence edges and create
   -- a chain of 'Copy' agents to duplicate the argument into one copy per
   -- occurrence. If there is exactly one occurrence, just splice the argument
   -- onto the binder edge (linear case).
+  --
+  -- This MUST run BEFORE the body\/result merge below: in the degenerate
+  -- @body = var@ case (@lamBody == lamVar@), merging @appResult@ onto
+  -- @lamBody@ first would bring the result edge's ports (e.g. the 'Initiator'
+  -- output) onto the binder edge, and the occurrence count would mistake them
+  -- for extra occurrences, spawning a spurious 'Copy' chain. Counting first
+  -- sees only the genuine occurrences.
   let v = lamVar lam
   ns <- attachedNodes v
   fullPorts <- concat <$> mapM (portsOn v) ns
   -- Determine which ports are actual occurrences of the bound variable in the
   -- current λ's body:
-  -- * The current λ's lamVar port (index 2) is the binder, not an occurrence.
-  -- * The current λ's lamBody port (index 3) IS an occurrence if on v
+  -- \* The current λ's lamVar port (index 2) is the binder, not an occurrence.
+  -- \* The current λ's lamBody port (index 3) IS an occurrence if on v
   --   (degenerate case: body = var, e.g. λy. y).
-  -- * Other YaleLam nodes with the same binder edge are defensive exclusion
+  -- \* Other YaleLam nodes with the same binder edge are defensive exclusion
   --   (should not occur with the split-binder-edge design).
-  -- * All other ports on v are genuine body occurrences.
+  -- \* All other ports on v are genuine body occurrences.
   isOcc <- mapM (isOccPort v lamNode) fullPorts
   let occPorts = [(n, i) | ((n, i), True) <- zip fullPorts isOcc]
   case occPorts of
-    [] -> mergeEdges (appArg app) v -- degenerate: body = var, splice arg
-    [_single] -> mergeEdges (appArg app) v -- linear: one occurrence
+    [] ->
+      -- The bound variable is UNUSED: the argument is discarded. Attach a
+      -- 'Garbage' (@e@) agent directly onto the argument edge to erase it
+      -- (Mackie 1998: an unused argument is erased, not spliced onto the
+      -- binder edge). 'newNode' is used (rather than 'newEdge'+'mergeEdges')
+      -- so the argument edge is NOT deleted: in the tie-the-knot the argument
+      -- edge is shared with the sibling app's ports, and deleting it would
+      -- leave those ports' owner holding a stale edge reference.
+      void $ newNode (Garbage{garbageIn = appArg app})
+    -- Linear: one occurrence. Which edge survives the merge depends on the
+    -- case, because 'mergeEdges' deletes its second argument and the loser's
+    -- owner may hold a stale reference:
+    --
+    -- \* Degenerate @body = var@ (@lamBody == v@): the BINDER @v@ must survive
+    --   (first argument). The body\/result merge below reads @lamBody lam@
+    --   (= @v@); deleting @v@ would make that merge a silent no-op and strand
+    --   the result. Here @appArg@ is the plain argument (not a shared knot
+    --   edge), so deleting it is harmless.
+    -- \* Non-degenerate (@lamBody /= v@): the ARGUMENT edge must survive (first
+    --   argument). In the tie-the-knot the argument edge is shared with the
+    --   sibling app's ports; deleting it would leave those ports' owner holding
+    --   a stale edge reference. The body\/result merge below reads @lamBody lam@
+    --   (/= @v@), a distinct edge that is not deleted here, so it still works.
+    [_single] ->
+      if lamBody lam == v
+        then mergeEdges v (appArg app)
+        else mergeEdges (appArg app) v
     _multi -> do
       es <- deleteEdge v
       let zipped = zip es fullPorts
       let eOccs = [e | (e, np) <- zipped, np `elem` occPorts]
       createCopyChain (appArg app) eOccs
+  mergeEdges (lamBody lam) (appResult app)
   mergeEdges eD (lamVarList lam)
   deleteNode appNode
   deleteNode lamNode
@@ -331,6 +363,12 @@ bound variable in the body of the λ at @lamNode@:
 * For the current λ: port 2 (lamVar) is the binder, not an occurrence;
   port 3 (lamBody) IS an occurrence if on @v@ (degenerate case: body = var).
 * For other 'YaleLam' nodes with the same binder edge: excluded (defensive).
+* For a 'FreeVar'\/'FreeVarBlocked' node: the @fvOcc@ port (which sits on the
+  binder edge as the free-variable connection point) is NOT an occurrence —
+  it is a passive receiver of the β-splice, not a use of the bound variable.
+  Counting it would spuriously duplicate the argument (corrupting the
+  tie-the-knot cycle). The list-continuation ports (@fvCont@\/@fvHead@) are
+  not on the binder edge, so they never appear here.
 * For all other nodes: included (genuine body occurrences).
 -}
 isOccPort :: Edge -> Node -> (Node, Int) -> Rewrite YaleNode Bool
@@ -338,10 +376,16 @@ isOccPort v lamNode (n, i)
   | n == lamNode = return (i /= 2)
   | otherwise = do
       nv <- readNode n
-      return (not (isOtherCopyOf v nv))
+      case nv of
+        -- FreeVar ports: [fvCont, fvOcc]; fvOcc (index 1) is not an occurrence.
+        FreeVar{} -> return (i /= 1)
+        -- FreeVarBlocked ports: [fvHead, fvCont, fvOcc]; fvOcc (index 2) is not.
+        FreeVarBlocked{} -> return (i /= 2)
+        _ -> return (not (isOtherCopyOf v nv))
 
--- | Whether @nv@ is a 'YaleLam' with the same binder edge @v@ (i.e. another
--- copy of the same abstraction).
+{- | Whether @nv@ is a 'YaleLam' with the same binder edge @v@ (i.e. another
+copy of the same abstraction).
+-}
 isOtherCopyOf :: Edge -> YaleNode -> Bool
 isOtherCopyOf v nv = case nv of
   YaleLam{lamVar = v'} -> v' == v
@@ -397,18 +441,21 @@ copyLamRHS c lam = do
   -- Copy agent duplicates the body sub-net into fresh edges, carrying the
   -- split-vars so that bound-variable occurrences are routed to the correct
   -- copy's binder edge.
-  if lamBody lam == v then do
-    byNode $ YaleLam{lamResult = copyOut1 c, lamVarList = eList1, lamVar = v1, lamBody = v1}
-    byNode $ YaleLam{lamResult = copyOut2 c, lamVarList = eList2, lamVar = v2, lamBody = v2}
-  else do
-    eBody1 <- byEdge
-    eBody2 <- byEdge
-    byNode $ YaleLam{lamResult = copyOut1 c, lamVarList = eList1, lamVar = v1, lamBody = eBody1}
-    byNode $ YaleLam{lamResult = copyOut2 c, lamVarList = eList2, lamVar = v2, lamBody = eBody2}
-    byNode $ Copy{copyIn = lamBody lam, copyOut1 = eBody1, copyOut2 = eBody2, copySticky = sticky, copySplitVars = newSplitVars}
+  if lamBody lam == v
+    then do
+      byNode $ YaleLam{lamResult = copyOut1 c, lamVarList = eList1, lamVar = v1, lamBody = v1}
+      byNode $ YaleLam{lamResult = copyOut2 c, lamVarList = eList2, lamVar = v2, lamBody = v2}
+    else do
+      eBody1 <- byEdge
+      eBody2 <- byEdge
+      byNode $ YaleLam{lamResult = copyOut1 c, lamVarList = eList1, lamVar = v1, lamBody = eBody1}
+      byNode $ YaleLam{lamResult = copyOut2 c, lamVarList = eList2, lamVar = v2, lamBody = eBody2}
+      byNode $
+        Copy{copyIn = lamBody lam, copyOut1 = eBody1, copyOut2 = eBody2, copySticky = sticky, copySplitVars = newSplitVars}
   -- A c agent is propagated along the free-variable list. For a closed term
   -- the list is just ν, so the c agent duplicates the end-of-list agent.
-  byNode $ Copy{copyIn = lamVarList lam, copyOut1 = eList1, copyOut2 = eList2, copySticky = sticky, copySplitVars = splitVars}
+  byNode $
+    Copy{copyIn = lamVarList lam, copyOut1 = eList1, copyOut2 = eList2, copySticky = sticky, copySplitVars = splitVars}
 
 {- | Port allocation when duplicating a node. Each auxiliary port is either:
 (a) a bound-variable occurrence of an abstraction being duplicated — it sits on
@@ -430,27 +477,50 @@ byEdgeOrSticky sticky splitVars port
       e1 <- byEdge
       e2 <- byEdge
       return (e1, e2, True)
-  where
-    lookupSplit [] _ = Nothing
-    lookupSplit ((orig, v1, v2) : rest) p
-      | p == orig = Just (v1, v2)
-      | otherwise = lookupSplit rest p
+ where
+  lookupSplit [] _ = Nothing
+  lookupSplit ((orig, v1, v2) : rest) p
+    | p == orig = Just (v1, v2)
+    | otherwise = lookupSplit rest p
 
 -- | Whether a port needs a 'Copy' agent (it is neither split nor sticky).
 needsCopyAgent :: [Edge] -> [(Edge, Edge, Edge)] -> Edge -> Bool
 needsCopyAgent sticky splitVars port
   | port `elem` sticky = False
   | otherwise = isNothing (lookupSplit splitVars port)
-  where
-    lookupSplit [] _ = Nothing
-    lookupSplit ((orig, _, _) : rest) p
-      | p == orig = Just ()
-      | otherwise = lookupSplit rest p
+ where
+  lookupSplit [] _ = Nothing
+  lookupSplit ((orig, _, _) : rest) p
+    | p == orig = Just ()
+    | otherwise = lookupSplit rest p
+
+{- | Create a chain of 'Copy' agents (in the 'Replace' monad) to duplicate the
+term on edge @eIn@ into one copy per edge in @eTargets@. For @k@ target edges
+this creates @k-1@ 'Copy' agents and @k-2@ temporary edges. Used when several
+ports of a duplicated node share a single original edge (e.g. the
+self-application @(x x)@, where @appFunc == appArg@): a single 'Copy' per port
+would be consumed by the first and leave the rest stuck, so the term is fanned
+out through a chain instead.
+-}
+createCopyChainReplace :: [Edge] -> [(Edge, Edge, Edge)] -> Edge -> [Edge] -> Replace YaleNode ()
+createCopyChainReplace sticky splitVars eIn eTargets = case eTargets of
+  [] -> return ()
+  [e1, e2] ->
+    byNode $ Copy{copyIn = eIn, copyOut1 = e1, copyOut2 = e2, copySticky = sticky, copySplitVars = splitVars}
+  (e1 : eRest) -> do
+    eTemp <- byEdge
+    byNode $ Copy{copyIn = eIn, copyOut1 = e1, copyOut2 = eTemp, copySticky = sticky, copySplitVars = splitVars}
+    createCopyChainReplace sticky splitVars eTemp eRest
 
 {- | 'Copy'×'YaleApp': copy the application. Two copies of the @@@ are
 produced; a 'Copy' (@c@) agent is propagated along each copy's auxiliary
 ports (the function and the argument) — unless the port is a bound-variable
 occurrence (on a sticky edge), in which case it is shared.
+
+When the function and argument ports share the SAME original edge (the
+self-application @(x x)@), a single 'Copy' per port would be consumed by the
+first and leave the second stuck (empty input). Instead the term is fanned out
+to all four target edges through a 'Copy' chain ('createCopyChainReplace').
 -}
 copyAppRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyAppRHS c app = do
@@ -463,14 +533,21 @@ copyAppRHS c app = do
   -- c is propagated along the function and argument ports: each new c agent
   -- sits on the original port edge and fans it out to the two copies. A port
   -- that is a bound-variable occurrence (split or sticky) is not duplicated.
-  when needFuncCopy $ do
-    eF1 <- byEdge
-    eF2 <- byEdge
-    byNode $ Copy{copyIn = appFunc app, copyOut1 = eF1, copyOut2 = eF2, copySticky = sticky, copySplitVars = splitVars}
-  when needArgCopy $ do
-    eA1 <- byEdge
-    eA2 <- byEdge
-    byNode $ Copy{copyIn = appArg app, copyOut1 = eA1, copyOut2 = eA2, copySticky = sticky, copySplitVars = splitVars}
+  -- If both ports share the same original edge (self-application), fan the
+  -- term out to all four targets with a Copy chain (see above).
+  case (needFuncCopy, needArgCopy) of
+    (True, True)
+      | appFunc app == appArg app ->
+          createCopyChainReplace sticky splitVars (appFunc app) [eFunc1, eFunc2, eArg1, eArg2]
+    (True, _) -> do
+      byNode $
+        Copy{copyIn = appFunc app, copyOut1 = eFunc1, copyOut2 = eFunc2, copySticky = sticky, copySplitVars = splitVars}
+      when needArgCopy $
+        byNode $
+          Copy{copyIn = appArg app, copyOut1 = eArg1, copyOut2 = eArg2, copySticky = sticky, copySplitVars = splitVars}
+    (False, True) ->
+      byNode $ Copy{copyIn = appArg app, copyOut1 = eArg1, copyOut2 = eArg2, copySticky = sticky, copySplitVars = splitVars}
+    (False, False) -> return ()
 
 -- | 'Copy'×'Constant': copy a base value. Two copies.
 copyConstRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
@@ -492,7 +569,14 @@ copyFreeVarRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyFreeVarRHS c b = do
   byNode $ FreeVar{fvCont = copyOut1 c, fvOcc = fvOcc b, name = name b}
   byNode $ FreeVar{fvCont = copyOut2 c, fvOcc = fvOcc b, name = name b}
-  byNode $ Copy{copyIn = fvCont b, copyOut1 = copyOut1 c, copyOut2 = copyOut2 c, copySticky = copySticky c, copySplitVars = copySplitVars c}
+  byNode $
+    Copy
+      { copyIn = fvCont b
+      , copyOut1 = copyOut1 c
+      , copyOut2 = copyOut2 c
+      , copySticky = copySticky c
+      , copySplitVars = copySplitVars c
+      }
 
 {- | 'Copy'×'FreeVarBlocked': the blocking rule. A @c@ agent meeting a @b'@
 agent converts the @b'@ back to a @b@ (Mackie 1998: "in the process of
@@ -504,7 +588,14 @@ copyFreeVarBlockedRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyFreeVarBlockedRHS c b = do
   byNode $ FreeVar{fvCont = copyOut1 c, fvOcc = fvOcc b, name = name b}
   byNode $ FreeVar{fvCont = copyOut2 c, fvOcc = fvOcc b, name = name b}
-  byNode $ Copy{copyIn = fvCont b, copyOut1 = copyOut1 c, copyOut2 = copyOut2 c, copySticky = copySticky c, copySplitVars = copySplitVars c}
+  byNode $
+    Copy
+      { copyIn = fvCont b
+      , copyOut1 = copyOut1 c
+      , copyOut2 = copyOut2 c
+      , copySticky = copySticky c
+      , copySplitVars = copySplitVars c
+      }
 
 {- | 'Subst'×'YaleApp': the @s@ agent propagates into the application's
 function and argument. The application is preserved (recreated) with its
@@ -563,11 +654,40 @@ substBoundVarRHS s bv =
 eraseRHS :: Replace YaleNode ()
 eraseRHS = return ()
 
-{- | 'Garbage'×(any term): the @e@ agent erases the term and the net on its
-auxiliary ports.
+{- | 'Garbage'×(any term): the @e@ agent erases the term and RECURSIVELY the
+net on its auxiliary ports (Mackie 1998, garbage collection). The two nodes
+that met (@e@ and the term) are deleted by the 'replace' action; the RHS
+spawns a fresh 'Garbage' agent on each auxiliary port so the erasure
+propagates through the whole sub-net.
+
+The binder edge of a 'YaleLam' (@lamVar@) is deliberately NOT given a fresh
+'Garbage': it is a hyperedge shared with the body's bound-variable
+occurrences. Those occurrence ports are removed as the body's nodes are
+erased (via the 'Garbage' propagated onto @lamBody@), so the binder edge
+drains naturally without a dedicated eraser (which would risk meeting
+non-garbage ports spliced onto the shared edge).
 -}
 garbageRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
-garbageRHS _ _ = return ()
+garbageRHS _ x = case x of
+  YaleLam{} -> spawnGarbageOn [lamVarList x, lamBody x]
+  YaleApp{} -> spawnGarbageOn [appArg x, appResult x]
+  Copy{} -> spawnGarbageOn [copyOut1 x, copyOut2 x]
+  Subst{} -> spawnGarbageOn [substOut x]
+  FreeVar{} -> spawnGarbageOn [fvOcc x]
+  FreeVarBlocked{} -> spawnGarbageOn [fvCont x, fvOcc x]
+  BoundVar{} -> spawnGarbageOn [bvEdge x]
+  -- Single-port agents with no auxiliary sub-net: just cancel.
+  Erase{} -> return ()
+  EndList{} -> return ()
+  Constant{} -> return ()
+  Multiplexer{} -> return ()
+  Initiator{} -> error "Garbage met the Initiator (root is not collectable)"
+
+{- | Attach a fresh 'Garbage' agent directly onto each of the given edges
+(via 'byNode', so no new edge is created).
+-}
+spawnGarbageOn :: [Edge] -> Replace YaleNode ()
+spawnGarbageOn = mapM_ (byNode . \e -> Garbage{garbageIn = e})
 
 -- * Helpers
 

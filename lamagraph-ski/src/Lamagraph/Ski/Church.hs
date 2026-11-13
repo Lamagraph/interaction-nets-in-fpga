@@ -104,12 +104,12 @@ multLam = do
           )
       )
 
--- | Church predecessor: @\n f x. n (\g h. h (g f)) (\u. x) (\u. u)@.
--- NOTE: this is the standard (non-saturating) Church pred; @pred 0 = identity@.
--- The 'subLam' function relies on saturation at 0, which this does NOT provide;
--- see the known issue with @2 < 1@ (task #91).
-predLam :: State Int Lam
-predLam = do
+{- | The non-saturating Church pred (primitive): @\n f x. n (\g h. h (g f)) (\u. x) (\u. u)@.
+For @n >= 1@ this is @n - 1@, but @pred 0 = identity@ (not 0). It is the
+building block of the saturating 'predLam' below.
+-}
+predLamNonSat :: State Int Lam
+predLamNonSat = do
   n <- freshName
   f <- freshName
   x <- freshName
@@ -133,6 +133,20 @@ predLam = do
               )
           )
       )
+
+{- | Saturating Church predecessor: @\n. (isZero n) 0 (predLamNonSat n)@.
+@pred 0 = 0@ and @pred n = n - 1@ for @n > 0@. Saturation at 0 is what makes
+'subLam' (and hence the comparison operators built on it) correct: without it,
+@sub 1 2 = pred (pred 1) = pred 0 = identity@ instead of @0@, so @2 < 1@
+mis-evaluates (task #91).
+-}
+predLam :: State Int Lam
+predLam = do
+  n <- freshName
+  isZeroL <- isZeroLam
+  zeroL <- zeroLam
+  nonSatL <- predLamNonSat
+  pure $ LLam n (LApp (LApp (LApp isZeroL (LVar n)) zeroL) (LApp nonSatL (LVar n)))
 
 {- | Saturating Church subtraction: @\m n. n (\k. pred k) m@ = @max 0 (m - n)@.
 Applies 'predLam' @n@ times to @m@; since 'predLam' saturates at 0, the result

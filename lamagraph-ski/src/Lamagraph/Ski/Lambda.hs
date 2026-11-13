@@ -59,14 +59,18 @@ this for every binder.
 freshName :: State Int String
 freshName = state $ \i -> ("__v" <> show i, i + 1)
 
--- | Free variables of a lambda term.
+{- | Free variables of a lambda term. A 'LSelfRef' is a reference to the
+enclosing recursive function, treated as a free variable named
+'selfRefName'; an 'LRec' binds that name (along with the binder of the
+wrapped lambda), so it is subtracted here.
+-}
 fv :: Lam -> Set String
 fv = \case
   LVar v -> Set.singleton v
   LApp f x -> fv f <> fv x
   LLam v body -> fv body Set.\\ Set.singleton v
-  LSelfRef -> Set.empty
-  LRec l -> fv l
+  LSelfRef -> Set.singleton selfRefName
+  LRec l -> fv l Set.\\ Set.singleton selfRefName
   LMutRec groups body ->
     let groupNames = Set.fromList (map fst groups)
         allFvs = foldr ((<>) . fv . snd) Set.empty groups <> fv body

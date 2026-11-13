@@ -148,8 +148,16 @@ recBindsToLam :: ConTags -> NonEmpty (Var, CoreExpr) -> Lam -> TranslateM Lam
 recBindsToLam tags recs bodyLam = case toList recs of
   [(f, e)] -> do
     innerLam <- coreExprToLam tags e
+    -- Wrap the function in a self-reference abstraction: the knot construction
+    -- ('Lamagraph.Ski.YaleNet.buildYaleNet') expects 'LRec (LLam self body)'
+    -- where the OUTER lambda is the self-reference (F = λself. body, so that
+    -- Y(F) = F (Y F)). Without this wrapper the function's own parameter would
+    -- be mistaken for the self-reference, turning e.g. 'let rec f n = n' into
+    -- Y (λn. n) (a divergent fixed point of identity) instead of
+    -- Y (λself. λn. n) (the identity function).
+    selfName <- lift freshName
     let innerLam' = subst (varName f) LSelfRef innerLam
-    pure (subst (varName f) (LRec innerLam') bodyLam)
+    pure (subst (varName f) (LRec (LLam selfName innerLam')) bodyLam)
   _ -> do
     groups <- recGroupsLam tags recs
     pure (LMutRec groups bodyLam)

@@ -5,6 +5,7 @@ design doc for the pipeline and encoding choices.
 module Lamagraph.Ski (
   encodeAndReduce,
   translateAndRun,
+  lmlValue,
   churchGraph,
   module Lamagraph.Ski.Church,
   module Lamagraph.Ski.Compare,
