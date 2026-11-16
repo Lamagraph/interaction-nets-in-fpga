@@ -100,9 +100,10 @@ reduceStepsYale maxSteps g0 =
 
 {- | All active pairs of the net: unordered pairs of distinct interacting nodes
 joined at their principal (port 0) edge, where the pair actually interacts.
-The order is deterministic: pairs involving a 'Copy' agent come first (so that
-duplication is performed before β-reduction can consume the term being copied),
-then remaining pairs in node order.
+The order is the deterministic node order — NO agent-type priority. Interaction
+nets are confluent: the final normal form is independent of the reduction
+order, so steering the order (e.g. firing 'Copy' pairs before β) is both
+unnecessary and a symptom of non-confluent rules.
 -}
 findActivePairs :: Graph YaleNode -> [(Node, Node)]
 findActivePairs = runReader go
@@ -113,42 +114,32 @@ findActivePairs = runReader go
     ns <- readNodeList
     vs <- mapM readNode ns
     let tagged = [(a, va) | (a, va) <- zip ns vs, interacting va]
-    let pairs =
-          [ (a, b)
-          | (a, va) <- tagged
-          , (b, vb) <- tagged
-          , b > a
-          , canMeet va vb
-          , interacts va vb
-          , -- Paper-faithful β precondition (Mackie 1998, Fig. 2): β-reduction
-          -- fires only when the abstraction's free variables are all
-          -- substituted. A 'FreeVar' whose @fvOcc@ sits on a SHARED edge
-          -- (the tie-the-knot loop) is already wired to its value (the knot),
-          -- so it counts as substituted. A 'FreeVar' on a plain edge is not
-          -- yet substituted; firing β early would let the @d@ agent erase it
-          -- and the @Garbage@ walk into shared structure (over-erasure).
-          betaAllowed g va vb
-          , betaAllowed g vb va
-          ]
-    -- Prioritize pairs involving a Copy agent: duplication must happen before
-    -- β-reduction can consume the term being copied.
-    let copyNodes = [a | (a, va) <- tagged, isCopy va]
-    let isCopyPair (a, b) = a `elem` copyNodes || b `elem` copyNodes
-    let copyPairs = filter isCopyPair pairs
-    let otherPairs = filter (not . isCopyPair) pairs
-    return (copyPairs ++ otherPairs)
-   where
-    isCopy (Copy{}) = True
-    isCopy _ = False
-    -- β is allowed when the λ's free variables are all substituted: either
-    -- the list is empty (no 'FreeVar' agents) or every 'FreeVar' points to a
-    -- SHARED edge (the tie-the-knot loop), meaning it is already wired to its
-    -- value. See the precondition comment in the pairs comprehension above.
-    betaAllowed gg (YaleApp{}) (YaleLam{lamVarList = eList}) =
-      allFvSubstituted gg eList
-    betaAllowed gg (YaleLam{lamVarList = eList}) (YaleApp{}) =
-      allFvSubstituted gg eList
-    betaAllowed _ _ _ = True
+    return
+      [ (a, b)
+      | (a, va) <- tagged
+      , (b, vb) <- tagged
+      , b > a
+      , canMeet va vb
+      , interacts va vb
+      , -- Paper-faithful β precondition (Mackie 1998, Fig. 2): β-reduction
+      -- fires only when the abstraction's free variables are all
+      -- substituted. A 'FreeVar' whose @fvOcc@ sits on a SHARED edge
+      -- (the tie-the-knot loop) is already wired to its value (the knot),
+      -- so it counts as substituted. A 'FreeVar' on a plain edge is not
+      -- yet substituted; firing β early would let the @d@ agent erase it
+      -- and the @Garbage@ walk into shared structure (over-erasure).
+      betaAllowed g va vb
+      , betaAllowed g vb va
+      ]
+  -- β is allowed when the λ's free variables are all substituted: either
+  -- the list is empty (no 'FreeVar' agents) or every 'FreeVar' points to a
+  -- SHARED edge (the tie-the-knot loop), meaning it is already wired to its
+  -- value. See the precondition comment in the pairs comprehension above.
+  betaAllowed gg (YaleApp{}) (YaleLam{lamVarList = eList}) =
+    allFvSubstituted gg eList
+  betaAllowed gg (YaleLam{lamVarList = eList}) (YaleApp{}) =
+    allFvSubstituted gg eList
+  betaAllowed _ _ _ = True
 
 {- | Whether every 'FreeVar' on the free-variable list edge @eList@ is
 substituted, i.e. its @fvOcc@ port sits on a SHARED edge (more than two
@@ -186,7 +177,19 @@ canMeet va vb =
     || agentAtAppResult va vb
     || agentAtAppResult vb va
  where
-  agentAtAppResult a@(Copy{}) (YaleApp{appResult = r}) = principalPort a == r
+  -- Guard: a Copy must NOT meet the application when the application's
+  -- argument is the Copy's own output. That is the tie-the-knot cycle (Mackie
+  -- §6): the Copy's output feeds the application's argument and the
+  -- application's result feeds the Copy's input. Firing 'Copy'×'YaleApp' there
+  -- would duplicate the application and propagate a 'Copy' along its function
+  -- (the recursive body), re-entering the cycle and duplicating the body
+  -- without bound (the knot never reaches normal form). The knot must instead
+  -- be unzipped by the β-reduction of the application's function, which this
+  -- guard leaves free to fire. In the legitimate body-copy case the
+  -- application's argument is an ordinary term, never the Copy's own output,
+  -- so the guard is inert there.
+  agentAtAppResult a@(Copy{copyOut1 = o1, copyOut2 = o2}) (YaleApp{appResult = r, appArg = arg}) =
+    principalPort a == r && arg /= o1 && arg /= o2
   agentAtAppResult a@(Subst{}) (YaleApp{appResult = r}) = principalPort a == r
   -- The forcing agent sits on the (free) result edge and must meet the
   -- application there to walk into the function's net.
@@ -321,26 +324,14 @@ betaRHS app lam appNode lamNode = do
   -- \* All other ports on v are genuine body occurrences.
   isOcc <- mapM (isOccPort v lamNode) fullPorts
   let occPorts = [(n, i) | ((n, i), True) <- zip fullPorts isOcc]
-  -- Tie-the-knot guard (Mackie 1998 §6): count the argument edge's ports so
-  -- the unused-variable case below can detect a SHARED edge (the knot loop).
-  nArgPorts <- countEdgePorts (appArg app)
   case occPorts of
     [] ->
       -- The bound variable is UNUSED: the argument is discarded. Attach a
       -- 'Garbage' (@e@) agent directly onto the argument edge to erase it
       -- (Mackie 1998: an unused argument is erased, not spliced onto the
       -- binder edge). 'newNode' is used (rather than 'newEdge'+'mergeEdges')
-      -- so the argument edge is NOT deleted: in the tie-the-knot the argument
-      -- edge is shared with the sibling app's ports, and deleting it would
-      -- leave those ports' owner holding a stale edge reference.
-      --
-      -- EXCEPTION (tie-the-knot, Mackie 1998 §6): if the argument edge is a
-      -- SHARED edge (more than two ports — the knot loop, which is also the
-      -- 'Copy' agent's @copyOut2@), spawning a 'Garbage' here would walk into
-      -- the shared structure and over-erase the knot (and everything reachable
-      -- from it). The argument is discarded by simply NOT splicing it onto the
-      -- binder edge; the shared edge is left intact so the knot survives.
-      when (nArgPorts <= 2) $ void $ newNode (Garbage{garbageIn = appArg app})
+      -- so the argument edge is NOT deleted.
+      void $ newNode (Garbage{garbageIn = appArg app})
     -- Linear: one occurrence. Which edge survives the merge depends on the
     -- case, because 'mergeEdges' deletes its second argument and the loser's
     -- owner may hold a stale reference:
