@@ -15,7 +15,9 @@ module Lamagraph.Ski.Value (
 import Relude
 
 import Lamagraph.Compiler.Eval qualified as Eval
-import Lamagraph.Compiler.Typechecker.TcTypes (Name)
+import Lamagraph.Compiler.ModuleResolver.DefaultEnv (stdPrefix)
+import Lamagraph.Compiler.Syntax.Longident (mkLongident)
+import Lamagraph.Compiler.Typechecker.TcTypes (Name (Name))
 
 {- | A canonical value. 'RBool' and the non-'RInt' constructors are present now
 as structure for the wider value set (Task C); the minimal subset only
@@ -44,5 +46,13 @@ canonicalize = \case
   Eval.VChar c -> Right (RChar c)
   Eval.VString s -> Right (RString s)
   Eval.VTuple v vs -> RTuple <$> traverse canonicalize (v : toList vs)
+  -- The LML evaluator represents booleans as the standard-library unit ADTs
+  -- @#std.true@ / @#std.false@. Canonicalise them to 'RBool' so the LML side
+  -- compares equal to the SKI/YALE decoders (which yield 'RBool').
+  Eval.VAdt dc [] | dc == stdTrueName -> Right (RBool True)
+  Eval.VAdt dc [] | dc == stdFalseName -> Right (RBool False)
   Eval.VAdt dc vs -> RAdt dc <$> traverse canonicalize vs
   other -> Left (NonResultValue other)
+ where
+  stdTrueName = Name (mkLongident (stdPrefix :| ["true"]))
+  stdFalseName = Name (mkLongident (stdPrefix :| ["false"]))

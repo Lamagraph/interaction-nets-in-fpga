@@ -73,11 +73,11 @@ translateCore :: [CoreBind] -> CoreExpr -> Either SkiError Term.Expr
 translateCore binds resultExpr =
   fmap toSki (evalState (runExceptT (rejectRec binds resultExpr >> buildLam binds resultExpr)) 0)
 
-{- | Translate a closed LML core program to a 'Lam' term (the intermediate
-representation), keeping the 'LRec'\/'LMutRec' markers that the YALE net
-builder ('Lamagraph.Ski.YaleNet.buildYaleNet') needs to splice self-references
-into cycles. For a non-recursive program, 'toSki' of the result equals
-'translateCore'.
+{- | Translate a closed LML core program to a 'Lamagraph.Ski.Lambda.Lam'
+term (the intermediate representation), keeping the 'LRec'\/'LMutRec' markers
+that the YALE net builder ('Lamagraph.Ski.YaleNet.buildYaleNet') needs to
+splice self-references into cycles. For a non-recursive program, 'toSki' of
+the result equals 'translateCore'.
 -}
 translateLam :: [CoreBind] -> CoreExpr -> Either SkiError Lam
 translateLam binds resultExpr =
@@ -85,7 +85,7 @@ translateLam binds resultExpr =
 
 {- | Reject recursive bindings before translation: the SKI backend is
 non-recursive-only, and translating a recursive program would leave a free
-'selfRefName' variable in the SKI term.
+'Lamagraph.Ski.Lambda.selfRefName' variable in the SKI term.
 -}
 rejectRec :: [CoreBind] -> CoreExpr -> TranslateM ()
 rejectRec binds resultExpr =

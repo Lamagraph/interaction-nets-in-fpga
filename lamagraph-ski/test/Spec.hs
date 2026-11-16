@@ -6,12 +6,24 @@ import Common.Term qualified as Term
 import Data.ByteString.Lazy.Char8 (pack)
 import Data.HashMap.Lazy qualified as HashMap
 import Data.List (lookup)
+import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import GraphRewriting (Graph, evalGraph, readNodeList)
+import GraphRewriting (
+  Graph,
+  Rewrite,
+  emptyGraph,
+  evalGraph,
+  execGraph,
+  newEdge,
+  newNode,
+  readNode,
+  readNodeList,
+ )
 import Hedgehog hiding (Var)
 import Hedgehog.Gen qualified as Gen
-import INet.Graph (SKI (..), fromTerm)
+import INet.Graph (fromTerm)
+import INet.Graph qualified as INet
 import System.FilePath ((<.>), (</>))
 import Test.Tasty
 import Test.Tasty.Golden (goldenVsString)
@@ -25,8 +37,9 @@ import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.Syntax.Longident (mkLongident)
 import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
 import Lamagraph.Ski
-import Lamagraph.Ski.YaleDecode (rootConstantNameYale, skiEvalYale)
-import Lamagraph.Ski.YaleNet (YaleNode, buildYaleNet)
+import Lamagraph.Ski.YaleDecode (skiEvalYale)
+import Lamagraph.Ski.YaleNet (YaleNode (..), buildYaleNet)
+import Lamagraph.Ski.YaleNet qualified as YaleNet
 import Lamagraph.Ski.YaleReduce (reduceStepsYale)
 
 {- | Step budget for reducing a decoded term to normal form. Generous because
@@ -46,11 +59,14 @@ main =
       , recIrTests
       , translateLamTests
       , yaleReduceTests
+      , yaleInteractionRuleTests
+      , yaleDuplicationCompositionTests
       , recursionTests
       , mutualRecTests
       , yaleEvalTests
       , churchIfTests
       , yaleComplexTests
+      , yaleSimpleConstructionTests
       , runnerTests
       , equivalenceTests
       , dropArgTests
@@ -330,6 +346,306 @@ yaleReduceTests =
         assertYaleNF "module M\nlet rec fact n = if n < 1 then 1 else n * fact (n - 1)\nlet result = fact 2" 10000
     ]
 
+-- * Interaction-rule tests (net-level, paper-faithful)
+
+{- | Build a YALE net from a build action (no 'Initiator', no 'Forcing' agent):
+a bare net containing exactly the nodes the test creates.
+-}
+buildYaleTestNet :: Rewrite YaleNode () -> Graph YaleNode
+buildYaleTestNet build = execGraph build emptyGraph
+
+-- | A short tag for a YALE node type (for histograms).
+yaleNodeTag :: YaleNode -> String
+yaleNodeTag = \case
+  Initiator{} -> "Init"
+  YaleLam{} -> "Lam"
+  YaleApp{} -> "App"
+  Copy{} -> "Copy"
+  Subst{} -> "Subst"
+  Erase{} -> "Erase"
+  FreeVar{} -> "FreeV"
+  FreeVarBlocked{} -> "FreeVB"
+  EndList{} -> "End"
+  Garbage{} -> "Garbage"
+  Forcing{} -> "Forcing"
+  Constant{YaleNet.name = n} -> "Const(" <> n <> ")"
+  Multiplexer{} -> "Mux"
+
+-- | Histogram of node types in a YALE net.
+yaleHist :: Graph YaleNode -> Map String Int
+yaleHist = evalGraph go
+ where
+  go = do
+    ns <- readNodeList
+    vs <- mapM readNode ns
+    return (Map.fromListWith (+) [(yaleNodeTag v, 1) | v <- vs])
+
+{- | Reduce a bare test net and assert it reaches normal form with exactly the
+expected node-type histogram. This checks a single interaction rule (or a small
+composition) against the paper's expected right-hand side: the LHS nodes are
+consumed and the RHS nodes remain.
+-}
+assertReducesTo :: String -> Rewrite YaleNode () -> Map String Int -> IO ()
+assertReducesTo lbl build expected = do
+  let g0 = buildYaleTestNet build
+      (steps, g, nf) = reduceStepsYale 10000 g0
+  assertBool (lbl <> ": expected NF, stuck after " <> show steps <> " steps") nf
+  assertEqual (lbl <> ": node histogram") expected (yaleHist g)
+
+{- | Net-level tests for the individual YALE interaction rules (Mackie 1998,
+§5). Each test builds a bare net containing one active pair (plus the minimal
+context the rule needs), reduces it, and checks the surviving nodes match the
+paper's right-hand side. These isolate the dynamics rule-by-rule, independent of
+the net builder and the scheduler.
+-}
+yaleInteractionRuleTests :: TestTree
+yaleInteractionRuleTests =
+  testGroup
+    "yale-interaction-rules"
+    [ -- Erase (d) x EndList (nu): the eraser completes on an empty list.
+      testCase "Erase x EndList -> empty" $
+        assertReducesTo
+          "Erase x EndList"
+          ( do
+              e <- newEdge
+              void $ newNode Erase{eraseIn = e}
+              void $ newNode EndList{endIn = e}
+          )
+          Map.empty
+    , -- Copy (c) x Constant: a base value is duplicated into two copies.
+      testCase "Copy x Constant -> two copies" $
+        assertReducesTo
+          "Copy x Constant"
+          ( do
+              eIn <- newEdge
+              e1 <- newEdge
+              e2 <- newEdge
+              void $ newNode Copy{copyIn = eIn, copyOut1 = e1, copyOut2 = e2, copySticky = [], copySplitVars = []}
+              void $ newNode Constant{inp = eIn, name = "k"}
+          )
+          (Map.fromList [("Const(k)", 2)])
+    , -- Copy (c) x EndList (nu): the end-of-list is duplicated into two.
+      testCase "Copy x EndList -> two EndLists" $
+        assertReducesTo
+          "Copy x EndList"
+          ( do
+              eIn <- newEdge
+              e1 <- newEdge
+              e2 <- newEdge
+              void $ newNode Copy{copyIn = eIn, copyOut1 = e1, copyOut2 = e2, copySticky = [], copySplitVars = []}
+              void $ newNode EndList{endIn = eIn}
+          )
+          (Map.fromList [("End", 2)])
+    , -- Subst (s) x Constant: the substitution agent is erased at a base value.
+      testCase "Subst x Constant -> one Constant" $
+        assertReducesTo
+          "Subst x Constant"
+          ( do
+              eIn <- newEdge
+              eOut <- newEdge
+              eVar <- newEdge
+              eVarCopy <- newEdge
+              void $ newNode Subst{substIn = eIn, substOut = eOut, substVar = eVar, substVarCopy = eVarCopy}
+              void $ newNode Constant{inp = eIn, name = "k"}
+          )
+          (Map.fromList [("Const(k)", 1)])
+    , -- beta: (\\x. x) k -> k. The degenerate body = var case: the argument is
+      -- spliced onto the binder and the result is the argument.
+      testCase "beta: (\\x. x) k -> k" $
+        assertReducesTo
+          "beta identity"
+          ( do
+              eOut <- newEdge
+              eRes <- newEdge
+              eBinder <- newEdge
+              eList <- newEdge
+              eK <- newEdge
+              void $ newNode YaleLam{lamResult = eRes, lamVarList = eList, lamVar = eBinder, lamBody = eBinder}
+              void $ newNode YaleApp{appFunc = eRes, appArg = eK, appResult = eOut}
+              void $ newNode Constant{inp = eK, name = "k"}
+              void $ newNode EndList{endIn = eList}
+          )
+          (Map.fromList [("Const(k)", 1)])
+    , -- beta: (\\x. c) k -> c. The bound variable is UNUSED, so the argument is
+      -- erased (Garbage) and the result is the body.
+      testCase "beta: (\\x. c) k -> c (arg erased)" $
+        assertReducesTo
+          "beta unused var"
+          ( do
+              eOut <- newEdge
+              eRes <- newEdge
+              eBinder <- newEdge
+              eList <- newEdge
+              eK <- newEdge
+              eC <- newEdge
+              void $ newNode YaleLam{lamResult = eRes, lamVarList = eList, lamVar = eBinder, lamBody = eC}
+              void $ newNode YaleApp{appFunc = eRes, appArg = eK, appResult = eOut}
+              void $ newNode Constant{inp = eK, name = "k"}
+              void $ newNode Constant{inp = eC, name = "c"}
+              void $ newNode EndList{endIn = eList}
+          )
+          (Map.fromList [("Const(c)", 1)])
+    , -- beta: (\\x. x x) k -> k k. The bound variable is used TWICE, so the
+      -- argument is DUPLICATED (a Copy fans it out to both occurrences).
+      testCase "beta: (\\x. x x) k -> k k (duplication)" $
+        assertReducesTo
+          "beta duplication"
+          ( do
+              eOut <- newEdge
+              eRes <- newEdge
+              eBinder <- newEdge
+              eList <- newEdge
+              eK <- newEdge
+              eBody <- newEdge
+              void $ newNode YaleApp{appFunc = eBinder, appArg = eBinder, appResult = eBody}
+              void $ newNode YaleLam{lamResult = eRes, lamVarList = eList, lamVar = eBinder, lamBody = eBody}
+              void $ newNode YaleApp{appFunc = eRes, appArg = eK, appResult = eOut}
+              void $ newNode Constant{inp = eK, name = "k"}
+              void $ newNode EndList{endIn = eList}
+          )
+          (Map.fromList [("App", 1), ("Const(k)", 2)])
+    , -- Copy (c) x App: the application is duplicated; the Copy propagates
+      -- along the function and argument ports (duplicating each).
+      testCase "Copy x App -> two Apps" $
+        assertReducesTo
+          "Copy x App"
+          ( do
+              eIn <- newEdge
+              e1 <- newEdge
+              e2 <- newEdge
+              eFunc <- newEdge
+              eArg <- newEdge
+              void $ newNode YaleApp{appFunc = eFunc, appArg = eArg, appResult = eIn}
+              void $ newNode Copy{copyIn = eIn, copyOut1 = e1, copyOut2 = e2, copySticky = [], copySplitVars = []}
+              void $ newNode Constant{inp = eFunc, name = "f"}
+              void $ newNode Constant{inp = eArg, name = "a"}
+          )
+          (Map.fromList [("App", 2), ("Const(f)", 2), ("Const(a)", 2)])
+    , -- Copy (c) x Lam: the abstraction is duplicated; each copy gets its own
+      -- binder edge, and a Copy propagates along the body and the fv-list.
+      testCase "Copy x Lam -> two Lams" $
+        assertReducesTo
+          "Copy x Lam"
+          ( do
+              eIn <- newEdge
+              e1 <- newEdge
+              e2 <- newEdge
+              eBinder <- newEdge
+              eList <- newEdge
+              eBody <- newEdge
+              void $ newNode YaleLam{lamResult = eIn, lamVarList = eList, lamVar = eBinder, lamBody = eBody}
+              void $ newNode Copy{copyIn = eIn, copyOut1 = e1, copyOut2 = e2, copySticky = [], copySplitVars = []}
+              void $ newNode Constant{inp = eBody, name = "b"}
+              void $ newNode EndList{endIn = eList}
+          )
+          (Map.fromList [("Lam", 2), ("Const(b)", 2), ("End", 2)])
+    , -- Forcing (4) x Forcing (4): the two forcing agents cancel.
+      testCase "Forcing x Forcing -> empty" $
+        assertReducesTo
+          "Forcing x Forcing"
+          ( do
+              e <- newEdge
+              void $ newNode Forcing{forcingIn = e}
+              void $ newNode Forcing{forcingIn = e}
+          )
+          Map.empty
+    , -- Forcing (4) x Constant: the forcing agent is absorbed at a base value.
+      testCase "Forcing x Constant -> Constant (absorbed)" $
+        assertReducesTo
+          "Forcing x Constant"
+          ( do
+              e <- newEdge
+              void $ newNode Forcing{forcingIn = e}
+              void $ newNode Constant{inp = e, name = "k"}
+          )
+          (Map.fromList [("Const(k)", 1)])
+    , -- Forcing (4) x FreeVar (b): the b agent is toggled to b' (blocked).
+      testCase "Forcing x FreeVar -> FreeVarBlocked" $
+        assertReducesTo
+          "Forcing x FreeVar"
+          ( do
+              eHead <- newEdge
+              eOcc <- newEdge
+              void $ newNode Forcing{forcingIn = eHead}
+              void $ newNode FreeVar{fvCont = eHead, fvOcc = eOcc, name = "x"}
+          )
+          (Map.fromList [("FreeVB", 1)])
+    , -- Forcing (4) x FreeVarBlocked (b'): the b' agent is toggled back to b.
+      testCase "Forcing x FreeVarBlocked -> FreeVar" $
+        assertReducesTo
+          "Forcing x FreeVarBlocked"
+          ( do
+              eHead <- newEdge
+              eCont <- newEdge
+              eOcc <- newEdge
+              void $ newNode Forcing{forcingIn = eHead}
+              void $ newNode FreeVarBlocked{fvHead = eHead, fvCont = eCont, fvOcc = eOcc, name = "x"}
+          )
+          (Map.fromList [("FreeV", 1)])
+    ]
+
+-- * Duplication-composition tests (net-level, paper-faithful)
+
+{- | Agent tags that must NOT survive in a clean normal form: a lingering
+duplication\/substitution\/erasure agent (or a free-variable marker) means the
+net is stuck mid-reduction. (A lone 'Forcing' at the output, and 'Lam'\/'App'\/
+'End' inside a Church value, are legitimate and are NOT flagged.)
+-}
+yaleStuckTags :: [String]
+yaleStuckTags = ["Copy", "Subst", "Erase", "FreeV", "FreeVB", "BoundV"]
+
+{- | Reduce a FULL YALE net built from a closed lambda term ('buildYaleNet',
+which adds the 'Initiator' and the output 'Forcing') and assert it reaches
+normal form with no stuck agents. Unlike 'assertReducesTo' (an exact histogram
+for a single rule), this checks a COMPOSITION: the whole term reduces and no
+duplication\/erasure\/substitution agent is left dangling. This is the
+lambda-term-level regression test for composition bugs that the single-rule
+tests cannot catch.
+-}
+assertLamNormalForm :: String -> Lam -> IO ()
+assertLamNormalForm lbl lam = do
+  let g0 = buildYaleNet lam
+      (steps, g, nf) = reduceStepsYale 10000 g0
+      h = yaleHist g
+      stuck = [t | t <- yaleStuckTags, isJust (Map.lookup t h)]
+  assertBool (lbl <> ": expected NF, stuck after " <> show steps <> " steps") nf
+  assertBool (lbl <> ": stuck agents remain: " <> show stuck) (null stuck)
+
+{- | Composition tests for the duplication dynamics. The minimal structure that
+exposed the 'copyLamRHS' bug: a lambda is DUPLICATED (by self-application or a
+Church numeral) and its body is itself a lambda whose body is a bound variable
+of an OUTER lambda that is being duplicated. Such a body is a bound-variable
+occurrence, not a sub-net, so it must be SPLIT across the copies (routed by
+'byEdgeOrSticky'), never handed to a body 'Copy' agent (which would dangle on
+the binder edge and stick the net).
+-}
+yaleDuplicationCompositionTests :: TestTree
+yaleDuplicationCompositionTests =
+  testGroup
+    "yale-duplication-compositions"
+    [ -- Positive control: duplicating @λa. a@ (body = the SAME lambda's bound
+      -- variable, the @lamBody == v@ case) already worked and must keep working.
+      testCase "dup (\\a. a) via self-app" $
+        assertLamNormalForm "dup (\\a. a)" (LApp (LLam "x" (LApp (LVar "x") (LVar "x"))) (LLam "a" (LVar "a")))
+    , -- THE BUG: duplicating @λa. λb. a@ (body = a bound variable of an OUTER
+      -- lambda being duplicated). Self-application @(\x. x x)@ uses its argument
+      -- twice, forcing the duplication of @(\a b. a)@.
+      testCase "dup (\\a b. a) via self-app" $
+        assertLamNormalForm "dup (\\a b. a)" (LApp (LLam "x" (LApp (LVar "x") (LVar "x"))) (LLam "a" (LLam "b" (LVar "a"))))
+    , -- The same structure driven by a Church numeral: @2 (\k. (\a b. a) k) 3@
+      -- reduces to @3@. The numeral 2 duplicates @(\k. (\a b. a) k)@, whose body
+      -- contains the nested @λa. λb. a@.
+      testCase "2 (\\k. (\\a b. a) k) 3" $
+        assertLamNormalForm
+          "2 (\\k. (\\a b. a) k) 3"
+          ( LApp
+              (LApp (church 2) (LLam "k" (LApp (LLam "a" (LLam "b" (LVar "a"))) (LVar "k"))))
+              (church 3)
+          )
+    ]
+ where
+  church n = evalState (churchLam n) 0
+
 -- * Recursion tests (S7)
 
 {- | Assert that the LML interpreter and the YALE pipeline agree on the program,
@@ -382,13 +698,17 @@ recursionTests =
     , testCase "countdown 4 = 10" $ assertYaleAgrees (countdownSrc 4) (RInt 10)
     ]
  where
-  factSrc n = "module M\nlet rec fact k = if k < 1 then 1 else k * fact (k - 1)\nlet result = fact " <> show n
+  factSrc :: Integer -> Text
+  factSrc n = "module M\nlet rec fact k = if k < 1 then 1 else k * fact (k - 1)\nlet result = fact " <> T.pack (show n)
   -- NB: the LML grammar requires the left operand of an infix operator to be a
   -- 'simple_expr' (Parser.y: 'simple_expr infix_op compound_expr'); a bare
   -- application like 'fib (k - 1)' is only a 'compound_expr', so it must be
   -- parenthesized to sit on the left of '+'.
-  fibSrc n = "module M\nlet rec fib k = if k < 2 then 1 else (fib (k - 1)) + fib (k - 2)\nlet result = fib " <> show n
-  countdownSrc n = "module M\nlet rec countdown k = if k < 1 then 0 else k + countdown (k - 1)\nlet result = countdown " <> show n
+  fibSrc :: Integer -> Text
+  fibSrc n = "module M\nlet rec fib k = if k < 2 then 1 else (fib (k - 1)) + fib (k - 2)\nlet result = fib " <> T.pack (show n)
+  countdownSrc :: Integer -> Text
+  countdownSrc n =
+    "module M\nlet rec countdown k = if k < 1 then 0 else k + countdown (k - 1)\nlet result = countdown " <> T.pack (show n)
 
 {- | Mutual-recursion tests: exercise the 'LMutRec' cycle (one binder per
 function, cross-references by name). Each case runs BOTH the LML interpreter and
@@ -405,11 +725,12 @@ mutualRecTests =
     , testCase "odd 7 = true" $ assertYaleAgrees (evenOddSrc "odd" 7) (RBool True)
     ]
  where
+  evenOddSrc :: Text -> Integer -> Text
   evenOddSrc fn n =
     "module M\nlet rec even k = if k < 1 then true else odd (k - 1) and odd k = if k < 1 then false else even (k - 1)\nlet result = "
       <> fn
       <> " "
-      <> show n
+      <> T.pack (show n)
 
 {- | Tests for the step-bounded SKI runner: a well-behaved term (the Church
 numeral 5) reduces to normal form within the budget, while the non-terminating
@@ -474,12 +795,12 @@ wrapDecoder term =
    in Term.A (Term.A term decoderFn) (Term.V baseName)
 
 -- | Count the tick nodes in a reduced graph (the decoded integer).
-decodeTicks :: Graph SKI -> Int
+decodeTicks :: Graph INet.SKI -> Int
 decodeTicks = countLogical isTick
  where
-  isTick :: SKI -> Bool
+  isTick :: INet.SKI -> Bool
   isTick = \case
-    V{name = n} -> n == tickName
+    INet.V{INet.name = n} -> n == tickName
     _ -> False
 
 {- | Regression test for the "drop unevaluated argument" optimization. The term
@@ -655,9 +976,9 @@ yaleComplexTests =
         assertYaleAgrees
           "module M\nlet applyTwice = fun f x -> f (f x)\nlet result = applyTwice (fun x -> x + 1) 10"
           (RInt 12)
-    -- Top-level @let@ bindings that ARE functions (multi-argument, curried),
-    -- using the @let name args = body@ form (no explicit @fun@).
-    , testCase "top-level fn: max 3 5 = 5" $
+    , -- Top-level @let@ bindings that ARE functions (multi-argument, curried),
+      -- using the @let name args = body@ form (no explicit @fun@).
+      testCase "top-level fn: max 3 5 = 5" $
         assertYaleAgrees
           "module M\nlet max x y = if x < y then y else x\nlet result = max 3 5"
           (RInt 5)
@@ -677,9 +998,9 @@ yaleComplexTests =
         assertYaleAgrees
           "module M\nlet max x y = if x < y then y else x\nlet max3 x y z = max x (max y z)\nlet result = max3 9 2 4"
           (RInt 9)
-    -- Associativity property: @max x (max y z) == max (max x y) z@. Both sides
-    -- are evaluated independently and must agree with the expected value.
-    , testCase "assoc: max 1 (max 2 3) = 3" $
+    , -- Associativity property: @max x (max y z) == max (max x y) z@. Both sides
+      -- are evaluated independently and must agree with the expected value.
+      testCase "assoc: max 1 (max 2 3) = 3" $
         assertYaleAgrees
           "module M\nlet max x y = if x < y then y else x\nlet result = max 1 (max 2 3)"
           (RInt 3)
@@ -697,8 +1018,60 @@ yaleComplexTests =
           (RInt 5)
     ]
 
--- | The boolean-match scrutinee binder (the desugared @if@ binds the condition
--- to this name).
+{- | Simple-construction localization matrix for the non-terminating
+duplication bug. Each case is a top-level function applied to arguments, run
+through BOTH the LML interpreter and the YALE pipeline ('assertYaleAgrees').
+
+Localisation result: the trigger is applying 'pred' (via 'sub', which backs
+'<' / '<=' / '>' / '-') FOUR OR MORE times to a Church numeral. 'a - b' is
+'pred^b(a)', and 'm < n' is 'not (isZero (n - m))', so the LEFT operand of
+'<' (respectively the subtrahend of '-') is the number of 'pred' applications:
+
+  * 1-3 preds  -> converges (fast for small, slow for large numerals);
+  * >= 4 preds -> the net grows ~1 node/step and overflows the step budget.
+
+The cases marked @BUG@ therefore fail with 'StepOverflowReached' until the
+'pred' duplication is fixed; they are the regression probes for that fix.
+(They never hang: 'skiEvalYale' is bounded by 'defaultMaxSteps'.)
+-}
+yaleSimpleConstructionTests :: TestTree
+yaleSimpleConstructionTests =
+  testGroup
+    "YALE simple constructions"
+    [ -- Arithmetic with big args: baseline, all converge.
+      testCase "f x y = x + y ; f 3 4 = 7" $ fnCase "let f x y = x + y" "f 3 4" (RInt 7)
+    , testCase "f x y = x * y ; f 3 4 = 12" $ fnCase "let f x y = x * y" "f 3 4" (RInt 12)
+    , testCase "f x y = x - y ; f 4 3 = 1" $ fnCase "let f x y = x - y" "f 4 3" (RInt 1)
+    , testCase "f x = x + x ; f 3 = 6" $ fnCase "let f x = x + x" "f 3" (RInt 6)
+    , testCase "f x = x * x ; f 3 = 9" $ fnCase "let f x = x * x" "f 3" (RInt 9)
+    , -- Comparison, left operand <= 3 (<= 3 preds): converge.
+      testCase "f x y = x < y ; f 1 2 = true" $ fnCase "let f x y = x < y" "f 1 2" (RBool True)
+    , testCase "f x y = x < y ; f 2 1 = false" $ fnCase "let f x y = x < y" "f 2 1" (RBool False)
+    , testCase "f x y = x < y ; f 3 4 = true" $ fnCase "let f x y = x < y" "f 3 4" (RBool True)
+    , testCase "f x = x < 3 ; f 1 = true" $ fnCase "let f x = x < 3" "f 1" (RBool True)
+    , testCase "f x = x < 3 ; f 3 = false" $ fnCase "let f x = x < 3" "f 3" (RBool False)
+    , -- Comparison, left operand >= 4 (>= 4 preds): THE BUG (overflows).
+      testCase "BUG f x y = x < y ; f 4 5 = true" $ fnCase "let f x y = x < y" "f 4 5" (RBool True)
+    , testCase "BUG f x y = x < y ; f 5 3 = false" $ fnCase "let f x y = x < y" "f 5 3" (RBool False)
+    , testCase "BUG f x = x < 3 ; f 4 = false" $ fnCase "let f x = x < 3" "f 4" (RBool False)
+    , testCase "BUG f x = x < 3 ; f 5 = false" $ fnCase "let f x = x < 3" "f 5" (RBool False)
+    , -- Subtraction, subtrahend >= 4 (>= 4 preds): confirms sub/pred is the
+      -- culprit, independent of the '<' / isZero / not wrappers.
+      testCase "f x = x - 3 ; f 5 = 2" $ fnCase "let f x = x - 3" "f 5" (RInt 2)
+    , testCase "BUG f x = x - 4 ; f 5 = 1" $ fnCase "let f x = x - 4" "f 5" (RInt 1)
+    , testCase "BUG f x = x - 4 ; f 4 = 0" $ fnCase "let f x = x - 4" "f 4" (RInt 0)
+    , -- Multi-param arithmetic / if: converge.
+      testCase "f x y z = x + y * z ; f 3 4 5 = 23" $ fnCase "let f x y z = x + y * z" "f 3 4 5" (RInt 23)
+    , testCase "f x y z = if x < y then y else z ; f 3 4 5 = 4" $
+        fnCase "let f x y z = if x < y then y else z" "f 3 4 5" (RInt 4)
+    ]
+ where
+  fnCase defn call =
+    assertYaleAgrees ("module M\n" <> defn <> "\nlet result = " <> call)
+
+{- | The boolean-match scrutinee binder (the desugared @if@ binds the condition
+to this name).
+-}
 scrut :: Var
 scrut = Id (Name (mkLongident (pure "t#a")))
 

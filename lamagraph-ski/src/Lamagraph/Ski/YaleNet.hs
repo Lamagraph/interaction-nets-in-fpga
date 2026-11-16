@@ -43,6 +43,7 @@ module Lamagraph.Ski.YaleNet (
   YaleNode (..),
   buildYaleNet,
   buildYaleNetK,
+  BuildM,
   Projection,
   idProj,
   compileBinder,
@@ -126,10 +127,8 @@ data YaleNode
   | {- | The @s@ (substitution) agent, propagated inside a copied body.
     @substVar@ is the bound-variable edge of the abstraction being duplicated
     (the original); @substVarCopy@ is the bound-variable edge of the copy this
-    @s@ agent belongs to. When the @s@ agent meets a 'BoundVar' marker whose
-    port equals @substVar@, it rewires the occurrence to @substVarCopy@ (so the
-    copy gets its own bound variable); otherwise it passes through (free var or
-    a nested abstraction's bound variable).
+    @s@ agent belongs to. The @s@ agent propagates into applications and nested
+    abstractions and is erased at a base value.
     -}
     Subst
       { substIn :: Edge
@@ -164,32 +163,6 @@ data YaleNode
   | -- | The @ν@ (end-of-list) agent.
     EndList
       { endIn :: Edge
-      }
-  | {- | The @v@ (bound-variable) agent (Mackie 1998, Fig. 3a). A 2-port node
-    that connects a bound-variable occurrence in the body to the binder edge
-    of the abstraction.
-
-    * @bvOcc@ is the occurrence port, sitting on the body edge where the
-      variable is used. This is the principal port: it is the edge the @s@
-      (substitution) agent meets when walking the copied body.
-    * @bvEdge@ is the binder-edge port, sitting on the abstraction's
-      bound-variable edge (@lamVar@). When the β-rule splices an argument onto
-      the binder edge, this port carries the splice, so the occurrence is
-      updated automatically.
-    * @bvId@ is a STABLE identity for the bound variable: the binder edge at
-      build time. The @s@ agent matches a marker by @bvId@ (not by @bvEdge@,
-      which moves when the β-rule splices an argument onto the binder edge).
-
-    Making the occurrence port the principal (rather than placing a single
-    marker on the shared binder edge) is what keeps the dynamics race-free:
-    the @c@ (copy) agent sits on the binder edge and therefore never meets the
-    marker (whose principal is on the body edge), so it cannot accidentally
-    consume the marker and sever the occurrence from the binder edge.
-    -}
-    BoundVar
-      { bvOcc :: Edge
-      , bvEdge :: Edge
-      , bvId :: Edge
       }
   | -- | The @e@ (garbage) agent; erases whatever it meets.
     Garbage
@@ -237,7 +210,6 @@ instance View [Edge] YaleNode where
     FreeVar{fvCont = a, fvOcc = b, name = _} -> [a, b]
     FreeVarBlocked{fvHead = a, fvCont = b, fvOcc = c, name = _} -> [a, b, c]
     EndList{endIn = a} -> [a]
-    BoundVar{bvOcc = a, bvEdge = b, bvId = _} -> [a, b]
     Garbage{garbageIn = a} -> [a]
     Forcing{forcingIn = a} -> [a]
     Constant{inp = i} -> [i]
@@ -270,9 +242,6 @@ instance View [Edge] YaleNode where
     EndList{} -> n{endIn = a}
      where
       [a] = ports
-    BoundVar{} -> n{bvOcc = a, bvEdge = b}
-     where
-      [a, b] = ports
     Garbage{} -> n{garbageIn = a}
      where
       [a] = ports
@@ -297,7 +266,6 @@ instance INet YaleNode where
     FreeVar{fvCont = a} -> a
     FreeVarBlocked{fvHead = a} -> a
     EndList{endIn = a} -> a
-    BoundVar{bvOcc = a} -> a
     Garbage{garbageIn = a} -> a
     Forcing{forcingIn = a} -> a
     Constant{inp = i} -> i
@@ -318,11 +286,11 @@ data Name = Name
   , reference :: BuildM Edge
   }
 
--- | The binder environment: a list of 'Name's, innermost binder first.
+-- | The binder environment: a list of @Name@'s, innermost binder first.
 type Env = [Name]
 
 {- | Bind a name, creating its binder 'Multiplexer'. Returns the binder edge
-and the 'Name' (whose 'reference' wires variable occurrences).
+and the @Name@ (whose 'reference' wires variable occurrences).
 -}
 bindName :: String -> BuildM (Edge, Name)
 bindName sym = do
@@ -366,7 +334,7 @@ buildFvNode env w eList = do
 -- * Net builder
 
 {- | A net fragment: a function from an input edge to an output edge, built in
-the 'BuildM' monad.
+the @BuildM@ monad.
 -}
 type Projection = Edge -> BuildM Edge
 
@@ -416,27 +384,36 @@ compile env p term = case term of
     eList <- newEdge
     (ev, name) <- bindName v
     -- Free-variable list (Mackie 1998): one 'FreeVar' (b) agent per free
-    -- variable of the body that is bound by an enclosing abstraction, all
-    -- sharing the single list edge @eList@, terminated by 'EndList' (ν).
-    -- Each 'FreeVar''s @fvOcc@ is merged onto the binder edge of the
-    -- abstraction that binds the variable, so the variable's value flows in
-    -- via the enclosing β-splice. When the 'Copy' agent duplicates this
+    -- variable of the body that must be SHARED (not duplicated) when the
+    -- abstraction is copied — currently only the recursive self-reference
+    -- (@selfRefName@), whose value is the tie-the-knot loop. All 'FreeVar's
+    -- share the single list edge @eList@, terminated by 'EndList' (ν). Each
+    -- 'FreeVar''s @fvOcc@ is merged onto the binder edge of the abstraction
+    -- that binds the variable. When the 'Copy' agent duplicates this
     -- abstraction it walks the list and duplicates each 'FreeVar' while
-    -- SHARING @fvOcc@ ('copyFreeVarRHS') — this is what makes a recursive
-    -- self-reference (a free variable of the body) shared rather than
-    -- duplicated, preserving the tie-the-knot cycle. A free variable not
-    -- bound by any enclosing abstraction is a base value and is handled as a
-    -- 'Constant' at its usage site (by 'compileVar'), not listed here.
+    -- routing @fvOcc@ ('copyFreeVarRHS') — this is what makes the recursive
+    -- self-reference shared rather than duplicated, preserving the
+    -- tie-the-knot cycle.
+    --
+    -- Ordinary captured variables (bound by an enclosing abstraction) are NOT
+    -- listed here: their occurrences are wired DIRECTLY onto the enclosing
+    -- binder edge by @compileVar@, and 'copyLamRHS'\/'copyAppRHS' split that
+    -- direct port across the copies (via 'byEdgeOrSticky'), so no 'FreeVar'
+    -- is needed to track them. Listing them would create a spurious 'FreeVar'
+    -- that survives to normal form under duplication (the inner copy's fv
+    -- list is not β-reduced), sticking the net. A free variable not bound by
+    -- any enclosing abstraction is a base value and is handled as a
+    -- 'Constant' at its usage site (by @compileVar@), not listed here.
     let freeVars =
           filter
-            (\w -> isJust (lookupBinder w env))
+            (\w -> w == selfRefName && isJust (lookupBinder w env))
             (Set.toList (fv body Set.\\ Set.singleton v))
     mapM_ (\w -> buildFvNode env w eList) freeVars
     void $ newNode EndList{endIn = eList}
     -- Abstraction @λv. body@: lamResult = result (p, principal), lamVarList =
     -- the free-variable list, lamVar = bound variable (ev), lamBody = body.
     -- Each occurrence of @v@ in the body is a direct port on the binder edge
-    -- @ev@ (wired by 'compileVar'); there is no separate marker on @ev@.
+    -- @ev@ (wired by @compileVar@); there is no separate marker on @ev@.
     void $ newNode YaleLam{lamResult = p, lamVarList = eList, lamVar = ev, lamBody = b}
     compile (name : env) b body
   LVar v -> compileVar env p v
@@ -511,12 +488,12 @@ compileVar env p v = case env of
 
 -- * Binder compilation
 
-{- | Compile a 'Multiplexer' binder away. Each occurrence already carries its
-own 'BoundVar' marker (created by 'compileVar'), whose @bvOcc@ port sits on the
-occurrence edge and whose @bvEdge@ port sits on the binder edge; the markers
-therefore already connect the occurrences to the binder edge. The 'Multiplexer'
-is a compile-time-only artifact and is simply deleted. Applied exhaustively
-until no 'Multiplexer' remains.
+{- | Compile a 'Multiplexer' binder away. Each bound-variable occurrence is
+already wired DIRECTLY onto the binder edge by @compileVar@ (a direct port on
+the binder hyperedge, no marker node in between), so the occurrences are
+already connected to the binder edge. The 'Multiplexer' is a compile-time-only
+artifact and is simply deleted. Applied exhaustively until no 'Multiplexer'
+remains.
 -}
 compileBinder :: Rule YaleNode
 compileBinder = do

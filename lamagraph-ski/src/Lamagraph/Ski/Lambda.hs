@@ -118,9 +118,9 @@ selfRefName = "__selfref__"
 SKI @V@ node by the body translation and then bound by the abstraction rule
 ('abstractSki'), so a closed lambda term translates to a closed SKI term. The
 recursion markers are not part of the SKI backend's domain: 'LRec' is
-transparent (the SKI translation never receives one — 'translateCore' rejects
-recursive bindings) and 'LMutRec' is an error (the SKI backend is
-non-recursive-only).
+transparent (the SKI translation never receives one —
+'Lamagraph.Ski.Translate.translateCore' rejects recursive bindings) and
+'LMutRec' is an error (the SKI backend is non-recursive-only).
 -}
 toSki :: Lam -> Term.Expr
 toSki = \case
