@@ -41,7 +41,7 @@ interacting nodes joined at their principal ports) and rewrites it, until no
 active pair remains (normal form) or the step budget is exhausted. The firing
 order is arbitrary (the first active pair in node order).
 -}
-module Lamagraph.Ski.YaleReduce (reduceStepsYale) where
+module Lamagraph.Ski.YaleReduce (reduceStepsYale, reduceStepsYaleTrace) where
 
 import Relude
 
@@ -97,6 +97,25 @@ reduceStepsYale maxSteps g0 =
     | otherwise = case findActivePairs g of
         [] -> (step, g, True)
         (a, b) : _ -> go (step + 1) (fireInteraction g a b) (remaining - 1)
+
+{- | Like 'reduceStepsYale', but returns the SEQUENCE of intermediate nets:
+the net after the compile-time binders are compiled away (before any
+interaction), then the net after each interaction, up to the normal form (or
+the step budget). Useful for visual debugging (see
+'Lamagraph.Ski.YaleDraw.dumpReduction'): the @i@-th element is the net after
+@i@ interactions.
+-}
+reduceStepsYaleTrace :: Int -> Graph YaleNode -> [Graph YaleNode]
+reduceStepsYaleTrace maxSteps g0 =
+  let g1 = compileBinders g0
+   in go g1 maxSteps
+ where
+  go :: Graph YaleNode -> Int -> [Graph YaleNode]
+  go g remaining
+    | remaining <= 0 = [g]
+    | otherwise = case findActivePairs g of
+        [] -> [g]
+        (a, b) : _ -> g : go (fireInteraction g a b) (remaining - 1)
 
 {- | All active pairs of the net: unordered pairs of distinct interacting nodes
 joined at their principal (port 0) edge, where the pair actually interacts.

@@ -16,12 +16,34 @@ dependencies:
   - relude
   - containers
   - mtl
+  - aeson
+  - bytestring
+  - filepath
+  - directory
   - lamagraph-compiler
   - graph-rewriting
   - graph-rewriting-ski
 
 library:
   source-dirs: src
+
+executables:
+  yale-draw:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - lamagraph-ski
+      - bytestring
+      - directory
+      - filepath
+      - graph-rewriting
+      - lamagraph-compiler
+      - relude
+      - text
 
 tests:
   lamagraph-ski-test:

@@ -33,6 +33,7 @@ library
       Lamagraph.Ski.Value
       Lamagraph.Ski.Worklist
       Lamagraph.Ski.YaleDecode
+      Lamagraph.Ski.YaleDraw
       Lamagraph.Ski.YaleNet
       Lamagraph.Ski.YaleReduce
   other-modules:
@@ -46,13 +47,45 @@ library
       MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , containers
+    , directory
+    , filepath
     , graph-rewriting
     , graph-rewriting-ski
     , lamagraph-compiler
     , mtl
     , relude
+  default-language: GHC2021
+
+executable yale-draw
+  main-is: Main.hs
+  other-modules:
+      Paths_lamagraph_ski
+  hs-source-dirs:
+      app
+  default-extensions:
+      NoImplicitPrelude
+      OverloadedStrings
+      LambdaCase
+      MonoLocalBinds
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , graph-rewriting
+    , graph-rewriting-ski
+    , lamagraph-compiler
+    , lamagraph-ski
+    , mtl
+    , relude
+    , text
   default-language: GHC2021
 
 test-suite lamagraph-ski-test
@@ -69,9 +102,11 @@ test-suite lamagraph-ski-test
       MonoLocalBinds
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
     , bytestring
     , containers
+    , directory
     , filepath
     , graph-rewriting
     , graph-rewriting-ski
