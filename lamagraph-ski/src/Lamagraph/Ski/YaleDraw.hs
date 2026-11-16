@@ -26,9 +26,9 @@ module Lamagraph.Ski.YaleDraw (
 
 import Relude
 
-import qualified Data.Aeson as Aeson
-import qualified Data.ByteString.Lazy as BSL
-import qualified Data.Map.Strict as Map
+import Data.Aeson qualified as Aeson
+import Data.ByteString.Lazy qualified as BSL
+import Data.Map.Strict qualified as Map
 import Data.View (View (inspect))
 import GraphRewriting (
   Edge,
@@ -58,7 +58,7 @@ netToInviz = evalGraph collect
   collect :: Rewrite YaleNode Aeson.Value
   collect = do
     ns <- readNodeList
-    infos <- mapM (\n -> (, n) <$> readNode n) ns
+    infos <- mapM (\n -> (,n) <$> readNode n) ns
     let sorted = sortBy (compare `on` snd) infos
         -- (agentId, label, [(portId, edge)]) per node
         nodeInfos :: [(String, String, [(String, Edge)])]
@@ -73,9 +73,9 @@ netToInviz = evalGraph collect
         edges :: [Aeson.Value]
         edges =
           [ edgeObj a1 p1 a2 p2
-              | (_, eps) <- Map.toAscList edgeMap
-              , let seps = sortBy (compare `on` (\(a, p) -> (a, p))) eps
-              , [(a1, p1), (a2, p2)] <- [seps]
+          | (_, eps) <- Map.toAscList edgeMap
+          , let seps = sortBy (compare `on` (\(a, p) -> (a, p))) eps
+          , [(a1, p1), (a2, p2)] <- [seps]
           ]
     return (Aeson.object ["agents" Aeson..= agents, "edges" Aeson..= edges])
 
@@ -85,8 +85,7 @@ netToInvizText g = decodeUtf8 (Aeson.encode (netToInviz g))
 
 -- * Dumping to files
 
-{- | Write a single net to @path@ as INviz JSON.
--}
+-- | Write a single net to @path@ as INviz JSON.
 dumpNet :: FilePath -> Graph YaleNode -> IO ()
 dumpNet path g = BSL.writeFile path (Aeson.encode (netToInviz g))
 
@@ -102,7 +101,7 @@ dumpReduction dir maxSteps g0 = do
   createDirectoryIfMissing True dir
   let graphs = reduceStepsYaleTrace maxSteps g0
   mapM_
-    ( \(i, g) -> BSL.writeFile (dir </> stepName i) (Aeson.encode (netToInviz g)) )
+    (\(i, g) -> BSL.writeFile (dir </> stepName i) (Aeson.encode (netToInviz g)))
     (zip [0 :: Int ..] graphs)
  where
   stepName :: Int -> FilePath
@@ -123,7 +122,7 @@ labelOf n = case n of
   YaleLam{} -> "Lam"
   YaleApp{} -> "App"
   Copy{} -> "Copy"
-  Subst{} -> "Subst"
+  Delta{} -> "Delta"
   Erase{} -> "Erase"
   FreeVar{name = nm} -> "FreeVar:" <> nm
   FreeVarBlocked{name = nm} -> "FreeVarBlocked:" <> nm
@@ -144,8 +143,9 @@ portIds d =
       auxIds = zip (map (\i -> "P" <> show (i + 1)) [0 :: Int ..]) auxs
    in ("P0", pp) : auxIds
 
--- | An agent JSON object. @pids@ is @(principalPort : auxiliaryPorts)@ (the
--- principal port is always first, see 'portIds').
+{- | An agent JSON object. @pids@ is @(principalPort : auxiliaryPorts)@ (the
+principal port is always first, see 'portIds').
+-}
 agentObj :: String -> String -> [(String, Edge)] -> Aeson.Value
 agentObj aid lbl ((pid0, _) : auxs) =
   Aeson.object

@@ -333,7 +333,7 @@ yaleNodeTag = \case
   YaleLam{} -> "Lam"
   YaleApp{} -> "App"
   Copy{} -> "Copy"
-  Subst{} -> "Subst"
+  Delta{} -> "Delta"
   Erase{} -> "Erase"
   FreeVar{} -> "FreeV"
   FreeVarBlocked{} -> "FreeVB"
@@ -408,19 +408,20 @@ yaleInteractionRuleTests =
               void $ newNode EndList{endIn = eIn}
           )
           (Map.fromList [("End", 2)])
-    , -- Subst (s) x Constant: the substitution agent is erased at a base value.
-      testCase "Subst x Constant -> one Constant" $
+    , -- Delta (δ) x Constant: the duplication agent duplicates a base value
+      -- (the δ×α general rule; a Constant has no auxiliary ports, so no δ is
+      -- propagated).
+      testCase "Delta x Constant -> two Constants" $
         assertReducesTo
-          "Subst x Constant"
+          "Delta x Constant"
           ( do
               eIn <- newEdge
-              eOut <- newEdge
-              eVar <- newEdge
-              eVarCopy <- newEdge
-              void $ newNode Subst{substIn = eIn, substOut = eOut, substVar = eVar, substVarCopy = eVarCopy}
+              eO1 <- newEdge
+              eO2 <- newEdge
+              void $ newNode Delta{deltaIn = eIn, deltaOut1 = eO1, deltaOut2 = eO2}
               void $ newNode Constant{inp = eIn, name = "k"}
           )
-          (Map.fromList [("Const(k)", 1)])
+          (Map.fromList [("Const(k)", 2)])
     , -- beta: (\\x. x) k -> k. The degenerate body = var case: the argument is
       -- spliced onto the binder and the result is the argument.
       testCase "beta: (\\x. x) k -> k" $
@@ -564,7 +565,7 @@ net is stuck mid-reduction. (A lone 'Forcing' at the output, and 'Lam'\/'App'\/
 'End' inside a Church value, are legitimate and are NOT flagged.)
 -}
 yaleStuckTags :: [String]
-yaleStuckTags = ["Copy", "Subst", "Erase", "FreeV", "FreeVB", "BoundV"]
+yaleStuckTags = ["Copy", "Delta", "Erase", "FreeV", "FreeVB", "BoundV"]
 
 {- | Reduce a FULL YALE net built from a closed lambda term ('buildYaleNet',
 which adds the 'Initiator' and the output 'Forcing') and assert it reaches
@@ -653,24 +654,24 @@ recursionTests =
     "recursion (cyclic net)"
     [ testCase "rec identity: f 5 = 5" $
         assertYaleAgrees "module M\nlet rec f n = n\nlet result = f 5" (RInt 5)
-    -- Light linear-recursion cases (isolate the knot with tiny inputs):
-    -- count n = n via '1 + count (n - 1)'; far cheaper than fact (uses '+').
-    , testCase "count 1 = 1" $ assertYaleAgrees (countSrc 1) (RInt 1)
+    , -- Light linear-recursion cases (isolate the knot with tiny inputs):
+      -- count n = n via '1 + count (n - 1)'; far cheaper than fact (uses '+').
+      testCase "count 1 = 1" $ assertYaleAgrees (countSrc 1) (RInt 1)
     , testCase "count 2 = 2" $ assertYaleAgrees (countSrc 2) (RInt 2)
     , testCase "count 3 = 3" $ assertYaleAgrees (countSrc 3) (RInt 3)
     , testCase "fact 0 = 1" $ assertYaleAgrees (factSrc 0) (RInt 1)
     , testCase "fact 2 = 2" $ assertYaleAgrees (factSrc 2) (RInt 2)
     , testCase "fact 3 = 6" $ assertYaleAgrees (factSrc 3) (RInt 6)
     , testCase "fact 4 = 24" $ assertYaleAgrees (factSrc 4) (RInt 24)
-    -- fact 5 = 120: exceeds the step budget (Church-factorial inefficiency).
-    -- , testCase "fact 5 = 120" $ assertYaleAgrees (factSrc 5) (RInt 120)
-    , testCase "fib 2 = 1" $ assertYaleAgrees (fibSrc 2) (RInt 1)
+    , -- fact 5 = 120: exceeds the step budget (Church-factorial inefficiency).
+      -- , testCase "fact 5 = 120" $ assertYaleAgrees (factSrc 5) (RInt 120)
+      testCase "fib 2 = 1" $ assertYaleAgrees (fibSrc 2) (RInt 1)
     , testCase "fib 3 = 2" $ assertYaleAgrees (fibSrc 3) (RInt 2)
     , testCase "fib 5 = 5" $ assertYaleAgrees (fibSrc 5) (RInt 5)
     , testCase "fib 6 = 8" $ assertYaleAgrees (fibSrc 6) (RInt 8)
-    -- fib 10 = 55: exceeds the step budget (exponential recursion).
-    -- , testCase "fib 10 = 55" $ assertYaleAgrees (fibSrc 10) (RInt 55)
-    , testCase "countdown 1 = 1" $ assertYaleAgrees (countdownSrc 1) (RInt 1)
+    , -- fib 10 = 55: exceeds the step budget (exponential recursion).
+      -- , testCase "fib 10 = 55" $ assertYaleAgrees (fibSrc 10) (RInt 55)
+      testCase "countdown 1 = 1" $ assertYaleAgrees (countdownSrc 1) (RInt 1)
     , testCase "countdown 2 = 3" $ assertYaleAgrees (countdownSrc 2) (RInt 3)
     , testCase "countdown 4 = 10" $ assertYaleAgrees (countdownSrc 4) (RInt 10)
     , testCase "power 2 2 = 4" $ assertYaleAgrees (powerSrc 2 2) (RInt 4)
@@ -729,8 +730,8 @@ basicFuncTests =
     , testCase "min4a (min (min a b) (min c d)) 4 2 8 6 = 2" $ assertYaleAgrees (min4aSrc 4 2 8 6) (RInt 2)
     , testCase "min4b (min d (min c (min a b))) 3 7 1 5 = 1" $ assertYaleAgrees (min4bSrc 3 7 1 5) (RInt 1)
     , testCase "min4b (min d (min c (min a b))) 4 2 8 6 = 2" $ assertYaleAgrees (min4bSrc 4 2 8 6) (RInt 2)
-    -- Small inputs (isolate input-size dependence of the #104 timeouts):
-    , testCase "min3a small 1 1 1 = 1" $ assertYaleAgrees (min3aSrc 1 1 1) (RInt 1)
+    , -- Small inputs (isolate input-size dependence of the #104 timeouts):
+      testCase "min3a small 1 1 1 = 1" $ assertYaleAgrees (min3aSrc 1 1 1) (RInt 1)
     , testCase "min3a small 2 1 3 = 1" $ assertYaleAgrees (min3aSrc 2 1 3) (RInt 1)
     , testCase "min3b small 1 1 1 = 1" $ assertYaleAgrees (min3bSrc 1 1 1) (RInt 1)
     , testCase "min3b small 2 1 3 = 1" $ assertYaleAgrees (min3bSrc 2 1 3) (RInt 1)
