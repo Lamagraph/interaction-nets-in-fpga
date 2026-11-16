@@ -157,9 +157,8 @@ translateTests =
     ]
 
 {- | Unit tests for 'fv' and 'subst' over the recursion constructors
-('LSelfRef', 'LRec', 'LMutRec'): a self-reference contributes no free
-variable, group names are bound in a mutual group, and substitution respects
-the binders (a bound name is not substituted; a group name is protected).
+('LSelfRef', 'LRec'): a self-reference contributes no free variable, and
+substitution respects the binders (a bound name is not substituted).
 -}
 recIrTests :: TestTree
 recIrTests =
@@ -171,11 +170,6 @@ recIrTests =
           "fv (LRec (LLam f (self x)))"
           (Set.fromList ["x"])
           (fv (LRec (LLam "f" (LApp LSelfRef (LVar "x")))))
-    , testCase "fv LMutRec: group names are bound" $
-        assertEqual
-          "fv (LMutRec [(even, ...), (odd, ...)] (even z))"
-          (Set.fromList ["z"])
-          (fv (LMutRec mutualGroups (LApp (LVar "even") (LVar "z"))))
     , testCase "subst: bound name is not substituted in an LRec body" $
         assertEqual
           "subst f g (LRec (LLam f (self f)))"
@@ -186,29 +180,13 @@ recIrTests =
           "subst f g (f (LRec (LLam f (self f))))"
           (LApp (LVar "g") (LRec (LLam "f" (LApp LSelfRef (LVar "f")))))
           (subst "f" (LVar "g") (LApp (LVar "f") (LRec (LLam "f" (LApp LSelfRef (LVar "f"))))))
-    , testCase "subst: a group name is protected in an LMutRec" $
-        assertEqual
-          "subst even w (LMutRec groups (even z))"
-          (LMutRec mutualGroups (LApp (LVar "even") (LVar "z")))
-          (subst "even" (LVar "w") (LMutRec mutualGroups (LApp (LVar "even") (LVar "z"))))
-    , testCase "subst: an external name recurses into an LMutRec" $
-        assertEqual
-          "subst z w (LMutRec groups z)"
-          (LMutRec mutualGroups (LVar "w"))
-          (subst "z" (LVar "w") (LMutRec mutualGroups (LVar "z")))
-    ]
- where
-  -- \| A mutual-recursion group: @even@ and @odd@ call each other.
-  mutualGroups :: [(String, Lam)]
-  mutualGroups =
-    [ ("even", LLam "n" (LApp (LVar "odd") (LVar "n")))
-    , ("odd", LLam "n" (LApp (LVar "even") (LVar "n")))
     ]
 
 {- | Tests for 'translateLam': 'let rec' produces an 'LRec' with an 'LSelfRef'
-self-reference, mutual 'let rec' produces an 'LMutRec', a non-recursive program
-carries no recursion markers, and 'translateCore' rejects recursive bindings
-(the SKI backend is non-recursive-only).
+self-reference, mutual 'let rec' is expanded to a plain lambda term via
+Bekić's theorem (no recursion markers), a non-recursive program carries no
+recursion markers, and 'translateCore' rejects recursive bindings (the SKI
+backend is non-recursive-only).
 -}
 translateLamTests :: TestTree
 translateLamTests =
@@ -223,14 +201,14 @@ translateLamTests =
               assertBool "contains LRec" (containsRecMarker lam)
               assertBool "contains LSelfRef" (containsLSelfRef lam)
               assertLamClosed lam
-    , testCase "mutual let rec -> LMutRec" $
+    , testCase "mutual let rec -> plain lambda term (Bekić expansion)" $
         case compileLml
           "module M\nlet rec even n = if n < 1 then true else odd (n - 1) and odd n = if n < 1 then false else even (n - 1)\nlet result = even 4" of
           Left e -> assertFailure $ "compileLml failed: " <> e
           Right (binds, resultExpr) -> case translateLam binds resultExpr of
             Left e -> assertFailure $ "translateLam failed: " <> show e
             Right lam -> do
-              assertBool "top level is LMutRec" (isLMutRec lam)
+              assertBool "no recursion markers" (not (containsRecMarker lam))
               assertLamClosed lam
     , testCase "non-recursive program carries no recursion markers" $
         case compileLml "module M\nlet double = fun x -> x + x\nlet result = double 3" of
@@ -246,18 +224,12 @@ translateLamTests =
             other -> assertFailure $ "expected Left (UnsupportedConstruct \"recursive let\"), got " <> show other
     ]
 
--- | Whether a lambda term is an 'LMutRec' at the top level.
-isLMutRec :: Lam -> Bool
-isLMutRec (LMutRec _ _) = True
-isLMutRec _ = False
-
-{- | Whether a lambda term contains a recursion marker ('LRec', 'LMutRec', or
-'LSelfRef') anywhere.
+{- | Whether a lambda term contains a recursion marker ('LRec' or 'LSelfRef')
+anywhere.
 -}
 containsRecMarker :: Lam -> Bool
 containsRecMarker = \case
   LRec _ -> True
-  LMutRec _ _ -> True
   LSelfRef -> True
   LVar _ -> False
   LApp f x -> containsRecMarker f || containsRecMarker x
@@ -271,7 +243,6 @@ containsLSelfRef = \case
   LApp f x -> containsLSelfRef f || containsLSelfRef x
   LLam _ b -> containsLSelfRef b
   LRec l -> containsLSelfRef l
-  LMutRec groups body -> any (containsLSelfRef . snd) groups || containsLSelfRef body
 
 -- | Assert that a lambda term is closed (no free variables).
 assertLamClosed :: Lam -> Assertion

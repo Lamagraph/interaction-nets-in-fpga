@@ -39,15 +39,6 @@ data Lam
     finite cyclic net.
     -}
     LRec Lam
-  | {- | Marks a group of mutually-recursive functions. The list carries
-    @(name, body)@ pairs: each body has its own self-references as 'LSelfRef'
-    and cross-references to the other functions as 'LVar' (by name). The
-    final 'Lam' is the surrounding body, with references to the functions as
-    'LVar' (by name). The YALE net builder compiles each function to its own
-    output edge and wires the self- and cross-references back to those edges
-    (a cycle through 'Lamagraph.Ski.YaleNet.Copy' agents).
-    -}
-    LMutRec [(String, Lam)] Lam
   deriving (Show, Eq)
 
 {- | Generate a fresh, unique variable name. Composing lambda terms (e.g.
@@ -71,10 +62,6 @@ fv = \case
   LLam v body -> fv body Set.\\ Set.singleton v
   LSelfRef -> Set.singleton selfRefName
   LRec l -> fv l Set.\\ Set.singleton selfRefName
-  LMutRec groups body ->
-    let groupNames = Set.fromList (map fst groups)
-        allFvs = foldr ((<>) . fv . snd) Set.empty groups <> fv body
-     in allFvs `Set.difference` groupNames
 
 {- | Substitute @repl@ for every free occurrence of @v@ in a lambda term.
 (Ignores variable capture; adequate for the minimal subset, hardened in S5.)
@@ -87,11 +74,6 @@ subst v repl (LLam w body)
   | otherwise = LLam w (subst v repl body)
 subst _ _ LSelfRef = LSelfRef
 subst v repl (LRec l) = LRec (subst v repl l)
-subst v repl (LMutRec groups body)
-  | v `Set.member` groupNames = LMutRec groups body
-  | otherwise = LMutRec (map (second (subst v repl)) groups) (subst v repl body)
- where
-  groupNames = Set.fromList (map fst groups)
 
 {- | Replace every 'LSelfRef' in a lambda term with a free variable @v@. Used
 by the recursive-binding handlers to convert a recursive body (with
@@ -104,8 +86,6 @@ replaceSelfRef v = \case
   LApp f x -> LApp (replaceSelfRef v f) (replaceSelfRef v x)
   LLam w body -> LLam w (replaceSelfRef v body)
   LRec l -> LRec (replaceSelfRef v l)
-  LMutRec groups body ->
-    LMutRec (map (second (replaceSelfRef v)) groups) (replaceSelfRef v body)
 
 {- | The reserved variable name for a self-reference ('LSelfRef'). The net
 builder recognises this name and splices the corresponding occurrence into a
@@ -117,10 +97,9 @@ selfRefName = "__selfref__"
 {- | Translate a lambda term to a SKI term. A bound variable is introduced as a
 SKI @V@ node by the body translation and then bound by the abstraction rule
 ('abstractSki'), so a closed lambda term translates to a closed SKI term. The
-recursion markers are not part of the SKI backend's domain: 'LRec' is
+recursion marker is not part of the SKI backend's domain: 'LRec' is
 transparent (the SKI translation never receives one —
-'Lamagraph.Ski.Translate.translateCore' rejects recursive bindings) and
-'LMutRec' is an error (the SKI backend is non-recursive-only).
+'Lamagraph.Ski.Translate.translateCore' rejects recursive bindings).
 -}
 toSki :: Lam -> Term.Expr
 toSki = \case
@@ -129,7 +108,6 @@ toSki = \case
   LLam v body -> abstractSki v (toSki body)
   LSelfRef -> Term.V selfRefName
   LRec l -> toSki l
-  LMutRec _ _ -> error "toSki: mutual recursion is not supported by the SKI backend"
 
 {- | Whether @v@ occurs as a free @V@ node anywhere in a SKI term. The SKI
 constants (@S@, @K@, @I@) carry no free variables.

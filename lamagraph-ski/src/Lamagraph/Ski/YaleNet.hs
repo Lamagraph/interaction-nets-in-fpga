@@ -52,7 +52,6 @@ module Lamagraph.Ski.YaleNet (
 
 import Relude
 
-import Data.Set qualified as Set
 import Data.View
 import GraphRewriting (
   Edge,
@@ -72,7 +71,7 @@ import GraphRewriting (
  )
 import GraphRewriting.Pattern.InteractionNet (INet (..))
 
-import Lamagraph.Ski.Lambda (Lam (..), fv, replaceSelfRef, selfRefName)
+import Lamagraph.Ski.Lambda (Lam (..), replaceSelfRef, selfRefName)
 
 -- * Node type (the YALE signature)
 
@@ -305,32 +304,6 @@ bindName sym = do
         return e
   return (v, Name{symbol = sym, binderEdge = v, reference = ref})
 
-{- | Look up the binder edge of a name in the environment (innermost binder
-first). Used to wire a 'FreeVar' occurrence onto the enclosing abstraction's
-binder edge.
--}
-lookupBinder :: String -> Env -> Maybe Edge
-lookupBinder sym env = listToMaybe [binderEdge n | n <- env, symbol n == sym]
-
-{- | Build one 'FreeVar' (b) agent for a free variable @w@ of an abstraction
-body: its @fvCont@ port joins the list edge @eList@ and its @fvOcc@ port is
-merged onto the binder edge of the enclosing abstraction that binds @w@. The
-caller guarantees @w@ is bound in @env@ (see 'lookupBinder').
--}
-buildFvNode :: Env -> String -> Edge -> BuildM ()
-buildFvNode env w eList = do
-  let Just binderEdge = lookupBinder w env
-  eOcc <- newEdge
-  -- Create the node FIRST (its @fvOcc@ port is on the fresh, live @eOcc@),
-  -- THEN merge @eOcc@ onto the enclosing binder edge (moving the port). The
-  -- node's @fvOcc@ field still names @eOcc@ afterwards, so patch it to the
-  -- survivor to avoid a stale edge reference.
-  fvNode <- newNode FreeVar{fvCont = eList, fvOcc = eOcc, name = w}
-  mergeEdges binderEdge eOcc
-  modifyNode fvNode $ \n -> case n of
-    FreeVar{fvCont = a, name = c} -> FreeVar{fvCont = a, fvOcc = binderEdge, name = c}
-    _ -> n
-
 -- * Net builder
 
 {- | A net fragment: a function from an input edge to an output edge, built in
@@ -384,31 +357,20 @@ compile env p term = case term of
     eList <- newEdge
     (ev, name) <- bindName v
     -- Free-variable list (Mackie 1998): one 'FreeVar' (b) agent per free
-    -- variable of the body that must be SHARED (not duplicated) when the
-    -- abstraction is copied — currently only the recursive self-reference
-    -- (@selfRefName@), whose value is the tie-the-knot loop. All 'FreeVar's
-    -- share the single list edge @eList@, terminated by 'EndList' (ν). Each
-    -- 'FreeVar''s @fvOcc@ is merged onto the binder edge of the abstraction
-    -- that binds the variable. When the 'Copy' agent duplicates this
-    -- abstraction it walks the list and duplicates each 'FreeVar' while
-    -- routing @fvOcc@ ('copyFreeVarRHS') — this is what makes the recursive
-    -- self-reference shared rather than duplicated, preserving the
-    -- tie-the-knot cycle.
+    -- variable of the body that is NOT bound by any enclosing abstraction in
+    -- the current environment. The recursive self-reference (@selfRefName@)
+    -- is NOT listed here: it is a bound variable of an enclosing abstraction
+    -- (the @LRec@ binder), so @compileVar@ wires it DIRECTLY onto that
+    -- binder edge. The β-rule's splice of the knot edge onto the binder edge
+    -- then preserves the self-reference naturally — no 'FreeVar' intermediary
+    -- is needed (and one would be erroneously erased by the β-rule).
     --
-    -- Ordinary captured variables (bound by an enclosing abstraction) are NOT
-    -- listed here: their occurrences are wired DIRECTLY onto the enclosing
-    -- binder edge by @compileVar@, and 'copyLamRHS'\/'copyAppRHS' split that
-    -- direct port across the copies (via 'byEdgeOrSticky'), so no 'FreeVar'
-    -- is needed to track them. Listing them would create a spurious 'FreeVar'
-    -- that survives to normal form under duplication (the inner copy's fv
-    -- list is not β-reduced), sticking the net. A free variable not bound by
-    -- any enclosing abstraction is a base value and is handled as a
-    -- 'Constant' at its usage site (by @compileVar@), not listed here.
-    let freeVars =
-          filter
-            (\w -> w == selfRefName && isJust (lookupBinder w env))
-            (Set.toList (fv body Set.\\ Set.singleton v))
-    mapM_ (\w -> buildFvNode env w eList) freeVars
+    -- Ordinary captured variables (bound by an enclosing abstraction) are
+    -- likewise NOT listed: their occurrences are wired DIRECTLY onto the
+    -- enclosing binder edge by @compileVar@, and 'copyLamRHS'\/'copyAppRHS'
+    -- split that direct port across the copies (via 'byEdgeOrSticky').
+    -- A free variable not bound by any enclosing abstraction is a base value
+    -- and is handled as a 'Constant' at its usage site (by @compileVar@).
     void $ newNode EndList{endIn = eList}
     -- Abstraction @λv. body@: lamResult = result (p, principal), lamVarList =
     -- the free-variable list, lamVar = bound variable (ev), lamBody = body.
@@ -419,24 +381,27 @@ compile env p term = case term of
   LVar v -> compileVar env p v
   LSelfRef -> compileVar env p selfRefName
   LRec (LLam _ body) ->
-    -- YALE "tie the knot" (Mackie 1998, §6 "Recursion", Fig. p.125): @Y(F)@
-    -- where @F = λself. body'@ and @body' = body[LSelfRef ↦ self]@. The knot
-    -- is a SINGLE shared edge @eK@ that is simultaneously the argument of the
-    -- application and the second output of the copy agent:
+    -- YALE "tie the knot" (Mackie 1998, §6 "Recursion"): @Y(F)@ where
+    -- @F = λself. body'@ and @body' = body[LSelfRef ↦ self]@. The paper codes
+    -- recursion "without needing to introduce any additional agents" — the
+    -- knot is a cyclic structure using TWO application agents ("using two
+    -- interactions", Fig. p.125):
     --
-    --        p ◄─ c.out1
-    --             c  = Copy(in=eRes, out1=p, out2=eK)
-    --             @  = YaleApp(func=N, arg=eK, res=eRes)
-    --             N  = 𝒯(λself. body')
-    --   eK is a single shared edge: @.appArg = c.out2 (the loop).
+    --        p ◄─ @1.res
+    --             @1  = YaleApp(func=N1, arg=eK, res=p)
+    --        eK ◄─ @2.res
+    --             @2  = YaleApp(func=N2, arg=eK, res=eK)
+    --             N1, N2 = two copies of 𝒯(λself. body')
+    --
+    -- @eK@ is the knot edge: the argument of BOTH applications and the result
+    -- of @2. When @2 fires (β-rule with appArg == appResult == eK), the body
+    -- (with self↦eK) flows back to eK, regenerating the knot. The β-rule
+    -- preserves eK in this case (see 'betaRHS' in YaleReduce.hs).
     --
     -- The self-reference is a BOUND variable of @F@ (spliced onto @eK@ when
-    -- the @ fires); it is a free variable of any nested abstraction, so it
+    -- an @ fires); it is a free variable of any nested abstraction, so it
     -- enters that abstraction's free-variable list (a 'FreeVar' whose
-    -- @fvOcc@ sits on @F@'s binder edge). The 'Copy' agent shares @eK@ (via
-    -- 'copySticky') rather than duplicating it — this is the paper's
-    -- "boundary wires are shared, not copied" behaviour, and is what
-    -- preserves the tie-the-knot cycle.
+    -- @fvOcc@ sits on @F@'s binder edge).
     do
       eK <- newEdge
       eN <- newEdge
@@ -454,15 +419,6 @@ compile env p term = case term of
             , copySplitVars = []
             }
   LRec _ -> error "LRec: expected a lambda"
-  LMutRec groups body ->
-    -- Mutual recursion: one 'Multiplexer' per function; each body is compiled
-    -- to its own output (self-references wired to it, cross-references by
-    -- name), and the surrounding body is compiled with all names in scope.
-    do
-      (es, names) <- mapAndUnzipM (bindName . fst) groups
-      let env' = names ++ env
-      zipWithM_ (\e (n, b) -> compile env' e (replaceSelfRef n b)) es groups
-      compile env' p body
 
 {- | Resolve a variable occurrence @v@ at the edge @p@ under the binder
 environment @env@. The innermost matching binder is wired directly; a

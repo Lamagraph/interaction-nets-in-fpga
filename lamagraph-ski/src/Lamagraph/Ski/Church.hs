@@ -28,6 +28,9 @@ module Lamagraph.Ski.Church (
   pairLam,
   fstLam,
   sndLam,
+  tupleLam,
+  projLam,
+  yLam,
   unitLam,
   intToChurch,
 ) where
@@ -311,6 +314,56 @@ sndLam = do
   x <- freshName
   y <- freshName
   pure $ LLam p (LApp (LVar p) (LLam x (LLam y (LVar y))))
+
+{- | The Y combinator (fixed-point operator):
+@λf. (λx. f (x x)) (λx. f (x x))@. Used by the Bekić expansion of
+mutually recursive groups (see 'Lamagraph.Ski.Translate').
+-}
+yLam :: State Int Lam
+yLam = do
+  f <- freshName
+  x <- freshName
+  let body = LApp (LVar f) (LApp (LVar x) (LVar x))
+  pure $ LLam f (LApp (LLam x body) (LLam x body))
+
+{- | Church-encoded n-ary tuple as a right-nested chain of pairs:
+@tupleLam [b1, ..., bn] = pair b1 (pair b2 (... (pair b(n-1) bn)...))@.
+A singleton tuple is just the element itself; the empty tuple is the unit.
+-}
+tupleLam :: [Lam] -> State Int Lam
+tupleLam [b] = pure b
+tupleLam (b : bs) = do
+  pairL <- pairLam
+  rest <- tupleLam bs
+  pure (LApp (LApp pairL b) rest)
+tupleLam [] = unitLam
+
+{- | The @i@-th projection (1-based) of a Church-encoded tuple of length @n@
+as built by 'tupleLam': @snd@ applied @(i-1)@ times, then @fst@ — except the
+LAST element, which sits bare (not wrapped in a pair), so
+@projLam n n = λp. snd^(n-1) p@ with no final @fst@.
+-}
+projLam :: Int -> Int -> State Int Lam
+projLam i n
+  | i < 1 || i > n = error "projLam: index out of range"
+  | otherwise = do
+      p <- freshName
+      body <-
+        if i == n
+          then sndChain (i - 1) (LVar p)
+          else do
+            fstL <- fstLam
+            inner <- sndChain (i - 1) (LVar p)
+            pure (LApp fstL inner)
+      pure (LLam p body)
+ where
+  -- | @snd@ applied @k@ times to @x@.
+  sndChain :: Int -> Lam -> State Int Lam
+  sndChain 0 x = pure x
+  sndChain k x = do
+    sndL <- sndLam
+    rest <- sndChain (k - 1) x
+    pure (LApp sndL rest)
 
 -- | The SKI term for the Church numeral @n@ (a closed term, no free @V@ nodes).
 intToChurch :: Int -> Term.Expr

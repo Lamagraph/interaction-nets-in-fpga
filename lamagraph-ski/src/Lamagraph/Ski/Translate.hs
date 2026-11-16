@@ -1,8 +1,9 @@
 {- | Translation from the LML core language to the lambda intermediate
 representation, and from there to the SKI combinator calculus. The core term
-is expanded to a lambda term (inlining non-recursive lets, converting
-recursive bindings to 'LRec'\/'LMutRec' markers, and swapping the standard
-arithmetic operators for their Church encodings). 'translateCore' converts the
+is expanded to a lambda term (inlining non-recursive lets, converting a
+single recursive binding to an 'LRec' marker, expanding mutual recursion via
+Bekić's theorem into plain lambda terms, and swapping the standard arithmetic
+operators for their Church encodings). 'translateCore' converts the
 lambda term to SKI via the standard lambda-to-SKI rule (the SKI backend is
 non-recursive-only and rejects recursive bindings); 'translateLam' returns the
 lambda term with the recursion markers intact, for the YALE net builder
@@ -48,10 +49,13 @@ import Lamagraph.Ski.Church (
   ltLam,
   multLam,
   pairLam,
+  projLam,
   sndLam,
   subLam,
   trueLam,
+  tupleLam,
   unitLam,
+  yLam,
  )
 import Lamagraph.Ski.Error (SkiError (..))
 import Lamagraph.Ski.Lambda (Lam (..), freshName, subst, toSki)
@@ -74,9 +78,10 @@ translateCore binds resultExpr =
   fmap toSki (evalState (runExceptT (rejectRec binds resultExpr >> buildLam binds resultExpr)) 0)
 
 {- | Translate a closed LML core program to a 'Lamagraph.Ski.Lambda.Lam'
-term (the intermediate representation), keeping the 'LRec'\/'LMutRec' markers
-that the YALE net builder ('Lamagraph.Ski.YaleNet.buildYaleNet') needs to
-splice self-references into cycles. For a non-recursive program, 'toSki' of
+term (the intermediate representation), keeping the 'LRec' markers that the
+YALE net builder ('Lamagraph.Ski.YaleNet.buildYaleNet') needs to splice
+self-references into cycles (mutual recursion is already expanded to plain
+lambda terms at this stage). For a non-recursive program, 'toSki' of
 the result equals 'translateCore'.
 -}
 translateLam :: [CoreBind] -> CoreExpr -> Either SkiError Lam
@@ -137,12 +142,13 @@ self-reference @f@ replaced by 'LSelfRef', and the whole function is wrapped in
 'LRec'). The net builder ('Lamagraph.Ski.YaleNet.buildYaleNet') compiles the
 'LRec' to the paper's tie-the-knot cycle (Mackie 1998, §6).
 
-For mutual recursion (more than one binding in the group), each function's body
-is translated with its own self-references as 'LSelfRef' and cross-references
-to the other functions as 'LVar' (by name); the whole group and @bodyLam@ are
-wrapped in 'LMutRec'. The net builder compiles each function to its own output
-edge and wires the self- and cross-references back to those edges (a cycle
-through 'Lamagraph.Ski.YaleNet.Copy' agents).
+For mutual recursion (more than one binding in the group), the group is
+expanded at translation time via Bekić's theorem: the group @[f1..fn]@ is the
+least fixed point of @F(p) = (b1(p), ..., bn(p))@, where each body @bi@
+references every group member (including itself) as the @i@-th projection of
+the Church-encoded tuple @p@. The fixed point is taken with the Y combinator
+over tuples ('Lamagraph.Ski.Church.yLam'), so the result is a plain lambda
+term — the net layer needs no mutual-recursion special case.
 -}
 recBindsToLam :: ConTags -> NonEmpty (Var, CoreExpr) -> Lam -> TranslateM Lam
 recBindsToLam tags recs bodyLam = case toList recs of
@@ -158,21 +164,33 @@ recBindsToLam tags recs bodyLam = case toList recs of
     selfName <- lift freshName
     let innerLam' = subst (varName f) LSelfRef innerLam
     pure (subst (varName f) (LRec (LLam selfName innerLam')) bodyLam)
-  _ -> do
-    groups <- recGroupsLam tags recs
-    pure (LMutRec groups bodyLam)
-
-{- | Translate the bodies of a mutual-recursion group to @(name, body)@ pairs,
-where each body has its own self-references as 'LSelfRef' and cross-references
-to the other functions as 'LVar' (by name).
--}
-recGroupsLam :: ConTags -> NonEmpty (Var, CoreExpr) -> TranslateM [(String, Lam)]
-recGroupsLam tags recs = mapM go (toList recs)
- where
-  go (f, e) = do
-    bodyLam <- coreExprToLam tags e
-    let bodyLam' = subst (varName f) LSelfRef bodyLam
-    pure (varName f, bodyLam')
+  recsL -> do
+    let names = map (varName . fst) recsL
+    rawBodies <- mapM (\(_, e) -> coreExprToLam tags e) recsL
+    -- Bekić: F(p) = (b1(p), ..., bn(p)), where each group name fi in body bi
+    -- is replaced by the i-th projection of the tuple p.
+    let n = length names
+    p <- lift freshName
+    pProjs <- mapM (\i -> do
+                      proj <- lift (projLam i n)
+                      pure (LApp proj (LVar p)))
+                   [1 .. n]
+    let bodies =
+          zipWith
+            ( \raw projs ->
+                foldr (\(nm, pj) t -> subst nm pj t) raw (zip names projs)
+            )
+            rawBodies
+            (replicate (length names) pProjs)
+    tuple <- lift (tupleLam bodies)
+    y <- lift yLam
+    let fp = LApp y (LLam p tuple)
+    -- Each group name in the surrounding body becomes (proj i) fp.
+    fpProjs <- mapM (\i -> do
+                       proj <- lift (projLam i n)
+                       pure (LApp proj fp))
+                    [1 .. n]
+    pure $ foldr (\(nm, pj) t -> subst nm pj t) bodyLam (zip names fpProjs)
 
 coreExprToLam :: ConTags -> CoreExpr -> TranslateM Lam
 coreExprToLam tags = \case
