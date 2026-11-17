@@ -937,37 +937,38 @@ result is two ``b′`` agents and one ``b``.
       bA2["b.A2"]
       bA3["b.A3"]
     end
-    bp1A3 --- bp2A1
-    bp1A2 --- bA2
-    bp2A2 --- bA1
-    bp1P --- i1(("I₁"))
-    bp1A1 --- i2(("I₂"))
+    bp1P --- bp2P
+    bp1A3 --- bA2
+    bp2A1 --- bA1
+    bp1A1 --- i1(("I₁"))
+    bp1A2 --- i2(("I₂"))
     bA3 --- i3(("I₃"))
-    bp2P --- i5(("I₅"))
-    bp2A3 --- i4(("I₄/I₆"))
-    bP --- i6(("I₄/I₆"))
+    bP --- i4(("I₄"))
+    bp2A2 --- i5(("I₅"))
+    bp2A3 --- i6(("I₆"))
 
 **Spec**
 
 - **Active pair:** ``b.P ⋈ b′.P``
 - **Fresh agents:** ``b′₁``, ``b′₂``, ``b``
-- **Internal edges:** ``(b′₁.A3, b′₂.A1)``, ``(b′₁.A2, b.A2)``,
-  ``(b′₂.A2, b.A1)``
+- **Internal edges:** ``(b′₁.P, b′₂.P)``, ``(b′₁.A3, b.A2)``,
+  ``(b′₂.A1, b.A1)``
 - **Interface (|I| = 6):**
-  - I₁ = ``b.A1`` → ``b′₁.P``
-  - I₂ = ``b.A2`` → ``b′₁.A1``
+  - I₁ = ``b.A1`` → ``b′₁.A1``
+  - I₂ = ``b.A2`` → ``b′₁.A2``
   - I₃ = ``b.A3`` → ``b.A3``
-  - I₄ = ``b′.A1`` → ``b′₂.A3`` or ``b.P``
-  - I₅ = ``b′.A2`` → ``b′₂.P``
-  - I₆ = ``b′.A3`` → ``b.P`` or ``b′₂.A3``
+  - I₄ = ``b′.A1`` → ``b.P``
+  - I₅ = ``b′.A2`` → ``b′₂.A2``
+  - I₆ = ``b′.A3`` → ``b′₂.A3``
 
 .. note::
 
-   The three ``b``-side ports (I₁, I₂, I₃) and I₅ are mapped with confidence:
-   I₅ = ``b′.A2 → b′₂.P`` is forced by the list-link role. The remaining two
-   ``b′`` ports (I₄ = ``b′.A1``, I₆ = ``b′.A3``) form a 2-element ambiguity
-   onto ``{b′₂.A3, b.P}``; the figure does not disambiguate which goes where,
-   so both pairings are listed as alternatives.
+   The interface is fully determined by the **orientation/order-preservation**
+   property: each LHS interface edge maps to the RHS free port of the same
+   orientation, preserving top-to-bottom (vertical) and left-to-right
+   (horizontal) order. Five of the six edges keep their orientation; the only
+   change is ``I₄ = b′.A1 → b.P`` (a horizontal LHS edge becoming the vertical
+   ``b`` bottom edge). This resolves the former ``{b′₂.A3, b.P}`` ambiguity.
 
 Rule 14: c ⋈ b′ (copy a lifted substitution)
 --------------------------------------------
@@ -1209,8 +1210,8 @@ Implementation notes & caveats
 - **Port roles are derived.** The port roles in the *Port roles* section are
   derived from the rules, not stated in the paper; the ``λ`` roles in
   particular disagree with the translation figure in places.
-- **Rule 13 (``b ⋈ b′``).** The interface is narrowed to a 2-element
-  ambiguity (I₄/I₆ onto ``{b′₂.A3, b.P}``); see the rule's note.
+- **Rule 13 (``b ⋈ b′``).** The interface is fully determined by the
+  orientation/order-preservation property (see the rule's note).
 - **Rule 15 (``d ⋈ b′``).** The result is one wire (a bare edge splicing
   ``b′.A1`` and ``b′.A3``) and one fresh ``d`` (``b′.A2`` → ``d.P``); see the
   rule's note.
