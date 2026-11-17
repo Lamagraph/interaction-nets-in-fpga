@@ -1080,20 +1080,18 @@ the abstraction erases the ``b′``.
     bpA2 --- i2(("I₂"))
     bpA3 --- i3(("I₃"))
 
-**RHS** (the paper draws the preserved ``b′`` ports as a single vertical bar)
+**RHS** (one wire + one fresh ``d``)
 
 .. code-block:: mermaid
 
   flowchart LR
+    e1["b′.A1"] --- e2["b′.A3"]
     subgraph d["d"]
       dP(["d.P"])
     end
-    f1["b′.A1"]
-    f2["b′.A2"]
-    f3["b′.A3"]
-    f1 --- i1(("I₁"))
-    f2 --- i2(("I₂"))
-    f3 --- i3(("I₃"))
+    dP --- i2(("I₂"))
+    e1 --- i1(("I₁"))
+    e2 --- i3(("I₃"))
 
 **Spec**
 
@@ -1101,18 +1099,17 @@ the abstraction erases the ``b′``.
 - **Fresh agents:** ``d``
 - **Internal edges:** —
 - **Interface (|I| = 3):**
-  - I₁ = ``b′.A1`` → ``b′.A1`` (preserved)
-  - I₂ = ``b′.A2`` → ``b′.A2`` (preserved)
-  - I₃ = ``b′.A3`` → ``b′.A3`` (preserved)
+  - I₁ = ``b′.A1`` → bare edge (with I₃)
+  - I₂ = ``b′.A2`` → ``d.P``
+  - I₃ = ``b′.A3`` → bare edge (with I₁)
 
 .. note::
 
-   The paper renders the preserved ``b′`` ports as a single vertical bar
-   (shorthand for "these ports pass through") alongside the ``d`` agent. The
-   arity axiom fixes ``|I(n)| = 3``; whether ``d.P`` is a separate fourth free
-   port or is identified with the box-opening connection (i.e. one of the three
-   interface ports) is not unambiguous in the figure. Confirm against the box
-   structure in the translation section before implementing.
+   The result is a single wire (a bare edge) and one fresh ``d`` agent with a
+   free primary port. The wire splices two of the ``b′`` ports (``b′.A1`` and
+   ``b′.A3``); the third (``b′.A2``, the list link) is handed to the fresh
+   ``d``'s primary port (the list continuation). The arity axiom fixes
+   ``|I(n)| = 3`` (the three ``b′`` ports).
 
 Rule 16: ε ⋈ α (erasure, schema)
 --------------------------------
@@ -1214,9 +1211,9 @@ Implementation notes & caveats
   particular disagree with the translation figure in places.
 - **Rule 13 (``b ⋈ b′``).** The interface is narrowed to a 2-element
   ambiguity (I₄/I₆ onto ``{b′₂.A3, b.P}``); see the rule's note.
-- **Rule 15 (``d ⋈ b′``).** The paper's vertical-bar shorthand leaves the
-  exact interface (3 ports per the arity axiom) ambiguous with respect to
-  ``d.P``; see the rule's note.
+- **Rule 15 (``d ⋈ b′``).** The result is one wire (a bare edge splicing
+  ``b′.A1`` and ``b′.A3``) and one fresh ``d`` (``b′.A2`` → ``d.P``); see the
+  rule's note.
 - **System properties.** The system is deadlock-free; there is at most one rule
   per agent pair; every RHS is in normal form; and the arity axiom
   ``Ar(l₁) + Ar(l₂) = |I(n)|`` holds for every rule. Each rule's **interface**
