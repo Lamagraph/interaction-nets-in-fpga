@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="470" viewBox="0 0 900 470">
+<rect width="900" height="470" fill="#fff"/>
+<rect x="10" y="10" width="90" height="32" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<text x="55" y="32" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="18" fill="#000">Rule 2</text>
+<rect x="40" y="55" width="350" height="370" rx="26" ry="26" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="9 7"/>
+<circle cx="150" cy="240" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
+<text x="150" y="246" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">d</text>
+<polygon points="182,247 182,233 194,240" fill="#000"/>
+<circle cx="280" cy="240" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
+<text x="280" y="246" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">ν</text>
+<polygon points="248,233 248,247 236,240" fill="#000"/>
+<polyline points="194,240 236,240" fill="none" stroke="#000" stroke-width="2"/>
+<text x="450" y="251" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="48" fill="#000">⇒</text>
+</svg>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="470" viewBox="0 0 900 470">
+<rect width="900" height="470" fill="#fff"/>
+<rect x="10" y="10" width="101" height="32" fill="#fff" stroke="#000" stroke-width="1.5"/>
+<text x="60" y="32" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="18" fill="#000">Rule 16</text>
+<rect x="40" y="55" width="350" height="370" rx="26" ry="26" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="9 7"/>
+<circle cx="215" cy="140" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
+<text x="215" y="146" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">ε</text>
+<polygon points="208,172 222,172 215,184" fill="#000"/>
+<circle cx="215" cy="300" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
+<text x="215" y="306" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">λ</text>
+<polygon points="222,268 208,268 215,256" fill="#000"/>
+<polyline points="215,184 215,256" fill="none" stroke="#000" stroke-width="2"/>
+<polyline points="192.4,322.6 120,425" fill="none" stroke="#000" stroke-width="2"/>
+<circle cx="120" cy="425" r="5" fill="#000"/>
+<text x="120" y="449" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₁</text>
+<polyline points="237.6,322.6 310,425" fill="none" stroke="#000" stroke-width="2"/>
+<circle cx="310" cy="425" r="5" fill="#000"/>
+<text x="310" y="449" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">Iₖ</text>
+<text x="215" y="388" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="22" fill="#000">·····</text>
+<rect x="510" y="55" width="350" height="370" rx="26" ry="26" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="9 7"/>
+<circle cx="620" cy="240" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
+<text x="620" y="246" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">ε</text>
+<polygon points="613,272 627,272 620,284" fill="#000"/>
+<circle cx="780" cy="240" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
+<text x="780" y="246" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">ε</text>
+<polygon points="773,272 787,272 780,284" fill="#000"/>
+<polyline points="620,284 620,425" fill="none" stroke="#000" stroke-width="2"/>
+<circle cx="620" cy="425" r="5" fill="#000"/>
+<text x="620" y="449" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₁</text>
+<polyline points="780,284 780,425" fill="none" stroke="#000" stroke-width="2"/>
+<circle cx="780" cy="425" r="5" fill="#000"/>
+<text x="780" y="449" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">Iₖ</text>
+<text x="700" y="245" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="22" fill="#000">···</text>
+<text x="450" y="251" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="48" fill="#000">⇒</text>
+</svg>
