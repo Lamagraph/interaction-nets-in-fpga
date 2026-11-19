@@ -34,9 +34,8 @@ switch -exact $board {
         set constraints_file "../hdl/primer25_pin_constraints.cst"
     }
     "mega138" {
-        set device "GW5AST-LV138FPG676AES"
+        set device "GW5AST-LV138FPG676AC1/I0"
         set device_version "B"
-        # set constraints_file "../lamagraph-core/hdl/mega138_pin_constraints.cst"
         set constraints_file "../hdl/mega138_pin_constraints.cst"
     }
     default {
