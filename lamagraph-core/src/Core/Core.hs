@@ -9,7 +9,7 @@ import Clash.Prelude
 import Core.CPU
 import Core.Concrete.Initial (initialIdApplyToIdMM, initialIdApplyToIdNode)
 import Core.Concrete.ReduceRulesLambda
-import Core.Loader
+import Core.Memory
 import Core.MemoryManager.MemoryManager
 import Core.Node
 import INet.Net
@@ -37,21 +37,20 @@ logicBoard ::
   (Signal dom AddressNumber, Signal dom Bit)
 logicBoard initialNet initialRootNodeAddress initialMemoryManager = (_nextRootNodeAddress <$> o, tx)
  where
-  ram = exposeEnable (blockRam initialNet)
-  initialCPUIn = CPUIn def
-
-  i = register initialCPUIn nextInput
   o =
-    mealyCore @portsNumber @nodesNumber @edgesNumber @agentType initialMemoryManager initialRootNodeAddress i
+    mealyCore @portsNumber @nodesNumber @edgesNumber @agentType
+      initialMemoryManager initialRootNodeAddress (CPUIn <$> memory)
+  done = _done <$> o
 
-  rf = mux (_done <$> o) (exposeEnable ((_done <$> o) `andEnable` iterateOverRamForm) byteTransmitted) (_ramForm <$> o)
-
-  nextLoadedNode = delayedMaybeRam ram rf -- (delayedMaybeRam ram (_ramForm <$> o))
-  nextInput = CPUIn <$> (makeLoadedNodeFromRamForm <$> nextLoadedNode <*> (_ramForm <$> o))
+  memory = blockRamMemory initialNet request
+  request = mux done dumpRequest (toRamAddress . _toMem <$> o)
+  (dumpRequest, nextLoadedNode) = dumpMemory done (fromEnable byteTransmitted) memory
 
   (tx, byteTransmitted) = transmitNodeByUart nextLoadedNode
 
-  makeLoadedNodeFromRamForm n ramForm = LoadedNode <$> n <*> (fst <$> ramForm)
+  toRamAddress (ToMem r) = ToMem (convert <$> r)
+  convert (MemRead address) = MemRead (fromIntegral address)
+  convert (MemWrite address cell) = MemWrite (fromIntegral address) cell
 
 createDomain vSystem{vName = "CustomDom", vPeriod = hzToPeriod 15e6, vResetPolarity = ActiveLow}
 

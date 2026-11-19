@@ -143,6 +143,17 @@ fromBytes bytes = unpack (resize bits)
  where
   bits = v2bv (concatMap bv2v bytes)
 
+serializeBytes ::
+  (HiddenClockResetEnable dom, KnownNat n) =>
+  Signal dom (Vec n d) ->
+  Signal dom Bool ->
+  Signal dom Bool ->
+  (Signal dom d, Signal dom Bool)
+serializeBytes bytes valid accepted = (byte, isLast .&&. transfer)
+ where
+  transfer = valid .&&. accepted
+  (byte, isLast) = exposeEnable (iterateOverDataBool bytes) (toEnable transfer)
+
 iterateOverDataBool ::
   forall dom n d.
   (HiddenClockResetEnable dom, KnownNat n) =>

@@ -10,22 +10,22 @@ module Core.CPU where
 import Clash.Prelude
 import Control.Lens hiding (Index)
 import Control.Monad.State.Strict
-import Core.Loader
 import Core.Map
+import Core.Memory
 import Core.MemoryManager.ChangesAccumulator (getAllChangesByDelta)
 import Core.MemoryManager.MemoryManager
 import Core.MemoryManager.NodeChanges
 import Core.Node
 import Core.Reducer
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (fromMaybe)
 import INet.Net
 import qualified Prelude as P
 
-newtype CPUIn portsNumber agentType = CPUIn (Maybe (LoadedNode portsNumber agentType))
+newtype CPUIn portsNumber agentType = CPUIn (FromMem (Maybe (Node portsNumber agentType)))
   deriving (Generic, NFDataX, Show)
 
 data CPUOut portsNumber agentType = CPUOut
-  { _ramForm :: Maybe (RamForm portsNumber agentType)
+  { _toMem :: ToMem AddressNumber (Maybe (Node portsNumber agentType))
   , _nextRootNodeAddress :: AddressNumber
   , _done :: Bool
   }
@@ -34,22 +34,28 @@ data CPUOut portsNumber agentType = CPUOut
 data Phase (externalNodesNumber :: Nat) (newNodesNumber :: Nat)
   = Init
   | FetchLeftActiveAddress
+  | WaitLeft AddressNumber
   | FetchRightActiveAddress
+  | WaitRight AddressNumber
+  | ClearLeft
+  | WaitClearLeft
+  | ClearRight
+  | WaitClearRight
   | Reduce
   | ReadExternal (Index externalNodesNumber)
+  | WaitExternal (Index externalNodesNumber) AddressNumber
   | WriteChange (Index externalNodesNumber)
+  | WaitChange (Index externalNodesNumber)
   | WriteNewNodes (Index newNodesNumber)
+  | WaitNewNode (Index newNodesNumber)
   | Done
-  | DelayReduce
-  | DelayFetch
-  | DelayWrite (Index externalNodesNumber)
   deriving (Generic, NFDataX, Show, Eq)
 
 data CPUState portsNumber nodesNumber edgesNumber agentType = CPUState
   { _phase :: Phase ((*) 2 portsNumber) nodesNumber
   , _memoryManager :: MemoryManager
   , _previousLoadedNode :: Maybe (LoadedNode portsNumber agentType)
-  , _previousRamForm :: Maybe (RamForm portsNumber agentType)
+  , _loadedNode :: Maybe (LoadedNode portsNumber agentType)
   , _changes :: Map ((*) 2 portsNumber) (Changes portsNumber)
   , _interface :: Interface ((*) 2 portsNumber)
   , _nodesToWrite :: Vec nodesNumber (Maybe (LoadedNode portsNumber agentType))
@@ -57,7 +63,7 @@ data CPUState portsNumber nodesNumber edgesNumber agentType = CPUState
   }
   deriving (Generic, NFDataX)
 
-instance (Show (CPUState portsNumber nodesNumber edgesNumber agentType)) where
+instance Show (CPUState portsNumber nodesNumber edgesNumber agentType) where
   show CPUState{..} =
     "phase = "
       P.++ show _phase
@@ -75,13 +81,12 @@ initCPUState initMM initRootNodeAddress =
   CPUState
     { _phase = Init
     , _memoryManager = initMM
-    , _previousLoadedNode = def
-    , _previousRamForm = def
+    , _previousLoadedNode = Nothing
+    , _loadedNode = Nothing
     , _changes = def
     , _interface = def
     , _nodesToWrite = def
-    , -- , _chooseReductionRule = reductionRule
-      _rootNodeAddress = initRootNodeAddress
+    , _rootNodeAddress = initRootNodeAddress
     }
 
 step ::
@@ -93,103 +98,87 @@ step ::
   , Show agentType
   , Eq agentType
   ) =>
-  -- CPUState portsNumber nodesNumber edgesNumber agentType ->
   CPUIn portsNumber agentType ->
   State (CPUState portsNumber nodesNumber edgesNumber agentType) (CPUOut portsNumber agentType)
-step i@(CPUIn processedLoadedNode) =
-  do
-    s@(CPUState{..}) <- get
-    case _phase of
-      Init -> do
-        put s{_phase = FetchLeftActiveAddress}
-        pure $ CPUOut{_ramForm = def, _nextRootNodeAddress = _rootNodeAddress, _done = False}
-      FetchLeftActiveAddress ->
-        if isJust ramForm
-          then do
-            put s{_phase = DelayFetch, _previousRamForm = ramForm}
-            pure CPUOut{_ramForm = ramForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
-          else do
-            put s{_phase = Done}
-            pure $
-              CPUOut{_ramForm = def, _nextRootNodeAddress = _rootNodeAddress, _done = True}
-       where
-        activeAddress = giveActiveAddressNumber _memoryManager
-        ramForm = (\address -> (address, Just (address, Nothing))) <$> activeAddress
-      FetchRightActiveAddress -> do
-        put s{_phase = DelayReduce, _previousLoadedNode = processedLoadedNode, _previousRamForm = ramForm}
-        pure CPUOut{_ramForm = ramForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
-       where
-        activeAddress =
-          (view nodeAddress . (fromMaybe (errorX "Wrong definition of active pair") <$> view primaryPort))
-            . view containedNode
-            <$> processedLoadedNode
-        ramForm = (\address -> (address, Just (address, Nothing))) <$> activeAddress
-      Reduce -> do
-        put
-          ( s
-              { _phase = ReadExternal 0
-              , _memoryManager = allocatedAddressesMemoryManager
-              , _previousLoadedNode = def
-              , _changes = allChanges
-              , _interface = newInterface
-              , _nodesToWrite = _newNodes delta
-              , _rootNodeAddress = newRootAddress
-              }
-          )
-        pure CPUOut{_ramForm = def, _nextRootNodeAddress = newRootAddress, _done = True}
-       where
-        acPair = fromMaybe (errorX $ "cpu: 1. i = \n" P.++ show i) (ActivePair <$> _previousLoadedNode <*> processedLoadedNode)
-        removedActivePairMemoryManager = removeActivePair acPair _memoryManager
-        (delta, allocatedAddressesMemoryManager) = reduce @portsNumber @nodesNumber @edgesNumber @agentType removedActivePairMemoryManager acPair
-        newInterface = getInterface @portsNumber @((*) 2 portsNumber) acPair
-        allChanges = getAllChangesByDelta delta newInterface
-        newRootAddress = changeRootNode acPair _rootNodeAddress delta
-      ReadExternal counter -> do
-        put s{_phase = nextPhase, _previousRamForm = _ramForm}
-        pure CPUOut{..}
-       where
-        _ramForm = (,def) <$> _interface !! counter
-        _nextRootNodeAddress = _rootNodeAddress
-        nextPhase
-          | _ramForm == def && counter == (maxBound :: Index ((*) 2 portsNumber)) || _interface == def = WriteNewNodes 0
-          | _ramForm == def = ReadExternal $ counter + 1
-          | otherwise = DelayWrite counter
-        _done = nextPhase == Done
-      WriteChange counter -> do
-        put s{_phase = nextPhase, _previousRamForm = _ramForm}
-        pure CPUOut{..}
-       where
-        _ramForm = do
-          ln <- processedLoadedNode
-          address <- _interface !! counter
-          let newNode = applyChangesToNode (_containedNode ln) <$> find _changes address
-           in pure (address, Just (address, newNode))
-        _nextRootNodeAddress = _rootNodeAddress
-        nextPhase =
-          if counter == (maxBound :: Index ((*) 2 portsNumber))
-            then WriteNewNodes 0
-            else ReadExternal $ counter + 1
-        _done = nextPhase == Done
-      WriteNewNodes counter -> do
-        put s{_phase = nextPhase, _previousRamForm = _ramForm}
-        pure CPUOut{..}
-       where
-        _ramForm = (\(LoadedNode n a) -> (a, Just (a, Just n))) <$> _nodesToWrite !! counter
-        _nextRootNodeAddress = _rootNodeAddress
-        nextPhase
-          | counter == (maxBound :: Index nodesNumber) || (_nodesToWrite == def) = FetchLeftActiveAddress
-          | otherwise = WriteNewNodes $ counter + 1
-        _done = nextPhase == Done
-      Done -> pure $ CPUOut{_ramForm = def, _nextRootNodeAddress = _rootNodeAddress, _done = True}
-      DelayFetch -> do
-        put s{_phase = FetchRightActiveAddress}
-        pure CPUOut{_ramForm = _previousRamForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
-      DelayReduce -> do
-        put s{_phase = Reduce}
-        pure CPUOut{_ramForm = _previousRamForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
-      DelayWrite counter -> do
-        put s{_phase = WriteChange counter}
-        pure CPUOut{_ramForm = _previousRamForm, _nextRootNodeAddress = _rootNodeAddress, _done = False}
+step (CPUIn memory) = do
+  s@CPUState{..} <- get
+  let
+    output request = CPUOut (ToMem request) _rootNodeAddress False
+    advance phase = put s{_phase = phase} >> pure (output Nothing)
+    issue request phase = do
+      if ready memory then put s{_phase = phase} else pure ()
+      pure (output (Just request))
+    waitWrite phase = case resp memory of
+      Just WriteAck -> advance phase
+      _ -> pure (output Nothing)
+    nextExternal counter
+      | counter == maxBound = WriteNewNodes 0
+      | otherwise = ReadExternal (counter + 1)
+    nextNew counter
+      | counter == maxBound = FetchLeftActiveAddress
+      | otherwise = WriteNewNodes (counter + 1)
+    left = fromMaybe (errorX "CPU: missing left active node") _previousLoadedNode
+    right = fromMaybe (errorX "CPU: missing right active node") _loadedNode
+  case _phase of
+    Init -> advance FetchLeftActiveAddress
+    FetchLeftActiveAddress -> case giveActiveAddressNumber _memoryManager of
+      Nothing -> advance Done
+      Just address -> issue (MemRead address) (WaitLeft address)
+    WaitLeft address -> case resp memory of
+      Just (ReadData cell) -> do
+        put s{_phase = FetchRightActiveAddress, _previousLoadedNode = LoadedNode <$> cell <*> pure address}
+        pure (output Nothing)
+      _ -> pure (output Nothing)
+    FetchRightActiveAddress ->
+      let address = view nodeAddress $ fromMaybe (errorX "CPU: disconnected active pair") $ view (containedNode . primaryPort) left
+       in issue (MemRead address) (WaitRight address)
+    WaitRight address -> case resp memory of
+      Just (ReadData cell) -> do
+        put s{_phase = ClearLeft, _loadedNode = LoadedNode <$> cell <*> pure address}
+        pure (output Nothing)
+      _ -> pure (output Nothing)
+    ClearLeft -> issue (MemWrite (view originalAddress left) Nothing) WaitClearLeft
+    WaitClearLeft -> waitWrite ClearRight
+    ClearRight -> issue (MemWrite (view originalAddress right) Nothing) WaitClearRight
+    WaitClearRight -> waitWrite Reduce
+    Reduce -> do
+      let
+        pair = ActivePair left right
+        removed = removeActivePair pair _memoryManager
+        (delta, allocated) = reduce @portsNumber @nodesNumber @edgesNumber @agentType removed pair
+        newInterface = getInterface @portsNumber @((*) 2 portsNumber) pair
+        newRoot = changeRootNode pair _rootNodeAddress delta
+      put
+        s
+          { _phase = ReadExternal 0
+          , _memoryManager = allocated
+          , _previousLoadedNode = Nothing
+          , _loadedNode = Nothing
+          , _changes = getAllChangesByDelta delta newInterface
+          , _interface = newInterface
+          , _nodesToWrite = _newNodes delta
+          , _rootNodeAddress = newRoot
+          }
+      pure (CPUOut (ToMem Nothing) newRoot False)
+    ReadExternal counter -> case _interface !! counter of
+      Nothing -> advance (nextExternal counter)
+      Just address -> issue (MemRead address) (WaitExternal counter address)
+    WaitExternal counter address -> case resp memory of
+      Just (ReadData cell) -> do
+        put s{_phase = WriteChange counter, _loadedNode = LoadedNode <$> cell <*> pure address}
+        pure (output Nothing)
+      _ -> pure (output Nothing)
+    WriteChange counter -> case (_interface !! counter, _loadedNode) of
+      (Just address, Just loaded) ->
+        let cell = applyChangesToNode (view containedNode loaded) <$> find _changes address
+         in issue (MemWrite address cell) (WaitChange counter)
+      _ -> advance (nextExternal counter)
+    WaitChange counter -> waitWrite (nextExternal counter)
+    WriteNewNodes counter -> case _nodesToWrite !! counter of
+      Nothing -> advance (nextNew counter)
+      Just (LoadedNode node address) -> issue (MemWrite address (Just node)) (WaitNewNode counter)
+    WaitNewNode counter -> waitWrite (nextNew counter)
+    Done -> pure (CPUOut (ToMem Nothing) _rootNodeAddress True)
 
 mealyCore ::
   forall portsNumber nodesNumber edgesNumber agentType dom.

@@ -179,7 +179,8 @@ transmitNodeByUart ::
   ) =>
   Signal dom (Maybe (Node portsNumber agentType)) ->
   (Signal dom Bit, Enable dom)
-transmitNodeByUart maybeNode = (sout, toEnable isMax)
+transmitNodeByUart maybeNode = (sout, toEnable nodeTransmitted)
  where
-  (byte, isMax) = exposeEnable (iterateOverDataBool (toBytes . fromJust <$> maybeNode)) rdyToRx
+  (byte, nodeTransmitted) =
+    serializeBytes (toBytes . fromJust <$> maybeNode) (isJust <$> maybeNode) (fromEnable rdyToRx)
   (sout, rdyToRx) = (isJust <$> maybeNode) `andEnable` transmitByteByUART byte
