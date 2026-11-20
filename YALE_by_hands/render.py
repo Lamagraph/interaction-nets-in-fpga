@@ -381,7 +381,7 @@ def rule_11():
     sbb, qbb = agent(610, 290, "b", {1: 180, 2: 315, 3: 45}, 90)
     sdt, qdt = agent(790, 100, "δ", {1: 225, 2: 135}, 270)
     sdm, qdm = agent(800, 220, "δ", {1: 225, 2: 135}, 0)
-    sdp, qdp = agent(750, 350, "δ′", {1: 315, 2: 225}, 90)
+    sdp, qdp = agent(750, 350, "δ′", {1: 222, 2: 162}, 90)
     p += [sbt, sbb, sdt, sdm, sdp]
     # interface wires
     p += [wire([qbt[1], (510, 140)]), iface(510, 140, "I₁", dx=-10, dy=5, anchor="end")]
@@ -572,7 +572,7 @@ def rule_14():
     sbu, qbu = agent(590, 170, "b′", {1: 270, 2: 0, 3: 90}, 180)
     scr, qcr = agent(810, 250, "c", {1: 225, 2: 135}, 0)
     sbl, qbl = agent(590, 320, "b′", {1: 270, 2: 315, 3: 45}, 180)
-    scb, qcb = agent(730, 380, "c", {2: 225, 1: 315}, 90)
+    scb, qcb = agent(730, 380, "c", {2: 181, 1: 231}, 90)
     p += [sd, sbu, scr, sbl, scb]
     # interface wires
     p += [wire([qd["P"], (700, 55)]),   iface(700, 55, "I₅", dy=-12)]

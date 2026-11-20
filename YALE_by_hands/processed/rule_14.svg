@@ -57,8 +57,8 @@
 <circle cx="730" cy="380" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
 <text x="730" y="386" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">c</text>
 <polygon points="723,412 737,412 730,424" fill="#000"/>
-<text x="743.4" y="371.6" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">1</text>
-<text x="716.6" y="371.6" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">2</text>
+<text x="718" y="370.2" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">1</text>
+<text x="711" y="384.7" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">2</text>
 <polyline points="700,56 700,55" fill="none" stroke="#000" stroke-width="2"/>
 <circle cx="700" cy="55" r="5" fill="#000"/>
 <text x="700" y="43" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₅</text>
@@ -77,8 +77,8 @@
 <polyline points="677.4,77.4 590,138" fill="none" stroke="#000" stroke-width="2"/>
 <path d="M 700,132 C 700,190 590,220 590,288" fill="none" stroke="#000" stroke-width="2"/>
 <polyline points="622,170 787.4,227.4" fill="none" stroke="#000" stroke-width="2"/>
-<polyline points="590,202 707.4,357.4" fill="none" stroke="#000" stroke-width="2"/>
+<polyline points="590,202 698,379.4" fill="none" stroke="#000" stroke-width="2"/>
 <polyline points="612.6,297.4 787.4,272.6" fill="none" stroke="#000" stroke-width="2"/>
-<polyline points="612.6,342.6 752.6,357.4" fill="none" stroke="#000" stroke-width="2"/>
+<polyline points="612.6,342.6 709.9,355.1" fill="none" stroke="#000" stroke-width="2"/>
 <text x="450" y="251" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="48" fill="#000">⇒</text>
 </svg>
