@@ -176,10 +176,10 @@ def rule_03():
     p += [wire([q1[3], (390, 150)]),  iface(390, 150, "I₃", dx=10, dy=5, anchor="start")]
     # RHS
     p.append(subnet(*RHS))
-    a3, q3 = agent(685, 140, "κ", {}, 90)
+    a3, q3 = agent(685, 140, "κ", {}, 270)
     p.append(a3)
-    p.append(wire([q3["P"], (685, 425)]))
-    p.append(iface(685, 425, "I₁", dy=24))
+    p.append(wire([q3["P"], (685, 55)]))
+    p.append(iface(685, 55, "I₁", dy=-12))
     p.append(wire([(510, 300), (860, 300)]))
     p += [iface(510, 300, "I₂", dx=-10, dy=5, anchor="end"),
           iface(860, 300, "I₃", dx=10, dy=5, anchor="start")]
@@ -258,7 +258,7 @@ def rule_06():
     return wrap("Rule 6", "\n".join(p))
 
 def rule_07():
-    """Rule 7:  c ⋈ λ  ⇒  λ + λ + c + δ + δ⁻¹"""
+    """Rule 7:  c ⋈ λ  ⇒  λ + λ + c + δ + δ"""
     p = []
     # ── LHS ──
     p.append(subnet(*LHS))
@@ -276,7 +276,7 @@ def rule_07():
     str_, qr = agent(780, 140, "λ", {1: 180, 2: 90, 3: 0}, 270)
     sc, qc = agent(600, 320, "c", {1: 0, 2: 180}, 90)
     sd, qd = agent(700, 320, "δ", {1: 270, 2: 180}, 90)
-    si, qi = agent(800, 320, "δ⁻¹", {1: 270, 2: 180}, 90)
+    si, qi = agent(800, 320, "δ", {1: 270, 2: 180}, 90)
     p += [stl, str_, sc, sd, si]
     # P ports → interface
     p += [wire([qt["P"], (620, 55)]),  iface(620, 55, "I₂", dy=-12)]
@@ -288,10 +288,10 @@ def rule_07():
     # vertically / horizontally at their ports)
     p += [cwire(qt[1], (540, 185), (540, 275), qc[2]),   # λ_L.1 ↔ c.2 (left arc)
           cwire(qt[2], (620, 230), (700, 235), qd[1]),   # λ_L.2 ↔ δ.1 (lands from above)
-          cwire(qt[3], (720, 150), (800, 220), qi[1]),   # λ_L.3 ↔ δ⁻¹.1 (lands from above)
+          cwire(qt[3], (720, 150), (800, 220), qi[1]),   # λ_L.3 ↔ δ.1 (lands from above)
           cwire(qr[1], (700, 190), (632, 260), qc[1]),   # λ_R.1 ↔ c.1 (lands from above)
           cwire(qr[2], (780, 230), (628, 280), qd[2]),   # λ_R.2 ↔ δ.2 (lands from upper-left)
-          cwire(qr[3], (855, 190), (728, 280), qi[2])]   # λ_R.3 ↔ δ⁻¹.2 (right arc)
+          cwire(qr[3], (855, 190), (728, 280), qi[2])]   # λ_R.3 ↔ δ.2 (right arc)
     p.append(imply())
     return wrap("Rule 7", "\n".join(p))
 
@@ -316,11 +316,11 @@ def rule_08():
     return wrap("Rule 8", "\n".join(p))
 
 def rule_09():
-    """Rule 9:  δ⁻¹ ⋈ δ  ⇒  crossing wires (I₂↔I₄, I₁↔I₃)"""
+    """Rule 9:  δ ⋈ δ  ⇒  crossing wires (I₂↔I₄, I₁↔I₃)"""
     p = []
     # LHS
     p.append(subnet(*LHS))
-    a1, q1 = agent(215, 140, "δ⁻¹", {1: 330, 2: 210}, 90)
+    a1, q1 = agent(215, 140, "δ", {1: 330, 2: 210}, 90)
     a2, q2 = agent(215, 330, "δ", {1: 150, 2: 30}, 270)
     p += [a1, a2, wire([q1["P"], q2["P"]])]
     p += [wire([q1[1], (310, 55)]),  iface(310, 55, "I₁", dy=-12)]
@@ -363,12 +363,12 @@ def rule_10():
     return wrap("Rule 10", "\n".join(p))
 
 def rule_11():
-    """Rule 11:  δ ⋈ b  ⇒  b + b + δ + δ + δ′"""
+    """Rule 11:  δ ⋈ b′  ⇒  b + b + δ + δ + δ"""
     p = []
     # ── LHS ──
     p.append(subnet(*LHS))
     a1, q1 = agent(150, 240, "δ", {1: 225, 2: 135}, 0)
-    a2, q2 = agent(280, 240, "b", {1: 270, 2: 0, 3: 90}, 180)
+    a2, q2 = agent(280, 240, "b′", {1: 270, 2: 0, 3: 90}, 180)
     p += [a1, a2, wire([q1["P"], q2["P"]])]
     p += [wire([q1[1], (40, 160)]),  iface(40, 160, "I₁", dx=-10, dy=5, anchor="end")]
     p += [wire([q1[2], (40, 320)]),  iface(40, 320, "I₂", dx=-10, dy=5, anchor="end")]
@@ -381,7 +381,7 @@ def rule_11():
     sbb, qbb = agent(610, 290, "b", {1: 180, 2: 315, 3: 45}, 90)
     sdt, qdt = agent(790, 100, "δ", {1: 225, 2: 135}, 270)
     sdm, qdm = agent(800, 220, "δ", {1: 225, 2: 135}, 0)
-    sdp, qdp = agent(750, 350, "δ′", {1: 222, 2: 162}, 90)
+    sdp, qdp = agent(750, 350, "δ", {1: 222, 2: 162}, 90)
     p += [sbt, sbb, sdt, sdm, sdp]
     # interface wires
     p += [wire([qbt[1], (510, 140)]), iface(510, 140, "I₁", dx=-10, dy=5, anchor="end")]
@@ -394,8 +394,8 @@ def rule_11():
           wire([qbt[3], qdm[1]]),   # b_top.3 ↔ δ_mid.1
           wire([qbt["P"], qdm[2]]), # b_top.P ↔ δ_mid.2
           cwire(qbb[2], (700, 230), (790, 180), qdt[2]),  # b_bot.2 ↔ δ_top.2 (curve)
-          wire([qbb[3], qdp[1]]),   # b_bot.3 ↔ δ′.1
-          wire([qbb["P"], qdp[2]])] # b_bot.P ↔ δ′.2
+          wire([qbb[3], qdp[1]]),   # b_bot.3 ↔ δ.1
+          wire([qbb["P"], qdp[2]])] # b_bot.P ↔ δ.2
     p.append(imply())
     return wrap("Rule 11", "\n".join(p))
 
@@ -470,7 +470,7 @@ def legend():
           wire([q[3], (225, 120)])]
     p.append(label(258, 80, "primary port"))
     p.append(arrow(253, 84, q["P"][0] + 8, q["P"][1] + 2))
-    p.append(label(258, 168, "secondary (aux) port with member"))
+    p.append(label(258, 168, "secondary (aux) port with number"))
     p.append(arrow(253, 162, q[3][0] + 5, q[3][1] - 5))
     # ── Subnet ──
     p.append(subnet(60, 240, 240, 180, r=30))
@@ -486,12 +486,12 @@ def legend():
     return wrap("Legend", "\n".join(p))
 
 def rule_12():
-    """Rule 12:  δ ⋈ d  ⇒  (λ,δ) + ··· + (λ,δ)   (generalized over k)"""
+    """Rule 12:  δ ⋈ α  ⇒  (α,δ) + ··· + (α,δ)   (generalized over k)"""
     p = []
     # ── LHS ──
     p.append(subnet(*LHS))
     a1, q1 = agent(215, 140, "δ", {2: 225, 1: 315}, 90)
-    a2, _  = agent(215, 300, "d", {}, 270)
+    a2, _  = agent(215, 300, "α", {}, 270)
     p += [a1, a2, wire([q1["P"], (215, 256)])]
     p += [wire([q1[2], (120, 55)]),  iface(120, 55, "I₂", dy=-12)]
     p += [wire([q1[1], (310, 55)]),  iface(310, 55, "I₁", dy=-12)]
@@ -500,8 +500,8 @@ def rule_12():
     p.append(dots(215, 388))
     # ── RHS ──
     p.append(subnet(*RHS))
-    ll, _ = agent(620, 130, "λ", {}, 270)
-    lr, _ = agent(780, 130, "λ", {}, 270)
+    ll, _ = agent(620, 130, "α", {}, 270)
+    lr, _ = agent(780, 130, "α", {}, 270)
     dl, ql = agent(620, 300, "δ", {2: 225, 1: 315}, 90)
     dr, qr = agent(780, 300, "δ", {2: 225, 1: 315}, 90)
     p += [ll, lr, dl, dr]
@@ -510,11 +510,11 @@ def rule_12():
     p += [wire([(780, 86), (780, 55)]),  iface(780, 55, "I₁", dy=-12)]
     p += [wire([ql["P"], (620, 425)]),   iface(620, 425, "I₃", dy=24)]
     p += [wire([qr["P"], (780, 425)]),   iface(780, 425, "Iₖ", dy=24)]
-    # λ bottom wires (two per λ: one vertical, one crossing diagonal)
-    p += [wire([_p(620, 130, AR, 90),  ql[2]]),   # λ_L ↓ → δ_L.2
-          wire([_p(620, 130, AR, 45),  qr[2]]),   # λ_L ↘ → δ_R.2
-          wire([_p(780, 130, AR, 90),  qr[1]]),   # λ_R ↓ → δ_R.1
-          wire([_p(780, 130, AR, 135), ql[1]])]   # λ_R ↙ → δ_L.1
+    # α bottom wires (two per α: one vertical, one crossing diagonal)
+    p += [wire([_p(620, 130, AR, 90),  ql[2]]),   # α_L ↓ → δ_L.2
+          wire([_p(620, 130, AR, 45),  qr[2]]),   # α_L ↘ → δ_R.2
+          wire([_p(780, 130, AR, 90),  qr[1]]),   # α_R ↓ → δ_R.1
+          wire([_p(780, 130, AR, 135), ql[1]])]   # α_R ↙ → δ_L.1
     p.append(dots(700, 305, "···"))
     p.append(imply())
     return wrap("Rule 12", "\n".join(p))
@@ -554,12 +554,12 @@ def rule_13():
     return wrap("Rule 13", "\n".join(p))
 
 def rule_14():
-    """Rule 14:  c ⋈ b  ⇒  δ + b′ + c + b′ + c"""
+    """Rule 14:  c ⋈ b′  ⇒  δ + b′ + c + b′ + c"""
     p = []
     # ── LHS ──
     p.append(subnet(*LHS))
     a1, q1 = agent(150, 240, "c", {1: 225, 2: 135}, 0)
-    a2, q2 = agent(280, 240, "b", {1: 270, 2: 0, 3: 90}, 180)
+    a2, q2 = agent(280, 240, "b′", {1: 270, 2: 0, 3: 90}, 180)
     p += [a1, a2, wire([q1["P"], q2["P"]])]
     p += [wire([q1[1], (40, 150)]),  iface(40, 150, "I₁", dx=-10, dy=5, anchor="end")]
     p += [wire([q1[2], (40, 330)]),  iface(40, 330, "I₂", dx=-10, dy=5, anchor="end")]
@@ -584,15 +584,14 @@ def rule_14():
     p += [wire([qd[1], qbu[1]]),    # δ.1 ↔ b′_UL.1
           cwire(qd[2], (700, 190), (590, 220), qbl[1]),  # δ.2 ↔ b′_LL.1 (curve)
           wire([qbu[2], qcr[1]]),   # b′_UL.2 ↔ c_R.1
-          wire([qbu[3], qcb[2]]),   # b′_UL.3 ↔ c_B.2
+          wire([qbu[3], qcb[1]]),   # b′_UL.3 ↔ c_B.1
           wire([qbl[2], qcr[2]]),   # b′_LL.2 ↔ c_R.2
-          wire([qbl[3], qcb[1]])]   # b′_LL.3 ↔ c_B.1
+          wire([qbl[3], qcb[2]])]   # b′_LL.3 ↔ c_B.2
     p.append(imply())
     return wrap("Rule 14", "\n".join(p))
 
 def rule_15():
-    """Rule 15:  d ⋈ b′  ⇒  wire(I₁—I₂) + d
-    NOTE: LHS bottom interface is drawn as I₇ (RHS is I₂) — kept as drawn."""
+    """Rule 15:  d ⋈ b′  ⇒  wire(I₁—I₂) + d"""
     p = []
     # ── LHS ──
     p.append(subnet(*LHS))
@@ -601,7 +600,7 @@ def rule_15():
     p += [a1, a2, wire([q1["P"], q2["P"]])]
     p += [wire([q2[1], (280, 55)]),  iface(280, 55, "I₁", dy=-12)]
     p += [wire([q2[2], (390, 240)]), iface(390, 240, "I₃", dx=10, dy=5, anchor="start")]
-    p += [wire([q2[3], (280, 425)]), iface(280, 425, "I₇", dy=24)]
+    p += [wire([q2[3], (280, 425)]), iface(280, 425, "I₂", dy=24)]
     # ── RHS ──
     p.append(subnet(*RHS))
     a3, q3 = agent(780, 240, "d", {}, 0)

@@ -55,7 +55,7 @@
 <text x="700" y="306" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">1</text>
 <text x="681" y="325" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">2</text>
 <circle cx="800" cy="320" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
-<text x="800" y="326" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">δ⁻¹</text>
+<text x="800" y="326" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">δ</text>
 <polygon points="793,352 807,352 800,364" fill="#000"/>
 <text x="800" y="306" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">1</text>
 <text x="781" y="325" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">2</text>

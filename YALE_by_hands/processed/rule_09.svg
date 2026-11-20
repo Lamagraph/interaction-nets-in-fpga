@@ -5,7 +5,7 @@
 <text x="55" y="32" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="18" fill="#000">Rule 9</text>
 <rect x="40" y="55" width="350" height="370" rx="26" ry="26" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="9 7"/>
 <circle cx="215" cy="140" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
-<text x="215" y="146" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">δ⁻¹</text>
+<text x="215" y="146" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">δ</text>
 <polygon points="208,172 222,172 215,184" fill="#000"/>
 <text x="231.5" y="135.5" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">1</text>
 <text x="198.5" y="135.5" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">2</text>

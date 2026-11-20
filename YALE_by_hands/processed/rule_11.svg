@@ -10,7 +10,7 @@
 <text x="136.6" y="231.6" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">1</text>
 <text x="136.6" y="258.4" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">2</text>
 <circle cx="280" cy="240" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
-<text x="280" y="246" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">b</text>
+<text x="280" y="246" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">b′</text>
 <polygon points="248,233 248,247 236,240" fill="#000"/>
 <text x="280" y="226" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">1</text>
 <text x="299" y="245" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">2</text>
@@ -55,7 +55,7 @@
 <text x="786.6" y="211.6" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">1</text>
 <text x="786.6" y="238.4" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">2</text>
 <circle cx="750" cy="350" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
-<text x="750" y="356" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">δ′</text>
+<text x="750" y="356" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">δ</text>
 <polygon points="743,382 757,382 750,394" fill="#000"/>
 <text x="735.9" y="342.3" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">1</text>
 <text x="731.9" y="360.9" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">2</text>

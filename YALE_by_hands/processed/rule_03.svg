@@ -26,10 +26,10 @@
 <rect x="510" y="55" width="350" height="370" rx="26" ry="26" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="9 7"/>
 <circle cx="685" cy="140" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
 <text x="685" y="146" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">κ</text>
-<polygon points="678,172 692,172 685,184" fill="#000"/>
-<polyline points="685,184 685,425" fill="none" stroke="#000" stroke-width="2"/>
-<circle cx="685" cy="425" r="5" fill="#000"/>
-<text x="685" y="449" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₁</text>
+<polygon points="692,108 678,108 685,96" fill="#000"/>
+<polyline points="685,96 685,55" fill="none" stroke="#000" stroke-width="2"/>
+<circle cx="685" cy="55" r="5" fill="#000"/>
+<text x="685" y="43" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₁</text>
 <polyline points="510,300 860,300" fill="none" stroke="#000" stroke-width="2"/>
 <circle cx="510" cy="300" r="5" fill="#000"/>
 <text x="500" y="305" text-anchor="end" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₂</text>

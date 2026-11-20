@@ -22,7 +22,7 @@
 <text x="400" y="245" text-anchor="start" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₃</text>
 <polyline points="280,272 280,425" fill="none" stroke="#000" stroke-width="2"/>
 <circle cx="280" cy="425" r="5" fill="#000"/>
-<text x="280" y="449" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₇</text>
+<text x="280" y="449" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₂</text>
 <rect x="510" y="55" width="350" height="370" rx="26" ry="26" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="9 7"/>
 <circle cx="780" cy="240" r="32" fill="#fff" stroke="#000" stroke-width="2"/>
 <text x="780" y="246" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="20" fill="#000">d</text>
