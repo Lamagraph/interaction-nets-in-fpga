@@ -75,7 +75,7 @@
 <circle cx="730" cy="425" r="5" fill="#000"/>
 <text x="730" y="449" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₃</text>
 <polyline points="677.4,77.4 590,138" fill="none" stroke="#000" stroke-width="2"/>
-<polyline points="700,132 590,288" fill="none" stroke="#000" stroke-width="2"/>
+<path d="M 700,132 C 700,190 590,220 590,288" fill="none" stroke="#000" stroke-width="2"/>
 <polyline points="622,170 787.4,227.4" fill="none" stroke="#000" stroke-width="2"/>
 <polyline points="590,202 707.4,357.4" fill="none" stroke="#000" stroke-width="2"/>
 <polyline points="612.6,297.4 787.4,272.6" fill="none" stroke="#000" stroke-width="2"/>

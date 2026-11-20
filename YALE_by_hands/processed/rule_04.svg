@@ -48,14 +48,14 @@
 <text x="666" y="335" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">1</text>
 <text x="685" y="316" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">2</text>
 <text x="704" y="335" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">3</text>
-<polyline points="653,140 685,298" fill="none" stroke="#000" stroke-width="2"/>
+<path d="M 653,140 C 625,190 685,240 685,298" fill="none" stroke="#000" stroke-width="2"/>
 <polyline points="685,96 685,55" fill="none" stroke="#000" stroke-width="2"/>
 <circle cx="685" cy="55" r="5" fill="#000"/>
 <text x="685" y="43" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₂</text>
 <polyline points="717,140 860,140" fill="none" stroke="#000" stroke-width="2"/>
 <circle cx="860" cy="140" r="5" fill="#000"/>
 <text x="870" y="145" text-anchor="start" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₆</text>
-<polyline points="685,172 780,425" fill="none" stroke="#000" stroke-width="2"/>
+<path d="M 685,172 C 690,260 745,360 780,425" fill="none" stroke="#000" stroke-width="2"/>
 <circle cx="780" cy="425" r="5" fill="#000"/>
 <text x="780" y="449" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="16" fill="#000">I₁</text>
 <polyline points="653,330 510,330" fill="none" stroke="#000" stroke-width="2"/>

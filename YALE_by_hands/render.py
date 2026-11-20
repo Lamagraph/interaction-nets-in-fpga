@@ -94,6 +94,16 @@ def wire(pts):
     s = " ".join(f"{_f(x)},{_f(y)}" for x, y in pts)
     return f'<polyline points="{s}" fill="none" stroke="#000" stroke-width="{SW}"/>'
 
+def cwire(p0, c1, c2, p3):
+    """Curved wire: cubic Bézier from p0 to p3 with control points c1, c2.
+
+    Use for port connections where a straight line would pass through a
+    node or land at a bad angle (see RHS of rules 4, 7, 11, 14).
+    """
+    return (f'<path d="M {_f(p0[0])},{_f(p0[1])} '
+            f'C {_f(c1[0])},{_f(c1[1])} {_f(c2[0])},{_f(c2[1])} '
+            f'{_f(p3[0])},{_f(p3[1])}" fill="none" stroke="#000" stroke-width="{SW}"/>')
+
 def iface(x, y, label, dx=0, dy=0, anchor="middle"):
     """Interface dot on the subnet boundary + label."""
     return (f'<circle cx="{_f(x)}" cy="{_f(y)}" r="{DR}" fill="#000"/>\n'
@@ -195,10 +205,10 @@ def rule_04():
     a3, q3 = agent(685, 140, "λ", {1: 180, 2: 90, 3: 0}, 270)
     a4, q4 = agent(685, 330, "b", {1: 180, 2: 270, 3: 0}, 90)
     p += [a3, a4]
-    p.append(wire([q3[1], q4[2]]))                      # internal λ.1 ↔ b.2
+    p.append(cwire(q3[1], (625, 190), (685, 240), q4[2]))   # internal λ.1 ↔ b.2 (curve)
     p += [wire([q3["P"], (685, 55)]),  iface(685, 55, "I₂", dy=-12)]
     p += [wire([q3[3], (860, 140)]),   iface(860, 140, "I₆", dx=10, dy=5, anchor="start")]
-    p += [wire([q3[2], (780, 425)]),   iface(780, 425, "I₁", dy=24)]
+    p += [cwire(q3[2], (690, 260), (745, 360), (780, 425)), iface(780, 425, "I₁", dy=24)]
     p += [wire([q4[1], (510, 330)]),   iface(510, 330, "I₃", dx=-10, dy=5, anchor="end")]
     p += [wire([q4[3], (860, 330)]),   iface(860, 330, "I₅", dx=10, dy=5, anchor="start")]
     p += [wire([q4["P"], (685, 425)]), iface(685, 425, "I₄", dy=24)]
@@ -274,9 +284,14 @@ def rule_07():
     p += [wire([qc["P"], (600, 425)]), iface(600, 425, "I₃", dy=24)]
     p += [wire([qd["P"], (700, 425)]), iface(700, 425, "I₄", dy=24)]
     p += [wire([qi["P"], (800, 425)]), iface(800, 425, "I₅", dy=24)]
-    # internal wires
-    p += [wire([qt[1], qc[2]]), wire([qt[2], qd[1]]), wire([qt[3], qi[1]]),
-          wire([qr[1], qc[1]]), wire([qr[2], qd[2]]), wire([qr[3], qi[2]])]
+    # internal wires (curved: outer arcs bulge out, inner wires land
+    # vertically / horizontally at their ports)
+    p += [cwire(qt[1], (540, 185), (540, 275), qc[2]),   # λ_L.1 ↔ c.2 (left arc)
+          cwire(qt[2], (620, 230), (700, 235), qd[1]),   # λ_L.2 ↔ δ.1 (lands from above)
+          cwire(qt[3], (720, 150), (800, 220), qi[1]),   # λ_L.3 ↔ δ⁻¹.1 (lands from above)
+          cwire(qr[1], (700, 190), (632, 260), qc[1]),   # λ_R.1 ↔ c.1 (lands from above)
+          cwire(qr[2], (780, 230), (628, 280), qd[2]),   # λ_R.2 ↔ δ.2 (lands from upper-left)
+          cwire(qr[3], (855, 190), (728, 280), qi[2])]   # λ_R.3 ↔ δ⁻¹.2 (right arc)
     p.append(imply())
     return wrap("Rule 7", "\n".join(p))
 
@@ -378,7 +393,7 @@ def rule_11():
     p += [wire([qbt[2], qdt[1]]),   # b_top.2 ↔ δ_top.1
           wire([qbt[3], qdm[1]]),   # b_top.3 ↔ δ_mid.1
           wire([qbt["P"], qdm[2]]), # b_top.P ↔ δ_mid.2
-          wire([qbb[2], qdt[2]]),   # b_bot.2 ↔ δ_top.2 (long diagonal)
+          cwire(qbb[2], (700, 230), (790, 180), qdt[2]),  # b_bot.2 ↔ δ_top.2 (curve)
           wire([qbb[3], qdp[1]]),   # b_bot.3 ↔ δ′.1
           wire([qbb["P"], qdp[2]])] # b_bot.P ↔ δ′.2
     p.append(imply())
@@ -567,7 +582,7 @@ def rule_14():
     p += [wire([qcb["P"], (730, 425)]), iface(730, 425, "I₃", dy=24)]
     # internal wires
     p += [wire([qd[1], qbu[1]]),    # δ.1 ↔ b′_UL.1
-          wire([qd[2], qbl[1]]),    # δ.2 ↔ b′_LL.1
+          cwire(qd[2], (700, 190), (590, 220), qbl[1]),  # δ.2 ↔ b′_LL.1 (curve)
           wire([qbu[2], qcr[1]]),   # b′_UL.2 ↔ c_R.1
           wire([qbu[3], qcb[2]]),   # b′_UL.3 ↔ c_B.2
           wire([qbl[2], qcr[2]]),   # b′_LL.2 ↔ c_R.2
