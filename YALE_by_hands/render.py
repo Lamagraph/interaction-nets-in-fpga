@@ -117,30 +117,29 @@ def wrap(t, body, w=W, h=H):
 # ── Rule definitions ──────────────────────────────────────────────────
 
 def rule_01():
-    """Rule 1:  @ ⋈ λ  ⇒  d + ∩-wire"""
+    """Rule 1:  @ ⋈ λ  ⇒  d + crossing wires (I₁—I₄, I₃—I₅)"""
     p = []
     # ── LHS ──
     p.append(subnet(*LHS))
-    a1, q1 = agent(215, 150, "@", {1: 180, 2: 0}, 90)
-    a2, q2 = agent(215, 320, "λ", {1: 180, 2: 0, 3: 30}, 270)
+    a1, q1 = agent(215, 140, "@", {1: 270, 2: 0}, 90)
+    a2, q2 = agent(215, 320, "λ", {1: 180, 2: 90, 3: 0}, 270)
     p += [a1, a2, wire([q1["P"], q2["P"]])]
-    p += [wire([q1[1], (40, 150)]),  iface(40, 150, "I₁", dx=-10, dy=5, anchor="end")]
-    p += [wire([q1[2], (390, 150)]), iface(390, 150, "I₂", dx=10, dy=5, anchor="start")]
-    p += [wire([q2[1], (40, 320)]),  iface(40, 320, "I₃", dx=-10, dy=5, anchor="end")]
-    p += [wire([q2[2], (390, 320)]), iface(390, 320, "I₄", dx=10, dy=5, anchor="start")]
-    p += [wire([q2[3], (390, 352)]), iface(390, 352, "I₅", dx=10, dy=5, anchor="start")]
+    p += [wire([q1[1], (215, 55)]),  iface(215, 55, "I₁", dy=-12)]
+    p += [wire([q1[2], (390, 140)]), iface(390, 140, "I₅", dx=10, dy=5, anchor="start")]
+    p += [wire([q2[1], (40, 320)]),  iface(40, 320, "I₂", dx=-10, dy=5, anchor="end")]
+    p += [wire([q2[2], (215, 425)]), iface(215, 425, "I₃", dy=24)]
+    p += [wire([q2[3], (390, 320)]), iface(390, 320, "I₄", dx=10, dy=5, anchor="start")]
     # ── RHS ──
     p.append(subnet(*RHS))
-    p += [wire([(600, 55), (700, 55)]),    # top bar
-          wire([(600, 55), (600, 425)]),   # left vertical
-          wire([(700, 55), (700, 425)])]   # right vertical
-    a3, q3 = agent(780, 320, "d", {1: 0}, 270)
+    a3, q3 = agent(600, 240, "d", {}, 90)
     p.append(a3)
-    p.append(wire([q3["P"], (780, 200), (700, 200)]))   # d.P → right vertical
-    p.append(wire([q3[1], (860, 320)]))                  # d.1 → I₅
-    p += [iface(600, 55, "I₁", dy=-12), iface(700, 55, "I₂", dy=-12),
-          iface(600, 425, "I₃", dy=24), iface(700, 425, "I₄", dy=24),
-          iface(860, 320, "I₅", dx=10, dy=5, anchor="start")]
+    p += [wire([q3["P"], (580, 425)]), iface(580, 425, "I₂", dy=24)]
+    p.append(wire([(700, 55), (820, 425)]))    # I₁ — I₄
+    p.append(wire([(720, 425), (860, 160)]))   # I₃ — I₅
+    p += [iface(700, 55, "I₁", dy=-12),
+          iface(860, 160, "I₅", dx=10, dy=5, anchor="start"),
+          iface(720, 425, "I₃", dy=24),
+          iface(820, 425, "I₄", dy=24)]
     p.append(imply())
     return wrap("Rule 1", "\n".join(p))
 
