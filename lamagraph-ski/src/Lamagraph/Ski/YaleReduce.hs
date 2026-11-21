@@ -30,6 +30,30 @@ The interactions (all principal-port meetings), with their source in the paper:
 * 'Garbage'×(any term) (Mackie §5) — the @e@ agent erases the term and the
   net on its auxiliary ports.
 
+Rule-figure cross-reference (fast check against @YALE_by_hands/processed/@):
+
+* 'betaRHS' — rule_01 (@@×λ@)
+* 'eraseRHS' — rule_02 (d×ν)
+* rule_03 (b×k) — inline dispatch: the @b@ is deleted, the constant remains
+* rule_05 (b×ν) — inline dispatch: the @b@ is deleted, the end-list remains
+* 'copyConstRHS' — rule_06 (c×k)
+* 'copyLamRHS' — rule_07 (c×λ)
+* 'copyEndRHS' — rule_08 (c×ν)
+* 'deltaDeltaRHS' — rule_09 (δ×δ)
+* 'deltaFreeVarRHS' — rule_10 (δ×b)
+* 'deltaFreeVarBlockedRHS' — rule_11 (δ×b′)
+* 'deltaAlphaRHS' — rule_12 (δ×α)
+* 'freeVarFreeVarBlockedRHS' — rule_13 (b×b′)
+* 'copyFreeVarBlockedRHS' — rule_14 (c×b′)
+* 'eraseFreeVarBlockedRHS' — rule_15 (d×b′)
+* 'garbageRHS' — rule_16 (ε×λ)
+
+Not among the 16 extracted figures: 'copyFreeVarRHS' (c×b), 'deltaAppRHS'
+(δ×App), 'forcingFreeVarRHS'\/'forcingFreeVarBlockedRHS' (4×b\/4×b′, Mackie
+§5.1). Present in the 16 figures but not yet given a dedicated RHS: rule_04
+(b×λ) — the @b@ currently passes through the @λ@ by coexisting on the shared
+edge (no explicit splice rule).
+
 Recursion is encoded as a cyclic net ("tie the knot", Mackie §6): two
 'YaleApp' nodes, each fed by its own copy of @F = λself. inner@; the bottom
 app's result is the knot edge, which is also its argument. The β-reduction
@@ -52,14 +76,11 @@ import GraphRewriting (
   Rewrite,
   Rule,
   apply',
-  attachedNodes,
   byEdge,
   byNode,
   byWire,
   deleteNode,
-  evalGraph,
   inspect,
-  inspectNode,
   mergeEdges,
   newEdge,
   newNode,
@@ -130,7 +151,6 @@ findActivePairs = runReader go
  where
   go :: Reader (Graph YaleNode) [(Node, Node)]
   go = do
-    g <- ask
     ns <- readNodeList
     vs <- mapM readNode ns
     let tagged = [(a, va) | (a, va) <- zip ns vs, interacting va]
@@ -141,44 +161,7 @@ findActivePairs = runReader go
       , b > a
       , canMeet va vb
       , interacts va vb
-      , -- Paper-faithful β precondition (Mackie 1998, Fig. 2): β-reduction
-      -- fires only when the abstraction's free variables are all
-      -- substituted. A 'FreeVar' whose @fvOcc@ sits on a SHARED edge
-      -- (the tie-the-knot loop) is already wired to its value (the knot),
-      -- so it counts as substituted. A 'FreeVar' on a plain edge is not
-      -- yet substituted; firing β early would let the @d@ agent erase it
-      -- and the @Garbage@ walk into shared structure (over-erasure).
-      betaAllowed g va vb
-      , betaAllowed g vb va
       ]
-  -- β is allowed when the λ's free variables are all substituted: either
-  -- the list is empty (no 'FreeVar' agents) or every 'FreeVar' points to a
-  -- SHARED edge (the tie-the-knot loop), meaning it is already wired to its
-  -- value. See the precondition comment in the pairs comprehension above.
-  betaAllowed gg (YaleApp{}) (YaleLam{lamVarList = eList}) =
-    allFvSubstituted gg eList
-  betaAllowed gg (YaleLam{lamVarList = eList}) (YaleApp{}) =
-    allFvSubstituted gg eList
-  betaAllowed _ _ _ = True
-
-{- | Whether every 'FreeVar' on the free-variable list edge @eList@ is
-substituted, i.e. its @fvOcc@ port sits on a SHARED edge (more than two
-ports — the tie-the-knot loop, where the value is already wired in). An empty
-list (no 'FreeVar' agents) is trivially all-substituted. This is the net-level
-form of the paper's β precondition @fv(t) = {x}@ (Mackie 1998, Fig. 2): the
-body has no unsubstituted free variables, so the @d@ agent introduced by β
-meets the 'EndList' (ν) or a knot-wired 'FreeVar' rather than draining an
-unsubstituted free variable out of a shared net.
--}
-allFvSubstituted :: Graph YaleNode -> Edge -> Bool
-allFvSubstituted g eList =
-  let m = do
-        ns <- attachedNodes eList
-        vs <- mapM readNode ns
-        let fvEdges = [e | FreeVar{fvOcc = e} <- vs]
-        shared <- mapM countEdgePorts fvEdges
-        return (all (> 2) shared)
-   in evalGraph m g
 
 {- | Whether two agents can meet: they share an edge and at least one of them
  is on its principal port (standard interaction-net semantics, Mackie 1998).
@@ -193,10 +176,28 @@ allFvSubstituted g eList =
 -}
 canMeet :: YaleNode -> YaleNode -> Bool
 canMeet va vb =
-  principalPort va == principalPort vb
+  principalPort va == principalPort vb && not (isDeltaApp va vb)
     || agentAtAppResult va vb
     || agentAtAppResult vb va
+    || agentAtFvHead va vb
+    || agentAtFvHead vb va
  where
+  -- A 'Delta' must NOT meet a 'YaleApp' at the application's @appFunc@
+  -- (the application's principal port). A @δ@ only ever sits on an
+  -- application's @appFunc@ edge when that function is a free-variable
+  -- occurrence — i.e. the @fvOcc@ principal of a blocked @b'@ agent. In that
+  -- case the @δ@ must unblock the @b'@ (rule_11, @δ@×@b'@), NOT duplicate the
+  -- application. Allowing the principal-port @δ@×App@ meeting here lets
+  -- 'deltaAppRHS' consume the @δ@ before it can unblock the @b'@, stranding
+  -- the @b'@ with an empty @fvOcc@ and halting the reduction (this is why
+  -- every @if@ collapsed to a constant). The @δ@ is still free to meet the
+  -- application at its @appResult@ port via 'agentAtAppResult' (the body-
+  -- duplication case), which is the only legitimate @δ@×App@ meeting.
+  isDeltaApp x y = (isDeltaN x && isAppN y) || (isAppN x && isDeltaN y)
+  isDeltaN (Delta{}) = True
+  isDeltaN _ = False
+  isAppN (YaleApp{}) = True
+  isAppN _ = False
   -- Guard: a Copy must NOT meet the application when the application's
   -- argument is the Copy's own output. That is the tie-the-knot cycle (Mackie
   -- §6): the Copy's output feeds the application's argument and the
@@ -217,6 +218,24 @@ canMeet va vb =
   -- application there to walk into the function's net.
   agentAtAppResult a@(Forcing{}) (YaleApp{appResult = r}) = principalPort a == r
   agentAtAppResult _ _ = False
+  -- A Forcing agent may meet a FreeVarBlocked (b') at its @fvHead@ port, which
+  -- is an auxiliary port of the b'. The b' principal is @fvOcc@; the @fvHead@
+  -- port is wired to the forcing agent's primary when the b' was created by the
+  -- forcing toggle (4×b). The toggle-back (4×b') absorbs the forcing agent and
+  -- converts the b' back to a b, so no new agent is spawned on @fvHead@ and the
+  -- pair is well-formed.
+  --
+  -- NOTE: a 'Delta' must NOT be allowed to meet a b' at @fvHead@. The unblocking
+  -- rule (δ×b', rule_11) meets the b' at its @fvOcc@ principal and spawns a fresh
+  -- δ on @fvHead@ (the head-duplicator). If a δ already sitting on @fvHead@ (the
+  -- one preserved by the blocking rule δ×b, rule_10) were allowed to fire rule_11
+  -- directly, the spawned head-δ would share its input edge with the LHS δ;
+  -- deleting the LHS δ would strand the head-δ with a dangling input and the
+  -- reduction would halt. Instead the preserved δ waits on @fvHead@ until a
+  -- different δ reaches the b' @fvOcc@ principal and fires rule_11, which spawns
+  -- the partner head-δ that cancels with it (δ×δ).
+  agentAtFvHead a@(Forcing{}) (FreeVarBlocked{fvHead = h}) = principalPort a == h
+  agentAtFvHead _ _ = False
 
 -- * Firing a specific interaction
 
@@ -243,6 +262,25 @@ fireAt a b = do
     -- β-reduction: @ × λ (uses 'rewrite' so the RHS can call 'deleteEdge')
     (TApp, TLam) -> rewrite $ \_ -> betaRHS va vb a b
     (TLam, TApp) -> rewrite $ \_ -> betaRHS vb va b a
+    -- d × b' (rule 15): uses 'rewrite' so the RHS can call 'mergeEdges'
+    (TErase, TFVB) -> rewrite $ \_ -> eraseFreeVarBlockedRHS va vb a b
+    (TFVB, TErase) -> rewrite $ \_ -> eraseFreeVarBlockedRHS vb va b a
+    -- d × b (rule 2): uses 'rewrite' so the RHS can call 'mergeEdges' and
+    -- 'newNode' to wire the value to the occurrence and continue the erasure
+    -- along the list continuation.
+    (TErase, TFreeV) -> rewrite $ \_ -> eraseFreeVarRHS va vb a b
+    (TFreeV, TErase) -> rewrite $ \_ -> eraseFreeVarRHS vb va b a
+    -- b × κ (rule_03): the b agent is erased; the Constant remains.
+    (TFreeV, TConst) -> rewrite $ \_ -> deleteNode a
+    (TConst, TFreeV) -> rewrite $ \_ -> deleteNode b
+    -- b × ν (rule_05): the b agent is erased; the EndList remains.
+    (TFreeV, TEnd) -> rewrite $ \_ -> deleteNode a
+    (TEnd, TFreeV) -> rewrite $ \_ -> deleteNode b
+    -- b × b' (rule_13): uses 'rewrite' so the RHS can delete the LHS nodes
+    -- explicitly (the two b' agents share an internal edge, which the
+    -- 'replace' action mishandles).
+    (TFreeV, TFVB) -> rewrite $ \_ -> freeVarFreeVarBlockedRHS va vb a b
+    (TFVB, TFreeV) -> rewrite $ \_ -> freeVarFreeVarBlockedRHS vb va b a
     _ ->
       replace $ case (tag va, tag vb) of
         -- Copy: c × X
@@ -263,15 +301,18 @@ fireAt a b = do
         (TDelta, TDelta) -> deltaDeltaRHS va vb
         (TDelta, TApp) -> deltaAppRHS va vb
         (TApp, TDelta) -> deltaAppRHS vb va
+        -- δ × b / δ × b' (Mackie 1998, §5 "Duplication", rules 2 & 3): the
+        -- blocking / unblocking rules. These keep the δ agents well-balanced
+        -- on the free-variable list instead of letting them enter the body.
+        (TDelta, TFreeV) -> deltaFreeVarRHS va vb
+        (TFreeV, TDelta) -> deltaFreeVarRHS vb va
+        (TDelta, TFVB) -> deltaFreeVarBlockedRHS va vb
+        (TFVB, TDelta) -> deltaFreeVarBlockedRHS vb va
         (TDelta, _) -> deltaAlphaRHS va vb
         (_, TDelta) -> deltaAlphaRHS vb va
         -- Erase: d × X
         (TErase, TEnd) -> eraseRHS
         (TEnd, TErase) -> eraseRHS
-        (TErase, TFreeV) -> eraseRHS
-        (TFreeV, TErase) -> eraseRHS
-        (TErase, TFVB) -> eraseRHS
-        (TFVB, TErase) -> eraseRHS
         -- Garbage: e × X
         (TGarbage, _) -> garbageRHS va vb
         (_, TGarbage) -> garbageRHS vb va
@@ -299,6 +340,7 @@ The binder edge has exactly one port (guaranteed by the compiler's linear
 encoding), so there is NO fan-out here: the 'Copy'\/'Garbage' agents emitted
 by the compiler handle duplication\/erasure. This rule is a pure splice with
 no metadata and no additional knowledge.
+Figure: @YALE_by_hands/processed/rule_01.svg@.
 -}
 betaRHS :: YaleNode -> YaleNode -> Node -> Node -> Rewrite YaleNode ()
 betaRHS app lam appNode lamNode = do
@@ -322,28 +364,6 @@ betaRHS app lam appNode lamNode = do
   deleteNode appNode
   deleteNode lamNode
 
-{- | The ports of node @n@ that lie on edge @e@, as @(node, portIndex)@ pairs
-in port-index order. Used to correlate the fresh edges produced by an edge
-deletion (which are emitted in @attachedNodes@-then-port-index order) with the
-specific ports that were on the deleted edge.
--}
-portsOn :: Edge -> Node -> Rewrite YaleNode [(Node, Int)]
-portsOn e n = do
-  ports <- inspectNode n
-  return [(n, i) | (i, p) <- zip [0 ..] ports, p == e]
-
-{- | The total number of ports on edge @e@ (summed over all attached nodes).
-A plain (binary) edge has exactly two ports; a SHARED edge (hyperedge — e.g.
-the tie-the-knot loop, or a binder edge with multiple bound-variable
-occurrences) has more than two. Used to detect shared edges that must not be
-erased by a 'Garbage' agent (see the unused-variable case in 'betaRHS').
--}
-countEdgePorts :: Edge -> Rewrite YaleNode Int
-countEdgePorts e = do
-  ns <- attachedNodes e
-  ps <- concat <$> mapM (portsOn e) ns
-  return (length ps)
-
 {- | 'Copy'×'YaleLam': copy the abstraction (Mackie 1998, §5 "Duplication",
 the @c@×@λ@ rule). Two copies of the @λ@ are produced, each with its own fresh
 binder edge and body edge. A 'Copy' (@c@) agent is propagated along the
@@ -354,6 +374,7 @@ duplicates the binder edge (the bound-variable occurrence) and one duplicates
 the body ("a δ agent is introduced to duplicate the body of the abstraction,
 in the same way as we copied the abstraction agent"). This rule is a pure
 local replacement with no metadata.
+Figure: @YALE_by_hands/processed/rule_07.svg@.
 -}
 copyLamRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyLamRHS c lam = do
@@ -407,25 +428,6 @@ byEdgeOrSticky sticky splitVars port
       e2 <- byEdge
       return (e1, e2, True)
 
-{- | Route the @fvOcc@ edge of a 'FreeVar' through the split-vars when the
-abstraction that binds the variable is itself being duplicated. The @fvOcc@ is
-a passive receiver of the enclosing β-splice (the value flows in when the
-enclosing abstraction is applied), so — exactly like a bound-variable
-occurrence handled by 'byEdgeOrSticky' — it must be SPLIT when the enclosing
-binder edge is in the split-vars: copy 1 gets @v1@ and copy 2 gets @v2@, so
-each copy's 'FreeVar' points to its own copy's binder edge. If the enclosing
-abstraction is NOT being duplicated (the @fvOcc@ is not an @original@ edge in
-the split-vars), the @fvOcc@ is SHARED (both copies point to the same binder
-edge). Sharing it in the duplicated case would leave both copies' 'FreeVar's
-pointing at the original binder edge, which is drained when one copy is
-β-applied (the argument splices onto the copy's split edge, not the original),
-so the value never reaches the other copy and its redex deadlocks.
--}
-routeFvOcc :: [(Edge, Edge, Edge)] -> Edge -> (Edge, Edge)
-routeFvOcc splitVars fvOcc =
-  case lookupSplitEdge splitVars fvOcc of
-    Just (v1, v2) -> (v1, v2)
-    Nothing -> (fvOcc, fvOcc)
 
 {- | Create a chain of 'Copy' agents (in the 'Replace' monad) to duplicate the
 term on edge @eIn@ into one copy per edge in @eTargets@. For @k@ target edges
@@ -483,12 +485,14 @@ copyAppRHS c app = do
     (False, False) -> return ()
 
 -- | 'Copy'×'Constant': copy a base value. Two copies.
+-- Figure: @YALE_by_hands/processed/rule_06.svg@.
 copyConstRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyConstRHS c k = do
   byNode $ Constant{inp = copyOut1 c, name = name k}
   byNode $ Constant{inp = copyOut2 c, name = name k}
 
 -- | 'Copy'×'EndList': copy the end-of-list. Two @ν@'s.
+-- Figure: @YALE_by_hands/processed/rule_08.svg@.
 copyEndRHS :: YaleNode -> Replace YaleNode ()
 copyEndRHS c = do
   byNode $ EndList{endIn = copyOut1 c}
@@ -500,49 +504,176 @@ continuation (the tail). The variable occurrence (@fvOcc@) is routed through
 the split-vars by 'routeFvOcc': if the abstraction that binds the variable is
 being duplicated, each copy's @fvOcc@ points to its own copy's binder edge;
 otherwise the @fvOcc@ is shared.
+NOTE: no extracted figure — c×b is not among the 16 rules in
+@YALE_by_hands/processed/@ (the paper's c-meets-free-variable case is rule 14,
+c×b′, see 'copyFreeVarBlockedRHS').
 -}
 copyFreeVarRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyFreeVarRHS c b = do
-  let (fvOcc1, fvOcc2) = routeFvOcc (copySplitVars c) (fvOcc b)
-  byNode $ FreeVar{fvCont = copyOut1 c, fvOcc = fvOcc1, name = name b}
-  byNode $ FreeVar{fvCont = copyOut2 c, fvOcc = fvOcc2, name = name b}
+  -- δ for the continuation (b.fvCont)
+  eCont1 <- byEdge
+  eCont2 <- byEdge
+  byNode $ Delta{deltaIn = fvCont b, deltaOut1 = eCont1, deltaOut2 = eCont2}
+  -- c for the value (b.fvValue)
+  eVal1 <- byEdge
+  eVal2 <- byEdge
   byNode $
     Copy
-      { copyIn = fvCont b
-      , copyOut1 = copyOut1 c
-      , copyOut2 = copyOut2 c
+      { copyIn = fvValue b
+      , copyOut1 = eVal1
+      , copyOut2 = eVal2
       , copySticky = copySticky c
       , copySplitVars = copySplitVars c
       }
+  -- c for the occurrence (b.fvOcc)
+  eOcc1 <- byEdge
+  eOcc2 <- byEdge
+  byNode $
+    Copy
+      { copyIn = fvOcc b
+      , copyOut1 = eOcc1
+      , copyOut2 = eOcc2
+      , copySticky = copySticky c
+      , copySplitVars = copySplitVars c
+      }
+  -- Two b copies; the meeting port (principal) receives the c outputs.
+  byNode $ FreeVar{fvPrimary = copyOut1 c, fvOcc = eOcc1, fvCont = eCont1, fvValue = eVal1, name = name b}
+  byNode $ FreeVar{fvPrimary = copyOut2 c, fvOcc = eOcc2, fvCont = eCont2, fvValue = eVal2, name = name b}
 
 {- | 'Copy'×'FreeVarBlocked': the blocking rule. A @c@ agent meeting a @b'@
 agent converts the @b'@ back to a @b@ (Mackie 1998: "in the process of
 duplication we also convert the b' agent back to a b agent"), duplicates it
 (two @b@ copies, each with its @fvOcc@ routed by 'routeFvOcc'), and propagates
 a @c@ agent along the list continuation (the tail).
+Figure: @YALE_by_hands/processed/rule_14.svg@.
 -}
 copyFreeVarBlockedRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyFreeVarBlockedRHS c b = do
-  let (fvOcc1, fvOcc2) = routeFvOcc (copySplitVars c) (fvOcc b)
-  byNode $ FreeVar{fvCont = copyOut1 c, fvOcc = fvOcc1, name = name b}
-  byNode $ FreeVar{fvCont = copyOut2 c, fvOcc = fvOcc2, name = name b}
+  -- δ for the continuation (b'.fvCont)
+  eCont1 <- byEdge
+  eCont2 <- byEdge
+  byNode $ Delta{deltaIn = fvCont b, deltaOut1 = eCont1, deltaOut2 = eCont2}
+  -- c for the value (b'.fvValue)
+  eVal1 <- byEdge
+  eVal2 <- byEdge
   byNode $
     Copy
-      { copyIn = fvCont b
-      , copyOut1 = copyOut1 c
-      , copyOut2 = copyOut2 c
+      { copyIn = fvValue b
+      , copyOut1 = eVal1
+      , copyOut2 = eVal2
       , copySticky = copySticky c
       , copySplitVars = copySplitVars c
       }
+  -- c for the head (b'.fvHead)
+  eHead1 <- byEdge
+  eHead2 <- byEdge
+  byNode $
+    Copy
+      { copyIn = fvHead b
+      , copyOut1 = eHead1
+      , copyOut2 = eHead2
+      , copySticky = copySticky c
+      , copySplitVars = copySplitVars c
+      }
+  -- Two b' copies; the occurrence (principal) receives the c outputs.
+  byNode $ FreeVarBlocked{fvOcc = copyOut1 c, fvCont = eCont1, fvValue = eVal1, fvHead = eHead1, name = name b}
+  byNode $ FreeVarBlocked{fvOcc = copyOut2 c, fvCont = eCont2, fvValue = eVal2, fvHead = eHead2, name = name b}
 
 {- | 'Delta'×'Delta': two @δ@ agents meet and cancel (Mackie 1998, §5
 "Duplication"). This indicates that the duplication process is complete. The
-four auxiliary ports are crossed.
+four auxiliary ports are reconnected so that each @δ@'s @deltaOut1@ meets the
+other @δ@'s @deltaOut1@ and each @deltaOut2@ meets the other @deltaOut2@
+(parallel, NOT crossed): @out1@ and @out2@ consistently carry "copy 1" and
+"copy 2" respectively (see 'copyLamRHS' and 'deltaAlphaRHS'), so the
+cancellation must preserve that distinction or the two copies' sub-nets get
+swapped and the data flow is scrambled.
+Figure: @YALE_by_hands/processed/rule_09.svg@.
 -}
 deltaDeltaRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 deltaDeltaRHS d1 d2 =
-  byWire (deltaOut1 d1) (deltaOut2 d2)
-    <> byWire (deltaOut2 d1) (deltaOut1 d2)
+  byWire (deltaOut1 d1) (deltaOut1 d2)
+    <> byWire (deltaOut2 d1) (deltaOut2 d2)
+
+{- | 'Delta'×'FreeVar': the BLOCKING rule (Mackie 1998, §5 "Duplication",
+second rule). A @δ@ agent meeting a @b@ agent does NOT duplicate it; instead
+the @b@ is converted to a @b'@ (blocked free-variable) agent, whose new
+principal port (@fvHead@) is wired to the interaction edge (the @δ@'s former
+input). The @δ@ is preserved (not absorbed), so the pair immediately re-fires
+as @δ@×@b'@ (the unblocking rule below). The point of the block is that the
+@b'@'s new @fvHead@ port lets OTHER interactions complete while the @δ@ stays
+on the free-variable list — it is not allowed to enter the body through the
+occurrence, keeping the @δ@ agents well-balanced.
+Figure: @YALE_by_hands/processed/rule_10.svg@.
+-}
+deltaFreeVarRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
+deltaFreeVarRHS d b = do
+  -- The b is converted to a b': the occurrence becomes the principal, the
+  -- continuation and value are preserved, and the meeting port (the δ's
+  -- former input) becomes the new head port. The δ is preserved, its primary
+  -- now wired to the b' head.
+  byNode $ FreeVarBlocked{fvOcc = fvOcc b, fvCont = fvCont b, fvValue = fvValue b, fvHead = deltaIn d, name = name b}
+  byNode $ Delta{deltaIn = deltaIn d, deltaOut1 = deltaOut1 d, deltaOut2 = deltaOut2 d}
+
+{- | 'Delta'×'FreeVarBlocked': the UNBLOCKING rule (Mackie 1998, §5
+"Duplication", third rule). A @δ@ agent meeting a @b'@ agent converts the @b'@
+back to a @b@ and duplicates it into two @b@ copies (each copy's principal
+@fvCont@ wired to a @δ@ output). A fresh @δ@ is propagated along the list
+continuation (@fvCont@, "along the list of free variables") AND along the
+occurrence edge (@fvOcc@, "along the free variable edge"), so the duplication
+continues down the list and into the occurrence. Unlike the generic @δ@×@α@
+rule (which would duplicate the @b'@ and propagate only along its auxiliary
+ports), this rule unblocks the @b'@ and keeps the @δ@ balanced on the list.
+Figure: @YALE_by_hands/processed/rule_11.svg@.
+-}
+deltaFreeVarBlockedRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
+deltaFreeVarBlockedRHS d b = do
+  -- δ_top: duplicates the continuation (b'.fvCont)
+  eCont1 <- byEdge
+  eCont2 <- byEdge
+  byNode $ Delta{deltaIn = fvCont b, deltaOut1 = eCont1, deltaOut2 = eCont2}
+  -- δ_mid: duplicates the value (b'.fvValue); its outputs feed b1's value
+  -- and meeting ports.
+  eVal1 <- byEdge
+  eMeet1 <- byEdge
+  byNode $ Delta{deltaIn = fvValue b, deltaOut1 = eVal1, deltaOut2 = eMeet1}
+  -- δ_bot: duplicates the head (b'.fvHead); its outputs feed b2's value and
+  -- meeting ports.
+  eVal2 <- byEdge
+  eMeet2 <- byEdge
+  byNode $ Delta{deltaIn = fvHead b, deltaOut1 = eVal2, deltaOut2 = eMeet2}
+  -- Two b copies; the occurrence (the δ's outputs) is the principal's
+  -- counterpart, the meeting port is fed by the value/head δ.
+  byNode $ FreeVar{fvPrimary = eMeet1, fvOcc = deltaOut1 d, fvCont = eCont1, fvValue = eVal1, name = name b}
+  byNode $ FreeVar{fvPrimary = eMeet2, fvOcc = deltaOut2 d, fvCont = eCont2, fvValue = eVal2, name = name b}
+
+{- | 'FreeVar'×'FreeVarBlocked': the @b@ and @b'@ agents meet and reconfigure
+into two @b'@ agents and one @b@ agent (Mackie 1998, §5, rule 13). The @b@'s
+continuation becomes the top @b'@'s occurrence; the @b'@'s continuation becomes
+the top @b'@'s continuation; the @b@'s occurrence becomes the bottom @b'@'s
+occurrence; the @b'@'s head becomes the bottom @b'@'s head; the @b@'s value
+becomes the @b@'s value; the @b'@'s value becomes the @b@'s meeting port. The
+three internal edges wire the value\/head\/continuation ports across the agents.
+Figure: @YALE_by_hands/processed/rule_13.svg@.
+-}
+freeVarFreeVarBlockedRHS :: YaleNode -> YaleNode -> Node -> Node -> Rewrite YaleNode ()
+freeVarFreeVarBlockedRHS b bprime bNode bprimeNode = do
+  -- Capture the LHS edges before deleting the LHS nodes.
+  let eContB = fvCont b
+      eOccB = fvOcc b
+      eValB = fvValue b
+      eContP = fvCont bprime
+      eValP = fvValue bprime
+      eHeadP = fvHead bprime
+  -- Delete the LHS nodes FIRST so their edges are freed; the new nodes then
+  -- attach to the freed edges (not to edges still shared with live LHS nodes).
+  deleteNode bNode
+  deleteNode bprimeNode
+  eA <- newEdge -- top b'.fvValue = b.fvCont
+  eB <- newEdge -- top b'.fvHead = bottom b'.fvCont
+  eC <- newEdge -- bottom b'.fvValue = b.fvOcc
+  void $ newNode $ FreeVarBlocked{fvOcc = eContB, fvCont = eContP, fvValue = eA, fvHead = eB, name = name b}
+  void $ newNode $ FreeVarBlocked{fvOcc = eOccB, fvCont = eB, fvValue = eC, fvHead = eHeadP, name = name b}
+  void $ newNode $ FreeVar{fvPrimary = eValP, fvOcc = eC, fvCont = eA, fvValue = eValB, name = name b}
 
 {- | 'Delta'×'YaleApp': the @δ@ agent duplicates an application. Because the
 application's principal is @appFunc@ (so that β-reduction is a principal-port
@@ -552,6 +683,9 @@ NOT at the principal. The meeting port must be the one wired to the @δ@'s two
 outputs; the other two ports each receive a propagated @δ@. Wiring the wrong
 port (as the generic @δ@×@α@ rule would) disconnects the function and feeds the
 duplication back into itself, growing the net without bound.
+NOTE: no extracted figure — δ×App is a codebase-specific special case (the
+application's principal is @appFunc@, so the @δ@ meets it at @appResult@); it
+is not among the 16 rules in @YALE_by_hands/processed/@.
 -}
 deltaAppRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 deltaAppRHS d app =
@@ -585,6 +719,7 @@ propagates a fresh @δ@ agent along every auxiliary port of @α@, so that the
 duplication continues into the sub-net. The two copies' principal ports are
 wired to the @δ@'s two outputs. This is a pure local replacement with no
 metadata.
+Figure: @YALE_by_hands/processed/rule_12.svg@.
 -}
 deltaAlphaRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 deltaAlphaRHS d alpha = do
@@ -597,9 +732,40 @@ deltaAlphaRHS d alpha = do
   for_ (zip3 aux e1s e2s) $ \(origE, e1, e2) ->
     byNode $ Delta{deltaIn = origE, deltaOut1 = e1, deltaOut2 = e2}
 
--- | 'Erase'×(EndList\/FreeVarBlocked): the @d@ agent erases the list element.
+-- | 'Erase'×'EndList': the @d@ agent meets the end of the list. Both agents
+-- are deleted (the erasure is complete).
+-- Figure: @YALE_by_hands/processed/rule_02.svg@ (d×ν).
 eraseRHS :: Replace YaleNode ()
 eraseRHS = return ()
+
+{- | 'Erase'×'FreeVar': the @d@ agent meets a @b@ agent (Mackie 1998, §5,
+rule 2). The @b@ agent is erased: its @fvValue@ (wired to the enclosing binder
+edge) is merged onto its @fvOcc@ (the occurrence in the body), so the value
+flows to the occurrence. The @d@ agent is re-introduced on the list
+continuation (@fvCont@) to continue walking the list.
+-}
+eraseFreeVarRHS :: YaleNode -> YaleNode -> Node -> Node -> Rewrite YaleNode ()
+eraseFreeVarRHS _ b dNode bNode = do
+  -- Merge the value onto the occurrence FIRST (while the b agent still exists,
+  -- so the edges are valid), then create the continuation d agent, then delete
+  -- both agents.
+  mergeEdges (fvValue b) (fvOcc b)
+  void $ newNode Erase{eraseIn = fvCont b}
+  deleteNode dNode
+  deleteNode bNode
+
+{- | 'Erase'×'FreeVarBlocked': the @d@ agent meets a @b'@ (Mackie 1998, §5,
+rule 15). The @d@ agent is PRESERVED (not deleted): its @eraseIn@ is rewired
+to the @b'@'s value port, so the erasure continues along the value. The
+@b'@'s continuation and head ports are merged (they no longer dangle).
+Figure: @YALE_by_hands/processed/rule_15.svg@.
+-}
+eraseFreeVarBlockedRHS :: YaleNode -> YaleNode -> Node -> Node -> Rewrite YaleNode ()
+eraseFreeVarBlockedRHS _ b dNode bNode = do
+  deleteNode dNode
+  deleteNode bNode
+  mergeEdges (fvCont b) (fvHead b)
+  void $ newNode Erase{eraseIn = fvValue b}
 
 {- | 'Garbage'×(any term): the @e@ agent erases the term and RECURSIVELY the
 net on its auxiliary ports (Mackie 1998, garbage collection). The two nodes
@@ -613,6 +779,7 @@ occurrences. Those occurrence ports are removed as the body's nodes are
 erased (via the 'Garbage' propagated onto @lamBody@), so the binder edge
 drains naturally without a dedicated eraser (which would risk meeting
 non-garbage ports spliced onto the shared edge).
+Figure: @YALE_by_hands/processed/rule_16.svg@ (ε×λ; the generic ε×α case).
 -}
 garbageRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 garbageRHS _ x = case x of
@@ -620,8 +787,8 @@ garbageRHS _ x = case x of
   YaleApp{} -> spawnGarbageOn [appArg x, appResult x]
   Copy{} -> spawnGarbageOn [copyOut1 x, copyOut2 x]
   Delta{} -> spawnGarbageOn [deltaOut1 x, deltaOut2 x]
-  FreeVar{} -> spawnGarbageOn [fvOcc x]
-  FreeVarBlocked{} -> spawnGarbageOn [fvCont x, fvOcc x]
+  FreeVar{} -> spawnGarbageOn [fvOcc x, fvCont x, fvValue x]
+  FreeVarBlocked{} -> spawnGarbageOn [fvCont x, fvValue x, fvHead x]
   -- Single-port agents with no auxiliary sub-net: just cancel.
   Erase{} -> return ()
   EndList{} -> return ()
@@ -673,17 +840,23 @@ forcingCancelRHS = return ()
 free-variable) agent, which allows other reductions to complete. The forcing
 agent is absorbed; the @b'@ agent's new principal port (@fvHead@) is wired to
 the interaction edge (the forcing agent's former port).
+NOTE: no extracted figure — the Forcing (4) agent is from Mackie §5.1
+"Strong Reduction" (Fig. 4), not among the 16 rules in
+@YALE_by_hands/processed/@.
 -}
 forcingFreeVarRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 forcingFreeVarRHS f b =
-  byNode $ FreeVarBlocked{fvHead = forcingIn f, fvCont = fvCont b, fvOcc = fvOcc b, name = name b}
+  byNode $ FreeVarBlocked{fvOcc = fvOcc b, fvCont = fvCont b, fvValue = fvValue b, fvHead = forcingIn f, name = name b}
 
 {- | 'Forcing'×'FreeVarBlocked': convert the @b'@ agent back to a @b@ agent.
 The forcing agent is absorbed.
+NOTE: no extracted figure — the Forcing (4) agent is from Mackie §5.1
+"Strong Reduction" (Fig. 4), not among the 16 rules in
+@YALE_by_hands/processed/@.
 -}
 forcingFreeVarBlockedRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
-forcingFreeVarBlockedRHS _ b =
-  byNode $ FreeVar{fvCont = fvCont b, fvOcc = fvOcc b, name = name b}
+forcingFreeVarBlockedRHS f b =
+  byNode $ FreeVar{fvPrimary = forcingIn f, fvOcc = fvOcc b, fvCont = fvCont b, fvValue = fvValue b, name = name b}
 
 {- | 'Forcing'×(other agent): pass-through. The partner is recreated
 unchanged; the forcing agent moves to the partner's body edge. If the partner
@@ -754,9 +927,21 @@ interacts va vb =
     || isCopyPair va vb
     || isDeltaPair va vb
     || isErasePair va vb
+    || isFreeVPair va vb
+    || isFreeVFreeVBPair va vb
     || isGarbagePair va vb
     || isForcingPair va vb
  where
+  -- b × κ (rule_03) and b × ν (rule_05): the b agent meets a Constant or
+  -- EndList at its principal port and is erased; the other agent remains.
+  isFreeVPair x y =
+    (isFreeV x && (isConstant y || isEnd y))
+      || ((isConstant x || isEnd x) && isFreeV y)
+  -- b × b' (rule_13): the b and b' agents meet and reconfigure into two b'
+  -- agents and one b agent.
+  isFreeVFreeVBPair x y = (isFreeV x && isFVB y) || (isFVB x && isFreeV y)
+  isConstant (Constant{}) = True
+  isConstant _ = False
   isBeta x y = (isApp x && isLam y) || (isLam x && isApp y)
   -- A 'Copy' meets a term.
   isCopyPair x y = (isCopy x && isTerm y) || (isTerm x && isCopy y)

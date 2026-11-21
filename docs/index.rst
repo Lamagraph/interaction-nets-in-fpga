@@ -17,6 +17,7 @@ Contents
 
    architecture
    lml-ski
+   YALE
    contributing
 
 Navigation
@@ -26,6 +27,8 @@ Navigation
   lives). Read this before exploring the code.
 - :doc:`lml-ski` — design of the LML→SKI translator and the differential
   (LML vs SKI) test pipeline.
+- :doc:`YALE` — reference extraction of the YALE interaction-net system: the
+  agent alphabet and all reduction rules, implementation-precise.
 - :doc:`contributing` — the contribution guidelines (integration branch, commit
   format, merge strategy).
 - ``README.md`` — project landing page (interaction-net formalism, required

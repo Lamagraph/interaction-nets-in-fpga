@@ -56,6 +56,8 @@ module Lamagraph.Ski.YaleNet (
 
 import Relude
 
+import Data.Map qualified as Map
+import Data.Set qualified as Set
 import Data.View
 import GraphRewriting (
   Edge,
@@ -76,7 +78,7 @@ import GraphRewriting (
  )
 import GraphRewriting.Pattern.InteractionNet (INet (..))
 
-import Lamagraph.Ski.Lambda (Lam (..), replaceSelfRef, selfRefName)
+import Lamagraph.Ski.Lambda (Lam (..), fv, replaceSelfRef, selfRefName)
 
 -- * Node type (the YALE signature)
 
@@ -149,22 +151,30 @@ data YaleNode
     Erase
       { eraseIn :: Edge
       }
-  | {- | A @b@ (free-variable) agent; @fvCont@ is the list continuation
-    (principal), @fvOcc@ the variable occurrence.
+  | {- | A @b@ (free-variable) agent (Mackie 1998, §5). Four ports:
+    @fvPrimary@ is the principal (the meeting port, where @δ@\/@c@\/@d@\/@b'@
+    meet it); @fvOcc@ the variable occurrence; @fvCont@ the list continuation
+    (the rest of the free-variable list); @fvValue@ the value port (carries the
+    value spliced in during β-reduction).
     -}
     FreeVar
-      { fvCont :: Edge
+      { fvPrimary :: Edge
       , fvOcc :: Edge
+      , fvCont :: Edge
+      , fvValue :: Edge
       , name :: String
       }
-  | {- | A @b'@ (blocked free-variable) agent. @fvHead@ is the principal
-    port (where a @c@ agent meets it), @fvCont@ the list continuation
-    (where the propagated @c@ goes next), @fvOcc@ the variable occurrence.
+  | {- | A @b'@ (blocked free-variable) agent (Mackie 1998, §5). Four ports:
+    @fvOcc@ is the principal (the occurrence port, where @δ@\/@c@\/@d@\/@b@
+    meet it); @fvCont@ the list continuation; @fvValue@ the value port;
+    @fvHead@ the head port (wired to a @δ@'s primary when created by the
+    blocking rule).
     -}
     FreeVarBlocked
-      { fvHead :: Edge
+      { fvOcc :: Edge
       , fvCont :: Edge
-      , fvOcc :: Edge
+      , fvValue :: Edge
+      , fvHead :: Edge
       , name :: String
       }
   | -- | The @ν@ (end-of-list) agent.
@@ -214,8 +224,8 @@ instance View [Edge] YaleNode where
     Copy{copyIn = a, copyOut1 = b, copyOut2 = c, copySticky = _, copySplitVars = _} -> [a, b, c]
     Delta{deltaIn = a, deltaOut1 = b, deltaOut2 = c} -> [a, b, c]
     Erase{eraseIn = a} -> [a]
-    FreeVar{fvCont = a, fvOcc = b, name = _} -> [a, b]
-    FreeVarBlocked{fvHead = a, fvCont = b, fvOcc = c, name = _} -> [a, b, c]
+    FreeVar{fvPrimary = a, fvOcc = b, fvCont = c, fvValue = d, name = _} -> [a, b, c, d]
+    FreeVarBlocked{fvOcc = a, fvCont = b, fvValue = c, fvHead = d, name = _} -> [a, b, c, d]
     EndList{endIn = a} -> [a]
     Garbage{garbageIn = a} -> [a]
     Forcing{forcingIn = a} -> [a]
@@ -240,12 +250,12 @@ instance View [Edge] YaleNode where
     Erase{} -> n{eraseIn = a}
      where
       [a] = ports
-    FreeVar{} -> n{fvCont = a, fvOcc = b}
+    FreeVar{} -> n{fvPrimary = a, fvOcc = b, fvCont = c, fvValue = d}
      where
-      [a, b] = ports
-    FreeVarBlocked{} -> n{fvHead = a, fvCont = b, fvOcc = c}
+      [a, b, c, d] = ports
+    FreeVarBlocked{} -> n{fvOcc = a, fvCont = b, fvValue = c, fvHead = d}
      where
-      [a, b, c] = ports
+      [a, b, c, d] = ports
     EndList{} -> n{endIn = a}
      where
       [a] = ports
@@ -270,8 +280,8 @@ instance INet YaleNode where
     Copy{copyIn = a} -> a
     Delta{deltaIn = a} -> a
     Erase{eraseIn = a} -> a
-    FreeVar{fvCont = a} -> a
-    FreeVarBlocked{fvHead = a} -> a
+    FreeVar{fvPrimary = a} -> a
+    FreeVarBlocked{fvOcc = a} -> a
     EndList{endIn = a} -> a
     Garbage{garbageIn = a} -> a
     Forcing{forcingIn = a} -> a
@@ -312,6 +322,120 @@ bindName sym = do
         return e
   return (v, Name{symbol = sym, binderEdge = v, reference = ref})
 
+-- * Free-variable context (b agents)
+
+{- | The free-variable context: a stack of maps (innermost first), where each
+map maps a captured variable name to the list of its @c@-chain OUTPUT edges
+(one per occurrence, in body order).
+
+Paper-faithful encoding (Mackie 1998, §3 Conv. 3.3 + §4 "Duplication"): a
+captured variable occurring @N@ times is split into @N@ distinct names via the
+@[v = v₁, …, v_N]@ construct, translated as ONE 'FreeVar' (@b@) agent plus a
+chain of 'Copy' (@c@) agents fanning the value out to the @N@ occurrences. The
+whole @c@-chain is built in 'buildList' (the free-variable list, OUTSIDE the
+body), rooted at the @b@ agent's @fvValue@; 'compileVar' merely wires each
+occurrence to the next @c@-chain output. Keeping the @c@ agents out of the body
+means a @δ@ agent duplicating the body cannot duplicate them, so all @δ@ agents
+stay well-balanced inside the body of the abstraction (§5 "Duplication").
+-}
+type FreeVarCtx = [Map String [Edge]]
+
+{- | The captured variables of a term: the free variables of the term that are
+bound by an enclosing binder (in the environment). Sorted for determinism.
+-}
+distinctFreeVars :: Env -> Lam -> [String]
+distinctFreeVars env lam =
+  sort (Set.toList (fv lam `Set.intersection` boundNames env))
+ where
+  boundNames :: Env -> Set String
+  boundNames = Set.fromList . map symbol
+
+{- | Count the occurrences of each variable in a term, EXCLUDING occurrences
+inside nested abstractions that capture the variable. This gives the number of
+'b@ agents that the enclosing abstraction must create for each captured
+variable (one per occurrence wired to this abstraction's @b@ agents).
+
+The @excluded@ set accumulates the free variables of nested abstractions as we
+descend: an occurrence of a variable inside a nested @λw. body@ is handled by
+that nested abstraction (which creates its own @b@ agents), not by the
+enclosing one.
+-}
+countDirect :: Set String -> Lam -> Map String Int
+countDirect excluded (LVar v)
+  | v `Set.member` excluded = Map.empty
+  | otherwise = Map.singleton v 1
+countDirect excluded (LApp f x) =
+  Map.unionWith (+) (countDirect excluded f) (countDirect excluded x)
+countDirect excluded (LLam w body) =
+  let innerFvs = fv body
+      newExcluded = excluded `Set.union` innerFvs
+   in Map.delete w (countDirect newExcluded body)
+countDirect _ LSelfRef = Map.singleton selfRefName 1
+countDirect excluded (LRec l) = Map.delete selfRefName (countDirect excluded l)
+
+-- | Find the binder for a variable in the environment.
+findBinder :: Env -> String -> Name
+findBinder env v = case findBinderMaybe env v of
+  Just n -> n
+  Nothing -> error $ "findBinder: unbound variable " <> toText v
+
+{- | Find the binder for a variable in the environment, returning 'Nothing'
+if not found.
+-}
+findBinderMaybe :: Env -> String -> Maybe Name
+findBinderMaybe env v = case env of
+  [] -> Nothing
+  n : ns
+    | v == symbol n -> Just n
+    | otherwise -> findBinderMaybe ns v
+
+{- | Build the free-variable list: a chain of 'FreeVar' (@b@) agents, ONE per
+captured variable (Mackie 1998, §4 "Abstraction": "one for each free
+variable"), ending in an 'EndList' (@ν@) agent. Each @b@ agent's @fvValue@ is
+wired to the enclosing binder edge (via 'reference') and is the ROOT of the
+@N@-way @c@-chain (built here, in the free-variable list) that fans the value
+out to the @N@ occurrences (the paper's @[v = v₁, …, v_N]@ translation). Its
+@fvOcc@ is a fresh free edge. Returns the context mapping each variable to the
+list of its @c@-chain output edges (one per occurrence, in body order).
+-}
+buildList :: Env -> Edge -> Map String Int -> BuildM (Map String [Edge])
+buildList env eHead counts = go eHead (Map.keys counts) Map.empty
+ where
+  go :: Edge -> [String] -> Map String [Edge] -> BuildM (Map String [Edge])
+  go eTail [] ctx = do
+    void $ newNode EndList{endIn = eTail}
+    return ctx
+  go eCur (fvName : rest) ctx = do
+    let n = Map.findWithDefault 0 fvName counts
+    eOcc <- newEdge
+    eCont <- newEdge
+    refEdge <- reference (findBinder env fvName)
+    void $ newNode FreeVar{fvPrimary = eCur, fvOcc = eOcc, fvCont = eCont, fvValue = refEdge, name = fvName}
+    -- Fan the value (refEdge) out to @n@ occurrence edges. For @n == 1@ the
+    -- value edge IS the occurrence edge (no @c@ agent); for @n >= 2@ a @c@-chain
+    -- splits it. The @c@ agents live in the free-variable list, so a @δ@
+    -- duplicating the body cannot reach them.
+    finalOccs <-
+      if n == 1
+        then return [refEdge]
+        else do
+          occs <- replicateM n newEdge
+          buildCopyChain refEdge occs
+          return occs
+    go eCont rest (Map.insert fvName finalOccs ctx)
+
+{- | Look up a variable in the free-variable context (from innermost to
+outermost). Returns the updated context (with one @c@-chain output consumed
+from the innermost map that still has one) and the output edge to wire the
+occurrence to.
+-}
+lookupFvQueue :: FreeVarCtx -> String -> Maybe (FreeVarCtx, Edge)
+lookupFvQueue ctx v = case ctx of
+  [] -> Nothing
+  m : ms -> case Map.lookup v m of
+    Just (e : rest) -> Just (Map.insert v rest m : ms, e)
+    _ -> lookupFvQueue ms v
+
 -- * Net builder
 
 {- | A net fragment: a function from an input edge to an output edge, built in
@@ -341,7 +465,7 @@ buildYaleNetK proj lam = execGraph build emptyGraph
   build = do
     eOut <- newEdge
     void $ newNode Initiator{out = eOut}
-    compile [] eOut lam
+    void $ compile [] [] eOut lam
     -- Introduce the forcing agent (4) at the free output edge to drive
     -- strong reduction (Mackie §5.1): it supplies dummy arguments so that
     -- blocked computations complete, and toggles FreeVar <-> FreeVarBlocked
@@ -349,45 +473,49 @@ buildYaleNetK proj lam = execGraph build emptyGraph
     void $ newNode Forcing{forcingIn = eOut}
     void $ proj eOut
 
--- | Compile a 'Lam' term to the edge @p@ under the binder environment @env@.
-compile :: Env -> Edge -> Lam -> BuildM ()
-compile env p term = case term of
+{- | Compile a 'Lam' term to the edge @p@ under the binder environment @env@
+and the free-variable context @ctx@.
+-}
+compile :: Env -> FreeVarCtx -> Edge -> Lam -> BuildM FreeVarCtx
+compile env ctx p term = case term of
   LApp f x -> do
     ef <- newEdge
     ex <- newEdge
     -- Application @M N@: appFunc = M (function, principal), appArg = N
     -- (argument), appResult = result (p).
     void $ newNode YaleApp{appFunc = ef, appArg = ex, appResult = p}
-    compile env ef f
-    compile env ex x
+    ctx1 <- compile env ctx ef f
+    compile env ctx1 ex x
   LLam v body -> do
     b <- newEdge
     eList <- newEdge
     (ev, name) <- bindName v
-    -- Free-variable list (Mackie 1998): one 'FreeVar' (b) agent per free
-    -- variable of the body that is NOT bound by any enclosing abstraction in
-    -- the current environment. The recursive self-reference (@selfRefName@)
-    -- is NOT listed here: it is a bound variable of an enclosing abstraction
+    -- Free-variable list (Mackie 1998): one 'FreeVar' (b) agent per CAPTURED
+    -- variable of the body (free in the body, bound by an enclosing
+    -- abstraction in @env@). The recursive self-reference (@selfRefName@) is
+    -- NOT listed here: it is a bound variable of an enclosing abstraction
     -- (the @LRec@ binder), so @compileVar@ wires it DIRECTLY onto that
     -- binder edge. The β-rule's splice of the knot edge onto the binder edge
     -- then preserves the self-reference naturally — no 'FreeVar' intermediary
     -- is needed (and one would be erroneously erased by the β-rule).
     --
-    -- Ordinary captured variables (bound by an enclosing abstraction) are
-    -- likewise NOT listed: their occurrences are wired DIRECTLY onto the
-    -- enclosing binder edge by @compileVar@, and 'copyLamRHS'\/'copyAppRHS'
-    -- split that direct port across the copies (via 'byEdgeOrSticky').
     -- A free variable not bound by any enclosing abstraction is a base value
     -- and is handled as a 'Constant' at its usage site (by @compileVar@).
-    void $ newNode EndList{endIn = eList}
+    let fvs = distinctFreeVars env body
+        -- One 'FreeVar' (@b@) agent per OCCURRENCE of each captured variable
+        -- (not per distinct variable): this restores the paper's "unique
+        -- occurrence" invariant per @b@ agent, so that a @δ@ agent parking at
+        -- an occurrence is the only @δ@ on that @b@ agent's @fvOcc@ edge.
+        counts = Map.restrictKeys (countDirect Set.empty body) (Set.fromList fvs)
+    ctx' <- buildList env eList counts
     -- Abstraction @λv. body@: lamResult = result (p, principal), lamVarList =
     -- the free-variable list, lamVar = bound variable (ev), lamBody = body.
     -- Each occurrence of @v@ in the body is a direct port on the binder edge
     -- @ev@ (wired by @compileVar@); there is no separate marker on @ev@.
     void $ newNode YaleLam{lamResult = p, lamVarList = eList, lamVar = ev, lamBody = b}
-    compile (name : env) b body
-  LVar v -> compileVar env p v
-  LSelfRef -> compileVar env p selfRefName
+    compile (name : env) (ctx' : ctx) b body
+  LVar v -> compileVar env ctx p v
+  LSelfRef -> compileVar env ctx p selfRefName
   LRec (LLam _ body) ->
     -- YALE "tie the knot" (Mackie 1998, §6 "Recursion"): @Y(F)@ where
     -- @F = λself. body'@ and @body' = body[LSelfRef ↦ self]@. The paper codes
@@ -414,7 +542,7 @@ compile env p term = case term of
       eK <- newEdge
       eN <- newEdge
       let body' = replaceSelfRef selfRefName body
-      compile env eN (LLam selfRefName body')
+      ctx1 <- compile env ctx eN (LLam selfRefName body')
       eRes <- newEdge
       void $ newNode YaleApp{appResult = eRes, appFunc = eN, appArg = eK}
       void $
@@ -426,30 +554,36 @@ compile env p term = case term of
             , copySticky = [eK]
             , copySplitVars = []
             }
+      return ctx1
   LRec _ -> error "LRec: expected a lambda"
 
 {- | Resolve a variable occurrence @v@ at the edge @p@ under the binder
-environment @env@. The innermost matching binder registers the occurrence on
-its binder 'Multiplexer' (via 'reference'); a reference that is not bound by
-any enclosing binder becomes a 'Constant'.
+environment @env@ and the free-variable context @ctx@.
 
-Paper-faithful (Mackie 1998, LINEAR encoding): the occurrence is NOT merged
-directly onto the binder edge. Instead it is wired to a fresh edge registered
-on the binder 'Multiplexer'. 'compileBinder' then inspects how many
-occurrences were registered and emits the explicit linear structure: a
-'Garbage' (@e@) agent for 0, a direct wire for 1, or a 'Copy' (@c@) chain for
-≥2. This keeps every binder edge to a SINGLE port into the body, so the
-reducer's rules stay pure local replacements (no sharing metadata).
+If @v@ is a captured variable (present in @ctx@), the occurrence is wired to
+the next output of the variable's @c@-chain (built in 'buildList', in the
+free-variable list). This is the direct net translation of the paper's
+@[v = v₁, …, v_N]@ construct (Mackie 1998, §4 "Duplication"): one @b@ agent
+plus a @c@-chain fanning the value out to the @N@ occurrences; the @c@ agents
+live outside the body, so a @δ@ duplicating the body cannot reach them.
+Otherwise, the innermost matching binder registers the occurrence on its binder
+'Multiplexer' (via 'reference'); a reference that is not bound by any enclosing
+binder becomes a 'Constant'.
 -}
-compileVar :: Env -> Edge -> String -> BuildM ()
-compileVar env p v = case env of
-  [] -> void $ newNode Constant{inp = p, name = v}
-  n : ns ->
-    if v == symbol n
-      then do
-        e <- reference n
-        mergeEdges e p
-      else compileVar ns p v
+compileVar :: Env -> FreeVarCtx -> Edge -> String -> BuildM FreeVarCtx
+compileVar env ctx p v = case lookupFvQueue ctx v of
+  Just (ctx', eOcc) ->
+    -- Captured variable: wire the occurrence to the next @c@-chain output.
+    mergeEdges eOcc p >> return ctx'
+  Nothing -> case env of
+    [] -> newNode Constant{inp = p, name = v} >> return ctx
+    n : ns ->
+      if v == symbol n
+        then do
+          e <- reference n
+          mergeEdges e p
+          return ctx
+        else compileVar ns ctx p v
 
 -- * Binder compilation
 

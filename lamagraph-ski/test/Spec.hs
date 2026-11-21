@@ -456,6 +456,9 @@ yaleInteractionRuleTests =
               void $ newNode Constant{inp = eK, name = "k"}
               void $ newNode Constant{inp = eC, name = "c"}
               void $ newNode EndList{endIn = eList}
+              -- x is UNUSED: the binder edge carries a Garbage agent that
+              -- erases the spliced-in argument (the compiler's linear encoding).
+              void $ newNode Garbage{garbageIn = eBinder}
           )
           (Map.fromList [("Const(c)", 1)])
     , -- beta: (\\x. x x) k -> k k. The bound variable is used TWICE, so the
@@ -470,7 +473,12 @@ yaleInteractionRuleTests =
               eList <- newEdge
               eK <- newEdge
               eBody <- newEdge
-              void $ newNode YaleApp{appFunc = eBinder, appArg = eBinder, appResult = eBody}
+              eOcc1 <- newEdge
+              eOcc2 <- newEdge
+              -- x is used TWICE: the binder edge carries a Copy agent that fans
+              -- the spliced-in argument out to both occurrences in the body.
+              void $ newNode Copy{copyIn = eBinder, copyOut1 = eOcc1, copyOut2 = eOcc2, copySticky = [], copySplitVars = []}
+              void $ newNode YaleApp{appFunc = eOcc1, appArg = eOcc2, appResult = eBody}
               void $ newNode YaleLam{lamResult = eRes, lamVarList = eList, lamVar = eBinder, lamBody = eBody}
               void $ newNode YaleApp{appFunc = eRes, appArg = eK, appResult = eOut}
               void $ newNode Constant{inp = eK, name = "k"}
@@ -510,8 +518,11 @@ yaleInteractionRuleTests =
               void $ newNode Copy{copyIn = eIn, copyOut1 = e1, copyOut2 = e2, copySticky = [], copySplitVars = []}
               void $ newNode Constant{inp = eBody, name = "b"}
               void $ newNode EndList{endIn = eList}
+              -- A single bound-variable occurrence on the binder edge, so the
+              -- rule's binder-duplication Delta has something to duplicate.
+              void $ newNode Constant{inp = eBinder, name = "x"}
           )
-          (Map.fromList [("Lam", 2), ("Const(b)", 2), ("End", 2)])
+          (Map.fromList [("Lam", 2), ("Const(b)", 2), ("Const(x)", 2), ("End", 2)])
     , -- Forcing (4) x Forcing (4): the two forcing agents cancel.
       testCase "Forcing x Forcing -> empty" $
         assertReducesTo
@@ -539,8 +550,10 @@ yaleInteractionRuleTests =
           ( do
               eHead <- newEdge
               eOcc <- newEdge
+              eCont <- newEdge
+              eVal <- newEdge
               void $ newNode Forcing{forcingIn = eHead}
-              void $ newNode FreeVar{fvCont = eHead, fvOcc = eOcc, name = "x"}
+              void $ newNode FreeVar{fvPrimary = eHead, fvOcc = eOcc, fvCont = eCont, fvValue = eVal, name = "x"}
           )
           (Map.fromList [("FreeVB", 1)])
     , -- Forcing (4) x FreeVarBlocked (b'): the b' agent is toggled back to b.
@@ -552,9 +565,230 @@ yaleInteractionRuleTests =
               eCont <- newEdge
               eOcc <- newEdge
               void $ newNode Forcing{forcingIn = eHead}
-              void $ newNode FreeVarBlocked{fvHead = eHead, fvCont = eCont, fvOcc = eOcc, name = "x"}
+              eVal <- newEdge
+              void $ newNode FreeVarBlocked{fvOcc = eOcc, fvCont = eCont, fvValue = eVal, fvHead = eHead, name = "x"}
           )
           (Map.fromList [("FreeV", 1)])
+    -- ── rule_03 (b×κ): b is erased, Constant remains ──────────────────────
+    , testCase "FreeVar x Constant -> Constant (rule_03)" $
+        assertReducesTo
+          "FreeVar x Constant"
+          ( do
+              eMeet <- newEdge
+              eOcc <- newEdge
+              eCont <- newEdge
+              eVal <- newEdge
+              void $ newNode FreeVar{fvPrimary = eMeet, fvOcc = eOcc, fvCont = eCont, fvValue = eVal, name = "x"}
+              void $ newNode Constant{inp = eMeet, name = "k"}
+              void $ newNode EndList{endIn = eCont}
+              void $ newNode Constant{inp = eVal, name = "v"}
+              void $ newNode Constant{inp = eOcc, name = "o"}
+          )
+          (Map.fromList [("Const(k)", 1), ("Const(v)", 1), ("Const(o)", 1), ("End", 1)])
+    -- ── rule_04 (b×λ): both remain, ports reconfigured ────────────────────
+    , testCase "FreeVar x Lam -> Lam + FreeVar (rule_04)" $
+        assertReducesTo
+          "FreeVar x Lam"
+          ( do
+              eMeet <- newEdge
+              eOcc <- newEdge
+              eCont <- newEdge
+              eVal <- newEdge
+              eBinder <- newEdge
+              eList <- newEdge
+              eBody <- newEdge
+              void $ newNode FreeVar{fvPrimary = eMeet, fvOcc = eOcc, fvCont = eCont, fvValue = eVal, name = "x"}
+              void $ newNode YaleLam{lamResult = eMeet, lamVarList = eList, lamVar = eBinder, lamBody = eBody}
+              void $ newNode EndList{endIn = eCont}
+              void $ newNode EndList{endIn = eList}
+              void $ newNode Constant{inp = eBody, name = "b"}
+              void $ newNode Constant{inp = eVal, name = "v"}
+              void $ newNode Constant{inp = eOcc, name = "o"}
+          )
+          (Map.fromList [("Lam", 1), ("FreeV", 1), ("Const(b)", 1), ("Const(v)", 1), ("Const(o)", 1), ("End", 2)])
+    -- ── rule_05 (b×ν): b is erased, EndList remains ───────────────────────
+    , testCase "FreeVar x EndList -> EndList (rule_05)" $
+        assertReducesTo
+          "FreeVar x EndList"
+          ( do
+              eMeet <- newEdge
+              eOcc <- newEdge
+              eCont <- newEdge
+              eVal <- newEdge
+              void $ newNode FreeVar{fvPrimary = eMeet, fvOcc = eOcc, fvCont = eCont, fvValue = eVal, name = "x"}
+              void $ newNode EndList{endIn = eMeet}
+              void $ newNode EndList{endIn = eCont}
+              void $ newNode Constant{inp = eVal, name = "v"}
+              void $ newNode Constant{inp = eOcc, name = "o"}
+          )
+          (Map.fromList [("End", 2), ("Const(v)", 1), ("Const(o)", 1)])
+    -- ── rule_09 (δ×δ): two δ agents cancel, out1↔out1 / out2↔out2 ─────────
+    , testCase "Delta x Delta -> parallel (rule_09)" $
+        assertReducesTo
+          "Delta x Delta"
+          ( do
+              eIn <- newEdge
+              eO1a <- newEdge
+              eO1b <- newEdge
+              eO2a <- newEdge
+              eO2b <- newEdge
+              void $ newNode Delta{deltaIn = eIn, deltaOut1 = eO1a, deltaOut2 = eO1b}
+              void $ newNode Delta{deltaIn = eIn, deltaOut1 = eO2a, deltaOut2 = eO2b}
+              void $ newNode Constant{inp = eO1a, name = "a"}
+              void $ newNode Constant{inp = eO1b, name = "b"}
+              void $ newNode Constant{inp = eO2a, name = "c"}
+              void $ newNode Constant{inp = eO2b, name = "d"}
+          )
+          (Map.fromList [("Const(a)", 1), ("Const(b)", 1), ("Const(c)", 1), ("Const(d)", 1)])
+    -- ── rule_10+11 (δ×b then δ×b′): block then unblock, b duplicated ──────
+    , testCase "Delta x FreeVar -> two FreeVars (rule_10+11)" $
+        assertReducesTo
+          "Delta x FreeVar"
+          ( do
+              eIn <- newEdge
+              eO1 <- newEdge
+              eO2 <- newEdge
+              eOcc <- newEdge
+              eCont <- newEdge
+              eVal <- newEdge
+              void $ newNode Delta{deltaIn = eIn, deltaOut1 = eO1, deltaOut2 = eO2}
+              void $ newNode FreeVar{fvPrimary = eIn, fvOcc = eOcc, fvCont = eCont, fvValue = eVal, name = "x"}
+              void $ newNode EndList{endIn = eCont}
+              void $ newNode Constant{inp = eVal, name = "v"}
+              void $ newNode Constant{inp = eOcc, name = "o"}
+              void $ newNode Constant{inp = eO1, name = "p1"}
+              void $ newNode Constant{inp = eO2, name = "p2"}
+          )
+          (Map.fromList [("FreeV", 2), ("Const(v)", 2), ("Const(o)", 2), ("End", 2), ("Const(p1)", 1), ("Const(p2)", 1)])
+    -- ── rule_13 (b×b′): reconfigure into two b′ and one b ─────────────────
+    , testCase "FreeVar x FreeVarBlocked -> 2 FreeVB + 1 FreeV (rule_13)" $
+        assertReducesTo
+          "FreeVar x FreeVarBlocked"
+          ( do
+              eMeet <- newEdge
+              eOcc <- newEdge
+              eCont <- newEdge
+              eVal <- newEdge
+              eContP <- newEdge
+              eValP <- newEdge
+              eHeadP <- newEdge
+              void $ newNode FreeVar{fvPrimary = eMeet, fvOcc = eOcc, fvCont = eCont, fvValue = eVal, name = "x"}
+              void $ newNode FreeVarBlocked{fvOcc = eMeet, fvCont = eContP, fvValue = eValP, fvHead = eHeadP, name = "x"}
+          )
+          -- rule_13: the b and b' reconfigure into two b' agents and one b
+          -- agent. Auxiliary ports are left as free edges so no secondary
+          -- interaction (e.g. rule_03 b×κ) fires.
+          (Map.fromList [("FreeVB", 2), ("FreeV", 1)])
+    -- ── rule_14 (c×b′): b′ duplicated (two b′ copies, δ on cont, c on val/head) ──
+    , testCase "Copy x FreeVarBlocked -> two FreeVBs (rule_14)" $
+        assertReducesTo
+          "Copy x FreeVarBlocked"
+          ( do
+              eIn <- newEdge
+              eO1 <- newEdge
+              eO2 <- newEdge
+              eCont <- newEdge
+              eVal <- newEdge
+              eHead <- newEdge
+              void $ newNode Copy{copyIn = eIn, copyOut1 = eO1, copyOut2 = eO2, copySticky = [], copySplitVars = []}
+              void $ newNode FreeVarBlocked{fvOcc = eIn, fvCont = eCont, fvValue = eVal, fvHead = eHead, name = "x"}
+              void $ newNode EndList{endIn = eCont}
+              void $ newNode Constant{inp = eVal, name = "v"}
+              void $ newNode Constant{inp = eHead, name = "h"}
+              void $ newNode Constant{inp = eO1, name = "p1"}
+              void $ newNode Constant{inp = eO2, name = "p2"}
+          )
+          (Map.fromList [("FreeVB", 2), ("Const(v)", 2), ("Const(h)", 2), ("End", 2), ("Const(p1)", 1), ("Const(p2)", 1)])
+    -- ── rule_15 (d×b′): d preserved, rewired to b′ value ──────────────────
+    , testCase "Erase x FreeVarBlocked -> Erase on value (rule_15)" $
+        assertReducesTo
+          "Erase x FreeVarBlocked"
+          ( do
+              eMeet <- newEdge
+              eCont <- newEdge
+              eVal <- newEdge
+              eHead <- newEdge
+              void $ newNode Erase{eraseIn = eMeet}
+              void $ newNode FreeVarBlocked{fvOcc = eMeet, fvCont = eCont, fvValue = eVal, fvHead = eHead, name = "x"}
+              void $ newNode Constant{inp = eVal, name = "v"}
+              void $ newNode Constant{inp = eHead, name = "h"}
+          )
+          -- rule_15: the d agent is PRESERVED and rewired onto the value
+          -- (fvValue); the b' is deleted and its continuation (fvCont) is
+          -- merged with its head (fvHead). The d agent has no d×Constant rule,
+          -- so it stays parked on the value Constant; the head Constant rides
+          -- on the merged continuation/head edge.
+          (Map.fromList [("Erase", 1), ("Const(v)", 1), ("Const(h)", 1)])
+    -- ── rule_16 (ε×λ): Garbage propagated along varlist and body ──────────
+    , testCase "Garbage x Lam -> two Garbages (rule_16)" $
+        assertReducesTo
+          "Garbage x Lam"
+          ( do
+              eMeet <- newEdge
+              eList <- newEdge
+              eBinder <- newEdge
+              eBody <- newEdge
+              void $ newNode Garbage{garbageIn = eMeet}
+              void $ newNode YaleLam{lamResult = eMeet, lamVarList = eList, lamVar = eBinder, lamBody = eBody}
+              void $ newNode EndList{endIn = eList}
+              void $ newNode Constant{inp = eBody, name = "b"}
+          )
+          Map.empty
+    -- ── d×b (eraseFreeVarRHS): value delivered to occurrence ──────────────
+    , testCase "Erase x FreeVar -> value to occurrence (d×b)" $
+        assertReducesTo
+          "Erase x FreeVar"
+          ( do
+              eMeet <- newEdge
+              eOcc <- newEdge
+              eCont <- newEdge
+              eVal <- newEdge
+              void $ newNode Erase{eraseIn = eMeet}
+              void $ newNode FreeVar{fvPrimary = eMeet, fvOcc = eOcc, fvCont = eCont, fvValue = eVal, name = "x"}
+              void $ newNode EndList{endIn = eCont}
+              void $ newNode Constant{inp = eVal, name = "v"}
+              void $ newNode Constant{inp = eOcc, name = "o"}
+          )
+          (Map.fromList [("Const(v)", 1), ("Const(o)", 1)])
+    -- ── c×b (copyFreeVarRHS): b duplicated ─────────────────────────────────
+    , testCase "Copy x FreeVar -> two FreeVars (c×b)" $
+        assertReducesTo
+          "Copy x FreeVar"
+          ( do
+              eIn <- newEdge
+              eO1 <- newEdge
+              eO2 <- newEdge
+              eOcc <- newEdge
+              eCont <- newEdge
+              eVal <- newEdge
+              void $ newNode Copy{copyIn = eIn, copyOut1 = eO1, copyOut2 = eO2, copySticky = [], copySplitVars = []}
+              void $ newNode FreeVar{fvPrimary = eIn, fvOcc = eOcc, fvCont = eCont, fvValue = eVal, name = "x"}
+              void $ newNode EndList{endIn = eCont}
+              void $ newNode Constant{inp = eVal, name = "v"}
+              void $ newNode Constant{inp = eOcc, name = "o"}
+              -- NOTE: no markers on the Copy's outputs (eO1/eO2): the two new
+              -- b copies have their principal ports there, and a Constant would
+              -- be erased together with the b by rule_03 (b×κ).
+          )
+          (Map.fromList [("FreeV", 2), ("Const(v)", 2), ("Const(o)", 2), ("End", 2)])
+    -- ── δ×App (deltaAppRHS): application duplicated ────────────────────────
+    , testCase "Delta x App -> two Apps (δ×@)" $
+        assertReducesTo
+          "Delta x App"
+          ( do
+              eIn <- newEdge
+              eO1 <- newEdge
+              eO2 <- newEdge
+              eFunc <- newEdge
+              eArg <- newEdge
+              void $ newNode Delta{deltaIn = eIn, deltaOut1 = eO1, deltaOut2 = eO2}
+              void $ newNode YaleApp{appFunc = eFunc, appArg = eArg, appResult = eIn}
+              void $ newNode Constant{inp = eFunc, name = "f"}
+              void $ newNode Constant{inp = eArg, name = "a"}
+              void $ newNode Constant{inp = eO1, name = "p1"}
+              void $ newNode Constant{inp = eO2, name = "p2"}
+          )
+          (Map.fromList [("App", 2), ("Const(f)", 2), ("Const(a)", 2), ("Const(p1)", 1), ("Const(p2)", 1)])
     ]
 
 -- * Duplication-composition tests (net-level, paper-faithful)
