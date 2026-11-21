@@ -1,0 +1,29 @@
+let Tuples.Pair = Tuples.Pair
+let Tuples.Triple = Tuples.Triple
+let Tuples.fst = fun Tuples.p -> match Tuples.p as t#a with ( Tuples.Pair
+                                 , [Tuples.x, t#b]
+                                 , Tuples.x )
+let Tuples.snd = fun Tuples.p -> match Tuples.p as t#c with ( Tuples.Pair
+                                 , [t#d, Tuples.y]
+                                 , Tuples.y )
+let Tuples.first_of_int_triple = fun Tuples.t ->
+                                 match Tuples.t as t#e with ( Tuples.Triple
+                                 , [Tuples.x, t#f, t#g]
+                                 , Tuples.x )
+let Tuples.second_of_int_triple = fun Tuples.t ->
+                                  match Tuples.t as t#h with ( Tuples.Triple
+                                  , [t#i, Tuples.y, t#j]
+                                  , Tuples.y )
+let Tuples.sum_of_first_and_third_of_int_triple = fun Tuples.t ->
+                                                  match Tuples.t as t#k with ( Tuples.Triple
+                                                  , [Tuples.x, t#l, Tuples.z]
+                                                  , (#std.+ Tuples.x) Tuples.z )
+let Tuples.swap = fun Tuples.p -> match Tuples.p as t#m with ( Tuples.Pair
+                                  , [Tuples.x, Tuples.y]
+                                  , Tuples.Pair ((Tuples.y), (Tuples.x)) )
+let Tuples.t = Tuples.Triple ((1), (2), (3))
+let t#n = #std.print_int (Tuples.fst (Tuples.swap (Tuples.Pair ((1), (2)))))
+let t#o = #std.print_int (Tuples.fst (Tuples.Pair ((42), (#std.true))))
+let t#p = #std.print_int (Tuples.snd (Tuples.Pair ((#std.false), (100))))
+let t#q = #std.print_int (Tuples.sum_of_first_and_third_of_int_triple Tuples.t)
+let t#r = #std.print_int (Tuples.second_of_int_triple Tuples.t)
