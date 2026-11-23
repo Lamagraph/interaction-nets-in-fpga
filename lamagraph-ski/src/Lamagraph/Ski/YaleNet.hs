@@ -411,16 +411,23 @@ buildList env eHead counts = go eHead (Map.keys counts) Map.empty
     eCont <- newEdge
     refEdge <- reference (findBinder env fvName)
     void $ newNode FreeVar{fvPrimary = eCur, fvOcc = eOcc, fvCont = eCont, fvValue = refEdge, name = fvName}
-    -- Fan the value (refEdge) out to @n@ occurrence edges. For @n == 1@ the
-    -- value edge IS the occurrence edge (no @c@ agent); for @n >= 2@ a @c@-chain
-    -- splits it. The @c@ agents live in the free-variable list, so a @δ@
-    -- duplicating the body cannot reach them.
+    -- Fan the value out to @n@ occurrence edges. For @n == 1@ the value edge
+    -- IS the occurrence edge (no @c@ agent). For @n >= 2@ a @c@-chain splits
+    -- the value; it is rooted at the @b@ agent's @fvOcc@ (NOT @refEdge@, the
+    -- enclosing binder edge). Rooting at @refEdge@ lets a @δ@ spawned on that
+    -- binder edge (when the enclosing @λ@ is duplicated) meet the first
+    -- @Copy@ and walk down the chain into the body, violating the paper's
+    -- invariant that "@δ@ agents are well-balanced inside the body of an
+    -- abstraction". Rooting at @fvOcc@ isolates the chain from the binder
+    -- edge: the value reaches @fvOcc@ via the d×b rule (which merges
+    -- @fvValue@ onto @fvOcc@ as the erasure agent walks the list), and the
+    -- @c@ agents then fan it out to the @n@ occurrences.
     finalOccs <-
       if n == 1
         then return [refEdge]
         else do
           occs <- replicateM n newEdge
-          buildCopyChain refEdge occs
+          buildCopyChain eOcc occs
           return occs
     go eCont rest (Map.insert fvName finalOccs ctx)
 

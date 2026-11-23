@@ -284,7 +284,7 @@ fireAt a b = do
     _ ->
       replace $ case (tag va, tag vb) of
         -- Copy: c × X
-        (TCopy, TCopy) -> return ()
+        (TCopy, TCopy) -> copyCopyRHS va vb
         (TCopy, TLam) -> copyLamRHS va vb
         (TLam, TCopy) -> copyLamRHS vb va
         (TCopy, TApp) -> copyAppRHS va vb
@@ -308,6 +308,10 @@ fireAt a b = do
         (TFreeV, TDelta) -> deltaFreeVarRHS vb va
         (TDelta, TFVB) -> deltaFreeVarBlockedRHS va vb
         (TFVB, TDelta) -> deltaFreeVarBlockedRHS vb va
+        -- δ × λ: duplicate the abstraction, propagating a c (not a δ) along
+        -- the free-variable list to keep the δ agents well-balanced in the body.
+        (TDelta, TLam) -> deltaLamRHS va vb
+        (TLam, TDelta) -> deltaLamRHS vb va
         (TDelta, _) -> deltaAlphaRHS va vb
         (_, TDelta) -> deltaAlphaRHS vb va
         -- Erase: d × X
@@ -490,6 +494,24 @@ copyConstRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
 copyConstRHS c k = do
   byNode $ Constant{inp = copyOut1 c, name = name k}
   byNode $ Constant{inp = copyOut2 c, name = name k}
+
+{- | 'Copy'×'Copy': two @c@ agents meet on the same edge, both duplicating the
+same term. The duplication is redundant, so the two @c@ agents are removed and
+the term is fanned out to the UNION of the two @c@ agents' four outputs (via a
+'Copy' chain, 'createCopyChainReplace'). This preserves every copy the two
+@c@ agents were producing, instead of dropping the outputs (as a bare
+cancellation would).
+NOTE: no extracted figure — c×c is not among the 16 rules in
+@YALE_by_hands/processed/@.
+-}
+copyCopyRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
+copyCopyRHS c1 c2 =
+  createCopyChainReplace [] [] (copyIn c1)
+    [ copyOut1 c1
+    , copyOut2 c1
+    , copyOut1 c2
+    , copyOut2 c2
+    ]
 
 -- | 'Copy'×'EndList': copy the end-of-list. Two @ν@'s.
 -- Figure: @YALE_by_hands/processed/rule_08.svg@.
@@ -712,6 +734,36 @@ deltaAppRHS d app =
         byNode $ YaleApp{appFunc = deltaOut2 d, appArg = eA2, appResult = eB2}
         byNode $ Delta{deltaIn = appArg app, deltaOut1 = eA1, deltaOut2 = eA2}
         byNode $ Delta{deltaIn = appResult app, deltaOut1 = eB1, deltaOut2 = eB2}
+
+{- | 'Delta'×'YaleLam': the @δ@ agent duplicates an abstraction. This is the
+δ-analogue of the @c@×@λ@ rule ('copyLamRHS'): two copies of the @λ@ are
+produced, a @δ@ is introduced to duplicate the binder edge and the body, and a
+@c@ (NOT a @δ@) is propagated along the free-variable list. Propagating a @c@
+along the list — rather than a @δ@, as the generic 'deltaAlphaRHS' would — is
+what keeps the @δ@ agents well-balanced inside the body of the abstraction
+(Mackie 1998, §5 "Duplication"): a @δ@ on the free-variable list would enter
+the @c@-chains that fan captured values to their occurrences and duplicate
+them, re-entering nested abstractions without bound. The two copies' principal
+ports are wired to the @δ@'s two outputs (as in 'deltaAlphaRHS').
+NOTE: no extracted figure — δ×λ is the δ-analogue of rule 7 (c×λ); it is not
+among the 16 rules in @YALE_by_hands/processed/@.
+-}
+deltaLamRHS :: YaleNode -> YaleNode -> Replace YaleNode ()
+deltaLamRHS d lam = do
+  let v = lamVar lam
+  let bodyEdge = lamBody lam
+  v1 <- byEdge
+  v2 <- byEdge
+  eList1 <- byEdge
+  eList2 <- byEdge
+  eBody1 <- byEdge
+  eBody2 <- byEdge
+  byNode $ YaleLam{lamResult = deltaOut1 d, lamVarList = eList1, lamVar = v1, lamBody = eBody1}
+  byNode $ YaleLam{lamResult = deltaOut2 d, lamVarList = eList2, lamVar = v2, lamBody = eBody2}
+  byNode $ Delta{deltaIn = v, deltaOut1 = v1, deltaOut2 = v2}
+  byNode $ Delta{deltaIn = bodyEdge, deltaOut1 = eBody1, deltaOut2 = eBody2}
+  byNode $
+    Copy{copyIn = lamVarList lam, copyOut1 = eList1, copyOut2 = eList2, copySticky = [], copySplitVars = []}
 
 {- | 'Delta'×@α@: the general duplication rule (Mackie 1998, §5 "Duplication",
 final rule scheme). The @δ@ agent duplicates the agent @α@ into two copies and

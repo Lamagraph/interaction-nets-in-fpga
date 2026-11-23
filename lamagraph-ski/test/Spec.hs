@@ -37,7 +37,7 @@ import Lamagraph.Compiler.Eval
 import Lamagraph.Compiler.Syntax.Longident (mkLongident)
 import Lamagraph.Compiler.Typechecker.TcTypes (Name (..))
 import Lamagraph.Ski
-import Lamagraph.Ski.YaleDecode (skiEvalYale)
+import Lamagraph.Ski.YaleDecode (rootConstantNameYale, skiEvalYale)
 import Lamagraph.Ski.YaleNet (YaleNode (..), buildYaleNet)
 import Lamagraph.Ski.YaleNet qualified as YaleNet
 import Lamagraph.Ski.YaleReduce (reduceStepsYale)
@@ -62,6 +62,7 @@ main =
       , yaleInteractionRuleTests
       , yaleDuplicationCompositionTests
       , recursionTests
+      , yaleLambdaTermTests
       , basicFuncTests
       , mutualRecTests
       , yaleEvalTests
@@ -944,6 +945,87 @@ recursionTests =
       <> T.pack (show a)
       <> " "
       <> T.pack (show b)
+
+{- | Church-encoded booleans as bare 'Lam' terms (no LML frontend). -}
+churchTrue :: Lam
+churchTrue = LLam "__t__" (LLam "__f__" (LVar "__t__"))
+
+churchFalse :: Lam
+churchFalse = LLam "__t__" (LLam "__f__" (LVar "__f__"))
+
+{- | Assert that a Church-encoded boolean 'Lam' term reduces to the expected
+boolean. Applies the term to two distinct marker constants, reduces the net,
+and reads which marker survives at the root. No LML frontend: the term is a
+bare 'Lam', isolating the general λ-handling from the LML desugaring layer.
+Mirrors 'Lamagraph.Ski.YaleDecode.decodeYaleBool'. -}
+assertYaleBoolLam :: Lam -> Bool -> IO ()
+assertYaleBoolLam lam expected =
+  let full = LApp (LApp lam (LVar "__tickT__")) (LVar "__tickF__")
+      g = buildYaleNet full
+      (steps, g2, nf) = reduceStepsYale 20000 g
+   in if not nf
+        then assertFailure $ "did not reach NF within 20000 steps (stopped at " <> show steps <> ")"
+        else case rootConstantNameYale g2 of
+          Just nm ->
+            let actual = (nm == "__tickT__")
+             in if actual == expected
+                  then return ()
+                  else assertFailure $ "expected " <> show expected <> " but got " <> show actual
+          Nothing -> assertFailure "no marker constant at root after reduction"
+
+{- | Assert that a bare 'Lam' term reaches normal form within the step budget
+(no LML frontend). A loud failure (never a hang) if the budget is exhausted. -}
+assertYaleNFLam :: Lam -> Int -> IO ()
+assertYaleNFLam lam budget =
+  let g = buildYaleNet lam
+      (steps, _g2, nf) = reduceStepsYale budget g
+   in assertBool
+        ("expected NF within " <> show budget <> " steps, stopped at " <> show steps)
+        nf
+
+{- | Direct lambda-term tests (no LML frontend): Church-encoded conditionals
+and free-variable duplication. These exercise the general λ-handling
+(β-reduction and duplication) on bare 'Lam' terms, isolating it from the LML
+desugaring layer. The conditional @if b then t else e@ is the Church
+application @b t e@. -}
+yaleLambdaTermTests :: TestTree
+yaleLambdaTermTests =
+  testGroup
+    "yale lambda terms (Church conditionals)"
+    [ testCase "if true then false else true = false" $
+        assertYaleBoolLam (LApp (LApp churchTrue churchFalse) churchTrue) False
+    , testCase "if false then true else false = false" $
+        assertYaleBoolLam (LApp (LApp churchFalse churchTrue) churchFalse) False
+    , testCase "if false then false else true = true" $
+        assertYaleBoolLam (LApp (LApp churchFalse churchFalse) churchTrue) True
+    , testCase "if true then true else false = true" $
+        assertYaleBoolLam (LApp (LApp churchTrue churchTrue) churchFalse) True
+    , -- Duplication of a CLOSED abstraction: '(λt. t t) (λy. λx. x y y)'.
+      -- Baseline: no free vars, no b-agents, no c-chains.
+      testCase "dup of closed abstraction (λt.tt)(λy.λx.x y y) reaches NF" $
+        assertYaleNFLam
+          ( LApp
+              (LLam "__t__" (LApp (LVar "__t__") (LVar "__t__")))
+              (LLam "__y__" (LLam "__x__" (LApp (LApp (LVar "__x__") (LVar "__y__")) (LVar "__y__"))))
+          )
+          20000
+    , -- Duplication of an abstraction with a CAPTURED var: 'λy. (λt. t t) (λx. x y y)'.
+      -- The argument 'λx. x y y' is duplicated (two occurrences of 't'); 'y' is
+      -- free in it and occurs twice, so a c-chain fans 'y' from the enclosing
+      -- binder edge to its two occurrences. The δ spawned on the binder edge
+      -- while duplicating the argument must not collide with that c-chain.
+      -- Normal form: 'λy. y y y'.
+      testCase "dup of abstraction w/ captured var λy.(λt.tt)(λx.x y y) reaches NF" $
+        assertYaleNFLam
+          ( LLam
+              "__y__"
+              ( LApp
+                  (LLam "__t__" (LApp (LVar "__t__") (LVar "__t__")))
+                  (LLam "__x__" (LApp (LApp (LVar "__x__") (LVar "__y__")) (LVar "__y__")))
+              )
+          )
+          20000
+    ]
 
 {- | Basic-function tests: 'min' composed in different shapes. Non-recursive,
 but they stress the Copy machinery with nested applications and shared bodies
