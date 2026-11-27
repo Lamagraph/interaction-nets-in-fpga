@@ -38,8 +38,8 @@ activePairGettingTemplate ::
   Maybe (ActivePair portsNumber agentType) ->
   TestTree
 activePairGettingTemplate testName initialMM initialNet expectedActivePair =
-  testCase ("load active pair: " P.++ testName)
-    $ assertBool
+  testCase ("load active pair: " P.++ testName) $
+    assertBool
       ( "expected:\n"
           P.++ show expectedActivePair
           P.++ "\nactual:\n"
@@ -71,8 +71,8 @@ activePairGettingComplexTemplate ::
   [Maybe (ActivePair portsNumber agentType)] ->
   TestTree
 activePairGettingComplexTemplate testName initialNet activeAddresses expectedActivePairs =
-  testCase ("load active pair: " P.++ testName)
-    $ assertBool
+  testCase ("load active pair: " P.++ testName) $
+    assertBool
       ( "expected:\n"
           P.++ show expectedActivePairs
           P.++ "\nactual:\n"
@@ -106,8 +106,8 @@ interfaceReadWriteTemplate ::
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   TestTree
 interfaceReadWriteTemplate testName initialNet interface changedExNodes expectedNotWrittenInterface =
-  testCase ("load interface: " P.++ testName)
-    $ assertBool
+  testCase ("load interface: " P.++ testName) $
+    assertBool
       ( "expected:\n"
           P.++ show expectedNotWrittenInterface
           P.++ "\n"
@@ -144,8 +144,8 @@ interfaceReadWriteComplexTemplate ::
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   TestTree
 interfaceReadWriteComplexTemplate testName initialNet interface changedExNodes expectedNotWrittenInterface =
-  testCase ("load interface: " P.++ testName)
-    $ assertBool
+  testCase ("load interface: " P.++ testName) $
+    assertBool
       ( "expected:\n"
           P.++ show expectedNotWrittenInterface
           P.++ "\n"
@@ -168,10 +168,10 @@ interfaceReadWriteComplexTemplate testName initialNet interface changedExNodes e
     expectedNotWrittenInterface
       `elem` systemActualAnswer
       && P.last changedExNodes
-      `elem` systemActualAnswer
+        `elem` systemActualAnswer
       && changedExNodes
-      P.!! 3
-      `elem` systemActualAnswer
+        P.!! 3
+        `elem` systemActualAnswer
 
 combinationComplexTemplate ::
   forall agentType portsNumber externalNodesNumber.
@@ -191,8 +191,8 @@ combinationComplexTemplate ::
   Vec externalNodesNumber (Maybe (LoadedNode portsNumber agentType)) ->
   TestTree
 combinationComplexTemplate testName initialNet activeAddresses interfaces changedExNodes expectedActivePairs expectedNotWrittenInterface =
-  testCase ("load interface and active pair: " P.++ testName)
-    $ assertBool
+  testCase ("load interface and active pair: " P.++ testName) $
+    assertBool
       ( "expected:\n"
           P.++ show expectedNotWrittenInterface
           P.++ "\n"
@@ -397,8 +397,8 @@ combinationComplex =
       :> Nil
   activePair1 = ActivePair <$> initialEpsAppToId !! 1 <*> (initialEpsAppToId !! 2)
   activePair2 =
-    Just
-      $ ActivePair
+    Just $
+      ActivePair
         ( LoadedNode
             { _containedNode =
                 Node
